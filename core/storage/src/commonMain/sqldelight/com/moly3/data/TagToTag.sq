@@ -1,0 +1,32 @@
+CREATE TABLE TagToTag (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+
+    createdTime INTEGER NOT NULL,
+
+    -- FOREIGN KEYS
+    firstTagId INTEGER NOT NULL,
+    secondTagId INTEGER NOT NULL,
+    FOREIGN KEY(firstTagId) REFERENCES Tag(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY(secondTagId) REFERENCES Tag(id) ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+selectAll:
+SELECT *
+FROM TagToTag;
+
+search:
+SELECT *
+FROM TagToTag
+WHERE firstTagId = :tag1Id AND secondTagId = :tag2Id OR firstTagId = :tag2Id AND secondTagId = :tag1Id;
+
+delete:
+DELETE FROM TagToTag
+WHERE id = :id;
+
+insertObject:
+INSERT INTO TagToTag(firstTagId, secondTagId, createdTime)
+VALUES ?;
+
+lastInsertId:
+SELECT last_insert_rowid();
+

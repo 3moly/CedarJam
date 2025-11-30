@@ -1,0 +1,236 @@
+package com.moly3.cedarjam.pages.page_workspace
+
+import com.arkivanov.decompose.Child
+import com.arkivanov.decompose.ComponentContext
+import com.arkivanov.decompose.DelicateDecomposeApi
+import com.arkivanov.decompose.router.children.ChildNavState
+import com.arkivanov.decompose.router.children.NavState
+import com.arkivanov.decompose.router.children.SimpleChildNavState
+import com.arkivanov.decompose.router.children.SimpleNavigation
+import com.arkivanov.decompose.router.children.children
+import com.arkivanov.decompose.value.Value
+import com.arkivanov.mvikotlin.core.store.StoreFactory
+import com.arkivanov.mvikotlin.extensions.coroutines.labels
+import com.arkivanov.mvikotlin.extensions.coroutines.stateFlow
+import com.moly3.cedarjam.navigation.IDecomposeScopeComponent
+import com.moly3.cedarjam.navigation.Route
+import com.moly3.cedarjam.navigation.componentScope
+import com.moly3.cedarjam.navigation.stateFlow
+import com.moly3.cedarjam.pages.page_tabs.TabsComponent
+import com.moly3.cedarjam.pages.page_tabs.TabsComponentImpl
+import com.moly3.cedarjam.pages.page_workspace.store.WorkspaceStoreFactory
+import com.moly3.cedarjam.core.domain.dialog.DialogSelectTagService
+import com.moly3.cedarjam.core.domain.dialog.DialogTagToTagService
+import com.moly3.cedarjam.core.domain.model.PageNameData
+import com.moly3.cedarjam.core.domain.model.WorkspaceInput
+import com.moly3.cedarjam.core.domain.service.WorkspaceSession
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
+import org.koin.core.parameter.parametersOf
+import org.koin.core.scope.Scope
+
+data class PageNameWorkspace(
+    val pageNameData: PageNameData?
+)
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class WorkspaceComponentImpl(
+    private val workspaceInput: WorkspaceInput,
+    context: ComponentContext,
+    storeFactory: StoreFactory
+) : KoinComponent,
+    ComponentContext by context,
+    IDecomposeScopeComponent,
+    WorkspaceComponent {
+
+    override val scope by componentScope()
+    private val coroutineScope: CoroutineScope by inject()
+    override val workspaceSession: WorkspaceSession by inject {
+        parametersOf(
+            workspaceInput,
+            context.stateKeeper
+        )
+    }
+    override val dialogSelectTagService: DialogSelectTagService by inject()
+    override val dialogTagToTagService: DialogTagToTagService by inject()
+    private val store by lazy {
+        WorkspaceStoreFactory(
+            storeFactory = storeFactory,
+            lifecycle = lifecycle,
+            workspaceSession = workspaceSession
+        ).create(stateKeeper = stateKeeper)
+    }
+
+
+    override val state: StateFlow<State>
+        get() = store.stateFlow
+
+    override fun onIntent(intent: Intent) {
+        store.accept(intent)
+    }
+
+    override val labels: Flow<Label> = store.labels
+
+    private val navigation = SimpleNavigation<(NavigationState) -> NavigationState>()
+
+    private val _children: Value<WorkspaceComponent.Children<*, TabsComponent>> =
+        children(
+            source = navigation,
+            stateSerializer = NavigationState.serializer(),
+            key = "workspace",
+            initialState = {
+                NavigationState(
+                    configurations = listOf(Config.Tabs(index = 0))
+                )
+            },
+            navTransformer = { state, operation -> operation(state) },
+            stateMapper = { state, children ->
+                WorkspaceComponent.Children(
+                    items = children.map { it as Child.Created }
+                )
+            },
+            childFactory = { config, componentContext ->
+                TabsComponentImpl(
+                    context = componentContext,
+                    storeFactory = storeFactory,
+                    workspaceSession = workspaceSession,
+                    index = config.index,
+                    onSelfDestroy = {
+                        removeTabs(index = config.index)
+                    },
+                    onFileReveal = {
+                        store.accept(Intent.RevealFile(it))
+                    },
+                    onNewTabs = {
+                        navigation.navigate { state ->
+                            val maxIndex = state.configurations.maxOf { d -> d.index } + 1
+                            val configsMap = state.configurations.toMutableList()
+                            configsMap.add(Config.Tabs(maxIndex))
+                            state.copy(
+                                configurations = configsMap.sortedBy { d -> d.index }
+                            )
+                        }
+                    }
+                )
+            },
+        )
+
+    override val children: Value<WorkspaceComponent.Children<*, TabsComponent>>
+        get() = _children
+
+    init {
+        coroutineScope.launch {
+            _children.stateFlow.collectLatest {
+                val indexes = it.items.map { d->d.instance.index }
+                store.accept(Intent.ClearingTabs(indexes))
+            }
+        }
+        coroutineScope.launch {
+            val activeIndexFlow = state
+                .map { it.activeTabsIndex }
+                .distinctUntilChanged()
+            combine(
+                _children.stateFlow,
+                activeIndexFlow
+            ) { children, activeIndex ->
+                val foundItem = children.items.first { it.instance.index == activeIndex }
+                foundItem.instance.activeTab
+                    .flatMapLatest { it.activeFlowName }
+            }.flatMapLatest { activeFlow ->
+                activeFlow.map { state ->
+                    PageNameWorkspace(
+                        pageNameData = state
+                    )
+                }
+            }.collectLatest { page ->
+                store.accept(Intent.SetPageName(page))
+            }
+        }
+    }
+
+    private fun removeTabs(index: Int) {
+        if (children.value.items.size > 1) {
+            val itWasActiveIndex = state.value.activeTabsIndex == index
+            navigation.navigate { state ->
+                val configsMap =
+                    state.configurations.filter { d ->
+                        d.index != index
+                    }
+                state.copy(
+                    configurations = configsMap.sortedBy { d -> d.index }
+                )
+            }
+            if (itWasActiveIndex) {
+                val firstIndex = _children.value.items.firstOrNull()?.instance?.index
+                onIntent(Intent.SelectActiveTabs(firstIndex ?: 0))
+            }
+
+        }
+    }
+
+    override fun onScopeClose(scope: Scope) {
+        println("destroying workspace -> ${workspaceInput.name} <-")
+    }
+
+    @OptIn(DelicateDecomposeApi::class)
+    override fun onNavigate(route: Route) {
+        coroutineScope.launch(Dispatchers.Main.immediate) {
+            val foundActive = _children.value.items
+                .firstOrNull { d -> d.instance.index == state.value.activeTabsIndex }
+                ?: _children.value.items.firstOrNull()
+            foundActive?.instance?.onNavigate(route)
+        }
+    }
+
+    override fun setActiveTabs(component: Any) {
+        require(component is Config) { "component is not config" }
+        when (component) {
+            is Config.Tabs -> {
+                store.accept(Intent.SelectActiveTabs(component.index))
+            }
+        }
+    }
+
+    override fun getActiveTabsIndex(item: Any): Int {
+        require(item is Config) { "component is not config" }
+        return when (item) {
+            is Config.Tabs -> item.index
+        }
+    }
+
+
+    @Serializable
+    sealed interface Config {
+        val index: Int
+
+        @Serializable
+        data class Tabs(override val index: Int) : Config
+    }
+
+    @Serializable
+    private data class NavigationState(
+        val configurations: List<Config>
+    ) : NavState<Config> {
+
+        override val children: List<SimpleChildNavState<Config>> by lazy {
+            configurations.mapIndexed { index, config ->
+                SimpleChildNavState(
+                    configuration = config,
+                    status = ChildNavState.Status.RESUMED
+                )
+            }
+        }
+    }
+}

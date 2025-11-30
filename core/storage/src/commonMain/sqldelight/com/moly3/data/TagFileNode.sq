@@ -1,0 +1,27 @@
+CREATE TABLE TagFileNode (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+
+    createdTime INTEGER NOT NULL,
+
+    -- FOREIGN KEYS
+    tagId INTEGER NOT NULL,
+    fileNodeRelativePath TEXT NOT NULL,
+    FOREIGN KEY(tagId) REFERENCES Tag(id) ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+selectAll:
+SELECT *
+FROM TagFileNode;
+
+delete:
+DELETE FROM TagFileNode
+WHERE id = :id;
+
+insertObject:
+INSERT INTO TagFileNode(createdTime,tagId,fileNodeRelativePath)
+VALUES ?;
+
+updateFile:
+UPDATE TagFileNode
+SET fileNodeRelativePath = :newFileRelativePath
+WHERE fileNodeRelativePath = :oldFileRelativePath;

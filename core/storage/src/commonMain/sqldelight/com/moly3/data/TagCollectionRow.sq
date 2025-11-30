@@ -1,0 +1,23 @@
+CREATE TABLE TagCollectionRow (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+
+    createdTime INTEGER NOT NULL,
+
+-- FOREIGN KEYS
+    tagId INTEGER NOT NULL,
+    rowId INTEGER NOT NULL,
+    FOREIGN KEY (rowId) REFERENCES DataCollectionRow(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY(tagId) REFERENCES Tag(id) ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+selectAll:
+SELECT *
+FROM TagCollectionRow;
+
+delete:
+DELETE FROM TagCollectionRow
+WHERE id = :id;
+
+insertObject:
+INSERT INTO TagCollectionRow(createdTime,tagId,rowId)
+VALUES ?;

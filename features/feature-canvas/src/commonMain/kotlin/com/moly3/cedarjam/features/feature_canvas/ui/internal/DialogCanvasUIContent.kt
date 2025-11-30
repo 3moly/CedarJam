@@ -1,0 +1,307 @@
+package com.moly3.cedarjam.features.feature_canvas.ui.internal
+
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
+import com.mikepenz.hypnoticcanvas.shaderBackground
+import com.mohamedrejeb.compose.dnd.drop.dropTarget
+import com.moly3.cedarjam.core.domain.func.pathWrapper
+import com.moly3.cedarjam.core.domain.model.FileType
+import com.moly3.cedarjam.core.domain.model.canvas.ShapeData
+import com.moly3.cedarjam.core.domain.model.toGetFileType
+import com.moly3.cedarjam.core.domain.repository.IFilesRepository
+import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
+import com.moly3.cedarjam.core.ui.compositions.LocalDragAndDrop
+import com.moly3.cedarjam.core.ui.model.FileTreeItemPresentation
+import com.moly3.cedarjam.core.ui.uikit.CJText
+import com.moly3.cedarjam.core.ui.uikit.CJTextField
+import com.moly3.cedarjam.core.ui.vectors.Add
+import com.moly3.cedarjam.core.ui.vectors.TrashCan
+import com.moly3.cedarjam.features.feature_canvas.Intent
+import com.moly3.cedarjam.features.feature_canvas.State
+import com.moly3.cedarjam.features.feature_canvas.ui.shader.UmlShader
+import com.moly3.dataviz.block.func.absoluteOffset
+import com.moly3.dataviz.block.ui.Canvas
+import com.moly3.dataviz.core.block.model.Action
+import com.moly3.dataviz.core.block.model.CanvasSettings
+import kotlin.time.Clock
+
+@Composable
+internal fun DialogCanvasUIContent(
+    modifier: Modifier,
+    filesRepository: IFilesRepository,
+    state: State,
+    onFileTypeView: @Composable (FileType) -> Unit,
+    onIntent: (Intent) -> Unit
+) {
+    if (state.isShowContent) {
+        val actionState = remember { mutableStateOf<Action?>(value = null) }
+        val backgroundSecondary = LocalAppTheme.current.colors.backgroundSecondary
+        val selectedShader: UmlShader by remember { mutableStateOf(UmlShader) }
+        LaunchedEffect(backgroundSecondary) {
+            selectedShader.setColor(backgroundSecondary)
+        }
+        LaunchedEffect(state.zoom, state.userCoordinate) {
+            selectedShader.userCoordinates = state.userCoordinate
+            selectedShader.zoom = state.zoom
+            selectedShader.dotSpacing = 50f
+        }
+
+        Box(modifier = modifier) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+//                .hazeSource(hazeState, zIndex = 0f)
+                    .shaderBackground(shader = selectedShader)
+            )
+            val canvasSettings = remember {
+                CanvasSettings(
+                    defaultLineColor = Color.Red,
+                    sideCircleColor = Color.Cyan,
+                    selectedShapeBorderColor = Color.Magenta
+                )
+            }
+            val dragAndDropState = LocalDragAndDrop.current
+            val isDraggable = remember { mutableStateOf(false) }
+            Canvas(
+                modifier = Modifier.dropTarget(
+                    key = "targetKey:",
+                    state = dragAndDropState,
+                    onDragEnter = {
+                        isDraggable.value = true
+                        //draggableItems[data.row.id] = true
+                    },
+                    onDragExit = {
+                        isDraggable.value = false
+                        //draggableItems[data.row.id] = false
+                    },
+                    onDrop = { state ->
+                        println("state: ${state}")
+                        isDraggable.value = false
+                        val presData = state.data.data
+                        if (presData is FileTreeItemPresentation.FileTreeItemPresentationData.File) {
+                            onIntent(Intent.AddFileShape(presData.fileNode))
+                        }
+                    }
+                ),
+                backgroundModifier = Modifier,
+                connectionsModifier = Modifier,
+                settings = canvasSettings,
+                zoom = state.zoom,
+                userCoordinate = state.userCoordinate,
+                isDrawing = false,
+                shapes = state.shapes,
+                connections = state.connections,
+                drawingPaths = listOf(),
+                onAddPath = {},
+                onMoveShape = { index, pos ->
+                    onIntent(Intent.MoveShape(index, pos))
+                },
+                onResizeShape = { index, pos, size ->
+                    onIntent(Intent.ResizeShape(index, pos, size))
+                },
+                onAddConnection = {
+                    onIntent(Intent.AddConnection(it))
+                },
+                settingsPanel = { offset, action, onDoneAction ->
+                    var centerWidth by remember { mutableStateOf(0f) }
+                    val actualDensity = LocalDensity.current
+                    when (action) {
+                        is Action.DoubleClicked -> {}
+
+                        is Action.Connection,
+                        is Action.ShapeAction -> {
+                            Row(
+                                Modifier
+                                    .absoluteOffset(
+                                        ((offset / LocalDensity.current.density - Offset(
+                                            centerWidth / 2f,
+                                            50f
+                                        ) - Offset(0f, 8f)))
+                                    )
+                                    .onGloballyPositioned {
+                                        centerWidth = it.size.width.toFloat() / actualDensity.density
+                                    }
+                            ) {
+                                ButtonIcon(
+                                    modifier = Modifier,
+                                    color = LocalAppTheme.current.colors.divide,
+                                    iconColor = LocalAppTheme.current.colors.backgroundPrimary,
+                                    painter = rememberVectorPainter(TrashCan),
+                                    onClick = {
+                                        when (action) {
+                                            is Action.Connection -> {
+                                                //connections.remove(action.selectedConnection.connection)
+                                            }
+
+                                            is Action.DoubleClicked -> TODO()
+                                            is Action.ShapeAction -> {
+                                                //shapes.remove(action.shape)
+                                            }
+                                        }
+                                        onDoneAction()
+                                    })
+                            }
+                        }
+                    }
+                },
+                onDrawBlock = { shapeState ->
+                    val borderCoef by animateFloatAsState(
+                        if (shapeState.isSelected) 3f else 1f
+                    )
+                    val bgColor = if (shapeState.isDoubleClicked) {
+                        Color.Yellow.copy(alpha = 0.2f)
+                    } else {
+                        Color.Black
+//                        (shapeState.shape.backgroundColor
+//                            ?: Color.Black).copy(alpha = 0.3f) // Dark semi-transparent
+                    }
+                    Box(
+                        shapeState.modifier
+                            .let {
+                                if (shapeState.isDoubleClicked) {
+                                    it.zIndex(100f)
+                                } else
+                                    it
+                            }
+                            .fillMaxSize()
+//                            .hazeSource(hazeState, zIndex = 2f + shapeState.shape.id)
+//                            .hazeEffect(hazeState, hazeStyle) // Apply blur first
+                            .background(bgColor) // Then semi-transparent overlay
+                            .border((1f * state.zoom * borderCoef).dp, Color.White)
+                    ) {
+                        when (val data = shapeState.shape.data) {
+                            is ShapeData.Text -> {
+                                if (shapeState.isDoubleClicked) {
+                                    val textState =
+                                        remember {
+                                            mutableStateOf(
+                                                TextFieldValue(
+                                                    data.text,
+                                                    selection = TextRange(data.text.length)
+                                                )
+                                            )
+                                        }
+                                    val focusRequest = remember { FocusRequester() }
+                                    CJTextField(
+                                        modifier = Modifier
+                                            .padding(4.dp)
+                                            .fillMaxWidth()
+                                            .focusRequester(focusRequest),
+                                        value = textState.value,
+//                                        singleLine = true,
+                                        onValueChange = {
+                                            textState.value = it
+                                        },
+                                        textStyle = LocalAppTheme.current.textStyle.copy(fontSize = (12 * state.zoom / LocalDensity.current.density).sp),
+                                        onDone = {
+                                            val newChange = shapeState.shape.copy(
+                                                data = data.copy(text = textState.value.text)
+                                            )
+                                            onIntent(Intent.ChangeShape(newChange))
+                                            actionState.value = null
+                                        }
+                                    )
+                                    LaunchedEffect(Unit) {
+                                        focusRequest.requestFocus()
+                                    }
+                                } else {
+                                    CJText(
+                                        modifier = Modifier.align(Alignment.Center),
+                                        text = data.text,
+                                        color = Color.White,
+                                        fontSize = (12 * state.zoom / LocalDensity.current.density).sp
+                                    )
+                                }
+                            }
+
+                            is ShapeData.FileNode -> {
+                                val fullpath = state.workspaceFullpath
+                                val relativePath = data.relativeToFilePath
+                                var fileType by remember { mutableStateOf<FileType?>(null) }
+                                fileType?.let { onFileTypeView(it) }
+
+                                LaunchedEffect(relativePath, fullpath) {
+                                    if (fullpath != null) {
+                                        val sf = pathWrapper(fullpath, relativePath)
+                                        val fileNode =
+                                            filesRepository.getFileNodeFromFullPath(
+                                                sf.pathString,
+                                                false
+                                            )
+                                        fileType =
+                                            fileNode.toGetFileType(filesRepository = filesRepository)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                onZoomChange = {
+                    onIntent(Intent.SetZoom(it))
+                },
+                action = actionState.value,
+                roundToNearest = null,
+                onActionSet = {
+                    actionState.value = it
+                },
+                onUserCoordinateChange = {
+                    onIntent(Intent.SetUserCoordinate(it))
+                },
+                consume = false
+            )
+            if (isDraggable.value) {
+                Box(Modifier.fillMaxSize().background(Color.Gray.copy(alpha = 0.4f)))
+            }
+
+            Row(
+                modifier = Modifier.padding(bottom = 46.dp).align(Alignment.BottomCenter),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                ButtonIcon(
+                    modifier = Modifier,
+                    painter = rememberVectorPainter(Add),
+                    color = LocalAppTheme.current.colors.divide,
+                    iconColor = LocalAppTheme.current.colors.backgroundPrimary,
+                    onClick = {
+                        onIntent(Intent.AddShape)
+                    })
+//                Box(
+//                    Modifier.size(30.dp)
+//                        .background(if (isDrawingState.value) Color.Green else Color.Gray)
+//                        .clickable {
+//                            isDrawingState.value = !isDrawingState.value
+//                        })
+            }
+        }
+    }
+}

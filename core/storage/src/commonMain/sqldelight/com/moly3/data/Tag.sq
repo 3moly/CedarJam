@@ -1,0 +1,51 @@
+CREATE TABLE Tag (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    color TEXT NOT NULL,
+    description TEXT NOT NULL,
+    modifiedTime INTEGER NOT NULL,
+    createdTime INTEGER NOT NULL
+);
+
+selectAll:
+SELECT *
+FROM Tag;
+
+findOneForId:
+SELECT id
+FROM Tag
+WHERE id = :id;
+
+findOne:
+SELECT *
+FROM Tag
+WHERE id = :id;
+
+delete:
+DELETE FROM Tag
+WHERE id = :id;
+
+insertObject:
+INSERT INTO Tag(name,color,modifiedTime,createdTime,description)
+VALUES ?;
+
+search:
+SELECT *
+FROM Tag
+WHERE name = :name;
+
+rename:
+UPDATE Tag
+SET name = :newName,
+    modifiedTime = :modifiedTime
+WHERE id = :id;
+
+update:
+UPDATE Tag
+SET
+    color = :color,
+    modifiedTime = :modifiedTime
+WHERE id = :id;
+
+lastInsertId:
+SELECT last_insert_rowid();

@@ -1,0 +1,256 @@
+package com.moly3.cedarjam.core.storage.internal
+
+import co.touchlab.kermit.Logger
+import com.moly3.cedarjam.core.storage.ISystemFilesManager
+import com.moly3.cedarjam.core.storage.func.filesDirPath
+import com.moly3.cedarjam.core.storage.func.getFileNodeFromPath
+import com.moly3.cedarjam.core.storage.func.getFiles
+import com.moly3.cedarjam.core.domain.util.IPathWrapper
+import com.moly3.cedarjam.core.domain.func.getPlatform
+import com.moly3.cedarjam.core.domain.func.pathWrapper
+import com.moly3.cedarjam.core.domain.model.FileStructure
+import com.moly3.cedarjam.core.domain.model.FileTreeNode
+import com.moly3.cedarjam.core.domain.model.Platform
+import com.moly3.cedarjam.core.domain.model.ResultWrapper
+import com.moly3.cedarjam.core.domain.model.bind
+import com.moly3.cedarjam.core.domain.model.ensure
+import com.moly3.cedarjam.core.domain.model.resultBlock
+import com.moly3.cedarjam.core.domain.util.PathWrapper
+import com.moly3.cedarjam.core.storage.json.canvas.CanvasDataParser
+import com.moly3.cedarjam.core.domain.model.canvas.CanvasDataWithErrors
+import io.github.vinceglb.filekit.FileKit
+import io.github.vinceglb.filekit.utils.toPath
+import kotlinx.io.buffered
+import kotlinx.io.files.FileNotFoundException
+import kotlinx.io.files.FileSystem
+import kotlinx.io.files.Path
+import kotlinx.io.files.SystemFileSystem
+import kotlinx.io.readByteArray
+import kotlinx.io.readString
+import kotlinx.io.writeString
+
+internal class SystemFilesManager : ISystemFilesManager {
+
+    private val fs: FileSystem = SystemFileSystem
+
+
+    private fun copyFile(sourcePath: ByteArray, destinationPath: String) {
+        val destination = Path(destinationPath)
+        val parentDir = destination.parent
+        if (parentDir != null && !fs.exists(parentDir)) {
+            fs.createDirectories(parentDir)
+        }
+        fs.sink(destination).buffered().use { destinationBuffer ->
+            destinationBuffer.write(sourcePath)
+        }
+    }
+
+    private fun writeText(filePath: Path, content: String): ResultWrapper<Unit, String> {
+        return resultBlock {
+            try {
+                val sink = fs.sink(filePath)
+                val bufferedSink = sink.buffered()
+                bufferedSink.writeString(content)
+                bufferedSink.flush()
+                bufferedSink.close()
+            } catch (exc: FileNotFoundException) {
+                raise(exc.toString())
+            }
+        }
+    }
+
+    override fun extractZipFromBytes(
+        bytes: ByteArray,
+        destinationPath: String,
+        fileStructure: FileStructure
+    ) {
+        com.moly3.cedarjam.core.storage.func.extractZipFromBytes(
+            bytes,
+            destinationPath,
+            fileStructure
+        )
+    }
+
+
+    override fun toAbsoluteAppPath(relativePath: IPathWrapper): IPathWrapper {
+        return when (getPlatform()) {
+            Platform.Android,
+            Platform.Ios -> {
+                val firstPart = FileKit.filesDirPath()
+                if (relativePath.toString().contains(firstPart))
+                    pathWrapper(relativePath.toString())
+                else
+                    pathWrapper(
+                        firstPart,
+                        relativePath.toString()
+                    )
+            }
+
+            is Platform.Jvm,
+            Platform.Wasm -> {
+                pathWrapper(relativePath.pathString)
+            }
+        }
+    }
+
+    override fun toRelativeAppPath(relativePath: IPathWrapper): IPathWrapper {
+        return when (getPlatform()) {
+            Platform.Android,
+            Platform.Ios -> {
+                val relativePath = if (relativePath.pathString.first() == '/') {
+                    relativePath.pathString.replaceFirst("/", "")
+                } else relativePath.pathString
+                pathWrapper(relativePath)
+            }
+
+            is Platform.Jvm,
+            Platform.Wasm -> pathWrapper(relativePath.pathString)
+        }
+    }
+
+    override fun getFileNodeFromFullPath(fullPath: String): FileTreeNode.File {
+        val abs = toAbsoluteAppPath(pathWrapper(fullPath))
+        return getFileNodeFromPath(
+            Path(abs.pathString),
+            false,
+            fileSize = 0L
+        ) as FileTreeNode.File
+    }
+
+    override fun getDirectoryNodeFromFullPath(fullPath: String): FileTreeNode.Directory {
+        val abs = toAbsoluteAppPath(pathWrapper(fullPath))
+        if (!isNodeExists(abs.pathString)) {
+            createNode(true, abs.pathString, byteArray = null)
+        }
+        return getFileNodeFromPath(
+            abs.pathString.toPath(),
+            true,
+            fileSize = 0L
+        ) as FileTreeNode.Directory
+    }
+
+
+    override fun deleteNode(nodePath: String) {
+        try {
+            fs.delete(Path(nodePath), true)
+        } catch (exc: Exception) {
+        }
+    }
+
+    override fun moveNode(
+        nodePath: String,
+        moveNodePath: String,
+        isDirectory: Boolean
+    ): ResultWrapper<FileTreeNode, String> {
+        return resultBlock {
+            val path = Path(nodePath)
+            val newFilePath = Path(moveNodePath)
+            ensure(!fs.exists(newFilePath)) {
+                "to move node is already exists $moveNodePath"
+            }
+
+            val isTrans = moveNodePath.contains(nodePath)
+            ensure(!isTrans || path.parent.toString() == newFilePath.parent.toString()) { "cannot move to child directory" }
+
+            fs.atomicMove(path, newFilePath)
+            getFileNodeFromPath(
+                newFilePath,
+                isDirectory = isDirectory,
+                fileSize = 0L
+            )
+        }
+    }
+
+    override fun getNodes(nodePath: String): List<FileTreeNode> {
+        val abs = toAbsoluteAppPath(pathWrapper(nodePath))
+        return getFiles(
+            parentPath = abs.pathString.toPath()
+        ).first
+    }
+
+    override fun isNodeExists(path: String): Boolean {
+        Logger.w {
+            "isNodeExists: ${path}"
+        }
+        val path = path.toPath()
+        val absolutePath = if (path.isAbsolute) {
+            path.toString()
+        } else {
+            toAbsoluteAppPath(pathWrapper(path.toString())).pathString
+        }
+        return fs.exists(absolutePath.toPath())
+    }
+
+    override fun createNode(
+        isDirectory: Boolean,
+        nodePath: String,
+        byteArray: ByteArray?
+    ): ResultWrapper<FileTreeNode, String> {
+        Logger.w {
+            "create node: ${nodePath}"
+        }
+        val nodePath = toAbsoluteAppPath(PathWrapper(nodePath.toPath())).pathString
+        return resultBlock {
+            val path = Path(nodePath)
+            val meta = fs.metadataOrNull(path)
+            ensure(!(fs.exists(path) && meta?.isDirectory == isDirectory)) {
+                "node $path is already exists"
+            }
+            if (isDirectory) {
+                fs.createDirectories(path)
+            } else {
+                val parent = path.parent
+                if (parent != null && !fs.exists(parent)) {
+                    fs.createDirectories(parent)
+                }
+
+                val writeTextResult = writeText(path, "")
+                bind(writeTextResult)
+            }
+            val se = getFileNodeFromPath(
+                path,
+                isDirectory,
+                fileSize = 0L
+            )
+            if (byteArray != null) {
+                copyFile(byteArray, se.getFullPath())
+            }
+            se
+        }
+    }
+
+    override fun setNodeText(nodePath: String, text: String): ResultWrapper<Unit, String> {
+        return writeText(Path(nodePath), text)
+    }
+
+    override fun getNodeText(nodePath: String): String {
+        return fs.source(Path(nodePath)).use { source ->
+            val bufferedSource = source.buffered()
+            bufferedSource.readString()
+        }
+    }
+
+    override fun getNodeBytes(nodePath: String): ByteArray {
+        return fs.source(Path(nodePath)).use { source ->
+            val bufferedSource = source.buffered()
+            bufferedSource.readByteArray()
+        }
+    }
+
+    override fun getNodeCanvas(nodePath: String): ResultWrapper<CanvasDataWithErrors, String> {
+        return resultBlock {
+            val json = getNodeText(nodePath = nodePath)
+            CanvasDataParser.parse(json)
+        }
+    }
+
+    override fun saveNodeCanvas(
+        nodePath: String,
+        data: CanvasDataWithErrors
+    ): ResultWrapper<Unit, String> {
+        return resultBlock {
+            val json = CanvasDataParser.serialize(data)
+            setNodeText(nodePath = nodePath, text = json)
+        }
+    }
+}

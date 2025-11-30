@@ -1,0 +1,32 @@
+*.db
+*.iml
+*.pbxproj
+*.xcconfig
+.gradle
+.idea
+.DS_Store
+build
+captures
+.externalNativeBuild
+.cxx
+local.properties
+xcuserdata
+/.kotlin/
+iosApp/Pods/Target Support Files/
+/androidApp/release/
+/shared/database.db
+/versions.properties
+yarn.lock
+/iosApp/Pods/Manifest.lock
+/iosApp/Pods/Local Podspecs/shared.podspec.json
+shared/cache/
+shared/kcef-bundle/
+shared/MediaDeviceSalts
+shared/MediaDeviceSalts-journal
+
+/shared/saved_state.dat
+/compose_compiler
+moko-resources-generated.js
+/iosApp/Pods/
+*.podspec
+*.zip

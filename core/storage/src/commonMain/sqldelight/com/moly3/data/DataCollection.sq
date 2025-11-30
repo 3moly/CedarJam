@@ -1,0 +1,41 @@
+CREATE TABLE DataCollection (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    viewType INTEGER,
+    createdTime INTEGER NOT NULL,
+    modifiedTime INTEGER NOT NULL
+);
+
+selectAll:
+SELECT *
+FROM DataCollection;
+
+selectById:
+SELECT *
+FROM DataCollection
+WHERE id = :id;
+
+delete:
+DELETE FROM DataCollection
+WHERE id = :id;
+
+insertObject:
+INSERT INTO DataCollection(name,viewType,createdTime,modifiedTime)
+VALUES ?;
+
+rename:
+UPDATE DataCollection
+SET name = :newName,
+    modifiedTime = :modifiedTime
+WHERE id = :id
+  AND name <> :newName;
+
+updateViewType:
+UPDATE DataCollection
+SET viewType = :viewType,
+    modifiedTime = :modifiedTime
+WHERE id = :id
+ AND viewType <> :viewType;
+
+lastInsertId:
+SELECT last_insert_rowid();

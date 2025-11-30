@@ -1,0 +1,21 @@
+CREATE TABLE Annotation (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  dataPath TEXT NOT NULL,
+  dataPoint REAL NOT NULL,
+  description TEXT NOT NULL,
+
+  createdTime INTEGER NOT NULL,
+  modifiedTime INTEGER NOT NULL
+);
+
+selectAll:
+SELECT *
+FROM Annotation;
+
+delete:
+DELETE FROM Annotation
+WHERE id = :id;
+
+insertNew:
+INSERT INTO Annotation(dataPath, dataPoint, description, createdTime, modifiedTime)
+VALUES ?;

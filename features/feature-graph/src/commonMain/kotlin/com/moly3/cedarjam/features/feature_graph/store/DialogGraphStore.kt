@@ -1,0 +1,21 @@
+package com.moly3.cedarjam.features.feature_graph.store
+
+import androidx.compose.ui.geometry.Offset
+import com.arkivanov.mvikotlin.core.store.Store
+import com.moly3.cedarjam.core.domain.model.ObsidianGraphNode
+import com.moly3.cedarjam.features.feature_graph.Intent
+import com.moly3.cedarjam.features.feature_graph.State
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.ImmutableMap
+
+internal interface DialogGraphStore : Store<Intent, State, Unit> {
+
+    sealed interface Msg {
+        data class SetNodes(val value: ImmutableList<ObsidianGraphNode>) : Msg
+        data class SetCoordinates(val value: ImmutableMap<String, Offset>) : Msg
+        data class SetVelocities(val value: ImmutableMap<String, Offset>) : Msg
+        data class SetConnections(val value: ImmutableMap<String, ImmutableList<String>>) : Msg
+        data class SetZoom(val value: Float) : Msg
+        data class SetIsShowContent(val value: Boolean) : Msg
+    }
+}

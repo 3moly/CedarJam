@@ -1,0 +1,1 @@
+expect fun getTestResourcePath(resourceName: String): String
