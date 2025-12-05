@@ -1,6 +1,9 @@
 package com.moly3.cedarjam.core.domain.service
 
+import androidx.compose.ui.text.font.Font
 import co.touchlab.kermit.Logger
+import com.moly3.cedarjam.core.domain.func.hiddenDirectory
+import com.moly3.cedarjam.core.domain.func.pathWrapper
 import com.moly3.cedarjam.core.domain.model.FileTreeNode.Companion.hideHiddenDirectory
 import com.moly3.cedarjam.core.domain.model.node.toPresentation
 import com.moly3.cedarjam.core.domain.model.CollectionDTO
@@ -16,14 +19,17 @@ import com.moly3.cedarjam.core.domain.model.error.DatabaseError
 import com.moly3.cedarjam.core.domain.model.node.GraphSettingsConfig
 import com.moly3.cedarjam.core.domain.model.node.ObsidianGraphPresentation
 import com.moly3.cedarjam.core.domain.repository.IAppEnvironment
+import com.moly3.cedarjam.core.domain.repository.IFilesRepository
 import com.moly3.cedarjam.core.domain.repository.IWorkspaceEnvironment
 import com.moly3.cedarjam.core.domain.repository.IWorkspaceEnvironment.Companion.getHiddenDirectory
+import com.moly3.cedarjam.core.domain.util.PathWrapper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
@@ -32,6 +38,7 @@ import kotlinx.coroutines.flow.shareIn
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class WorkspaceSession(
+    private val filesRepository: IFilesRepository,
     private val appEnvironment: IAppEnvironment,
     private val scope: CoroutineScope,
     private val workspace: IWorkspaceEnvironment,
@@ -176,5 +183,27 @@ class WorkspaceSession(
                 files = files
             ) ?: listOf()
         }
+    }
+
+    private val _workspaceFont = MutableStateFlow<FileTreeNode?>(null)
+    val workspaceFont = _workspaceFont.asStateFlow()
+
+    suspend fun loadLocalFont() {
+        val localFontPath =
+            pathWrapper(workspace.getWorkspace().absolutePath, hiddenDirectory, "default.otf")
+        val font = try {
+            val node =
+                filesRepository.getFileNodeFromFullPath(
+                    localFontPath.pathString,
+                    isDirectory = false
+                )
+
+            if (filesRepository.isNodeExists(node)) {
+                node
+            } else null
+        } catch (exc: Exception) {
+            null
+        }
+        _workspaceFont.emit(font)
     }
 }

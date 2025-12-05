@@ -13,6 +13,7 @@ import com.moly3.cedarjam.core.domain.func.getPlatform
 import com.moly3.cedarjam.core.domain.model.AppSettings
 import com.moly3.cedarjam.core.domain.model.Platform
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
+import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
 
 @Composable
 fun CJApplicationTheme(
@@ -50,7 +51,6 @@ fun CJApplicationTheme(
     )
     val appTheme: CJAppTheme = remember(appSettings.theme) {
         CJAppTheme(
-            textStyle = textStyle,
             colors = appSettings.theme.colors,
             primaryColor = appSettings.theme.primaryColor,
             currentTheme = appSettings.theme.colorsType
@@ -62,7 +62,8 @@ fun CJApplicationTheme(
     )
     CompositionLocalProvider(
         LocalTextSelectionColors provides customTextSelectionColors,
-        LocalAppTheme provides appTheme
+        LocalAppTheme provides appTheme,
+        LocalTextStyle provides textStyle
     ) {
         content()
     }

@@ -26,7 +26,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil3.compose.rememberAsyncImagePainter
 import com.mohamedrejeb.compose.dnd.drop.dropTarget
-import com.moly3.cedarjam.core.ui.func.getPdfImage
 import com.moly3.cedarjam.core.domain.io
 import com.moly3.cedarjam.core.domain.model.CollectionRowDTO
 import com.moly3.cedarjam.core.domain.model.TagCollectionRowDTO
@@ -34,12 +33,13 @@ import com.moly3.cedarjam.core.domain.model.TagDTO
 import com.moly3.cedarjam.core.domain.model.WorkspacePresentation
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalDragAndDrop
+import com.moly3.cedarjam.core.ui.func.getPdfImage
 import com.moly3.cedarjam.core.ui.model.FileTreeItemPresentation
 import com.moly3.cedarjam.core.ui.uikit.CJButton
 import com.moly3.cedarjam.core.ui.uikit.CJDataTable
-import com.moly3.cedarjam.core.ui.uikit.Header
-import com.moly3.cedarjam.core.ui.uikit.CJText
 import com.moly3.cedarjam.core.ui.uikit.CJIcon
+import com.moly3.cedarjam.core.ui.uikit.CJText
+import com.moly3.cedarjam.core.ui.uikit.Header
 import com.moly3.cedarjam.core.ui.vectors.ArrowRight
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.PersistentList
@@ -96,13 +96,14 @@ internal fun CollectionDataGrid(
                             }
                             LaunchedEffect(it.row.fileRelativePath, workspace) {
                                 launch(io) {
+                                    val path = Path(
+                                        workspace?.absolutePath ?: "",
+                                        it.row.fileRelativePath!!
+                                    ).toString()
                                     try {
                                         imgBitmap = if (it.row.fileRelativePath != null) {
                                             getPdfImage(
-                                                Path(
-                                                    "workspace?.fullpath",
-                                                    it.row.fileRelativePath!!
-                                                ).toString(),
+                                                path,
                                                 page = 0,
                                                 dpi = 100f
                                             )
@@ -161,8 +162,8 @@ internal fun CollectionDataGrid(
                     headerName = "progress",
                     content = {
                         Column {
-                            CJText(it.row.currentProgress.toString())
-                            CJText(it.row.progressMax.toString())
+                            CJText(it.row.currentProgress.toString(), maxLines = 1)
+                            CJText(it.row.progressMax.toString(), maxLines = 1)
                         }
                     }
                 ),

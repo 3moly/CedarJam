@@ -39,6 +39,7 @@ import com.moly3.cedarjam.ui.pages.tag.ui.TagPage
 import com.moly3.cedarjam.ui.pages.tags.ui.TagsPage
 import com.moly3.cedarjam.core.domain.func.formatEpochMillis
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
+import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
 import com.moly3.cedarjam.core.ui.func.getPageTypeIcon
 import com.moly3.cedarjam.core.ui.uikit.CJTextField
 import com.moly3.cedarjam.core.ui.uikit.CJText
@@ -111,7 +112,7 @@ fun TabPage(component: TabComponent) {
                             bottom.linkTo(parent.bottom)
                         },
                     iconPainter = tabNameIcon,
-                    textStyle = LocalAppTheme.current.textStyle.copy(
+                    textStyle = LocalTextStyle.current.copy(
                         fontSize = 12.sp,
                         textAlign = TextAlign.Start
                     ),

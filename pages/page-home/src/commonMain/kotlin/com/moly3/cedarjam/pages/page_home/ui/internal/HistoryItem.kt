@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import com.moly3.cedarjam.pages.page_home.model.LineMatch
 import com.moly3.cedarjam.core.domain.func.formatEpochMillis
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
+import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
 import com.moly3.cedarjam.core.ui.uikit.CJHighlightedText
 import com.moly3.cedarjam.core.ui.uikit.CJText
 import kotlinx.collections.immutable.ImmutableList
@@ -58,24 +59,24 @@ internal fun HistoryItem(
                     modifier = Modifier,
                     text = text,
                     searchText = searchText,
-                    style = LocalAppTheme.current.textStyle
+                    style = LocalTextStyle.current
                 )
             } else {
                 CJText(
                     modifier = Modifier.weight(1f),
                     text = text,
-                    style = LocalAppTheme.current.textStyle
+                    style = LocalTextStyle.current
                 )
             }
 
             CJText(
                 text = timeText,
-                style = LocalAppTheme.current.textStyle,
+                style = LocalTextStyle.current,
                 modifier = Modifier.background(Color.LightGray).padding(4.dp)
             )
             CJText(
                 text = typeText,
-                style = LocalAppTheme.current.textStyle,
+                style = LocalTextStyle.current,
                 modifier = Modifier
                     .background(Color.Black, RoundedCornerShape(4.dp))
                     .padding(vertical = 4.dp, horizontal = 12.dp)
@@ -107,13 +108,13 @@ internal fun HistoryItem(
                         CJText(
                             modifier = Modifier,
                             text = match.line.toString(),
-                            style = LocalAppTheme.current.textStyle
+                            style =  LocalTextStyle.current
                         )
                         CJHighlightedText(
                             modifier = Modifier,
                             text = match.text,
                             searchText = searchText,
-                            style = LocalAppTheme.current.textStyle
+                            style =  LocalTextStyle.current
                         )
                     }
                 }

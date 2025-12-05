@@ -1,21 +1,28 @@
 package com.moly3.cedarjam.pages.page_home.ui.internal
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.moly3.cedarjam.core.domain.func.formatEpochMillis
+import com.moly3.cedarjam.core.ui.uikit.CJButton
+import com.moly3.cedarjam.core.ui.uikit.CJDataTable
 import com.moly3.cedarjam.pages.page_home.Intent
 import com.moly3.cedarjam.pages.page_home.State
 import com.moly3.cedarjam.pages.page_home.model.TimeMachine
 import com.moly3.cedarjam.core.ui.uikit.CJText
 import com.moly3.cedarjam.core.ui.uikit.CJSearchTextField
+import com.moly3.cedarjam.core.ui.uikit.Header
 import com.moly3.cedarjam.core.ui.uikit.UIStateContentLazy
 import com.moly3.cedarjam.core.ui.uikit.UIStateContentNoBox
+import com.moly3.cedarjam.pages.page_home.model.FileVersionLine
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class)
@@ -29,50 +36,50 @@ internal fun PageContent(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         item("top"){
-//            UIStateContentNoBox(state = state.fileVersionsState) {
-//                val headers: List<Header<FileVersionLine>> = remember(it) {
-//                    listOf(
-//                        Header(
-//                            headerName = "name",
-//                            content = { item ->
-//                                ObsText(text = item.fileRelativePath, maxLines = 3)
-//                            }
-//                        ),
-//                        Header(
-//                            headerName = "local time",
-//                            content = { item ->
-//                                ObsText(
-//                                    text = item.currentTime?.formatEpochMillis() ?: "",
-//                                    maxLines = 1
-//                                )
-//                            }
-//                        ),
-//                        Header(
-//                            headerName = "server time",
-//                            content = { item ->
-//                                ObsText(
-//                                    text =  item.serverTime?.formatEpochMillis() ?: "",
-//                                    maxLines = 1
-//                                )
-//                            }
-//                        ),
-////                    Header(
-////                        headerName = "server time",
-////                        content = { item ->
-////                            ObsText(
-////                                text =   if (item.serverTime != item.currentTime &&
-////                                    item.serverTime != null &&
-////                                    item.currentTime != null
-////                                ) {
-////
-////                                    (kotlin.math.abs(item.serverTime - item.currentTime)).toString()
-////                                } else "",
-////                                maxLines = 1
-////                            )
-////                        }
-////                    )
+            UIStateContentNoBox(state = state.fileVersionsState) {
+                val headers: List<Header<FileVersionLine>> = remember(it) {
+                    listOf(
+                        Header(
+                            headerName = "name",
+                            content = { item ->
+                                CJText(text = item.fileRelativePath, maxLines = 3)
+                            }
+                        ),
+                        Header(
+                            headerName = "local time",
+                            content = { item ->
+                                CJText(
+                                    text = item.currentTime?.formatEpochMillis() ?: "",
+                                    maxLines = 1
+                                )
+                            }
+                        ),
+                        Header(
+                            headerName = "server time",
+                            content = { item ->
+                                CJText(
+                                    text =  item.serverTime?.formatEpochMillis() ?: "",
+                                    maxLines = 1
+                                )
+                            }
+                        ),
+//                    Header(
+//                        headerName = "server time",
+//                        content = { item ->
+//                            ObsText(
+//                                text =   if (item.serverTime != item.currentTime &&
+//                                    item.serverTime != null &&
+//                                    item.currentTime != null
+//                                ) {
+//
+//                                    (kotlin.math.abs(item.serverTime - item.currentTime)).toString()
+//                                } else "",
+//                                maxLines = 1
+//                            )
+//                        }
 //                    )
-//                }
+                    )
+                }
 //                val columns = 10
 //                val rows = 10
 //                LazyTable(
@@ -87,29 +94,26 @@ internal fun PageContent(
 //                            )
 //                        }
 //                    ) { index ->
-//                        ObsText(text = "#$index")
+//                        CJText(text = "#$index")
 //                    }
 //                }
-////            Column(Modifier) {
-////                DataTable(
-////                    isFixedHeader = false,
-////                    modifier = Modifier,
-////                    headers = headers,
-////                    data = it
-////                )
-////            }
-//            }
+            Column(Modifier) {
+                CJDataTable(
+                    isLazyColumn = false,
+                    isFixedHeader = false,
+                    modifier = Modifier,
+                    headers = headers,
+                    data = it
+                )
+            }
+            }
 //
-//            BButton(text = "sync") {
-//                onIntent(Intent.Sync)
-//            }
-//
-//            BButton(text = "upload") {
-//                onIntent(Intent.Upload)
-//            }
-//            UIStateContentNoBox(state = state.uploadState) {
-//
-//            }
+            CJButton(text = "sync") {
+                onIntent(Intent.Sync)
+            }
+            UIStateContentNoBox(state = state.uploadState) {
+
+            }
             CJSearchTextField(
                 modifier = Modifier.fillMaxWidth(),
                 isSearchIcon = true,

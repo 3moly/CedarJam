@@ -2,6 +2,7 @@ package com.moly3.cedarjam.pages.page_workspace.store
 
 import androidx.compose.ui.geometry.Offset
 import com.arkivanov.mvikotlin.core.store.Store
+import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.pages.page_workspace.Intent
 import com.moly3.cedarjam.pages.page_workspace.Label
 import com.moly3.cedarjam.pages.page_workspace.PageNameWorkspace
@@ -38,6 +39,7 @@ internal interface WorkspaceStore : Store<Intent, State, Label> {
         data class SetMenuCovered(val value: Int?) : Msg
         data class SetLockedMenuCovered(val value: LockedMenuData?) : Msg
         data class SetMenuWidth(val value: Float) : Msg
+        data class SetWorkspaceFont(val value: FileTreeNode?) : Msg
 
     }
 }

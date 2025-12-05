@@ -48,6 +48,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import com.mikepenz.hypnoticcanvas.shaderBackground
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
+import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
 import com.moly3.cedarjam.core.ui.shader.NewMagma
 
 @Composable
@@ -60,7 +61,7 @@ fun CJTextField(
     BasicTextField(
         modifier = modifier,
         value = value,
-        textStyle = LocalAppTheme.current.textStyle,
+        textStyle = LocalTextStyle.current,
         onValueChange = onValueChanged,
         singleLine = singleLine,
         decorationBox = {
@@ -149,7 +150,7 @@ fun CJTextField2(
 fun CJTextField(
     text: TextFieldState,
     modifier: Modifier = Modifier,
-    textStyle: TextStyle = LocalAppTheme.current.textStyle,
+    textStyle: TextStyle = LocalTextStyle.current,
     enabled: Boolean = true,
     keyboardType: KeyboardType = KeyboardType.Unspecified,
     onDone: () -> Unit,
@@ -192,7 +193,7 @@ fun CJTextField(
 fun CJTextField(
     value: TextFieldValue,
     modifier: Modifier = Modifier,
-    textStyle: TextStyle = LocalAppTheme.current.textStyle,
+    textStyle: TextStyle = LocalTextStyle.current,
     onValueChange: (TextFieldValue) -> Unit,
     enabled: Boolean = true,
     keyboardType: KeyboardType = KeyboardType.Unspecified,

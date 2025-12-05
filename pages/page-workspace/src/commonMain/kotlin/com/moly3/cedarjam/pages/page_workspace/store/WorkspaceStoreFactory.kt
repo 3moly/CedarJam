@@ -280,7 +280,13 @@ internal class WorkspaceStoreFactory(
         override fun onStart(scopeFromStartToStop: CoroutineScope) {
             super.onStart(scopeFromStartToStop)
 
+            scopeFromStartToStop.launch {
+                workspaceSession.loadLocalFont()
 
+                workspaceSession.workspaceFont.collectLatest {
+                    dispatch(WorkspaceStore.Msg.SetWorkspaceFont(it))
+                }
+            }
             scopeFromStartToStop.launch {
                 combine(
                     workspaceSession.getFileNodes,
@@ -468,6 +474,10 @@ internal class WorkspaceStoreFactory(
 
         override fun executeIntent(intent: Intent) {
             when (intent) {
+                is Intent.OpenSettings -> {
+
+                }
+
                 is Intent.SelectWorkspace -> navigator.navigate(Route.Empty)
                 is Intent.OpenContextMenu -> {
                     val buttons = mutableListOf<ContextMenuButton>()
@@ -533,12 +543,12 @@ internal class WorkspaceStoreFactory(
                                         onClick = {
                                             val workspaceEnv =
                                                 workspaceSession.workspaceEnvStateFlow.value
-                                            val fileNode =data.fileNode
+                                            val fileNode = data.fileNode
 //                                                systemFilesManager.getFileNodeFromFullPath(
 //                                                    fullPath = data.fileNode.getFullPath(),
 //                                                    isDirectory = true
 //                                                )
-                                            if(fileNode is FileTreeNode.Directory){
+                                            if (fileNode is FileTreeNode.Directory) {
                                                 scope.launch {
                                                     val nodes = workspaceEnv.getNodes(fileNode)
                                                     val result = dialogDeleteService.open(Unit)
@@ -588,7 +598,7 @@ internal class WorkspaceStoreFactory(
                                     onClick = {
                                         val workspaceEnv =
                                             workspaceSession.workspaceEnvStateFlow.value
-                                        val fileNode =  data.fileNode
+                                        val fileNode = data.fileNode
 //                                            systemFilesManager.getFileNodeFromFullPath(
 //                                            fullPath = data.fileNode.getFullPath()
 //                                        )
@@ -822,7 +832,7 @@ internal class WorkspaceStoreFactory(
                             val oldNode = if (isDirectory) {
                                 systemFilesManager.getFileNodeFromFullPath(
                                     fullPath = draggingItemPath.getFullPath(),
-                                    isDirectory=isDirectory
+                                    isDirectory = isDirectory
                                 )
                             } else {
                                 systemFilesManager.getFileNodeFromFullPath(
@@ -1005,7 +1015,7 @@ internal class WorkspaceStoreFactory(
 
                         is FileTreeItemPresentation.FileTreeItemPresentationData.Directory -> {
                             scope.launch {
-                                val fileNode =data.fileNode
+                                val fileNode = data.fileNode
 //                                    systemFilesManager.getDirectoryNodeFromFullPath(
 //                                    fullPath = data.fileNode.getFullPath(),
 //                                )
@@ -1148,6 +1158,7 @@ internal class WorkspaceStoreFactory(
                 is SetLockedMenuCovered -> copy(lockedMenuCovered = msg.value)
                 is SetMenuWidth -> copy(menuWidth = msg.value)
                 is SetPosition -> copy(cursorPosition = msg.value)
+                is SetWorkspaceFont -> copy(workspaceFont = msg.value)
             }
         }
     }

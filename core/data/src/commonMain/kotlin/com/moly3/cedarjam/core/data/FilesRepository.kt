@@ -12,6 +12,8 @@ import com.moly3.cedarjam.core.domain.model.canvas.CanvasDataWithErrors
 import com.moly3.cedarjam.core.domain.model.resultBlock
 import com.moly3.cedarjam.core.domain.repository.IFilesRepository
 import com.moly3.cedarjam.core.domain.util.IPathWrapper
+import com.moly3.cedarjam.core.storage.func.commonGuy.extractZip
+import com.moly3.cedarjam.core.storage.func.commonGuy.packToZip
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class)
@@ -31,24 +33,24 @@ class FilesRepository(
         filesStorage.extractZipFromBytes(bytes, destinationPath, fileStructure)
     }
 
-    override suspend fun extractZip(
+    override suspend fun extractFilesFromZip(
         archivePath: String,
         workspaceFullPath: String,
         serverFiles: List<FileItem>
     ) {
-        _root_ide_package_.com.moly3.cedarjam.core.storage.func.commonGuy.extractZip(
+        extractZip(
             archivePath,
             workspaceFullPath,
             serverFiles
         )
     }
 
-    override suspend fun packToZip(
+    override suspend fun packFilesToZip(
         workspaceFolderAbsolutePath: String,
         filesToArchive: List<String>,
         archivePath: String
     ) {
-        _root_ide_package_.com.moly3.cedarjam.core.storage.func.commonGuy.packToZip(
+        packToZip(
             workspaceFolderAbsolutePath = workspaceFolderAbsolutePath,
             filesToArchive = filesToArchive,
             archivePath = archivePath

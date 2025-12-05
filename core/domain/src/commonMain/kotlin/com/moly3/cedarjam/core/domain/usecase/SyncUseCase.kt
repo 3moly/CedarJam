@@ -8,12 +8,11 @@ import com.moly3.cedarjam.core.domain.model.shouldBeSuccess
 import com.moly3.cedarjam.core.domain.model.FileItem
 import com.moly3.cedarjam.core.domain.model.FileMetadata
 import com.moly3.cedarjam.core.domain.model.FileName
+import com.moly3.cedarjam.core.domain.model.FileStructure
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
-import com.moly3.cedarjam.core.domain.model.FileTreeNode.Companion.getAll
 import com.moly3.cedarjam.core.domain.model.ResultWrapper
 import com.moly3.cedarjam.core.domain.model.WorkspacePresentation
 import com.moly3.cedarjam.core.domain.model.resultBlock
-import com.moly3.cedarjam.core.domain.model.shouldBeSuccess
 import com.moly3.cedarjam.core.domain.repository.IFilesRepository
 import com.moly3.cedarjam.core.domain.repository.IWorkspaceEnvironment
 import kotlinx.io.files.Path
@@ -70,7 +69,7 @@ class SyncUseCase(
 //            filesToArchive = filesToArchive,
 //            archive = archivePath
 //        )
-        filesRepo.packToZip(
+        filesRepo.packFilesToZip(
             workspaceFolderAbsolutePath = workspacePresentation.absolutePath,
             filesToArchive = filesToArchive,
             archivePath = archivePath
@@ -276,7 +275,7 @@ class SyncUseCase(
 
                 }
                 //filesRepo.extractZipFromBytes()
-                filesRepo.extractZip(
+                filesRepo.extractFilesFromZip(
                     archivePath = exportArchivePath,
                     workspaceFullPath = workspaceAbsolutePath,
                     serverFiles = serverFiles2,

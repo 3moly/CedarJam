@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
+import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
 
 @Composable
 fun CJButton(
@@ -32,9 +33,10 @@ fun CJButton(
     ) {
         CJText(
             text = text,
-            style = LocalAppTheme.current.textStyle,
+            style = LocalTextStyle.current,
             fontSize = 12.sp,
-            color = fontColor
+            color = fontColor,
+            maxLines = 1
         )
     }
 }

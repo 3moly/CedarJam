@@ -4,7 +4,6 @@ import androidx.compose.ui.text.input.TextFieldValue
 
 sealed interface Intent {
     data object Sync : Intent
-    data object Upload : Intent
     data object OpenTags : Intent
     data class SetSearchText(val value: TextFieldValue) : Intent
     data class OpenFileNode(val fullPath: String) : Intent

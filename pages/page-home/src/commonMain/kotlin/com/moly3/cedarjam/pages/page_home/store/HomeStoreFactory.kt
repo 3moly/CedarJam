@@ -345,18 +345,6 @@ internal class HomeStoreFactory(
                     navigator.navigate(Tags)
                 }
 
-                is Intent.Upload -> {
-//                    dispatch(HomeStore.Msg.SetUploadState(UIState.Loading))
-//
-//                    scope.launch(io) {
-//                        val result = workspaceSession.workspaceEnvStateFlow.value.uploadSync(,)
-//                        launch(Dispatchers.Main) {
-//                            dispatch(HomeStore.Msg.SetUploadState(result.mapToUIState()))
-//                            refreshStatusFiles()
-//                        }
-//                    }
-                }
-
                 is Intent.Sync -> {
                     scope.launch {
                         val resultss =

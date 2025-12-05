@@ -143,6 +143,7 @@ fun initApp(
                         scope = get(),
                         workspace = workspaceEnv,
                         fileManagerService = filesManager,
+                        filesRepository = get()
                     )
                 } catch (exc: Exception) {
                     Logger.d(exc.message ?: "")

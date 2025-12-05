@@ -116,15 +116,17 @@ kotlin {
 
             implementation(libs.dnd)
             implementation(libs.webview)
+
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             implementation(libs.coroutines.test)
             implementation(compose.uiTest)
             implementation(libs.kotest.property)
-
         }
         jvmMain.dependencies {
+
+
             implementation(compose.desktop.common)
             implementation(compose.desktop.currentOs)
             implementation(libs.coil.network.jvm)
@@ -137,9 +139,18 @@ kotlin {
             implementation(libs.jewel.decorated.window)
             implementation(libs.jewel.int.ui.standalone)
         }
+        androidMain.dependencies {
+
+        }
+        iosMain.dependencies {
+//            implementation(libs.compose.remote.layout.iosarm64)
+        }
         androidUnitTest.dependencies {
             implementation(libs.robolectric)
             implementation(libs.android.videoplayer.contextprovider)
+        }
+        wasmJsMain.dependencies {
+
         }
     }
 }

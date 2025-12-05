@@ -4,7 +4,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import com.moly3.cedarjam.core.domain.func.ComposeColorSerializer
 import com.moly3.cedarjam.core.domain.func.ComposeOffsetSerializer
-import com.moly3.dataviz.core.block.model.Shape
+import com.moly3.dataviz.core.whiteboard.model.Shape
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -18,4 +18,4 @@ data class ShapeImpl(
 
     val color: Color? = null,
     val data: ShapeData
-) : Shape
+) : Shape<Long>

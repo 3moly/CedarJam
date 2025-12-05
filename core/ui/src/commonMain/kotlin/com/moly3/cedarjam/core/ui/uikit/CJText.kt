@@ -11,12 +11,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
+import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
 
 @Composable
 fun CJText(
     text: AnnotatedString,
     modifier: Modifier = Modifier,
-    style: TextStyle = LocalAppTheme.current.textStyle,
+    style: TextStyle = LocalTextStyle.current,
     color: Color = Color.Unspecified,
     fontSize: TextUnit = TextUnit.Unspecified,
     fontWeight: FontWeight? = null,
@@ -44,7 +45,7 @@ fun CJText(
 fun CJText(
     text: String,
     modifier: Modifier = Modifier,
-    style: TextStyle = LocalAppTheme.current.textStyle,
+    style: TextStyle = LocalTextStyle.current,
     color: Color = Color.Unspecified,
     fontSize: TextUnit = TextUnit.Unspecified,
     fontWeight: FontWeight? = null,

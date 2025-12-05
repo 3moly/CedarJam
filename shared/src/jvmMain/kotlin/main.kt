@@ -1,14 +1,19 @@
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Tray
@@ -26,6 +31,8 @@ import com.badoo.reaktive.coroutinesinterop.asScheduler
 import com.badoo.reaktive.scheduler.overrideSchedulers
 import com.moly3.cedarjam.core.domain.DefaultJson
 import com.moly3.cedarjam.core.domain.model.AndroidApplicationContext
+import com.moly3.cedarjam.core.ui.uikit.CJBasicTable
+import com.moly3.cedarjam.core.ui.uikit.CJText
 import com.moly3.cedarjam.core.ui.vectors.Tag
 import com.moly3.cedarjam.di.initApp
 import com.moly3.cedarjam.navigation.Root
@@ -33,6 +40,7 @@ import com.moly3.cedarjam.navigation.createRootComponentSafe
 import com.moly3.cedarjam.pages.page_workspace.ui.ToolbarHeight
 import com.moly3.cedarjam.pages.page_workspace.ui.ToolbarState
 import com.moly3.cedarjam.ui.MainApp
+import com.skydoves.compose.stability.runtime.ComposeStabilityAnalyzer
 import dev.datlag.kcef.KCEF
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.filesDir
@@ -41,6 +49,8 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.json.encodeToStream
 import org.jetbrains.jewel.foundation.ExperimentalJewelApi
+import org.jetbrains.jewel.foundation.enableNewSwingCompositing
+import org.jetbrains.jewel.foundation.layout.BasicTableLayout
 import org.jetbrains.jewel.intui.window.styling.dark
 import org.jetbrains.jewel.intui.window.styling.defaults
 import org.jetbrains.jewel.intui.window.styling.light
@@ -76,7 +86,7 @@ private const val SAVED_STATE_FILE_NAME = "saved_state.dat"
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalJewelApi::class)
 fun main() {
-//    ComposeStabilityAnalyzer.setEnabled(true)
+    ComposeStabilityAnalyzer.setEnabled(false)
 //    ComposeStabilityAnalyzer.setLogger(object : RecompositionLogger {
 //        override fun log(event: RecompositionEvent) {
 //            if (false) {
@@ -147,17 +157,17 @@ fun main() {
     ////                    exitApplication()
     //                }
     //            }
-    //   todo     val fonts =
-//            androidx.compose.ui.text.platform.Font(file = File("manolomono.otf"))
-//        val fontFamily = FontFamily(listOf(fonts))
+//    val font = androidx.compose.ui.text.platform.Font(file = File("manolomono.otf"))
+//        val fontFamily = FontFamily(listOf(font))
     //                    if (!isFullScreenMode) {
 //                        MacWindowControls(windowState = state, onClose = {
 //                            exitApplication()
 //                        })
 //                    }
+
     application {
         System.setProperty("apple.awt.application.name", "Kotlin Explorer")
-        //enableNewSwingCompositing()
+        enableNewSwingCompositing()
 
         val trayState = rememberTrayState()
         Tray(

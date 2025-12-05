@@ -24,6 +24,7 @@ import com.moly3.cedarjam.core.domain.io
 import com.moly3.cedarjam.pages.page_graph.Intent
 import com.moly3.cedarjam.pages.page_graph.State
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
+import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
 import com.moly3.cedarjam.core.ui.onPointerEvent
 import com.moly3.cedarjam.core.ui.uikit.CJButtonIcon
 import com.moly3.cedarjam.core.ui.uikit.CJSlider
@@ -80,7 +81,8 @@ internal fun PageContent(state: State, onIntent: (Intent) -> Unit) {
             circleColor = Color.Yellow,
             primaryColor = Color.Blue,
             circleLineColor = LocalAppTheme.current.colors.divide,
-            consume = false
+            consume = false,
+            textStyle = LocalTextStyle.current
         )
 
         Column(

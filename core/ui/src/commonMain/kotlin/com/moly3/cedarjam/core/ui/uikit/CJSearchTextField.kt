@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
+import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
 import com.moly3.cedarjam.core.ui.func.darker
 import com.moly3.cedarjam.core.ui.vectors.SearchMagnifyingGlass
 import com.moly3.cedarjam.core.ui.volumedBorderStroke
@@ -37,7 +38,7 @@ fun CJSearchTextField(
 ) {
     val primaryColor = LocalAppTheme.current.primaryColor
     val primaryFontColor = LocalAppTheme.current.colors.primaryFont
-    val textStyle = LocalAppTheme.current.textStyle
+    val textStyle = LocalTextStyle.current
     val isShowPlaceholder = remember(value.text) {
         value.text.isEmpty()
     }

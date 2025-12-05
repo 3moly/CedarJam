@@ -1,6 +1,7 @@
 package com.moly3.cedarjam.pages.page_workspace
 
 import androidx.compose.ui.geometry.Offset
+import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.pages.page_workspace.model.ContextMenuData
 import com.moly3.cedarjam.pages.page_workspace.model.RenameFileNodeData
 import com.moly3.cedarjam.core.domain.model.UIState
@@ -35,7 +36,8 @@ data class State(
     val cursorPosition: Offset? = null,
     val menuWidth: Float = 400f,
     val menuCovered: Int? = null,
-    val lockedMenuCovered: LockedMenuData? = null
+    val lockedMenuCovered: LockedMenuData? = null,
+    val workspaceFont: FileTreeNode? = null
 
 ) {
     @Serializable

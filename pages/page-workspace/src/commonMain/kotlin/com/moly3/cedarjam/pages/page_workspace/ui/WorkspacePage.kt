@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,9 +33,13 @@ import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import com.mohamedrejeb.compose.dnd.DragAndDropContainer
 import com.mohamedrejeb.compose.dnd.rememberDragAndDropState
@@ -52,7 +57,9 @@ import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.domain.model.error.DatabaseError
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalDragAndDrop
+import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
 import com.moly3.cedarjam.core.ui.func.PointerIconType
+import com.moly3.cedarjam.core.ui.func.getFontByPath
 import com.moly3.cedarjam.core.ui.func.getPointerIcon
 import com.moly3.cedarjam.core.ui.model.FileTreeItemPresentation
 import com.moly3.cedarjam.core.ui.motions.PointerRequisite
@@ -107,397 +114,430 @@ fun WorkspacePage(
     }
     val scope = rememberCoroutineScope()
     val state by component.state.collectAsState()
+    val textStyleState = remember { mutableStateOf(TextStyle.Default) }
+
+    val primaryFont = LocalAppTheme.current.colors.primaryFont
+    LaunchedEffect(state.workspaceFont,primaryFont) {
+        val font = state.workspaceFont
+        textStyleState.value = if (font != null) {
+            TextStyle(
+                fontWeight = FontWeight.Normal,
+                fontSize = 16.sp,
+                color = primaryFont,
+                fontFamily = FontFamily(getFontByPath(font.getFullPath())),
+            )
+        } else {
+            TextStyle.Default
+        }
+    }
     val windowSize by rememberWindowSize()
     val updatedWindowSize by rememberUpdatedState(windowSize)
     val updatedIsMenuOpened by rememberUpdatedState(state.isMenuOpened)
     val updatedMenuWidth by rememberUpdatedState(state.menuWidth)
 
-    when (val status = state.databaseStatus) {
-        is UIState.Error -> {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    when (val dbError = status.error) {
-                        DatabaseError.NotExist -> {
-                            CJText(text = "database is not created")
-                            CJButton(text = "create database for this workspace") {
-                                component.onIntent(Intent.CreateWorkspace)
+    CompositionLocalProvider(
+        LocalTextStyle provides textStyleState.value
+    ) {
+        when (val status = state.databaseStatus) {
+            is UIState.Error -> {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        when (val dbError = status.error) {
+                            DatabaseError.NotExist -> {
+                                CJText(text = "database is not created")
+                                CJButton(text = "create database for this workspace") {
+                                    component.onIntent(Intent.CreateWorkspace)
+                                }
+                            }
+
+                            is DatabaseError.WrongFile -> {
+                                CJText(text = dbError.message)
                             }
                         }
 
-                        is DatabaseError.WrongFile -> {
-                            CJText(text = dbError.message)
+                        CJButton(text = "select workspace") {
+                            component.onIntent(Intent.SelectWorkspace)
                         }
                     }
-
-                    CJButton(text = "select workspace") {
-                        component.onIntent(Intent.SelectWorkspace)
-                    }
                 }
             }
-        }
 
-        is UIState.Loading -> {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CJLinearProgressIndicator()
-            }
-        }
-
-        is UIState.Success -> {
-            var screenWidth by remember { mutableStateOf<Float?>(null) }
-            val updatedScreenWidth by rememberUpdatedState(screenWidth)
-            val pointerIcon = remember(state.lockedMenuCovered, state.menuCovered) {
-                if (state.lockedMenuCovered != null || state.menuCovered != null) {
-                    PointerIconType.ResizeHorizontal
-                } else {
-                    PointerIconType.Default
+            is UIState.Loading -> {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CJLinearProgressIndicator()
                 }
             }
-            val updatedTabSizes by rememberUpdatedState(state.tabSizes)
-            val items by component.children.subscribeAsState()
-            val density = LocalDensity.current.density
-            val updatedDensity = rememberUpdatedState(density)
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .onGloballyPositioned {
-                        screenWidth = it.size.width.toFloat()
+
+            is UIState.Success -> {
+                var screenWidth by remember { mutableStateOf<Float?>(null) }
+                val updatedScreenWidth by rememberUpdatedState(screenWidth)
+                val pointerIcon = remember(state.lockedMenuCovered, state.menuCovered) {
+                    if (state.lockedMenuCovered != null || state.menuCovered != null) {
+                        PointerIconType.ResizeHorizontal
+                    } else {
+                        PointerIconType.Default
                     }
-                    .let {
-                        if (pointerIcon == PointerIconType.Default) {
-                            it
-                        } else {
-                            it.pointerHoverIcon(
-                                getPointerIcon(pointerIcon),
-                                overrideDescendants = true
+                }
+                val updatedTabSizes by rememberUpdatedState(state.tabSizes)
+                val items by component.children.subscribeAsState()
+                val density = LocalDensity.current.density
+                val updatedDensity = rememberUpdatedState(density)
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .onGloballyPositioned {
+                            screenWidth = it.size.width.toFloat()
+                        }
+                        .let {
+                            if (pointerIcon == PointerIconType.Default) {
+                                it
+                            } else {
+                                it.pointerHoverIcon(
+                                    getPointerIcon(pointerIcon),
+                                    overrideDescendants = true
+                                )
+                            }
+                        }
+                        .pointerInput(Unit) {
+                            detectPointerTransformGestures(
+                                scope = scope,
+                                numberOfPointers = 0,
+                                consume = false,
+                                requisite = PointerRequisite.GreaterThan,
+                                onClick = {
+                                    component.onIntent(Intent.HideContextMenu)
+                                },
+                                onCursorMove = { cursorOffset ->
+                                    component.onIntent(Intent.SetCursorPosition(cursorOffset))
+
+                                    val tab = getTab(
+                                        screenWidth = (updatedScreenWidth
+                                            ?: 0f) / updatedDensity.value,
+                                        menuWidth = if (updatedIsMenuOpened) (updatedMenuWidth) else {
+                                            if (updatedWindowSize == WindowSize.Compact)
+                                                0f
+                                            else
+                                                50f
+                                        },
+                                        updatedTabSizes = updatedTabSizes,
+                                        cursorOffset = cursorOffset / updatedDensity.value,
+                                        divideSize = 15f,
+                                        isLog = false
+                                    )
+                                    component.onIntent(Intent.SetMenuUnder(tab))
+                                },
+                                onGestureStart = { input ->
+
+                                    val sop = input.position / updatedDensity.value
+
+                                    val tab = getTab(
+                                        screenWidth = (updatedScreenWidth
+                                            ?: 0f) / updatedDensity.value,
+                                        menuWidth = if (updatedIsMenuOpened) updatedMenuWidth else {
+                                            if (updatedWindowSize == WindowSize.Compact)
+                                                0f
+                                            else
+                                                50f
+                                        },
+                                        updatedTabSizes = updatedTabSizes,
+                                        cursorOffset = sop,
+                                        divideSize = 15f,
+                                        isLog = false
+                                    )
+                                    if (tab == null) {
+                                        component.onIntent(Intent.SetLockedMenuUnder(null))
+                                    } else {
+                                        println("tab detected: ${tab}")
+                                        component.onIntent(
+                                            Intent.SetLockedMenuUnder(
+                                                LockedMenuData(
+                                                    offsetX = sop.x,
+                                                    menu = tab
+                                                )
+                                            )
+                                        )
+                                    }
+                                },
+                                onGesture = { centroid, pan, zoom, rotation, mainPointer, changes ->
+                                    val allTabs = items.items.map {
+                                        it.instance.index
+                                    }
+                                    if (updatedScreenWidth != null) {
+                                        component.onIntent(
+                                            Intent.OnOffsetTabChangeOffset(
+                                                allTabIndexes = allTabs,
+                                                screenWidth = (updatedScreenWidth
+                                                    ?: 0f) / updatedDensity.value,
+                                                data = pan.x / updatedDensity.value,
+                                                isEnd = false
+                                            )
+                                        )
+                                    }
+                                },
+                                onGestureEnd = { input ->
+                                    component.onIntent(Intent.SetLockedMenuUnder(null))
+                                },
+                                onGestureCancel = {
+                                    component.onIntent(Intent.SetLockedMenuUnder(null))
+                                }
                             )
                         }
-                    }
-                    .pointerInput(Unit) {
-                        detectPointerTransformGestures(
-                            scope = scope,
-                            numberOfPointers = 0,
-                            consume = false,
-                            requisite = PointerRequisite.GreaterThan,
-                            onClick = {
-                                component.onIntent(Intent.HideContextMenu)
-                            },
-                            onCursorMove = { cursorOffset ->
-                                component.onIntent(Intent.SetCursorPosition(cursorOffset))
-
-                                val tab = getTab(
-                                    screenWidth = (updatedScreenWidth ?: 0f) / updatedDensity.value,
-                                    menuWidth = if (updatedIsMenuOpened) (updatedMenuWidth) else {
-                                        if (updatedWindowSize == WindowSize.Compact)
-                                            0f
-                                        else
-                                            50f
-                                    },
-                                    updatedTabSizes = updatedTabSizes,
-                                    cursorOffset = cursorOffset / updatedDensity.value,
-                                    divideSize = 15f,
-                                    isLog = false
-                                )
-                                co.touchlab.kermit.Logger.e { "onCursorMove(${updatedDensity.value})" }
-                                component.onIntent(Intent.SetMenuUnder(tab))
-                            },
-                            onGestureStart = { input ->
-
-                                val sop = input.position / updatedDensity.value
-
-                                val tab = getTab(
-                                    screenWidth = (updatedScreenWidth ?: 0f) / updatedDensity.value,
-                                    menuWidth = if (updatedIsMenuOpened) updatedMenuWidth else {
-                                        if (updatedWindowSize == WindowSize.Compact)
-                                            0f
-                                        else
-                                            50f
-                                    },
-                                    updatedTabSizes = updatedTabSizes,
-                                    cursorOffset = sop,
-                                    divideSize = 15f,
-                                    isLog = false
-                                )
-                                if (tab == null) {
-                                    component.onIntent(Intent.SetLockedMenuUnder(null))
-                                } else {
-                                    println("tab detected: ${tab}")
-                                    component.onIntent(
-                                        Intent.SetLockedMenuUnder(
-                                            LockedMenuData(
-                                                offsetX = sop.x,
-                                                menu = tab
-                                            )
-                                        )
-                                    )
-                                }
-                            },
-                            onGesture = { centroid, pan, zoom, rotation, mainPointer, changes ->
-                                val allTabs = items.items.map {
-                                    it.instance.index
-                                }
-                                if (updatedScreenWidth != null) {
-                                    component.onIntent(
-                                        Intent.OnOffsetTabChangeOffset(
-                                            allTabIndexes = allTabs,
-                                            screenWidth = (updatedScreenWidth
-                                                ?: 0f) / updatedDensity.value,
-                                            data = pan.x / updatedDensity.value,
-                                            isEnd = false
-                                        )
-                                    )
-                                }
-                            },
-                            onGestureEnd = { input ->
-                                component.onIntent(Intent.SetLockedMenuUnder(null))
-                            },
-                            onGestureCancel = {
-                                component.onIntent(Intent.SetLockedMenuUnder(null))
-                            }
-                        )
-                    }
-            ) {
-                val dragAndDropState = rememberDragAndDropState<FileTreeItemPresentation>()
-                DragAndDropContainer(
-                    state = dragAndDropState,
-                    modifier = Modifier.fillMaxSize()
                 ) {
-                    CompositionLocalProvider(
-                        LocalDragAndDrop provides dragAndDropState
+                    val dragAndDropState = rememberDragAndDropState<FileTreeItemPresentation>()
+                    DragAndDropContainer(
+                        state = dragAndDropState,
+                        modifier = Modifier.fillMaxSize()
                     ) {
-                        Column {
-                            titleBarContent { toolbarState ->
+                        CompositionLocalProvider(
+                            LocalDragAndDrop provides dragAndDropState
+                        ) {
+                            Column {
+                                titleBarContent { toolbarState ->
 
-                                val menuWidth = remember(state.menuWidth, state.isMenuOpened) {
-                                    if (state.isMenuOpened) {
-                                        state.menuWidth.dp
-                                    } else {
-                                        45.dp
-                                    }
-                                }
-                                val menuWidthCustomEnd = remember(
-                                    menuWidth,
-                                    toolbarState
-                                ) {
-                                    if(toolbarState.isFirstCut){
-                                        (menuWidth - toolbarState.menuButtonsWidth).coerceAtLeast(45.dp)
-                                    }else{
-                                        menuWidth
-                                    }
-                                }
-                                val controlsToCut =
-                                    remember(toolbarState, menuWidth, menuWidthCustomEnd) {
-                                        if (toolbarState.isFirstCut) {
-                                            if (menuWidthCustomEnd == 45.dp) {
-                                                //toolbarState.menuButtonsWidth
-                                                toolbarState.controlsWidthToCut + menuWidthCustomEnd - menuWidth
-                                            } else {
-                                                0.dp
-                                            }
+                                    val menuWidth = remember(state.menuWidth, state.isMenuOpened) {
+                                        if (state.isMenuOpened) {
+                                            state.menuWidth.dp
                                         } else {
-                                            toolbarState.controlsWidthToCut
+                                            45.dp
                                         }
                                     }
-                                val lastWeightToCut = remember(
-                                    updatedScreenWidth,
-                                    menuWidth,
-                                    state.tabSizes,
-                                    controlsToCut,
-                                    density
-                                ) {
-                                    if (updatedScreenWidth == null || state.tabSizes.isEmpty()) {
-                                        0f
-                                    } else {
-                                        val availableWidth = updatedScreenWidth!! - menuWidth.value
-                                        val totalWeight = state.tabSizes.map { b -> b.value }
-                                            .sumOf { it.toDouble() }.toFloat()
-                                        val widthPerWeightUnit = availableWidth / totalWeight
-                                        if (widthPerWeightUnit > 0) {
-                                            controlsToCut.value * density / widthPerWeightUnit
-                                        } else {
-                                            0f
-                                        }
-                                    }
-                                }
-
-
-                                Box(
-                                    Modifier
-                                        .height(ToolbarHeight.dp)
-                                        .fillMaxWidth()
-                                ) {
-                                    Row(
-                                        Modifier.fillMaxSize(),
-                                        verticalAlignment = Alignment.CenterVertically
+                                    val menuWidthCustomEnd = remember(
+                                        menuWidth,
+                                        toolbarState
                                     ) {
-                                        Box(Modifier.fillMaxHeight().width(menuWidthCustomEnd)) {
-                                            CJIcon(
-                                                modifier = Modifier.padding(end = 12.dp)
-                                                    .align(Alignment.CenterEnd),
-                                                painter = rememberVectorPainter(BarLeft),
-                                                onClick = {
-                                                    component.onIntent(Intent.SetIsFullMenu(!state.isMenuOpened))
-                                                }
+                                        if (toolbarState.isFirstCut) {
+                                            (menuWidth - toolbarState.menuButtonsWidth).coerceAtLeast(
+                                                45.dp
                                             )
+                                        } else {
+                                            menuWidth
                                         }
-                                        Row(modifier = Modifier.weight(1f)) {
-                                            for ((index, item) in items.items.withIndex()) {
-                                                val isFirstTab = index == 0
-                                                val isLastTab = index == items.items.lastIndex
-
-                                                val tabWeight = if (toolbarState.isFullscreen) {
-                                                    state.tabSizes[item.instance.index] ?: 1f
+                                    }
+                                    val controlsToCut =
+                                        remember(toolbarState, menuWidth, menuWidthCustomEnd) {
+                                            if (toolbarState.isFirstCut) {
+                                                if (menuWidthCustomEnd == 45.dp) {
+                                                    //toolbarState.menuButtonsWidth
+                                                    toolbarState.controlsWidthToCut + menuWidthCustomEnd - menuWidth
                                                 } else {
-                                                    if (isFirstTab && toolbarState.isFirstCut) {
-                                                        (state.tabSizes[item.instance.index]
-                                                            ?: 1f) - lastWeightToCut
-                                                    } else if (isLastTab && !toolbarState.isFirstCut) {
-                                                        (state.tabSizes[item.instance.index]
-                                                            ?: 1f) - lastWeightToCut
-                                                    } else {
-                                                        state.tabSizes[item.instance.index] ?: 1f
-                                                    }
+                                                    0.dp
                                                 }
-                                                val isActive =
-                                                    remember(item, state.activeTabsIndex) {
-                                                        component.getActiveTabsIndex(item.configuration) == state.activeTabsIndex
+                                            } else {
+                                                toolbarState.controlsWidthToCut
+                                            }
+                                        }
+                                    val lastWeightToCut = remember(
+                                        updatedScreenWidth,
+                                        menuWidth,
+                                        state.tabSizes,
+                                        controlsToCut,
+                                        density
+                                    ) {
+                                        if (updatedScreenWidth == null || state.tabSizes.isEmpty()) {
+                                            0f
+                                        } else {
+                                            val availableWidth =
+                                                updatedScreenWidth!! - menuWidth.value
+                                            val totalWeight = state.tabSizes.map { b -> b.value }
+                                                .sumOf { it.toDouble() }.toFloat()
+                                            val widthPerWeightUnit = availableWidth / totalWeight
+                                            if (widthPerWeightUnit > 0) {
+                                                controlsToCut.value * density / widthPerWeightUnit
+                                            } else {
+                                                0f
+                                            }
+                                        }
+                                    }
+
+
+                                    Box(
+                                        Modifier
+                                            .height(ToolbarHeight.dp)
+                                            .fillMaxWidth()
+                                    ) {
+                                        Row(
+                                            Modifier.fillMaxSize(),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Box(
+                                                Modifier.fillMaxHeight().width(menuWidthCustomEnd)
+                                            ) {
+                                                CJIcon(
+                                                    modifier = Modifier.padding(end = 12.dp)
+                                                        .align(Alignment.CenterEnd),
+                                                    painter = rememberVectorPainter(BarLeft),
+                                                    onClick = {
+                                                        component.onIntent(Intent.SetIsFullMenu(!state.isMenuOpened))
                                                     }
+                                                )
+                                            }
+                                            Row(modifier = Modifier.weight(1f)) {
+                                                for ((index, item) in items.items.withIndex()) {
+                                                    val isFirstTab = index == 0
+                                                    val isLastTab = index == items.items.lastIndex
+
+                                                    val tabWeight = if (toolbarState.isFullscreen) {
+                                                        state.tabSizes[item.instance.index] ?: 1f
+                                                    } else {
+                                                        if (isFirstTab && toolbarState.isFirstCut) {
+                                                            (state.tabSizes[item.instance.index]
+                                                                ?: 1f) - lastWeightToCut
+                                                        } else if (isLastTab && !toolbarState.isFirstCut) {
+                                                            (state.tabSizes[item.instance.index]
+                                                                ?: 1f) - lastWeightToCut
+                                                        } else {
+                                                            state.tabSizes[item.instance.index]
+                                                                ?: 1f
+                                                        }
+                                                    }
+                                                    val isActive =
+                                                        remember(item, state.activeTabsIndex) {
+                                                            component.getActiveTabsIndex(item.configuration) == state.activeTabsIndex
+                                                        }
+                                                    val updatedConfiguration by rememberUpdatedState(
+                                                        item.configuration
+                                                    )
+                                                    val modifier = Modifier
+                                                        .weight(if (tabWeight <= 0f) 0.01f else tabWeight)
+                                                        .fillMaxHeight()
+                                                        .let {
+                                                            when (getPlatform()) {
+                                                                Platform.Ios,
+                                                                Platform.Android -> it.pointerInput(
+                                                                    Unit
+                                                                ) {
+                                                                    detectTapGestures {
+                                                                        component.setActiveTabs(
+                                                                            updatedConfiguration
+                                                                        )
+                                                                    }
+                                                                }
+
+                                                                is Platform.Jvm,
+                                                                Platform.Wasm -> it.onPointerEvent(
+                                                                    PointerEventType.Press
+                                                                ) {
+                                                                    component.setActiveTabs(
+                                                                        updatedConfiguration
+                                                                    )
+                                                                }
+                                                            }
+                                                        }
+                                                        .clip(RoundedCornerShape(0.dp))
+                                                    TabsPage(
+                                                        modifier = modifier,
+                                                        isActive = isActive,
+                                                        isLastTab = isLastTab,
+                                                        component = item.instance,
+                                                        onSelectedTab = {
+                                                            component.setActiveTabs(item.configuration)
+                                                        }
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                PageContent(
+                                    modifier = Modifier
+                                        .hazeSource(state = hazeState)
+                                        .weight(1f)
+                                        .fillMaxWidth(),
+                                    state = state,
+                                    labelsFlow = component.labels,
+                                    onSetIsFullMenu = {
+                                        component.onIntent(Intent.SetIsFullMenu(it))
+                                    },
+                                    onIntent = {
+                                        component.onIntent(it)
+                                    }) {
+                                    Column(Modifier.fillMaxSize()) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .weight(1f)
+                                                .background(LocalAppTheme.current.colors.backgroundSecondary),
+                                            horizontalArrangement = Arrangement.spacedBy(0.dp)
+                                        ) {
+                                            for ((index, item) in items.items.withIndex()) {
+                                                val tabWeight =
+                                                    state.tabSizes[item.instance.index] ?: 1f
+
+                                                val isLastTab = index == items.items.lastIndex
                                                 val updatedConfiguration by rememberUpdatedState(
                                                     item.configuration
                                                 )
-                                                val modifier = Modifier
-                                                    .weight(if(tabWeight<=0f) 0.01f else tabWeight)
-                                                    .fillMaxHeight()
-                                                    .let {
-                                                        when (getPlatform()) {
-                                                            Platform.Ios,
-                                                            Platform.Android -> it.pointerInput(Unit) {
-                                                                detectTapGestures {
+                                                TabsPageContent(
+                                                    modifier = Modifier
+                                                        .weight(tabWeight)
+                                                        .fillMaxHeight()
+                                                        .let {
+                                                            when (getPlatform()) {
+                                                                Platform.Ios,
+                                                                Platform.Android -> it.pointerInput(
+                                                                    Unit
+                                                                ) {
+                                                                    detectTapGestures {
+                                                                        component.setActiveTabs(
+                                                                            updatedConfiguration
+                                                                        )
+                                                                    }
+                                                                }
+
+                                                                is Platform.Jvm,
+                                                                Platform.Wasm -> it.onPointerEvent(
+                                                                    PointerEventType.Press
+                                                                ) {
                                                                     component.setActiveTabs(
                                                                         updatedConfiguration
                                                                     )
                                                                 }
                                                             }
-
-                                                            is Platform.Jvm,
-                                                            Platform.Wasm -> it.onPointerEvent(
-                                                                PointerEventType.Press
-                                                            ) {
-                                                                component.setActiveTabs(
-                                                                    updatedConfiguration
-                                                                )
-                                                            }
                                                         }
-                                                    }
-                                                    .clip(RoundedCornerShape(0.dp))
-                                                TabsPage(
-                                                    modifier = modifier,
-                                                    isActive = isActive,
+                                                        .clip(RoundedCornerShape(0.dp)),
+                                                    isMenuCovered = state.menuCovered == item.instance.index,
                                                     isLastTab = isLastTab,
-                                                    component = item.instance,
-                                                    onSelectedTab = {
-                                                        component.setActiveTabs(item.configuration)
-                                                    }
+                                                    component = item.instance
                                                 )
                                             }
                                         }
                                     }
                                 }
                             }
-                            PageContent(
-                                modifier = Modifier
-                                    .hazeSource(state = hazeState)
-                                    .weight(1f)
-                                    .fillMaxWidth(),
-                                state = state,
-                                labelsFlow = component.labels,
-                                onSetIsFullMenu = {
-                                    component.onIntent(Intent.SetIsFullMenu(it))
-                                },
-                                onIntent = {
-                                    component.onIntent(it)
-                                }) {
-                                Column(Modifier.fillMaxSize()) {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .weight(1f)
-                                            .background(LocalAppTheme.current.colors.backgroundSecondary),
-                                        horizontalArrangement = Arrangement.spacedBy(0.dp)
-                                    ) {
-                                        for ((index, item) in items.items.withIndex()) {
-                                            val tabWeight =
-                                                state.tabSizes[item.instance.index] ?: 1f
 
-                                            val isLastTab = index == items.items.lastIndex
-                                            val updatedConfiguration by rememberUpdatedState(item.configuration)
-                                            TabsPageContent(
-                                                modifier = Modifier
-                                                    .weight(tabWeight)
-                                                    .fillMaxHeight()
-                                                    .let {
-                                                        when (getPlatform()) {
-                                                            Platform.Ios,
-                                                            Platform.Android -> it.pointerInput(Unit) {
-                                                                detectTapGestures {
-                                                                    component.setActiveTabs(
-                                                                        updatedConfiguration
-                                                                    )
-                                                                }
-                                                            }
-
-                                                            is Platform.Jvm,
-                                                            Platform.Wasm -> it.onPointerEvent(
-                                                                PointerEventType.Press
-                                                            ) {
-                                                                component.setActiveTabs(
-                                                                    updatedConfiguration
-                                                                )
-                                                            }
-                                                        }
-                                                    }
-                                                    .clip(RoundedCornerShape(0.dp)),
-                                                isMenuCovered = state.menuCovered == item.instance.index,
-                                                isLastTab = isLastTab,
-                                                component = item.instance
-                                            )
-                                        }
-                                    }
-                                }
+                        }
+                    }
+                    if (state.contextMenuData != null) {
+                        CJContextMenu(
+                            modifier = Modifier
+                                .absoluteOffset(state.contextMenuData!!.cursorPosition / density)
+                                .clip(RoundedCornerShape(8.dp))
+                                .border(
+                                    1.dp,
+                                    LocalAppTheme.current.primaryColor,
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                .hazeEffect(state = hazeState, style = hazeStyle),
+                            columnModifier = Modifier
+                        ) {
+                            for (button in state.contextMenuData!!.menuButtons) {
+                                CJContextMenuButton(text = button.title, onClick = button.onClick)
                             }
                         }
-
                     }
                 }
-                if (state.contextMenuData != null) {
-                    CJContextMenu(
-                        modifier = Modifier
-                            .absoluteOffset(state.contextMenuData!!.cursorPosition / density)
-                            .clip(RoundedCornerShape(8.dp))
-                            .border(
-                                1.dp,
-                                LocalAppTheme.current.primaryColor,
-                                shape = RoundedCornerShape(8.dp)
-                            )
-                            .hazeEffect(state = hazeState, style = hazeStyle),
-                        columnModifier = Modifier
-                    ) {
-                        for (button in state.contextMenuData!!.menuButtons) {
-                            CJContextMenuButton(text = button.title, onClick = button.onClick)
-                        }
-                    }
-                }
+                DialogTagToTagUI(
+                    workspaceSession = component.workspaceSession,
+                    dialog = component.dialogTagToTagService
+                )
+                DialogSelectTagUI(
+                    dialog = component.dialogSelectTagService,
+                    workspaceSession = component.workspaceSession
+                )
             }
-            DialogTagToTagUI(
-                workspaceSession = component.workspaceSession,
-                dialog = component.dialogTagToTagService
-            )
-            DialogSelectTagUI(
-                dialog = component.dialogSelectTagService,
-                workspaceSession = component.workspaceSession
-            )
         }
     }
 }

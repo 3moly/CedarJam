@@ -28,7 +28,7 @@ class AppEnvironment(
 
     private val _workspacesStateFlow =
         MutableStateFlow<UIState<List<WorkspacePresentation>, Nothing>>(UIState.Loading)
-    private val _appSettingsStateFlow = MutableStateFlow(AppSettings.Companion.defaultSettings)
+    private val _appSettingsStateFlow = MutableStateFlow(AppSettings.defaultSettings)
 
     init {
         scope.launch(Dispatchers.Main.immediate) {

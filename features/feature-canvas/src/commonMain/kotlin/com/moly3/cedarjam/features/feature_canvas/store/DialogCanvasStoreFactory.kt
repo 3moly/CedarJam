@@ -255,6 +255,15 @@ internal class DialogCanvasStoreFactory(
                     dispatch(SetShapes(value = shapes.toPersistentList()))
                     save()
                 }
+
+                is Intent.DeleteShape -> {
+                    val shapes = state().shapes.toMutableList()
+                    val oldShape = shapes.firstOrNull { b -> b.id == intent.shape.id }
+                    val index = shapes.indexOf(oldShape)
+                    shapes.removeAt(index)
+                    dispatch(SetShapes(value = shapes.toPersistentList()))
+                    save()
+                }
             }
         }
     }

@@ -1,20 +1,12 @@
 package com.moly3.cedarjam.core.storage.internal
 
+import com.moly3.cedarjam.core.domain.DefaultJson
+import com.moly3.cedarjam.core.domain.model.AppSettings
+import com.moly3.cedarjam.core.domain.model.Workspace
 import com.moly3.cedarjam.core.storage.IAppStorage
-import com.moly3.cedarjam.core.storage.model.AppSettingsJson
-import com.moly3.cedarjam.core.storage.model.AppThemeJson
-import com.moly3.cedarjam.core.storage.model.toData
-import com.moly3.cedarjam.core.storage.model.toJson
 import com.russhwolf.settings.Settings
 import com.russhwolf.settings.contains
-import com.moly3.cedarjam.core.domain.DefaultJson
-import com.moly3.cedarjam.core.domain.func.toColor
-import com.moly3.cedarjam.core.domain.func.toHexString
-import com.moly3.cedarjam.core.domain.model.AppSettings
-import com.moly3.cedarjam.core.domain.model.AppThemeData
-import com.moly3.cedarjam.core.domain.model.Workspace
 import kotlinx.serialization.json.Json
-import kotlin.collections.iterator
 
 internal class AppStorage(
     private val keyValueSettings: Settings
@@ -43,37 +35,39 @@ internal class AppStorage(
 
     override fun getAppSettings(): AppSettings {
         return try {
+//
+//            val appSettings =
+//            AppSettings(
+//                theme = AppThemeData(
+//                    primaryColor = appSettings.appTheme.primaryColor.toColor(),
+//
+//                    fontFamily = appSettings.appTheme.fontFamily,
+//                    colorsType = appSettings.appTheme.colorsType,
+//
+//                    colors = appSettings.appTheme.colorsData.toData()
+//                ),
+//                currentWorkspaceFullPath = appSettings.currentWorkspaceFullPath
+//            )
             val data = keyValueSettings.getStringOrNull(appSettingsKey)!!
-            val appSettings = DefaultJson.decodeFromString<AppSettingsJson>(data)
-            AppSettings(
-                theme = AppThemeData(
-                    primaryColor = appSettings.appTheme.primaryColor.toColor(),
-
-                    fontFamily = appSettings.appTheme.fontFamily,
-                    colorsType = appSettings.appTheme.colorsType,
-
-                    colors = appSettings.appTheme.colorsData.toData()
-                ),
-                currentWorkspaceFullPath = appSettings.currentWorkspaceFullPath
-            )
+            DefaultJson.decodeFromString<AppSettings>(data)
         } catch (exc: Exception) {
             AppSettings.Companion.defaultSettings
         }
     }
 
     override fun setAppSettings(settings: AppSettings) {
-        val theme = settings.theme
-        val themeJson = AppThemeJson(
-            primaryColor = theme.primaryColor.toHexString(),
-            colorsType = theme.colorsType,
-            fontFamily = theme.fontFamily,
-            colorsData = theme.colors.toJson()
-        )
-        val appSettingsJson = AppSettingsJson(
-            appTheme = themeJson,
-            currentWorkspaceFullPath = settings.currentWorkspaceFullPath
-        )
-        val json = DefaultJson.encodeToString(appSettingsJson)
+//        val theme = settings.theme
+//        val themeJson = AppThemeJson(
+//            primaryColor = theme.primaryColor.toHexString(),
+//            colorsType = theme.colorsType,
+//            fontFamily = theme.fontFamily,
+//            colorsData = theme.colors.toJson()
+//        )
+//        val appSettingsJson = AppSettingsJson(
+//            appTheme = themeJson,
+//            currentWorkspaceFullPath = settings.currentWorkspaceFullPath
+//        )
+        val json = DefaultJson.encodeToString(settings)
         keyValueSettings.putString(appSettingsKey, json)
     }
 

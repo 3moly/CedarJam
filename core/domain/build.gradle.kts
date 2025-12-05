@@ -36,6 +36,9 @@ kotlin {
                 implementation(libs.filekit.dialogs)
             }
         }
+        commonTest.dependencies{
+            implementation(libs.kotlin.test)
+        }
         androidUnitTest.dependencies {
             implementation(libs.robolectric)
         }

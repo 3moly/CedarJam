@@ -74,18 +74,18 @@ kotlin {
         }
         jvmMain.dependencies {
             implementation(libs.sqldelight.jvm)
-            implementation(libs.kmp.io)
+//            implementation(libs.kmp.io)
         }
         androidMain.dependencies {
             implementation(libs.sqldelight.android)
-            implementation(libs.kmp.io)
+//            implementation(libs.kmp.io)
         }
         iosMain.dependencies {
             implementation(libs.sqldelight.ios)
-            implementation(libs.kmp.io)
+//            implementation(libs.kmp.io)
         }
         jvmMain.dependencies {
-            implementation(libs.kmp.io)
+//            implementation(libs.kmp.io)
         }
     }
 }

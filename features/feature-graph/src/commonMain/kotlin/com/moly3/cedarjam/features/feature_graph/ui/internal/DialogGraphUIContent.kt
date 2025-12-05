@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.moly3.cedarjam.core.domain.io
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
+import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
 import com.moly3.cedarjam.features.feature_graph.Intent
 import com.moly3.cedarjam.features.feature_graph.State
 import com.moly3.cedarjam.core.ui.uikit.CJSlider
@@ -72,7 +73,8 @@ internal fun DialogGraphUIContent(
                 circleColor = Color.Yellow,
                 primaryColor = Color.Blue,
                 circleLineColor = LocalAppTheme.current.colors.divide,
-                consume = false
+                consume = false,
+                textStyle = LocalTextStyle.current
             )
             Column(Modifier.align(Alignment.TopEnd), horizontalAlignment = Alignment.End) {
                 CJText(text = state.zoom.toString())

@@ -1,10 +1,14 @@
 package com.moly3.cedarjam.core.domain.model
 
 import androidx.compose.ui.graphics.Color
+import com.moly3.cedarjam.core.domain.func.ComposeColorSerializer
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class AppThemeData(
     val colorsType: ColorsType,
     val fontFamily: FontFamilyData,
+    @Serializable(with = ComposeColorSerializer::class)
     val primaryColor: Color,
     val colors: AppColorsData
 ) {
@@ -18,16 +22,27 @@ data class AppThemeData(
     }
 }
 
+@Serializable
 data class AppColorsData(
+    @Serializable(with = ComposeColorSerializer::class)
     val primaryFont: Color,
+    @Serializable(with = ComposeColorSerializer::class)
     val secondaryFont: Color,
+    @Serializable(with = ComposeColorSerializer::class)
     val backgroundPrimary: Color,
+    @Serializable(with = ComposeColorSerializer::class)
     val backgroundSecondary: Color,
+    @Serializable(with = ComposeColorSerializer::class)
     val statusBarBorder: Color,
+    @Serializable(with = ComposeColorSerializer::class)
     val statusBar: Color,
+    @Serializable(with = ComposeColorSerializer::class)
     val icon: Color,
+    @Serializable(with = ComposeColorSerializer::class)
     val divide: Color,
+    @Serializable(with = ComposeColorSerializer::class)
     val circle: Color,
+    @Serializable(with = ComposeColorSerializer::class)
     val circleLine: Color
 ) {
     companion object {

@@ -23,18 +23,13 @@ import com.moly3.cedarjam.core.ui.vectors.WaterDrop
 import com.moly3.cedarjam.core.ui.volumedBorderStroke
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
-@Preview
-@Composable
-fun WorkspaceSelectPreview() {
-    WorkspaceSelect(null, onChangeSettings = {}, onChangeWorkspace = {}, onChangeColors = {})
-}
-
 @Composable
 fun WorkspaceSelect(
     activeWorkspace: WorkspacePresentation?,
     onChangeWorkspace: () -> Unit,
     onChangeSettings: () -> Unit,
     onChangeColors: () -> Unit,
+    onOpenSettings: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -74,6 +69,12 @@ fun WorkspaceSelect(
             painter = rememberVectorPainter(Bulb),
             isEnabled = true,
             onClick = onChangeColors
+        )
+        CJIcon(
+            modifier = Modifier,
+            painter = rememberVectorPainter(SettingsFuture),
+            isEnabled = true,
+            onClick = onOpenSettings
         )
     }
 }

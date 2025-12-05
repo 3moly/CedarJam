@@ -29,6 +29,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
+import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
 import com.moly3.cedarjam.core.ui.uikit.CJText
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.collectLatest
@@ -112,7 +113,7 @@ fun FileEdit(
             }
         }
     }
-    val lineNumberTextStyle = TextStyle.Default.copy(
+    val lineNumberTextStyle = LocalTextStyle.current.copy(
         color = Color(0xFF808080),
         fontSize = linesTextSize.sp,
         lineHeight = lineHeight.sp,
@@ -121,7 +122,7 @@ fun FileEdit(
             trim = LineHeightStyle.Trim.None
         )
     )
-    val editorTextStyle = TextStyle.Default.copy(
+    val editorTextStyle = LocalTextStyle.current.copy(
         color = appTheme.colors.primaryFont,
         fontSize = textSize.sp,
         lineHeight = lineHeight.sp,

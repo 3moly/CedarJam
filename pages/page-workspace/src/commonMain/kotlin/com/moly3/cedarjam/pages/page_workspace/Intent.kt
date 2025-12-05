@@ -12,6 +12,7 @@ sealed interface Intent {
     data class SetIsFullMenu(val value: Boolean) : Intent
     data object ChangeAppSettings : Intent
     data object ChangeAppColors : Intent
+    data object OpenSettings : Intent
     data class SetCursorPosition(val offset: Offset) : Intent
     data class SetLockedMenuUnder(val value: LockedMenuData?) : Intent
     data class SetMenuUnder(val tab: Int?) : Intent

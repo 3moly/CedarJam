@@ -41,6 +41,7 @@ import com.moly3.cedarjam.core.domain.io
 import com.moly3.cedarjam.core.domain.model.FileType
 import com.moly3.cedarjam.core.ui.service.MacTrackpadGestureService
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
+import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
 import com.moly3.cedarjam.core.ui.func.darker
 import com.moly3.cedarjam.core.ui.onPointerEvent
 import com.moly3.cedarjam.core.ui.uikit.CJCircularProgressIndicator
@@ -179,7 +180,7 @@ internal fun PdfUI(
                     onValueChange = {
                         textState = it
                     },
-                    textStyle = LocalAppTheme.current.textStyle.merge(
+                    textStyle = LocalTextStyle.current.merge(
                         textAlign = TextAlign.End
                     ),
                     keyboardType = KeyboardType.Number,
@@ -210,7 +211,8 @@ internal fun PdfUI(
                             painter = documentState!!.getPagePainter(currentPage - 1)
 
                             text = documentState!!.getPageText(currentPage - 1)
-                        } catch (exc: Exception) { }
+                        } catch (exc: Exception) {
+                        }
 
                         //                                            imgBitmap = getPdfImage(
 //                                                Path(

@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.rememberAsyncImagePainter
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
+import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
 import com.moly3.cedarjam.core.ui.uikit.CJText
 import com.moly3.cedarjam.core.ui.vectors.SettingsFuture
 import dev.chrisbanes.haze.HazeDefaults
@@ -152,13 +153,13 @@ fun FlowerCard(
                             CJText(
                                 text = currentProgress.toString(),
                                 color = Color.Green,
-                                style = LocalAppTheme.current.textStyle,
+                                style = LocalTextStyle.current,
                                 fontSize = 10.sp
                             )
                             CJText(
                                 text = progressMax.toString(),
                                 color = Color.Green,
-                                style = LocalAppTheme.current.textStyle,
+                                style = LocalTextStyle.current,
                                 fontSize = 10.sp
                             )
                         }
