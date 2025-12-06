@@ -26,7 +26,7 @@ kotlin {
                 api(libs.koin)
                 api(libs.coroutines)
 
-                implementation(compose.foundation)
+                implementation(libs.foundation)
             }
         }
     }

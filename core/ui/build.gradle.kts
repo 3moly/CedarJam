@@ -21,13 +21,13 @@ kotlin {
             implementation(libs.coroutines)
             implementation(libs.serialization)
 
-            implementation(compose.material3)
-            implementation(compose.material)
-
-            api(compose.runtime)
-            api(compose.foundation)
-            api(compose.ui)
-            api(compose.components.uiToolingPreview)
+            implementation(libs.material3)
+            implementation(libs.material)
+            api(libs.runtime)
+            api(libs.foundation)
+            api(libs.ui)
+            api(libs.ui.tooling.preview)
+            api("org.jetbrains.compose.components:components-resources:1.10.0-rc01")
 
             api(libs.hypnoticcanvas)
             api(libs.hypnoticcanvas.shaders)
@@ -37,6 +37,7 @@ kotlin {
             implementation(libs.videoplayer)
             api(libs.dnd)
             api(libs.lazytable)
+            api("io.github.sudarshanmhasrup.localina:localina:1.0.0-alpha3")
         }
         commonTest.dependencies{
             implementation(libs.kotlin.test)
@@ -47,7 +48,12 @@ kotlin {
     }
 }
 dependencies {
-    api(compose.uiTooling)
+    api("org.jetbrains.compose.ui:ui-tooling:1.10.0-rc01")
+}
+compose.resources {
+    publicResClass = true
+    packageOfResClass = "com.moly3.cedarjam.ui"
+    generateResClass = auto
 }
 android {
     namespace = "com.moly3.cedarjam.ui"

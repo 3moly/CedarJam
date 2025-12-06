@@ -167,7 +167,7 @@ fun main() {
 
     application {
         System.setProperty("apple.awt.application.name", "Kotlin Explorer")
-        enableNewSwingCompositing()
+//        enableNewSwingCompositing()
 
         val trayState = rememberTrayState()
         Tray(

@@ -30,7 +30,7 @@ kotlin {
                 implementation(projects.core.storage)
                 implementation(libs.coroutines)
                 implementation(libs.datetime)
-                implementation(compose.foundation)
+                implementation(libs.foundation)
             }
         }
         commonTest.dependencies {

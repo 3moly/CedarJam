@@ -42,6 +42,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.moly3.cedarjam.core.domain.func.getPlatform
@@ -56,7 +57,6 @@ import com.moly3.cedarjam.core.ui.vectors.FileAdd
 import com.moly3.cedarjam.core.ui.vectors.FolderAdd
 import com.moly3.cedarjam.core.ui.volumedBorderStroke
 import dev.chrisbanes.haze.hazeEffect
-import org.jetbrains.compose.ui.tooling.preview.Preview
 
 private val LINE_WIDTH = 1.dp
 private val RECT_RADIUS = 40f

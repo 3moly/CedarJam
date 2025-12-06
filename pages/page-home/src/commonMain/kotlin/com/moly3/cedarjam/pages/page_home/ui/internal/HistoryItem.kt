@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.moly3.cedarjam.pages.page_home.model.LineMatch
 import com.moly3.cedarjam.core.domain.func.formatEpochMillis
@@ -25,7 +26,6 @@ import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
 import com.moly3.cedarjam.core.ui.uikit.CJHighlightedText
 import com.moly3.cedarjam.core.ui.uikit.CJText
 import kotlinx.collections.immutable.ImmutableList
-import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
 internal fun HistoryItem(

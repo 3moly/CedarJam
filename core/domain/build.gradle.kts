@@ -31,7 +31,7 @@ kotlin {
                 implementation(libs.compose.data.viz.core)
 
                 //planning to remove soon
-                implementation(compose.foundation)
+                implementation(libs.foundation)
                 implementation(libs.filekit.core)
                 implementation(libs.filekit.dialogs)
             }

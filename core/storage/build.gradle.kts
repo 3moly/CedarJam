@@ -60,7 +60,7 @@ kotlin {
                 implementation(libs.key.value.settings.test)
                 implementation(libs.kotlinx.io.core)
                 implementation(libs.filekit.core)
-                implementation(compose.foundation)
+                implementation(libs.foundation)
                 implementation(libs.sqldelight.extensions)
                 implementation(libs.compose.data.viz)
 

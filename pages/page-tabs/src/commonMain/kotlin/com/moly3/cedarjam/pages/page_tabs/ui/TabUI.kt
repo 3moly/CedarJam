@@ -16,13 +16,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.uikit.CJButtonIcon
 import com.moly3.cedarjam.core.ui.uikit.CJText
 import com.moly3.cedarjam.core.ui.vectors.CloseSM
-import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
 fun TabUI(

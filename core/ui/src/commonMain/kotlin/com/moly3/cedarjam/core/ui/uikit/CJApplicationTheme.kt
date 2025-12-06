@@ -14,6 +14,7 @@ import com.moly3.cedarjam.core.domain.model.AppSettings
 import com.moly3.cedarjam.core.domain.model.Platform
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
+import io.github.sudarshanmhasrup.localina.api.LocalinaApp
 
 @Composable
 fun CJApplicationTheme(
@@ -65,6 +66,8 @@ fun CJApplicationTheme(
         LocalAppTheme provides appTheme,
         LocalTextStyle provides textStyle
     ) {
-        content()
+        LocalinaApp {
+            content()
+        }
     }
 }

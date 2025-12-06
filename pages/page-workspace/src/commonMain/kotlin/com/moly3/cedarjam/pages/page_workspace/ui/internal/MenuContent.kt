@@ -138,9 +138,6 @@ internal fun MenuContent(
                     },
                     onChangeColors = {
                         onIntent(Intent.ChangeAppColors)
-                    },
-                    onOpenSettings = {
-                        onIntent(Intent.OpenSettings)
                     })
             }
         }

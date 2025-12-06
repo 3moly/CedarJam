@@ -36,7 +36,6 @@ import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
-import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
 fun FlowerCard(

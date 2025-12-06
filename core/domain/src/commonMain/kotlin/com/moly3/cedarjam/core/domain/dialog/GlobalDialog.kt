@@ -8,7 +8,10 @@ import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
-abstract class GlobalDialog<Input, Result>(val isGenericDialog: Boolean = true, val closeValue: Result) {
+abstract class GlobalDialog<Input, Result>(
+    val isGenericDialog: Boolean = true,
+    val closeValue: Result
+) {
 
     private var _continuation: Continuation<Result>? = null
     private val _inputDataState =
@@ -20,6 +23,10 @@ abstract class GlobalDialog<Input, Result>(val isGenericDialog: Boolean = true, 
 
     fun isOpened(): Boolean {
         return inputData.value is DialogState.Opened
+    }
+
+    suspend fun cancel() {
+        setResult(closeValue)
     }
 
     suspend fun setResult(data: Result) {

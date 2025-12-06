@@ -18,7 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.moly3.cedarjam.core.domain.dialog.DialogTagToTagService
-import com.moly3.cedarjam.core.domain.dialog.DialogTagToTagServiceData
+import com.moly3.cedarjam.core.domain.dialog.model.DialogTagToTagServiceData
 import com.moly3.cedarjam.core.domain.model.TagDTO
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
 import com.moly3.cedarjam.core.ui.uikit.CJDialogGeneric
