@@ -14,8 +14,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -45,9 +48,16 @@ import com.moly3.cedarjam.core.ui.vectors.SettingsFuture
 fun SelectWorkspacePage(component: ISelectWorkspaceComponent) {
     val state by component.state.collectAsState(State())
     val windowSize by rememberWindowSize()
-    BoxWithConstraints(modifier = Modifier.fillMaxSize().background(Color(0xFF0F1F17))) {
+    BoxWithConstraints(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFF0F1F17))
+            .statusBarsPadding()
+            .navigationBarsPadding()
+            .imePadding()
+    ) {
         val screenHeight = maxHeight
-        val titleOffset = screenHeight * when(windowSize){
+        val titleOffset = screenHeight * when (windowSize) {
             WindowSize.Compact -> 0.1f
             WindowSize.Medium -> 0.1f
             WindowSize.Expanded -> 0.1f
@@ -124,7 +134,7 @@ fun SelectWorkspacePage(component: ISelectWorkspaceComponent) {
                                 )
                             }
                             Box(
-                                modifier = Modifier.clickable{
+                                modifier = Modifier.clickable {
                                     component.onIntent(Intent.DeleteWorkspace(item))
                                 }
                             ) {

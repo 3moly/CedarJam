@@ -15,11 +15,13 @@ interface IFilesRepository {
         workspaceFullPath: String,
         serverFiles: List<FileItem>
     )
+
     suspend fun packFilesToZip(
         workspaceFolderAbsolutePath: String,
         filesToArchive: List<String>,
         archivePath: String,
     )
+
     fun getFileNodeFromFullPath(fullPath: String, isDirectory: Boolean): FileTreeNode
     fun getNodes(node: FileTreeNode.Directory): List<FileTreeNode>
     fun isNodeExists(node: FileTreeNode): Boolean
@@ -32,6 +34,7 @@ interface IFilesRepository {
     fun moveNode(node: FileTreeNode, newNode: FileTreeNode): ResultWrapper<FileTreeNode, String>
     fun setNodeText(node: FileTreeNode.File, text: String): ResultWrapper<Unit, String>
     fun getNodeText(node: FileTreeNode.File): ResultWrapper<String, String>
+    fun setNodeBytes(node: FileTreeNode.File, byteArray: ByteArray)
     fun getNodeBytes(node: FileTreeNode.File): ByteArray
     fun getNodeCanvas(nodePath: String): ResultWrapper<CanvasDataWithErrors, String>
     fun saveNodeCanvas(nodePath: String, data: CanvasDataWithErrors): ResultWrapper<Unit, String>

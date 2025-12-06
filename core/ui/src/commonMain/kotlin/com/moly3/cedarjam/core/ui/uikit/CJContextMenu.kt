@@ -14,7 +14,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import com.moly3.cedarjam.core.domain.model.AppSettings
+import com.moly3.cedarjam.core.domain.model.settings.AppSettings
 
 @Composable
 fun CJContextMenu(

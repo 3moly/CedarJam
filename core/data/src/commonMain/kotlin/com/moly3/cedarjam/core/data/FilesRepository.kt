@@ -137,6 +137,10 @@ class FilesRepository(
         }
     }
 
+    override fun setNodeBytes(node: FileTreeNode.File, byteArray: ByteArray) {
+        filesStorage.setNodeBytes(nodePath = node.getFullPath(), byteArray = byteArray)
+    }
+
     override fun getNodeBytes(node: FileTreeNode.File): ByteArray {
         return filesStorage.getNodeBytes(node.getFullPath())
     }

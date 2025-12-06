@@ -1,16 +1,15 @@
-package com.moly3.cedarjam.core.domain.model
+package com.moly3.cedarjam.core.domain.model.settings
 
+import com.moly3.cedarjam.core.domain.model.AppThemeData
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class AppSettings(
-    val currentWorkspaceFullPath: String?,
     val theme: AppThemeData
 ) {
     companion object {
         val defaultSettings = AppSettings(
-            currentWorkspaceFullPath = null,
-            theme = AppThemeData.Default
+            theme = AppThemeData.Companion.Default
         )
     }
 }

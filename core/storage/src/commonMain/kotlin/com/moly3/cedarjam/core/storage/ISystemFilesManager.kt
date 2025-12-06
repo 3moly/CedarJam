@@ -30,6 +30,7 @@ interface ISystemFilesManager {
     fun setNodeText(nodePath: String, text: String): ResultWrapper<Unit, String>
     fun getNodeText(nodePath: String): String
     fun getNodeBytes(nodePath: String): ByteArray
+    fun setNodeBytes(nodePath: String, byteArray: ByteArray)
     fun getNodeCanvas(nodePath: String): ResultWrapper<CanvasDataWithErrors, String>
     fun saveNodeCanvas(nodePath: String, data: CanvasDataWithErrors): ResultWrapper<Unit, String>
 }

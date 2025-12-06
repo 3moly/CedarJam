@@ -7,6 +7,8 @@ import com.moly3.cedarjam.pages.page_workspace.model.RenameFileNodeData
 import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.domain.model.WorkspacePresentation
 import com.moly3.cedarjam.core.domain.model.error.DatabaseError
+import com.moly3.cedarjam.core.domain.model.settings.WorkspaceFont
+import com.moly3.cedarjam.core.domain.model.settings.WorkspaceSettings
 import com.moly3.cedarjam.core.ui.model.FileTreeItemPresentation
 import com.moly3.cedarjam.pages.page_workspace.model.LockedMenuData
 import com.moly3.cedarjam.pages.page_workspace.model.TabWeightsData
@@ -37,7 +39,8 @@ data class State(
     val menuWidth: Float = 400f,
     val menuCovered: Int? = null,
     val lockedMenuCovered: LockedMenuData? = null,
-    val workspaceFont: FileTreeNode? = null
+    val workspaceFont: WorkspaceFont? = null,
+    val settings: WorkspaceSettings = WorkspaceSettings.defaultSettings
 
 ) {
     @Serializable

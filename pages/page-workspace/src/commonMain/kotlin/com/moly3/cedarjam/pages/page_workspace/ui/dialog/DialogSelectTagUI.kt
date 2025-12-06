@@ -26,7 +26,10 @@ import com.moly3.cedarjam.core.ui.uikit.CJButton
 import kotlinx.coroutines.launch
 
 @Composable
-fun DialogSelectTagUI(dialog: DialogSelectTagService, workspaceSession: WorkspaceSession) {
+fun DialogSelectTagUI(
+    dialog: DialogSelectTagService,
+    workspaceSession: WorkspaceSession
+) {
     val scope = rememberCoroutineScope()
 
     CJDialogGeneric(dialog = dialog) {

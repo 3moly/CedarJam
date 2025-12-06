@@ -1,6 +1,6 @@
 package com.moly3.cedarjam.core.domain.repository
 
-import com.moly3.cedarjam.core.domain.model.AppSettings
+import com.moly3.cedarjam.core.domain.model.settings.AppSettings
 import com.moly3.cedarjam.core.domain.model.ResultWrapper
 import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.domain.model.Workspace

@@ -157,7 +157,6 @@ fun main() {
     ////                    exitApplication()
     //                }
     //            }
-//    val font = androidx.compose.ui.text.platform.Font(file = File("manolomono.otf"))
 //        val fontFamily = FontFamily(listOf(font))
     //                    if (!isFullScreenMode) {
 //                        MacWindowControls(windowState = state, onClose = {

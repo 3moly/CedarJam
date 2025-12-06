@@ -4,4 +4,6 @@ import kotlinx.serialization.json.Json
 
 val DefaultJson = Json {
     this.ignoreUnknownKeys = true
+    prettyPrint = true
+//    prettyPrintIndent = "  "
 }

@@ -21,6 +21,7 @@ import com.moly3.cedarjam.pages.page_tabs.TabsComponentImpl
 import com.moly3.cedarjam.pages.page_workspace.store.WorkspaceStoreFactory
 import com.moly3.cedarjam.core.domain.dialog.DialogSelectTagService
 import com.moly3.cedarjam.core.domain.dialog.DialogTagToTagService
+import com.moly3.cedarjam.core.domain.dialog.DialogWorkspaceSettingsService
 import com.moly3.cedarjam.core.domain.model.PageNameData
 import com.moly3.cedarjam.core.domain.model.WorkspaceInput
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
@@ -65,6 +66,7 @@ class WorkspaceComponentImpl(
     }
     override val dialogSelectTagService: DialogSelectTagService by inject()
     override val dialogTagToTagService: DialogTagToTagService by inject()
+    override val dialogWorkspaceSettingsService: DialogWorkspaceSettingsService by inject()
     private val store by lazy {
         WorkspaceStoreFactory(
             storeFactory = storeFactory,

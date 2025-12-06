@@ -1,5 +1,6 @@
 package com.moly3.cedarjam.core.data
 
+import androidx.compose.runtime.MutableState
 import com.moly3.cedarjam.core.net.IRemoteSyncRepository
 import com.moly3.data.DataCollectionRow
 import com.moly3.data.Tag
@@ -30,6 +31,7 @@ import com.moly3.cedarjam.core.domain.model.WorkspacePresentation
 import com.moly3.cedarjam.core.domain.model.bind
 import com.moly3.cedarjam.core.domain.model.ensure
 import com.moly3.cedarjam.core.domain.model.error.DatabaseError
+import com.moly3.cedarjam.core.domain.model.getSettingsJsonFile
 import com.moly3.cedarjam.core.domain.model.resultBlock
 import com.moly3.cedarjam.core.domain.model.shouldBeSuccess
 import com.moly3.cedarjam.core.domain.model.toCollectionViewType
@@ -47,13 +49,17 @@ import com.moly3.cedarjam.core.domain.model.request.RenameTagRequest
 import com.moly3.cedarjam.core.domain.model.request.UpdateDataCollectionRequest
 import com.moly3.cedarjam.core.domain.model.request.UpdateDataCollectionRowRequest
 import com.moly3.cedarjam.core.domain.model.request.UpdateTagRequest
+import com.moly3.cedarjam.core.domain.model.settings.AppSettings
+import com.moly3.cedarjam.core.domain.model.settings.WorkspaceSettings
 import com.moly3.cedarjam.core.domain.service.FileManagerService
 import com.moly3.cedarjam.core.storage.ISqlStorage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlin.collections.map
@@ -65,10 +71,13 @@ class WorkspaceEnvironment(
     private val workspace: WorkspacePresentation,
     private val filesRepo: IFilesRepository,//core:data
     private val fileManagerService: FileManagerService, //core:data
-    private val syncNetRepository: IRemoteSyncRepository //-> core:net
+    private val syncNetRepository: IRemoteSyncRepository, //-> core:net,
+    settings: WorkspaceSettings
 ) : IWorkspaceEnvironment {
 
-    private val fileNodesState = MutableStateFlow(tryToGet())
+    private val fileNodesState: MutableStateFlow<UIState<List<FileTreeNode>, String>> =
+        MutableStateFlow(UIState.Loading)
+    private val _appSettingsStateFlow = MutableStateFlow(settings)
 
     private val deletedFilesMeta = FileTreeNode.File(
         name = FileName(name = "deleted_files", extension = null),
@@ -97,6 +106,26 @@ class WorkspaceEnvironment(
         }
     }
 
+    override suspend fun initConfigAndFiles() {
+        updateTimes()
+        try {
+
+        }catch (exc: Exception){}
+    }
+
+
+    override fun getWorkspaceSettingsFlow(): StateFlow<WorkspaceSettings> {
+        return _appSettingsStateFlow
+    }
+
+    override suspend fun setWorkspaceSettings(settings: WorkspaceSettings) {
+        withContext(io) {
+            val json = DefaultJson.encodeToString(settings)
+            filesRepo.setNodeText(workspace.getSettingsJsonFile(), json)
+            _appSettingsStateFlow.emit(settings)
+        }
+    }
+
     override fun getNodes(parentFolder: FileTreeNode.Directory?): List<FileTreeNode> {
         val directoryNode = parentFolder ?: FileTreeNode.Directory.create(workspace.absolutePath)
         return filesRepo.getNodes(directoryNode)
@@ -110,42 +139,12 @@ class WorkspaceEnvironment(
         }
     }
 
-//    override suspend fun downloadSync() {
-//        try {
-//            val absolutePath = workspace.absolutePath
-//            val result = syncNetRepository.downloadArchive(
-//                userName = "bulat",
-//                workspaceName = workspace.name
-//            )
-//            result.shouldBeSuccess()
-//            val files = syncNetRepository.workspaceFiles(
-//                userName = "bulat",
-//                workspaceName = workspace.name
-//            )
-//            files.shouldBeSuccess()
-//
-//            val bytes = result.value
-//
-//            filesRepo.extractZipFromBytes(
-//                bytes = bytes,
-//                destinationPath = absolutePath,
-//                fileStructure = files.value
-//            )
-//
-//        } catch (exc: Exception) {
-//            Logger.e("downloadSync error ----- " + exc.message ?: "")
-//        }
-//    }
-
     override suspend fun uploadSync(
         archiveFullPath: String,
         metadata: List<FileMetadata>,
         filesToDownload: List<String>,
     ): ResultWrapper<ByteArray, String> {
         return resultBlock {
-//catch (excs: RaiseCancellationException) {
-//                throw excs
-//            }
             try {
                 val fileNode = filesRepo.getFileNodeFromFullPath(
                     archiveFullPath,
@@ -163,7 +162,7 @@ class WorkspaceEnvironment(
                 uploadResult.value
             } catch (aa: ArithmeticException) {
                 raise(aa.message ?: "")
-            }  catch (exc: Exception) {
+            } catch (exc: Exception) {
                 raise("uploadSync: ${exc.message}")
             }
         }
@@ -433,7 +432,7 @@ class WorkspaceEnvironment(
             )
         }
 
-        return resultBlock<FileTreeNode.File,String> {
+        return resultBlock<FileTreeNode.File, String> {
             val fileNode = bind(newNode)
             ensure(fileNode is FileTreeNode.File) { "Expected file to be created" }
             updateTimes()

@@ -30,6 +30,7 @@ kotlin {
             implementation(libs.filekit.dialogs)
 
             implementation(libs.decompose.compose)
+            implementation(libs.colorpicker.compose)
         }
     }
 }

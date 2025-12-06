@@ -1,4 +1,4 @@
-package com.moly3.cedarjam.ui.dialog
+package com.moly3.cedarjam.pages.page_workspace.ui.dialog
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -23,16 +23,14 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.github.skydoves.colorpicker.compose.BrightnessSlider
 import com.github.skydoves.colorpicker.compose.ColorEnvelope
 import com.github.skydoves.colorpicker.compose.HsvColorPicker
 import com.github.skydoves.colorpicker.compose.rememberColorPickerController
-import com.moly3.cedarjam.core.domain.dialog.DialogAppSettingsService
-import com.moly3.cedarjam.core.domain.model.AppSettings
+import com.moly3.cedarjam.core.domain.dialog.DialogWorkspaceSettingsService
+import com.moly3.cedarjam.core.domain.model.settings.WorkspaceSettings
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
-import com.moly3.cedarjam.core.ui.func.changeLanguage
 import com.moly3.cedarjam.core.ui.func.flatClickable
 import com.moly3.cedarjam.core.ui.func.rememberWindowSize
 import com.moly3.cedarjam.core.ui.model.WindowSize
@@ -40,15 +38,20 @@ import com.moly3.cedarjam.core.ui.uikit.CJButton
 import com.moly3.cedarjam.core.ui.uikit.CJButton2
 import com.moly3.cedarjam.core.ui.uikit.CJDialogGenericAdaptive
 import com.moly3.cedarjam.core.ui.uikit.CJText
+import com.moly3.cedarjam.core.ui.uikit.LanguageComboBox
 import com.moly3.cedarjam.core.ui.volumedBorderStroke
 import com.moly3.cedarjam.ui.Res
 import com.moly3.cedarjam.ui.common_typ
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 
-//import androidx.compose.ui.
 @Composable
-fun DialogAppSettingsUI(dialog: DialogAppSettingsService) {
+fun DialogWorkspaceSettingsUI(
+    settings: WorkspaceSettings,
+    dialog: DialogWorkspaceSettingsService,
+    onSetSettings: (WorkspaceSettings) -> Unit,
+    onChangeFont: () -> Unit
+) {
     val windowSize by rememberWindowSize()
 
     val scope = rememberCoroutineScope()
@@ -57,38 +60,51 @@ fun DialogAppSettingsUI(dialog: DialogAppSettingsService) {
             val controller = rememberColorPickerController()
             val colorState = remember { mutableStateOf<Color?>(null) }
 
-            LaunchedEffect(Unit) {
-                controller.selectByColor(data.theme.primaryColor, true)
+            LaunchedEffect(settings.theme.primaryColor) {
+                controller.selectByColor(settings.theme.primaryColor, true)
             }
             Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
-                Column {
+                Column(
+                    modifier = Modifier.padding(horizontal = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
                     CJText("select color")
-                    HsvColorPicker(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(1f)
-                            .padding(10.dp),
-                        controller = controller,
-                        onColorChanged = { colorEnvelope: ColorEnvelope ->
-                            // do something
-                            colorState.value = colorEnvelope.color
-                        }
-                    )
-                    BrightnessSlider(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 10.dp)
-                            .height(35.dp),
-                        controller = controller,
-                    )
-                    Box(
-                        Modifier.fillMaxWidth().height(8.dp)
-                            .background(controller.selectedColor.value)
-                    )
+                    CJText(text = stringResource(Res.string.common_typ))
+                    CJButton(text = "change language") {
+                        onSetSettings(settings.copy(language = "ru"))
+                    }
+                    CJButton(text = "change font") {
+                        onChangeFont()
+                    }
+                    LanguageComboBox(selectedCode = settings.language ?: "en") {
+                        onSetSettings(settings.copy(language = it.code))
+                    }
+//                    HsvColorPicker(
+//                        modifier = Modifier
+//                            .fillMaxWidth()
+//                            .aspectRatio(1f)
+//                            .padding(10.dp),
+//                        controller = controller,
+//                        onColorChanged = { colorEnvelope: ColorEnvelope ->
+//                            // do something
+//                            colorState.value = colorEnvelope.color
+//                        }
+//                    )
+//                    BrightnessSlider(
+//                        modifier = Modifier
+//                            .fillMaxWidth()
+//                            .padding(vertical = 10.dp)
+//                            .height(35.dp),
+//                        controller = controller,
+//                    )
+//                    Box(
+//                        Modifier.fillMaxWidth().height(8.dp)
+//                            .background(controller.selectedColor.value)
+//                    )
                     CJButton2(onClick = {
                         colorState.value?.let {
                             scope.launch {
-                                dialog.setResult(data.copy(theme = data.theme.copy(primaryColor = it)))
+                                onSetSettings(settings.copy(theme = settings.theme.copy(primaryColor = it)))
                             }
                         }
                     }) {
@@ -126,7 +142,13 @@ fun DialogAppSettingsUI(dialog: DialogAppSettingsService) {
                         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                             CJText(text = stringResource(Res.string.common_typ))
                             CJButton(text = "change language") {
-                                changeLanguage("ru2")
+                                onSetSettings(settings.copy(language = "ru"))
+                            }
+                            CJButton(text = "change font") {
+                                onChangeFont()
+                            }
+                            LanguageComboBox(selectedCode = settings.language ?: "en") {
+                                onSetSettings(settings.copy(language = it.code))
                             }
                         }
                     }
@@ -136,16 +158,16 @@ fun DialogAppSettingsUI(dialog: DialogAppSettingsService) {
     }
 }
 
-@Preview
-@Composable
-fun DialogAppSettingsUIPreview() {
-    val scope = rememberCoroutineScope()
-    val dialog = remember {
-        val service = DialogAppSettingsService()
-        scope.launch {
-            service.open(AppSettings.defaultSettings)
-        }
-        service
-    }
-    DialogAppSettingsUI(dialog)
-}
+//@Preview
+//@Composable
+//fun DialogWorkspaceSettingsUIPreview() {
+//    val scope = rememberCoroutineScope()
+//    val dialog = remember {
+//        val service = DialogWorkspaceSettingsService()
+//        scope.launch {
+//            service.open(WorkspaceSettings.defaultSettings)
+//        }
+//        service
+//    }
+//    DialogWorkspaceSettingsUI(dialog)
+//}

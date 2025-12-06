@@ -1,7 +1,7 @@
 package com.moly3.cedarjam.core.storage.internal
 
 import com.moly3.cedarjam.core.domain.DefaultJson
-import com.moly3.cedarjam.core.domain.model.AppSettings
+import com.moly3.cedarjam.core.domain.model.settings.AppSettings
 import com.moly3.cedarjam.core.domain.model.Workspace
 import com.moly3.cedarjam.core.storage.IAppStorage
 import com.russhwolf.settings.Settings

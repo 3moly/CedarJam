@@ -2,7 +2,7 @@ package com.moly3.cedarjam.core.data
 
 import com.moly3.cedarjam.core.domain.io
 import com.moly3.cedarjam.core.domain.model.AppColorsData
-import com.moly3.cedarjam.core.domain.model.AppSettings
+import com.moly3.cedarjam.core.domain.model.settings.AppSettings
 import com.moly3.cedarjam.core.domain.model.ColorsType
 import com.moly3.cedarjam.core.domain.model.ResultWrapper
 import com.moly3.cedarjam.core.domain.model.UIState

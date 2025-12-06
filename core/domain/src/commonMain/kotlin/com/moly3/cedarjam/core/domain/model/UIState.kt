@@ -1,5 +1,8 @@
 package com.moly3.cedarjam.core.domain.model
 
+import androidx.compose.runtime.Stable
+
+@Stable
 sealed class UIState<out T, out E> {
     data object Loading : UIState<Nothing, Nothing>()
 

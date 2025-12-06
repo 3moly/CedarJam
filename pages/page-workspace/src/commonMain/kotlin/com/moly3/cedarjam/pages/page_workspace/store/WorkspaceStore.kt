@@ -12,6 +12,8 @@ import com.moly3.cedarjam.pages.page_workspace.model.RenameFileNodeData
 import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.domain.model.WorkspacePresentation
 import com.moly3.cedarjam.core.domain.model.error.DatabaseError
+import com.moly3.cedarjam.core.domain.model.settings.WorkspaceFont
+import com.moly3.cedarjam.core.domain.model.settings.WorkspaceSettings
 import com.moly3.cedarjam.core.ui.model.FileTreeItemPresentation
 import com.moly3.cedarjam.pages.page_workspace.model.LockedMenuData
 import com.moly3.cedarjam.pages.page_workspace.model.TabWeightsData
@@ -39,7 +41,8 @@ internal interface WorkspaceStore : Store<Intent, State, Label> {
         data class SetMenuCovered(val value: Int?) : Msg
         data class SetLockedMenuCovered(val value: LockedMenuData?) : Msg
         data class SetMenuWidth(val value: Float) : Msg
-        data class SetWorkspaceFont(val value: FileTreeNode?) : Msg
+        data class SetWorkspaceFont(val value: WorkspaceFont?) : Msg
+        data class SetWorkspaceSettings(val value: WorkspaceSettings) : Msg
 
     }
 }

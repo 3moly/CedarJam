@@ -30,10 +30,16 @@ import com.moly3.cedarjam.core.domain.model.request.RenameTagRequest
 import com.moly3.cedarjam.core.domain.model.request.UpdateDataCollectionRequest
 import com.moly3.cedarjam.core.domain.model.request.UpdateDataCollectionRowRequest
 import com.moly3.cedarjam.core.domain.model.request.UpdateTagRequest
+import com.moly3.cedarjam.core.domain.model.settings.WorkspaceSettings
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 
 interface IWorkspaceEnvironment {
+    fun getWorkspaceSettingsFlow(): StateFlow<WorkspaceSettings>
+
+    suspend fun initConfigAndFiles()
+    suspend fun setWorkspaceSettings(settings: WorkspaceSettings)
     suspend fun updateTimes()
     suspend fun reinitDatabase()
     suspend fun uploadSync(

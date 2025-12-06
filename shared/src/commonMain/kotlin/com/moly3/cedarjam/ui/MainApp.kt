@@ -20,7 +20,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.isBackPressed
 import androidx.compose.ui.input.pointer.isForwardPressed
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.extensions.compose.experimental.stack.ChildStack
@@ -32,7 +31,6 @@ import com.moly3.cedarjam.pages.page_select_workspace.ui.SelectWorkspacePage
 import com.moly3.cedarjam.pages.page_workspace.ui.WorkspacePage
 import com.moly3.cedarjam.ui.app.AppComposableWidgetHideKeyboard
 import com.moly3.cedarjam.ui.dialog.DialogAddCollectionRowUI
-import com.moly3.cedarjam.ui.dialog.DialogAppSettingsUI
 import com.moly3.cedarjam.ui.dialog.DialogColorPickerUI
 import com.moly3.cedarjam.ui.dialog.DialogCreateWorkspaceService
 import com.moly3.cedarjam.ui.dialog.DialogDeleteUI
@@ -81,9 +79,6 @@ fun MainApp(
             Box(
                 modifier = Modifier.fillMaxSize()
                     .background(LocalAppTheme.current.colors.backgroundPrimary)
-                    .statusBarsPadding()
-                    .navigationBarsPadding()
-                    .imePadding()
             ) {
                 ChildStack(
                     modifier = Modifier
@@ -149,7 +144,7 @@ fun MainApp(
                     root.dialogSelectWorkspaceService
                 )
                 DialogColorPickerUI(dialog = root.dialogColorPickerService)
-                DialogAppSettingsUI(dialog = root.dialogAppSettingsService)
+
                 Box(Modifier.fillMaxSize()) {
                     SuccessSnackbarComponent(
                         messageService = root.messageService

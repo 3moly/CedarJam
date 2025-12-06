@@ -213,10 +213,14 @@ internal class SystemFilesManager : ISystemFilesManager {
                 fileSize = 0L
             )
             if (byteArray != null) {
-                copyFile(byteArray, se.getFullPath())
+               copyFile(byteArray, se.getFullPath())
             }
             se
         }
+    }
+
+    override fun setNodeBytes(nodePath: String, byteArray: ByteArray) {
+        copyFile(byteArray, nodePath)
     }
 
     override fun setNodeText(nodePath: String, text: String): ResultWrapper<Unit, String> {

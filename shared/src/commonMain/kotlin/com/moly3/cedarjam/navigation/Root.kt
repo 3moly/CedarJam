@@ -6,12 +6,11 @@ import com.arkivanov.decompose.router.webhistory.WebNavigationOwner
 import com.moly3.cedarjam.pages.page_select_workspace.ISelectWorkspaceComponent
 import com.moly3.cedarjam.pages.page_workspace.WorkspaceComponent
 import com.moly3.cedarjam.core.domain.dialog.DialogAddCollectionRowService
-import com.moly3.cedarjam.core.domain.dialog.DialogAppSettingsService
 import com.moly3.cedarjam.core.domain.dialog.DialogColorPickerService
 import com.moly3.cedarjam.core.domain.dialog.DialogCreateWorkspaceService
 import com.moly3.cedarjam.core.domain.dialog.DialogDeleteService
 import com.moly3.cedarjam.core.domain.dialog.DialogSelectWorkspaceService
-import com.moly3.cedarjam.core.domain.model.AppSettings
+import com.moly3.cedarjam.core.domain.model.settings.AppSettings
 import com.moly3.cedarjam.core.domain.repository.IAppEnvironment
 import com.moly3.cedarjam.core.domain.service.IMessageService
 import kotlinx.coroutines.flow.StateFlow
@@ -20,7 +19,7 @@ import kotlinx.coroutines.flow.StateFlow
 @Immutable
 interface Root : NavigationComponent<Root.Child>, WebNavigationOwner {
     val messageService: IMessageService
-    val dialogAppSettingsService: DialogAppSettingsService
+
     val dialogColorPickerService: DialogColorPickerService
     val dialogSelectWorkspaceService: DialogSelectWorkspaceService
     val appEnvironment: IAppEnvironment

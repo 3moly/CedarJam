@@ -3,6 +3,7 @@ package com.moly3.cedarjam.pages.page_workspace
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.Density
 import com.moly3.cedarjam.core.domain.model.PageNameData
+import com.moly3.cedarjam.core.domain.model.settings.WorkspaceSettings
 import com.moly3.cedarjam.core.ui.model.FileTreeItemPresentation
 import com.moly3.cedarjam.pages.page_workspace.model.LockedMenuData
 import com.moly3.cedarjam.pages.page_workspace.model.TabWeightsData
@@ -12,13 +13,13 @@ sealed interface Intent {
     data class SetIsFullMenu(val value: Boolean) : Intent
     data object ChangeAppSettings : Intent
     data object ChangeAppColors : Intent
-    data object OpenSettings : Intent
     data class SetCursorPosition(val offset: Offset) : Intent
     data class SetLockedMenuUnder(val value: LockedMenuData?) : Intent
     data class SetMenuUnder(val tab: Int?) : Intent
     data object HideContextMenu : Intent
     data object SelectWorkspace : Intent
     data object CreateWorkspace : Intent
+    data object ChangeFont : Intent
     data class MoveFile(
         val directory: FileTreeItemPresentation,
         val file: FileTreeItemPresentation
@@ -47,6 +48,7 @@ sealed interface Intent {
     data class CreateDirectory(val directory: FileTreeItemPresentation) : Intent
     data class RevealFile(val data: PageNameData.PageType) : Intent
     data class ClearingTabs(val data: List<Int>) : Intent
+    data class SetSettings(val data: WorkspaceSettings) : Intent
 
 
 }

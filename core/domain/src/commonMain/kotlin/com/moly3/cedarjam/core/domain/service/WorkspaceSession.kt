@@ -1,14 +1,14 @@
 package com.moly3.cedarjam.core.domain.service
 
-import androidx.compose.ui.text.font.Font
 import co.touchlab.kermit.Logger
 import com.moly3.cedarjam.core.domain.func.hiddenDirectory
+import com.moly3.cedarjam.core.domain.func.nowInMs
 import com.moly3.cedarjam.core.domain.func.pathWrapper
-import com.moly3.cedarjam.core.domain.model.FileTreeNode.Companion.hideHiddenDirectory
-import com.moly3.cedarjam.core.domain.model.node.toPresentation
 import com.moly3.cedarjam.core.domain.model.CollectionDTO
 import com.moly3.cedarjam.core.domain.model.CollectionRowDTO
+import com.moly3.cedarjam.core.domain.model.FileName
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
+import com.moly3.cedarjam.core.domain.model.FileTreeNode.Companion.hideHiddenDirectory
 import com.moly3.cedarjam.core.domain.model.TagCollectionRowDTO
 import com.moly3.cedarjam.core.domain.model.TagDTO
 import com.moly3.cedarjam.core.domain.model.TagLinkDTO
@@ -18,11 +18,13 @@ import com.moly3.cedarjam.core.domain.model.WorkspacePresentation
 import com.moly3.cedarjam.core.domain.model.error.DatabaseError
 import com.moly3.cedarjam.core.domain.model.node.GraphSettingsConfig
 import com.moly3.cedarjam.core.domain.model.node.ObsidianGraphPresentation
+import com.moly3.cedarjam.core.domain.model.node.toPresentation
+import com.moly3.cedarjam.core.domain.model.settings.WorkspaceFont
+import com.moly3.cedarjam.core.domain.model.settings.WorkspaceSettings
 import com.moly3.cedarjam.core.domain.repository.IAppEnvironment
 import com.moly3.cedarjam.core.domain.repository.IFilesRepository
 import com.moly3.cedarjam.core.domain.repository.IWorkspaceEnvironment
 import com.moly3.cedarjam.core.domain.repository.IWorkspaceEnvironment.Companion.getHiddenDirectory
-import com.moly3.cedarjam.core.domain.util.PathWrapper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -44,6 +46,14 @@ class WorkspaceSession(
     private val workspace: IWorkspaceEnvironment,
     val fileManagerService: FileManagerService,
 ) {
+
+    fun getSettingsFlow(): StateFlow<WorkspaceSettings> {
+        return workspace.getWorkspaceSettingsFlow()
+    }
+
+    suspend fun setSettings(settings: WorkspaceSettings) {
+        workspace.setWorkspaceSettings(settings)
+    }
 
     val workspaceEnvStateFlow: StateFlow<IWorkspaceEnvironment> = MutableStateFlow(workspace)
 
@@ -185,22 +195,25 @@ class WorkspaceSession(
         }
     }
 
-    private val _workspaceFont = MutableStateFlow<FileTreeNode?>(null)
+    private val _workspaceFont = MutableStateFlow<WorkspaceFont?>(null)
     val workspaceFont = _workspaceFont.asStateFlow()
 
-    suspend fun loadLocalFont() {
-        val localFontPath =
-            pathWrapper(workspace.getWorkspace().absolutePath, hiddenDirectory, "default.otf")
-        val font = try {
-            val node =
-                filesRepository.getFileNodeFromFullPath(
-                    localFontPath.pathString,
-                    isDirectory = false
-                )
+    suspend fun initConfigAndFiles() {
+        workspace.initConfigAndFiles()
+    }
 
-            if (filesRepository.isNodeExists(node)) {
-                node
-            } else null
+    suspend fun loadLocalFont(newFile: FileTreeNode.File? = null) {
+        val node = FileTreeNode.File(
+            name = FileName(name = "default", extension = "otf"),
+            pathWrapper(workspace.getWorkspace().absolutePath, hiddenDirectory).pathString
+        )
+        val newNode = newFile ?: node
+        val font = try {
+//            if (filesRepository.isNodeExists(newNode)) {
+//
+//            } else
+//                null
+            WorkspaceFont(newNode, timestamp = nowInMs())
         } catch (exc: Exception) {
             null
         }

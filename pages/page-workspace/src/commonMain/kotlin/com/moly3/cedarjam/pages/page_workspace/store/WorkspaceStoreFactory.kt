@@ -27,7 +27,7 @@ import com.moly3.cedarjam.pages.page_workspace.State.Companion.toSaveable
 import com.moly3.cedarjam.pages.page_workspace.model.ContextMenuButton
 import com.moly3.cedarjam.pages.page_workspace.model.ContextMenuData
 import com.moly3.cedarjam.pages.page_workspace.model.RenameFileNodeData
-import com.moly3.cedarjam.core.domain.dialog.DialogAppSettingsService
+import com.moly3.cedarjam.core.domain.dialog.DialogWorkspaceSettingsService
 import com.moly3.cedarjam.core.domain.dialog.DialogColorPickerService
 import com.moly3.cedarjam.core.domain.dialog.DialogDeleteService
 import com.moly3.cedarjam.core.domain.func.combine
@@ -42,7 +42,6 @@ import com.moly3.cedarjam.core.domain.model.ColorsType
 import com.moly3.cedarjam.core.domain.model.FileName
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.NavigateToFile
-import com.moly3.cedarjam.core.domain.model.NavigateToFile.*
 import com.moly3.cedarjam.core.domain.model.PageNameData
 import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.domain.model.bind
@@ -62,14 +61,11 @@ import com.moly3.cedarjam.core.domain.service.WorkspaceSession
 import com.moly3.cedarjam.core.domain.usecase.INavigateToFileUseCase
 import com.moly3.cedarjam.core.ui.func.recalculateTabWeights
 import com.moly3.cedarjam.core.ui.model.FileTreeItemPresentation
-import com.moly3.cedarjam.navigation.Route.*
 import com.moly3.cedarjam.pages.page_workspace.Label.*
-import com.moly3.cedarjam.pages.page_workspace.model.LockedMenuData
 import com.moly3.cedarjam.pages.page_workspace.store.WorkspaceStore.Msg.*
 import com.moly3.cedarjam.pages.page_workspace.ui.internal.MenuCoveredId
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.dialogs.FileKitType
-import io.github.vinceglb.filekit.dialogs.FileKitType.*
 import io.github.vinceglb.filekit.dialogs.openFilePicker
 import io.github.vinceglb.filekit.extension
 import io.github.vinceglb.filekit.nameWithoutExtension
@@ -81,6 +77,7 @@ import kotlinx.collections.immutable.toPersistentList
 import kotlinx.collections.immutable.toPersistentSet
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.firstOrNull
@@ -97,7 +94,7 @@ internal class WorkspaceStoreFactory(
 
     private val systemFilesManager: IFilesRepository by inject()
     private val messagerService: IMessageService by inject()
-    private val dialogAppSettingsService: DialogAppSettingsService by inject()
+    private val dialogWorkspaceSettingsService: DialogWorkspaceSettingsService by inject()
     private val dialogColorPickerService: DialogColorPickerService by inject()
     private val dialogDeleteService: DialogDeleteService by inject()
     private val fileManagerService: FileManagerService by lazy {
@@ -281,6 +278,12 @@ internal class WorkspaceStoreFactory(
             super.onStart(scopeFromStartToStop)
 
             scopeFromStartToStop.launch {
+                workspaceSession.getSettingsFlow().collectLatest {
+                    dispatch(WorkspaceStore.Msg.SetWorkspaceSettings(it))
+                }
+            }
+            scopeFromStartToStop.launch {
+                workspaceSession.initConfigAndFiles()
                 workspaceSession.loadLocalFont()
 
                 workspaceSession.workspaceFont.collectLatest {
@@ -474,8 +477,30 @@ internal class WorkspaceStoreFactory(
 
         override fun executeIntent(intent: Intent) {
             when (intent) {
-                is Intent.OpenSettings -> {
+                is Intent.ChangeFont -> {
+                    scope.launch {
+                        val extensions = listOf(
+                            "ttf",
+                            "otf",
+                            "woff",
+                            "woff2"
+                        )
+                        val file =
+                            FileKit.openFilePicker(type = FileKitType.File(extensions = extensions))
+                        if (file != null) {
+                            val workspace =
+                                workspaceSession.workspaceEnvStateFlow.value.getWorkspace()
 
+                            val fileNode = FileTreeNode.File(
+                                name = FileName(name = "default", extension = "otf"),
+                                pathWrapper(workspace.absolutePath, hiddenDirectory).pathString
+                            )
+                            val bb = file.readBytes()
+                            systemFilesManager.setNodeBytes(fileNode, byteArray = bb)
+                            delay(400L)
+                            workspaceSession.loadLocalFont(fileNode)
+                        }
+                    }
                 }
 
                 is Intent.SelectWorkspace -> navigator.navigate(Route.Empty)
@@ -772,17 +797,13 @@ internal class WorkspaceStoreFactory(
 
                 Intent.ChangeAppSettings -> {
                     scope.launch {
-                        val settings = appEnvironment.getAppSettingsFlow().value
-                        val newSettings = dialogAppSettingsService.open(settings)
-                        if (newSettings != null) {
-                            appEnvironment.setAppSettings(newSettings)
-                        }
+                        dialogWorkspaceSettingsService.open(Unit)
                     }
                 }
 
                 Intent.ChangeAppColors -> {
                     scope.launch {
-                        val settings = appEnvironment.getAppSettingsFlow().value
+                        val settings = workspaceSession.getSettingsFlow().value
                         val colorsType = if (settings.theme.colorsType == ColorsType.Dark) {
                             ColorsType.Light
                         } else {
@@ -793,7 +814,7 @@ internal class WorkspaceStoreFactory(
                         } else {
                             AppColorsData.Light
                         }
-                        appEnvironment.setAppSettings(
+                        workspaceSession.setSettings(
                             settings.copy(
                                 theme = settings.theme.copy(
                                     colorsType = colorsType,
@@ -1068,6 +1089,12 @@ internal class WorkspaceStoreFactory(
                     dispatch(SetRenameFileNodeData(null))
                 }
 
+                is Intent.SetSettings -> {
+                    scope.launch {
+                        workspaceSession.setSettings(intent.data)
+                    }
+                }
+
                 is Intent.ClearingTabs -> {
                     val sizes =
                         state().tabSizes.filter { d -> intent.data.contains(d.key) }.toMutableMap()
@@ -1159,6 +1186,7 @@ internal class WorkspaceStoreFactory(
                 is SetMenuWidth -> copy(menuWidth = msg.value)
                 is SetPosition -> copy(cursorPosition = msg.value)
                 is SetWorkspaceFont -> copy(workspaceFont = msg.value)
+                is SetWorkspaceSettings -> copy(settings = msg.value)
             }
         }
     }

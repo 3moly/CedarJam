@@ -10,6 +10,7 @@ import com.moly3.cedarjam.navigation.NavigatorImpl
 import com.moly3.cedarjam.pages.page_workspace.WorkspaceComponentImpl
 import com.moly3.cedarjam.core.data.AppEnvironment
 import com.moly3.cedarjam.core.data.FilesRepository
+import com.moly3.cedarjam.core.domain.DefaultJson
 import com.moly3.cedarjam.repository.getJvmBrowserService
 import com.moly3.cedarjam.repository.getUtilsService
 import com.moly3.cedarjam.service.MessageServiceImpl
@@ -19,6 +20,11 @@ import com.moly3.cedarjam.core.domain.usecase.SyncUseCase
 import com.moly3.core_domain.BuildConfig
 import com.moly3.cedarjam.core.domain.model.AndroidApplicationContext
 import com.moly3.cedarjam.core.domain.model.WorkspaceInput
+import com.moly3.cedarjam.core.domain.model.bind
+import com.moly3.cedarjam.core.domain.model.fold
+import com.moly3.cedarjam.core.domain.model.getSettingsJsonFile
+import com.moly3.cedarjam.core.domain.model.resultBlock
+import com.moly3.cedarjam.core.domain.model.settings.WorkspaceSettings
 import com.moly3.cedarjam.core.domain.repository.IAppEnvironment
 import com.moly3.cedarjam.core.domain.repository.IFilesRepository
 import com.moly3.cedarjam.core.domain.repository.IWorkspaceEnvironment
@@ -59,7 +65,7 @@ fun initApp(
                 filesRepository = get()
             )
         }
-        single<ISyncUseCase>{
+        single<ISyncUseCase> {
             SyncUseCase(filesRepo = get())
         }
         factory<IOpenNodeDataUseCase> { params ->
@@ -77,7 +83,7 @@ fun initApp(
         single<MacTrackpadGestureService> { MacTrackpadGestureService() }
         single<Navigator> { navigator }
         single<CoroutineScope> { scope }
-        single { Json { isLenient = true; ignoreUnknownKeys = true;explicitNulls = false } }
+        single { Json { isLenient = true; ignoreUnknownKeys = true; explicitNulls = false } }
 
         single<IFilesRepository> {
             FilesRepository(
@@ -100,14 +106,30 @@ fun initApp(
             val filesManager: FileManagerService = params.get()
             val workspace = appEnvironment.getWorkspace(name = workspaceInput.name)
 
+            val filesRepository: IFilesRepository = get()
+            val settingsFile = workspace.getSettingsJsonFile()
+            val settings = try {
+                val jsonResult = filesRepository.getNodeText(settingsFile)
+                jsonResult.fold(
+                    onFailure = {
+                        WorkspaceSettings.defaultSettings
+                    },
+                    onSuccess = {
+                        DefaultJson.decodeFromString<WorkspaceSettings>(it)
+                    }
+                )
+            } catch (exc: Exception) {
+                WorkspaceSettings.defaultSettings
+            }
             WorkspaceEnvironment(
                 workspace = workspace,
-                filesRepo = get(),
+                filesRepo = filesRepository,
                 fileManagerService = filesManager,
                 sqlStorageFactory = {
                     get<ISqlStorage> { parametersOf(workspace.fullpath) }
                 },
-                syncNetRepository = get()
+                syncNetRepository = get(),
+                settings = settings
             )
         }
         scope<WorkspaceComponentImpl> {

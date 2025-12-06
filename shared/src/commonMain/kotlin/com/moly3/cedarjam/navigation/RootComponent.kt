@@ -17,12 +17,12 @@ import com.moly3.cedarjam.navigation.Root.Child.Workspace
 import com.moly3.cedarjam.pages.page_select_workspace.SelectWorkspaceComponent
 import com.moly3.cedarjam.pages.page_workspace.WorkspaceComponentImpl
 import com.moly3.cedarjam.core.domain.dialog.DialogAddCollectionRowService
-import com.moly3.cedarjam.core.domain.dialog.DialogAppSettingsService
+import com.moly3.cedarjam.core.domain.dialog.DialogWorkspaceSettingsService
 import com.moly3.cedarjam.core.domain.dialog.DialogColorPickerService
 import com.moly3.cedarjam.core.domain.dialog.DialogCreateWorkspaceService
 import com.moly3.cedarjam.core.domain.dialog.DialogDeleteService
 import com.moly3.cedarjam.core.domain.dialog.DialogSelectWorkspaceService
-import com.moly3.cedarjam.core.domain.model.AppSettings
+import com.moly3.cedarjam.core.domain.model.settings.AppSettings
 import com.moly3.cedarjam.core.domain.model.WorkspaceInput
 import com.moly3.cedarjam.core.domain.repository.IAppEnvironment
 import com.moly3.cedarjam.core.ui.service.MacTrackpadGestureService
@@ -52,9 +52,7 @@ class RootComponent(
     private val navigator: NavigatorDispatcher by inject()
     private val coroutineScope: CoroutineScope by inject()
     private val macTrackpadGestureService: MacTrackpadGestureService by inject()
-
     override val dialogAddCollectionRowService: DialogAddCollectionRowService by inject()
-    override val dialogAppSettingsService: DialogAppSettingsService by inject()
     override val dialogColorPickerService: DialogColorPickerService by inject()
     override val dialogCreateWorkspaceService: DialogCreateWorkspaceService by inject()
     override val dialogDeleteService: DialogDeleteService by inject()
