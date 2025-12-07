@@ -3,8 +3,11 @@ package com.moly3.cedarjam.android
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.text.LocalBackgroundTextMeasurementExecutor
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Modifier
 import com.arkivanov.essenty.backhandler.BackHandler
 import com.arkivanov.essenty.lifecycle.asEssentyLifecycle
 import com.arkivanov.essenty.lifecycle.doOnStop
@@ -13,6 +16,7 @@ import com.arkivanov.essenty.statekeeper.StateKeeperDispatcher
 import com.moly3.cedarjam.navigation.createRootComponentSafe
 import com.moly3.cedarjam.ui.MainApp
 import com.moly3.cedarjam.core.domain.DefaultJson
+import com.moly3.cedarjam.navigation.RootComponent
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.dialogs.init
 import io.github.vinceglb.filekit.filesDir
@@ -80,7 +84,9 @@ class MainActivity : ComponentActivity() {
             CompositionLocalProvider(
                 LocalBackgroundTextMeasurementExecutor provides textMeasurementExecutor
             ) {
-                MainApp(root = rootComponent)
+                Box(Modifier.fillMaxSize()) {
+                    MainApp(root = rootComponent)
+                }
             }
         }
     }

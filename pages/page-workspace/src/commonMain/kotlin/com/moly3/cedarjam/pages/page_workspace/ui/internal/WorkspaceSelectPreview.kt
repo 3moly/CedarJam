@@ -15,11 +15,9 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.unit.dp
 import com.moly3.cedarjam.core.domain.model.WorkspacePresentation
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
-import com.moly3.cedarjam.core.ui.uikit.CJText
 import com.moly3.cedarjam.core.ui.uikit.CJIcon
-import com.moly3.cedarjam.core.ui.vectors.Bulb
+import com.moly3.cedarjam.core.ui.uikit.CJText
 import com.moly3.cedarjam.core.ui.vectors.SettingsFuture
-import com.moly3.cedarjam.core.ui.vectors.WaterDrop
 import com.moly3.cedarjam.core.ui.volumedBorderStroke
 
 @Composable
@@ -27,7 +25,6 @@ fun WorkspaceSelect(
     activeWorkspace: WorkspacePresentation?,
     onChangeWorkspace: () -> Unit,
     onChangeSettings: () -> Unit,
-    onChangeColors: () -> Unit,
 ) {
     Row(
         modifier = Modifier
@@ -58,15 +55,9 @@ fun WorkspaceSelect(
         }
         CJIcon(
             modifier = Modifier,
-            painter = rememberVectorPainter(WaterDrop),
+            painter = rememberVectorPainter(SettingsFuture),
             isEnabled = true,
             onClick = onChangeSettings
-        )
-        CJIcon(
-            modifier = Modifier,
-            painter = rememberVectorPainter(Bulb),
-            isEnabled = true,
-            onClick = onChangeColors
         )
     }
 }

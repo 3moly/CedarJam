@@ -23,6 +23,7 @@ graph LR
     :features:feature-browser["feature-browser"]
     :features:feature-file["feature-file"]
     :features:feature-file-view["feature-file-view"]
+    :features:feature-settings["feature-settings"]
   end
   subgraph :pages
     :pages:page-home["page-home"]
@@ -102,10 +103,14 @@ graph LR
   :pages:page-tags --> :core:domain
   :pages:page-tags --> :core:navigation
   :pages:page-tags --> :core:ui
+  :features:feature-settings --> :core:domain
+  :features:feature-settings --> :core:navigation
+  :features:feature-settings --> :core:ui
   :pages:page-workspace --> :core:domain
   :pages:page-workspace --> :core:navigation
   :pages:page-workspace --> :core:ui
   :pages:page-workspace --> :pages:page-tabs
+  :pages:page-workspace --> :features:feature-settings
   :pages:page-tag --> :core:domain
   :pages:page-tag --> :core:navigation
   :pages:page-tag --> :core:ui

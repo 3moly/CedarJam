@@ -21,13 +21,13 @@ kotlin {
             implementation(libs.coroutines)
             implementation(libs.serialization)
 
-            implementation(libs.material3)
-            implementation(libs.material)
-            api(libs.runtime)
-            api(libs.foundation)
-            api(libs.ui)
-            api(libs.ui.tooling.preview)
-            api("org.jetbrains.compose.components:components-resources:1.10.0-rc01")
+            implementation(libs.compose.material3)
+            implementation(libs.compose.material)
+            api(libs.compose.runtime)
+            api(libs.compose.foundation)
+            api(libs.compose.ui)
+            api(libs.compose.ui.tooling.preview)
+            api(libs.compose.components.resources)
 
             api(libs.hypnoticcanvas)
             api(libs.hypnoticcanvas.shaders)
@@ -37,18 +37,19 @@ kotlin {
             implementation(libs.videoplayer)
             api(libs.dnd)
             api(libs.lazytable)
-            api("io.github.sudarshanmhasrup.localina:localina:1.0.0-alpha3")
+            api(libs.localina)
         }
         commonTest.dependencies{
             implementation(libs.kotlin.test)
         }
         jvmMain.dependencies {
+            api(libs.jewel.decorated.window)
             implementation(libs.pdfbox)
         }
     }
 }
 dependencies {
-    api("org.jetbrains.compose.ui:ui-tooling:1.10.0-rc01")
+    api(libs.compose.ui.tooling)
 }
 compose.resources {
     publicResClass = true

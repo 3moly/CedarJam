@@ -16,7 +16,7 @@ import com.moly3.cedarjam.pages.page_collection.State
 import com.moly3.cedarjam.core.domain.dialog.DialogSelectTagService
 import com.moly3.cedarjam.core.ui.func.getPdfResult
 import com.moly3.cedarjam.core.domain.func.getRelativePath
-import com.moly3.cedarjam.core.domain.model.PageNameData
+import com.moly3.cedarjam.core.ui.model.PageNameData
 import com.moly3.cedarjam.core.domain.func.nowInMs
 import com.moly3.cedarjam.core.domain.io
 import com.moly3.cedarjam.core.domain.model.NavigateToFile
@@ -32,6 +32,7 @@ import com.moly3.cedarjam.core.domain.model.resultBlock
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
 import com.moly3.cedarjam.core.domain.service.IUtilsService
 import com.moly3.cedarjam.core.domain.usecase.INavigateToFileUseCase
+import com.moly3.cedarjam.core.ui.model.CJText
 import com.moly3.cedarjam.core.ui.model.FileTreeItemPresentation
 import com.moly3.cedarjam.navigation.Route
 import kotlinx.collections.immutable.toPersistentList
@@ -88,7 +89,7 @@ internal class CollectionStoreFactory(
                     null
                 } else {
                     PageNameData(
-                        name = collection.name,
+                        name = CJText.Raw(collection.name),
                         pageType = PageNameData.PageType.Collection(id = collection.id),
                         modifiedTime = collection.modifiedTime
                     )

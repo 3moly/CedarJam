@@ -7,7 +7,7 @@ import com.moly3.cedarjam.features.feature_graph.func.graphDialogScopeFactory
 import com.moly3.cedarjam.features.feature_graph.func.setIsShowGraphDialog
 import com.moly3.cedarjam.core.domain.model.navigation.input.CollectionRowPageInput
 import com.moly3.cedarjam.pages.page_collection_row.store.CollectionRowStoreFactory
-import com.moly3.cedarjam.core.domain.model.PageNameData
+import com.moly3.cedarjam.core.ui.model.PageNameData
 import com.moly3.cedarjam.core.domain.model.getCollectionRowGraphId
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
 import kotlinx.coroutines.ExperimentalCoroutinesApi

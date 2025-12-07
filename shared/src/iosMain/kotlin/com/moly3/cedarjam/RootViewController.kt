@@ -1,5 +1,6 @@
 package com.moly3.cedarjam
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.ComposeUIViewController
@@ -16,6 +17,10 @@ fun RootViewController(root: Root, backDispatcher: BackDispatcher): UIViewContro
         ActualPredictiveBackGestureOverlay(
             backDispatcher = backDispatcher,
             modifier = Modifier.fillMaxSize(),
-        ) {     MainApp(root) }
+        ) {
+            Box(Modifier.fillMaxSize()) {
+                MainApp(root)
+            }
+        }
     }
 }

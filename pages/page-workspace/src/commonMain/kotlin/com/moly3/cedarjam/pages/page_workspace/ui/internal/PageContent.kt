@@ -78,10 +78,7 @@ fun PageContent(
                     state = state,
                     listState = listState,
                     dragAndDropState = dragAndDropState,
-                    onIntent = onIntent,
-                    onSetIsFullMenu = {
-                        onSetIsFullMenu(it)
-                    }
+                    onIntent = onIntent
                 )
             } else {
                 Box(
@@ -127,10 +124,7 @@ fun PageContent(
                 state = state,
                 listState = listState,
                 dragAndDropState = dragAndDropState,
-                onIntent = onIntent,
-                onSetIsFullMenu = {
-                    onSetIsFullMenu(it)
-                }
+                onIntent = onIntent
             )
             Box(
                 modifier = Modifier

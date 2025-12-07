@@ -40,7 +40,7 @@ fun CJWorkspaceTheme(
     ) {
         TextStyle(
             fontWeight = FontWeight.Normal,
-            fontSize = 16.sp,
+            fontSize = 14.sp,
             color = settings.theme.colors.primaryFont,
             fontFamily = textStyleState
         )

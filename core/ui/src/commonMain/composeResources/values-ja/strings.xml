@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<resources>
+    <string name="home">ホーム</string>
+    <string name="graph">グラフ</string>
+    <string name="tags">タグ</string>
+    <string name="collections">コレクション</string>
+    <string name="resources">リソース</string>
+    <string name="files">ファイル</string>
+    <string name="storage">ストレージ</string>
+
+    <string name="f_settings_title">設定</string>
+    <string name="f_settings_options">オプション</string>
+    <string name="f_settings_general_title">一般</string>
+    <string name="f_settings_general_appearance">外観</string>
+    <string name="language">言語</string>
+</resources>

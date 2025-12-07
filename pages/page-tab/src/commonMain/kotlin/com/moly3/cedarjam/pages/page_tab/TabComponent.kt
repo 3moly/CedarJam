@@ -9,7 +9,7 @@ import com.moly3.cedarjam.pages.page_graph.GraphComponent
 import com.moly3.cedarjam.pages.page_home.HomeComponent
 import com.moly3.cedarjam.ui.pages.tag.TagComponent
 import com.moly3.cedarjam.ui.pages.tags.TagsComponent
-import com.moly3.cedarjam.core.domain.model.PageNameData
+import com.moly3.cedarjam.core.ui.model.PageNameData
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 

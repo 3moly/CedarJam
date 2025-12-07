@@ -17,8 +17,10 @@ import com.mohamedrejeb.compose.dnd.drag.DraggableItem
 import com.mohamedrejeb.compose.dnd.drop.dropTarget
 import com.moly3.cedarjam.pages.page_workspace.model.RenameFileNodeData
 import com.moly3.cedarjam.core.ui.func.onSecondaryClickWithPosition
+import com.moly3.cedarjam.core.ui.model.CJText
 import com.moly3.cedarjam.core.ui.model.FileTreeItemPresentation
 import kotlinx.collections.immutable.ImmutableSet
+import org.jetbrains.compose.resources.stringResource
 
 fun LazyListScope.fileNodeTree(
     selectedKey: String?,
@@ -70,6 +72,7 @@ fun LazyListScope.fileNodeTree(
             key = item.key,
             data = item,
         ) {
+
             FileButton(
                 modifier = Modifier.onSecondaryClickWithPosition(
                     key = item,
@@ -110,7 +113,10 @@ fun LazyListScope.fileNodeTree(
                 isRename = isRename,
                 isContextMenuTarget = contextMenuTargetKey == item.key,
 
-                title = item.name,
+                title = when (val name = item.name) {
+                    is CJText.Raw -> name.text
+                    is CJText.Res -> stringResource(name.res)
+                },
                 fileExtension = item.fileExtension,
                 isDirectory = item.children != null,
                 counter = null,

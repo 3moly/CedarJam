@@ -14,7 +14,7 @@ data class CJAppTheme(
         val Default = CJAppTheme(
             colors = AppColorsData.Dark,
             primaryColor = Color.Red,
-            currentTheme = ColorsType.Unspecified
+            currentTheme = ColorsType.Dark
         )
     }
 }

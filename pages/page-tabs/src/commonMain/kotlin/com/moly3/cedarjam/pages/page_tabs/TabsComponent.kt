@@ -3,7 +3,7 @@ package com.moly3.cedarjam.pages.page_tabs
 import androidx.compose.runtime.Immutable
 import com.moly3.cedarjam.navigation.NavigationComponent
 import com.moly3.cedarjam.pages.page_tab.TabComponent
-import com.moly3.cedarjam.core.domain.model.PageNameData
+import com.moly3.cedarjam.core.ui.model.PageNameData
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 

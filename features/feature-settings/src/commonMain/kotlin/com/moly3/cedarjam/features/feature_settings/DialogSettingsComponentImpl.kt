@@ -54,6 +54,9 @@ class DialogSettingsComponentImpl(
                 SettingsGeneralComponent(
                     componentContext = componentContext,
                     workspaceSession = workspaceSession,
+                    back = {
+                        navigation.pop()
+                    },
                     close = {
                         onClose()
                     }

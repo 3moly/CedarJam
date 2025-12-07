@@ -1,9 +1,20 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <resources>
-    <string name="common_typ">Localina Showcase</string>
+    <string name="home">Home</string>
+    <string name="graph">Graph</string>
+    <string name="tags">Tags</string>
+    <string name="collections">Collections</string>
+    <string name="resources">Resources</string>
+    <string name="files">Files</string>
+    <string name="storage">Storage</string>
 
     <string name="f_settings_title">Settings</string>
     <string name="f_settings_options">Options</string>
-
     <string name="f_settings_general_title">General</string>
+    <string name="f_settings_general_appearance">Appearance</string>
+    <string name="language">Language</string>
+
+    <string name="theme">Theme</string>
+    <string name="light">Light</string>
+    <string name="dark">Dark</string>
 </resources>

@@ -24,7 +24,7 @@ fun CJApplicationTheme(
     val textStyle = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Normal,
-        fontSize = 16.sp,
+        fontSize = 14.sp,
         color =  appSettings.theme.colors.primaryFont
     )
     val appTheme: CJAppTheme = remember(appSettings.theme) {

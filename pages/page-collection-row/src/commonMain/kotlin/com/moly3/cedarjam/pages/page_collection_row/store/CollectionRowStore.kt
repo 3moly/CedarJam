@@ -5,7 +5,7 @@ import com.moly3.cedarjam.pages.page_collection_row.Intent
 import com.moly3.cedarjam.pages.page_collection_row.State
 import com.moly3.cedarjam.core.domain.model.CollectionDTO
 import com.moly3.cedarjam.core.domain.model.CollectionRowDTO
-import com.moly3.cedarjam.core.domain.model.PageNameData
+import com.moly3.cedarjam.core.ui.model.PageNameData
 import com.moly3.cedarjam.core.domain.model.WorkspacePresentation
 import kotlinx.coroutines.flow.StateFlow
 

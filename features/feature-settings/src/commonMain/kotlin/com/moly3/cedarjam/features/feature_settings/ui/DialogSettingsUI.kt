@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalWindowInfo
 import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.extensions.compose.experimental.stack.ChildStack
+import com.moly3.cedarjam.core.ui.JvmWindowScope
 import com.moly3.cedarjam.features.feature_settings.IDialogSettingsComponent
 import com.moly3.cedarjam.features.feature_settings.child.general.ui.SettingsGeneralUI
 import com.moly3.cedarjam.features.feature_settings.child.main.ui.SettingsMainUI
@@ -12,7 +13,7 @@ import com.moly3.cedarjam.navigation.func.backAnimation2
 
 @OptIn(ExperimentalDecomposeApi::class)
 @Composable
-fun DialogSettingsUI(
+fun JvmWindowScope.DialogSettingsUI(
     component: IDialogSettingsComponent
 ) {
     val windowInfo = LocalWindowInfo.current

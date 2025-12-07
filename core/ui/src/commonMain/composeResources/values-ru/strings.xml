@@ -1,9 +1,20 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <resources>
-    <string name="common_typ">Localina Шоукейс</string>
+    <string name="home">Главная</string>
+    <string name="graph">Граф</string>
+    <string name="tags">Теги</string>
+    <string name="collections">Коллекции</string>
+    <string name="resources">Ресурсы</string>
+    <string name="files">Файлы</string>
+    <string name="storage">Хранилище</string>
 
     <string name="f_settings_title">Настройки</string>
     <string name="f_settings_options">Опции</string>
-
     <string name="f_settings_general_title">Общее</string>
+    <string name="f_settings_general_appearance">Внешность</string>
+    <string name="language">Язык</string>
+
+    <string name="theme">Тема</string>
+    <string name="light">Светлая</string>
+    <string name="dark">Темная</string>
 </resources>

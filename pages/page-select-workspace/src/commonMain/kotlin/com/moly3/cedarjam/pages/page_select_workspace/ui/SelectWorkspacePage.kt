@@ -35,17 +35,19 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.moly3.cedarjam.core.ui.JvmWindowScope
 import com.moly3.cedarjam.pages.page_select_workspace.ISelectWorkspaceComponent
 import com.moly3.cedarjam.pages.page_select_workspace.Intent
 import com.moly3.cedarjam.pages.page_select_workspace.State
 import com.moly3.cedarjam.core.ui.func.rememberWindowSize
 import com.moly3.cedarjam.core.ui.model.WindowSize
+import com.moly3.cedarjam.core.ui.uikit.CJDraggableArea
 import com.moly3.cedarjam.core.ui.uikit.CJText
 import com.moly3.cedarjam.core.ui.uikit.UIStateContentLazy
 import com.moly3.cedarjam.core.ui.vectors.SettingsFuture
 
 @Composable
-fun SelectWorkspacePage(component: ISelectWorkspaceComponent) {
+fun JvmWindowScope.SelectWorkspacePage(component: ISelectWorkspaceComponent) {
     val state by component.state.collectAsState(State())
     val windowSize by rememberWindowSize()
     BoxWithConstraints(

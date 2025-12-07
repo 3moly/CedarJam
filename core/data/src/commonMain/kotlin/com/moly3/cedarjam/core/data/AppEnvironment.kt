@@ -33,25 +33,25 @@ class AppEnvironment(
     init {
         scope.launch(Dispatchers.Main.immediate) {
             refreshWorkspaces()
-            val appSettings = appStorage.getAppSettings()
-            val colorsType = if (appSettings.theme.colorsType == ColorsType.Unspecified) {
-                ColorsType.Dark
-            } else {
-                appSettings.theme.colorsType
-            }
-            val colors = if (appSettings.theme.colorsType == ColorsType.Unspecified) {
-                AppColorsData.Companion.Dark
-            } else {
-                appSettings.theme.colors
-            }
-            val newAppSettings = appSettings.copy(
-                theme = appSettings.theme.copy(
-                    colorsType = colorsType,
-                    colors = colors
-                )
-            )
-            setAppSettings(newAppSettings)
-            _appSettingsStateFlow.emit(newAppSettings)
+//            val appSettings = appStorage.getAppSettings()
+//            val colorsType = if (appSettings.theme.colorsType == ColorsType.Unspecified) {
+//                ColorsType.Dark
+//            } else {
+//                appSettings.theme.colorsType
+//            }
+//            val colors = if (appSettings.theme.colorsType == ColorsType.Unspecified) {
+//                AppColorsData.Companion.Dark
+//            } else {
+//                appSettings.theme.colors
+//            }
+//            val newAppSettings = appSettings.copy(
+//                theme = appSettings.theme.copy(
+//                    colorsType = colorsType,
+//                    colors = colors
+//                )
+//            )
+//            setAppSettings(newAppSettings)
+//            _appSettingsStateFlow.emit(newAppSettings)
         }
     }
 

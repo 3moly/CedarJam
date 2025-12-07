@@ -1,7 +1,7 @@
 package com.moly3.cedarjam.pages.page_collection
 
 import androidx.compose.runtime.Immutable
-import com.moly3.cedarjam.core.domain.model.PageNameData
+import com.moly3.cedarjam.core.ui.model.PageNameData
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 

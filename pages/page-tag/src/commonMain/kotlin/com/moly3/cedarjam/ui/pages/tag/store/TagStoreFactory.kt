@@ -11,7 +11,7 @@ import com.moly3.cedarjam.ui.pages.tag.Intent
 import com.moly3.cedarjam.ui.pages.tag.State
 import com.moly3.cedarjam.core.domain.dialog.DialogSelectTagService
 import com.moly3.cedarjam.core.domain.func.nowInMs
-import com.moly3.cedarjam.core.domain.model.PageNameData
+import com.moly3.cedarjam.core.ui.model.PageNameData
 import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.domain.model.bind
 import com.moly3.cedarjam.core.domain.model.getTagGraphId
@@ -21,6 +21,7 @@ import com.moly3.cedarjam.core.domain.model.request.CreateTagToTagRequest
 import com.moly3.cedarjam.core.domain.model.resultBlock
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
 import com.moly3.cedarjam.core.domain.usecase.IOpenNodeDataUseCase
+import com.moly3.cedarjam.core.ui.model.CJText
 import com.moly3.cedarjam.navigation.Navigator
 import com.moly3.cedarjam.navigation.mapper.toRoute
 import kotlinx.collections.immutable.toPersistentList
@@ -65,7 +66,7 @@ internal class TagStoreFactory(
                 val tag = it.firstOrNull { b -> b.id == pageData.id }
                 if (tag != null) {
                     PageNameData(
-                        name = tag.name,
+                        name = CJText.Raw(tag.name),
                         pageType = PageNameData.PageType.Tag(id = tag.id),
                         modifiedTime = tag.modifiedTime
                     )

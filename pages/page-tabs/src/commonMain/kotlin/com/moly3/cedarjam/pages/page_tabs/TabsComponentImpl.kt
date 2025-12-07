@@ -16,7 +16,7 @@ import com.moly3.cedarjam.navigation.componentScope
 import com.moly3.cedarjam.navigation.stateFlow
 import com.moly3.cedarjam.pages.page_tab.TabComponentImpl
 import com.moly3.cedarjam.pages.page_tabs.TabsComponentImpl.Config.Tab
-import com.moly3.cedarjam.core.domain.model.PageNameData
+import com.moly3.cedarjam.core.ui.model.PageNameData
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

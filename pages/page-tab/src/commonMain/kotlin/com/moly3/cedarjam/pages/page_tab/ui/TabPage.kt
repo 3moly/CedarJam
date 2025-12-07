@@ -41,13 +41,18 @@ import com.moly3.cedarjam.core.domain.func.formatEpochMillis
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
 import com.moly3.cedarjam.core.ui.func.getPageTypeIcon
+import com.moly3.cedarjam.core.ui.model.CJText
 import com.moly3.cedarjam.core.ui.uikit.CJTextField
 import com.moly3.cedarjam.core.ui.uikit.CJText
 import com.moly3.cedarjam.core.ui.uikit.CJIcon
 import com.moly3.cedarjam.core.ui.uikit.CJTextField2
 import com.moly3.cedarjam.core.ui.vectors.ArrowLeft
 import com.moly3.cedarjam.core.ui.vectors.ArrowRight
+import com.moly3.cedarjam.ui.Res
+import com.moly3.cedarjam.ui.tags
 import kotlinx.coroutines.flow.collectLatest
+import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.stringResource
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalDecomposeApi::class, ExperimentalTime::class)
@@ -70,7 +75,13 @@ fun TabPage(component: TabComponent) {
         tabNameState?.isEditEnabled() ?: false
     }
     LaunchedEffect(tabNameState) {
-        textNameState.setTextAndPlaceCursorAtEnd(tabNameState?.name ?: "")
+        getString(Res.string.tags)
+        val rawText = when (val name = tabNameState?.name) {
+            is CJText.Raw -> name.text
+            is CJText.Res -> getString(name.res)
+            null -> ""
+        }
+        textNameState.setTextAndPlaceCursorAtEnd(rawText)
     }
     LaunchedEffect(Unit) {
         component.labels.collectLatest { label ->
@@ -86,9 +97,13 @@ fun TabPage(component: TabComponent) {
         val newName = textNameState.text.toString()
         val tabName = tabNameState
         if (tabName != null) {
+            val oldName = when (val name = tabName.name) {
+                is CJText.Raw -> name.text
+                is CJText.Res -> "-- will not change"
+            }
             component.onIntent(
                 Intent.Rename(
-                    oldName = tabName.name,
+                    oldName = oldName,
                     newName = newName,
                     pageType = tabName.pageType
                 )

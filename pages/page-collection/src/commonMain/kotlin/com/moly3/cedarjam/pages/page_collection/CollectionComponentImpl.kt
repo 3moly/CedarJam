@@ -8,7 +8,7 @@ import com.moly3.cedarjam.core.domain.model.navigation.input.CollectionPageInput
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.StateFlow
 import com.moly3.cedarjam.pages.page_collection.store.CollectionStoreFactory
-import com.moly3.cedarjam.core.domain.model.PageNameData
+import com.moly3.cedarjam.core.ui.model.PageNameData
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
 
 class CollectionComponentImpl(

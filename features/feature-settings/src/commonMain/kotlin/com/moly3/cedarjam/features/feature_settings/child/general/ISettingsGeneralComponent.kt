@@ -7,6 +7,5 @@ import kotlinx.coroutines.flow.StateFlow
 @Stable
 interface ISettingsGeneralComponent {
     val settingsState: StateFlow<WorkspaceSettings>
-    fun onClose()
-    suspend fun onSetSettings(it: WorkspaceSettings)
+    fun onIntent(intent: Intent)
 }

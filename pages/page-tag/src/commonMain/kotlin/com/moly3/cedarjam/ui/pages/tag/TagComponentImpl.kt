@@ -8,7 +8,7 @@ import com.moly3.cedarjam.features.feature_graph.func.isGraphDialogInited
 import com.moly3.cedarjam.features.feature_graph.func.setIsShowGraphDialog
 import com.moly3.cedarjam.core.domain.model.navigation.input.TagPageInput
 import com.moly3.cedarjam.ui.pages.tag.store.TagStoreFactory
-import com.moly3.cedarjam.core.domain.model.PageNameData
+import com.moly3.cedarjam.core.ui.model.PageNameData
 import com.moly3.cedarjam.core.domain.model.getTagGraphId
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
 import kotlinx.coroutines.ExperimentalCoroutinesApi

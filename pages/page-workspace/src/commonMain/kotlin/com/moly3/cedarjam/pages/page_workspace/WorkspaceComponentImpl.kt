@@ -9,7 +9,7 @@ import com.arkivanov.decompose.router.children.SimpleChildNavState
 import com.arkivanov.decompose.router.children.SimpleNavigation
 import com.arkivanov.decompose.router.children.children
 import com.arkivanov.decompose.router.slot.activate
-import com.arkivanov.decompose.router.slot.navigate
+import com.arkivanov.decompose.router.slot.child
 import com.arkivanov.decompose.value.Value
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.arkivanov.mvikotlin.extensions.coroutines.labels
@@ -23,8 +23,7 @@ import com.moly3.cedarjam.pages.page_tabs.TabsComponentImpl
 import com.moly3.cedarjam.pages.page_workspace.store.WorkspaceStoreFactory
 import com.moly3.cedarjam.core.domain.dialog.DialogSelectTagService
 import com.moly3.cedarjam.core.domain.dialog.DialogTagToTagService
-import com.moly3.cedarjam.core.domain.dialog.DialogWorkspaceSettingsService
-import com.moly3.cedarjam.core.domain.model.PageNameData
+import com.moly3.cedarjam.core.ui.model.PageNameData
 import com.moly3.cedarjam.core.domain.model.WorkspaceInput
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
 import com.moly3.cedarjam.features.feature_settings.func.settingsDialogScopeFactory
@@ -70,7 +69,6 @@ class WorkspaceComponentImpl(
     }
     override val dialogSelectTagService: DialogSelectTagService by inject()
     override val dialogTagToTagService: DialogTagToTagService by inject()
-    override val dialogWorkspaceSettingsService: DialogWorkspaceSettingsService by inject()
 
     private val settingsDialogScope by lazy {
         settingsDialogScopeFactory(workspaceSession)
@@ -202,12 +200,19 @@ class WorkspaceComponentImpl(
 
     @OptIn(DelicateDecomposeApi::class)
     override fun onNavigate(route: Route) {
-        coroutineScope.launch(Dispatchers.Main.immediate) {
-            val foundActive = _children.value.items
-                .firstOrNull { d -> d.instance.index == state.value.activeTabsIndex }
-                ?: _children.value.items.firstOrNull()
-            foundActive?.instance?.onNavigate(route)
+        val settingsSlotChild = settingsDialogScope.slot.child
+
+        if (settingsSlotChild != null && route is Route.Back) {
+            settingsSlotChild.instance.onBackClicked()
+        } else {
+            coroutineScope.launch(Dispatchers.Main.immediate) {
+                val foundActive = _children.value.items
+                    .firstOrNull { d -> d.instance.index == state.value.activeTabsIndex }
+                    ?: _children.value.items.firstOrNull()
+                foundActive?.instance?.onNavigate(route)
+            }
         }
+
     }
 
     override fun setActiveTabs(component: Any) {

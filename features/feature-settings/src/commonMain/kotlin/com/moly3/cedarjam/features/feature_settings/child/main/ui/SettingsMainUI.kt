@@ -2,7 +2,6 @@ package com.moly3.cedarjam.features.feature_settings.child.main.ui
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -17,99 +16,115 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.moly3.cedarjam.core.ui.JvmWindowScope
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
+import com.moly3.cedarjam.core.ui.func.drawUnder
 import com.moly3.cedarjam.core.ui.func.flatClickable
-import com.moly3.cedarjam.core.ui.uikit.CJIcon
+import com.moly3.cedarjam.core.ui.uikit.CJDraggableArea
 import com.moly3.cedarjam.core.ui.uikit.CJText
-import com.moly3.cedarjam.core.ui.vectors.CloseSM
+import com.moly3.cedarjam.core.ui.uikit.CJToolbar
 import com.moly3.cedarjam.core.ui.vectors.Right2
-import com.moly3.cedarjam.core.ui.vectors.TrashCan
+import com.moly3.cedarjam.features.feature_settings.child.SettingsContent
 import com.moly3.cedarjam.features.feature_settings.child.main.ISettingsMainComponent
 import com.moly3.cedarjam.ui.Res
-import com.moly3.cedarjam.ui.*
+import com.moly3.cedarjam.ui.f_settings_general_appearance
+import com.moly3.cedarjam.ui.f_settings_general_title
+import com.moly3.cedarjam.ui.f_settings_options
+import com.moly3.cedarjam.ui.f_settings_title
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
-fun SettingsMainUI(component: ISettingsMainComponent) {
-    val appTheme = LocalAppTheme.current
-    Box(
-        Modifier
-            .fillMaxSize()
-            .background(appTheme.colors.backgroundPrimary)
-            .flatClickable {}
-            .statusBarsPadding()
-            .navigationBarsPadding()
-    ) {
-        Column {
-            Box(Modifier.height(46.dp).fillMaxWidth().drawUnder(borderThickness = 0.5.dp)) {
-                CJText(
-                    modifier = Modifier.align(Alignment.Center),
-                    text = stringResource(Res.string.f_settings_title)
+fun JvmWindowScope.SettingsMainUI(component: ISettingsMainComponent) {
+    SettingsContent {
+        Box {
+            CJDraggableArea {
+                CJToolbar(
+                    title = stringResource(Res.string.f_settings_title),
+                    onClose = {
+                        component.onClose()
+                    }
                 )
-                CJIcon(
-                    modifier = Modifier.padding(end = 16.dp).size(24.dp).align(Alignment.CenterEnd),
-                    painter = rememberVectorPainter(CloseSM)
-                ) {
-                    component.onClose()
+            }
+        }
+
+        Column(Modifier.weight(1f).fillMaxWidth()) {
+            CJText(
+                modifier = Modifier.padding(start = 24.dp, top = 24.dp, bottom = 8.dp),
+                text = stringResource(Res.string.f_settings_options),
+                fontSize = 12.sp,
+                color = LocalAppTheme.current.colors.secondaryFont
+            )
+            SelectOption(
+                isShowBorder = true,
+                text = stringResource(Res.string.f_settings_general_title),
+                onClick = {
+                    component.openGeneral()
                 }
-            }
+            )
+            SelectOption(
+                isShowBorder = true,
+                text = "Editor",
+                onClick = {
 
-            Column(Modifier.weight(1f).fillMaxWidth()) {
-                CJText(
-                    modifier = Modifier.padding(start = 24.dp, top = 24.dp, bottom = 8.dp),
-                    text = stringResource(Res.string.f_settings_options)
-                )
-                SelectOption(
-                    isShowBorder = true,
-                    text = stringResource(Res.string.f_settings_general_title),
-                    onClick = {
-                        component.openGeneral()
-                    }
-                )
-                SelectOption(
-                    isShowBorder = true,
-                    text = "Editor",
-                    onClick = {
+                }
+            )
+            SelectOption(
+                isShowBorder = true,
+                text = "Toolbar",
+                onClick = {
 
-                    }
-                )
-                SelectOption(
-                    isShowBorder = true,
-                    text = "Toolbar",
-                    onClick = {
+                }
+            )
+            SelectOption(
+                isShowBorder = true,
+                text = "Files and links",
+                onClick = {
 
-                    }
-                )
-                SelectOption(
-                    isShowBorder = true,
-                    text = "Files and links",
-                    onClick = {
+                }
+            )
+            SelectOption(
+                isShowBorder = false,
+                text = "Community plugins",
+                onClick = {
 
-                    }
-                )
-                SelectOption(
-                    isShowBorder = false,
-                    text = "Community plugins",
-                    onClick = {
-
-                    }
-                )
-            }
+                }
+            )
         }
     }
 }
 
 @Composable
 fun SelectOption(isShowBorder: Boolean, text: String, onClick: () -> Unit) {
+    SelectOption(
+        modifier = Modifier.clickable {
+            onClick()
+        },
+        isShowBorder = isShowBorder,
+        text = text,
+        content = {
+            Image(
+                painter = rememberVectorPainter(Right2),
+                contentDescription = null,
+                modifier = Modifier.size(24.dp).align(Alignment.CenterEnd),
+                colorFilter = ColorFilter.tint(LocalAppTheme.current.colors.icon)
+            )
+        }
+    )
+}
+
+@Composable
+fun SelectOption(
+    modifier: Modifier,
+    isShowBorder: Boolean,
+    text: String,
+    content: @Composable BoxScope.() -> Unit
+) {
     Box(
-        Modifier
+        modifier
             .height(44.dp)
             .fillMaxWidth()
             .let {
@@ -118,31 +133,11 @@ fun SelectOption(isShowBorder: Boolean, text: String, onClick: () -> Unit) {
                 else
                     it
             }
-            .clickable {
-                onClick()
-            }
+//            .clickable {
+//                onClick()
+//            }
             .padding(horizontal = 24.dp)) {
         CJText(modifier = Modifier.align(Alignment.CenterStart), text = text)
-        Image(
-            painter = rememberVectorPainter(Right2),
-            contentDescription = null,
-            modifier = Modifier.size(24.dp).align(Alignment.CenterEnd),
-            colorFilter = ColorFilter.tint(LocalAppTheme.current.colors.icon)
-        )
-    }
-}
-
-fun Modifier.drawUnder(
-    borderColor: Color = Color.Gray,
-    borderThickness: Dp = 1.dp
-): Modifier {
-    return this.drawBehind {
-        val stroke = borderThickness.toPx()
-        drawLine(
-            color = borderColor,
-            start = Offset(0f, size.height - stroke / 2f),
-            end = Offset(size.width, size.height - stroke / 2f),
-            strokeWidth = stroke
-        )
+        content()
     }
 }

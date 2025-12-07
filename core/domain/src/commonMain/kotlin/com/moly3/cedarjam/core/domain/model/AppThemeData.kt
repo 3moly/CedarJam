@@ -7,15 +7,13 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class AppThemeData(
     val colorsType: ColorsType,
-    val fontFamily: FontFamilyData,
     @Serializable(with = ComposeColorSerializer::class)
     val primaryColor: Color,
     val colors: AppColorsData
 ) {
     companion object {
         val Default = AppThemeData(
-            colorsType = ColorsType.Unspecified,
-            fontFamily = FontFamilyData.Default,
+            colorsType = ColorsType.Dark,
             primaryColor = Color(0xFFCE7B5A),
             colors = AppColorsData.Dark
         )
@@ -75,12 +73,6 @@ data class AppColorsData(
 }
 
 enum class ColorsType {
-    Unspecified,
     Dark,
-    Light,
-    Custom
-}
-
-enum class FontFamilyData {
-    Default
+    Light
 }

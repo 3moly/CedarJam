@@ -21,7 +21,7 @@ import com.mohamedrejeb.compose.dnd.DragAndDropState
 import com.moly3.cedarjam.pages.page_workspace.Intent
 import com.moly3.cedarjam.pages.page_workspace.State
 import com.moly3.cedarjam.pages.page_workspace.ui.component.fileNodeTree
-import com.moly3.cedarjam.core.domain.model.PageNameData
+import com.moly3.cedarjam.core.ui.model.PageNameData
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalHazeState
 import com.moly3.cedarjam.core.ui.compositions.LocalHazeStyle
@@ -39,8 +39,7 @@ internal fun MenuContent(
     state: State,
     listState: LazyListState,
     dragAndDropState: DragAndDropState<FileTreeItemPresentation>,
-    onIntent: (Intent) -> Unit,
-    onSetIsFullMenu: (Boolean) -> Unit
+    onIntent: (Intent) -> Unit
 ) {
     Box(modifier = modifier.background(LocalAppTheme.current.colors.backgroundPrimary)) {
         Box(Modifier.fillMaxSize().hazeSource(hazeState)) {
@@ -135,9 +134,6 @@ internal fun MenuContent(
                     },
                     onChangeSettings = {
                         onIntent(Intent.ChangeAppSettings)
-                    },
-                    onChangeColors = {
-                        onIntent(Intent.ChangeAppColors)
                     })
             }
         }

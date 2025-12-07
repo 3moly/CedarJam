@@ -27,11 +27,12 @@ kotlin {
                 api(libs.shared.logger.kermit)
                 implementation(libs.coroutines)
                 api(libs.serialization)
+                api(libs.compose.components.resources)
 
                 implementation(libs.compose.data.viz.core)
 
                 //planning to remove soon
-                implementation(libs.foundation)
+                implementation(libs.compose.foundation)
                 implementation(libs.filekit.core)
                 implementation(libs.filekit.dialogs)
             }

@@ -144,6 +144,10 @@ class DemoFilesManagerImpl : ISystemFilesManager {
     override fun getNodeBytes(nodePath: String): ByteArray =
         fs[normalize(nodePath)] ?: throw IllegalArgumentException("Not a file: $nodePath")
 
+    override fun setNodeBytes(nodePath: String, byteArray: ByteArray) {
+        TODO("Not yet implemented")
+    }
+
     override fun getNodeCanvas(nodePath: String): ResultWrapper<CanvasDataWithErrors, String> {
         TODO("Not yet implemented")
     }

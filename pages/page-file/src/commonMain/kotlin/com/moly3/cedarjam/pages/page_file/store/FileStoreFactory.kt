@@ -10,7 +10,7 @@ import com.moly3.cedarjam.core.domain.func.getRelativePath
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.FileTreeNode.Companion.getAllFilesByExtension
 import com.moly3.cedarjam.core.domain.model.FileType
-import com.moly3.cedarjam.core.domain.model.PageNameData
+import com.moly3.cedarjam.core.ui.model.PageNameData
 import com.moly3.cedarjam.core.domain.model.getGraphId
 import com.moly3.cedarjam.core.domain.model.navigation.input.FilePageInput
 import com.moly3.cedarjam.core.domain.model.request.CreateTagLinkRequest
@@ -19,6 +19,7 @@ import com.moly3.cedarjam.core.domain.repository.IAppEnvironment
 import com.moly3.cedarjam.core.domain.repository.IFilesRepository
 import com.moly3.cedarjam.core.domain.service.FileManagerService
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
+import com.moly3.cedarjam.core.ui.model.CJText
 import com.moly3.cedarjam.navigation.BaseExecutor
 import com.moly3.cedarjam.navigation.Navigator
 import com.moly3.cedarjam.navigation.Route
@@ -84,7 +85,7 @@ internal class FileStoreFactory(
             if (file != null) {
                 println("nameStateFlow mapping file name: ${file.name.name}")
                 PageNameData(
-                    name = file.name.name,
+                    name = CJText.Raw(file.name.name),
                     pageType = PageNameData.PageType.FileNode(
                         timestamp = data.timestamp,
                         fileTreeNode = file

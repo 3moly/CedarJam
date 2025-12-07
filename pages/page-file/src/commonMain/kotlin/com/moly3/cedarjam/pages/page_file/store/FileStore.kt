@@ -4,7 +4,7 @@ import com.arkivanov.mvikotlin.core.store.Store
 import com.moly3.cedarjam.pages.page_file.Intent
 import com.moly3.cedarjam.pages.page_file.State
 import com.moly3.cedarjam.core.domain.model.FileType
-import com.moly3.cedarjam.core.domain.model.PageNameData
+import com.moly3.cedarjam.core.ui.model.PageNameData
 import com.moly3.cedarjam.core.domain.model.TagDTO
 import com.moly3.cedarjam.core.domain.model.TagLinkDTO
 import kotlinx.coroutines.flow.Flow

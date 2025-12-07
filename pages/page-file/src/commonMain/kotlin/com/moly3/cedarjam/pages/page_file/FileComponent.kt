@@ -5,7 +5,7 @@ import com.arkivanov.decompose.router.slot.ChildSlot
 import com.arkivanov.decompose.value.Value
 import com.moly3.cedarjam.features.feature_graph.IDialogGraphComponent
 import com.moly3.cedarjam.core.domain.dialog.DialogColorPickerService
-import com.moly3.cedarjam.core.domain.model.PageNameData
+import com.moly3.cedarjam.core.ui.model.PageNameData
 import com.moly3.cedarjam.core.domain.repository.IAppEnvironment
 import com.moly3.cedarjam.core.domain.repository.IFilesRepository
 import com.moly3.cedarjam.core.ui.service.IJvmBrowserService

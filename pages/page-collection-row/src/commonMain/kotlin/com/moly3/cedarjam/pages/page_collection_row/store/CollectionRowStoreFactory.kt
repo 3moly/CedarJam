@@ -20,7 +20,7 @@ import com.moly3.cedarjam.core.domain.func.pathWrapper
 import com.moly3.cedarjam.core.domain.model.FileName
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.NavigateToFile
-import com.moly3.cedarjam.core.domain.model.PageNameData
+import com.moly3.cedarjam.core.ui.model.PageNameData
 import com.moly3.cedarjam.core.domain.model.TagDTO
 import com.moly3.cedarjam.core.domain.model.getCollectionRowGraphId
 import com.moly3.cedarjam.core.domain.model.request.RenameDataCollectionRowRequest
@@ -28,6 +28,7 @@ import com.moly3.cedarjam.core.domain.model.request.mapToUpdateRequest
 import com.moly3.cedarjam.core.domain.service.FileManagerService
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
 import com.moly3.cedarjam.core.domain.usecase.INavigateToFileUseCase
+import com.moly3.cedarjam.core.ui.model.CJText
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.dialogs.FileKitType.*
 import io.github.vinceglb.filekit.dialogs.openFilePicker
@@ -78,7 +79,7 @@ internal class CollectionRowStoreFactory(
                     null
                 } else {
                     PageNameData(
-                        name = row.name,
+                        name = CJText.Raw(row.name),
                         pageType = PageNameData.PageType.CollectionRow(id = row.id),
                         modifiedTime = row.modifiedTime
                     )

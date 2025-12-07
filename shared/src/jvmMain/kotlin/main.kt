@@ -1,9 +1,6 @@
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -13,7 +10,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalWindowInfo
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Tray
@@ -32,14 +28,14 @@ import com.badoo.reaktive.coroutinesinterop.asScheduler
 import com.badoo.reaktive.scheduler.overrideSchedulers
 import com.moly3.cedarjam.core.domain.DefaultJson
 import com.moly3.cedarjam.core.domain.model.AndroidApplicationContext
-import com.moly3.cedarjam.core.ui.uikit.CJBasicTable
-import com.moly3.cedarjam.core.ui.uikit.CJText
+import com.moly3.cedarjam.core.ui.ToolbarHeight
+import com.moly3.cedarjam.core.ui.compositions.LocalJvmToolbarState
+import com.moly3.cedarjam.core.ui.model.JvmToolbarState
 import com.moly3.cedarjam.core.ui.vectors.Tag
 import com.moly3.cedarjam.di.initApp
 import com.moly3.cedarjam.navigation.Root
 import com.moly3.cedarjam.navigation.createRootComponentSafe
 import com.moly3.cedarjam.navigation.ui.ActualPredictiveBackGestureOverlay
-import com.moly3.cedarjam.pages.page_workspace.ui.ToolbarHeight
 import com.moly3.cedarjam.pages.page_workspace.ui.ToolbarState
 import com.moly3.cedarjam.ui.MainApp
 import com.skydoves.compose.stability.runtime.ComposeStabilityAnalyzer
@@ -51,8 +47,6 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.json.encodeToStream
 import org.jetbrains.jewel.foundation.ExperimentalJewelApi
-import org.jetbrains.jewel.foundation.enableNewSwingCompositing
-import org.jetbrains.jewel.foundation.layout.BasicTableLayout
 import org.jetbrains.jewel.intui.window.styling.dark
 import org.jetbrains.jewel.intui.window.styling.defaults
 import org.jetbrains.jewel.intui.window.styling.light
@@ -86,7 +80,8 @@ fun File.readSerializableContainer(): SerializableContainer? =
 
 private const val SAVED_STATE_FILE_NAME = "saved_state.dat"
 
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalJewelApi::class,
+@OptIn(
+    ExperimentalComposeUiApi::class, ExperimentalJewelApi::class,
     ExperimentalDecomposeApi::class
 )
 fun main() {
@@ -212,55 +207,68 @@ fun main() {
                 style = DecoratedWindowStyle.dark(),
                 onCloseRequest = { exitApplication() }
             ) {
-                LaunchedEffect(Unit) {
-                    addMagnifyListener(window.contentPane) { magnifyValue ->
-                        root.shareMagnifyValue(magnifyValue)
-                    }
-                }
                 val windowInfo = LocalWindowInfo.current
                 LifecycleController(
                     lifecycle,
                     windowState,
                     windowInfo = windowInfo
                 )
-                ActualPredictiveBackGestureOverlay(
-                    backDispatcher = backDispatcher,
-                    modifier = Modifier
-                ) {
-                    MainApp(root = root) { titleBarContent ->
-                        TitleBar(Modifier) { state ->
-                            val padding = if (state.isFullscreen) 0.dp else 40.dp
-                            val modifierPadding = when (DesktopPlatform.Current) {
-                                DesktopPlatform.Linux -> Modifier
-                                DesktopPlatform.Windows -> Modifier
-                                    .padding(start = 70.dp)
-                                    .padding(end = 70.dp)
 
-                                DesktopPlatform.MacOS -> Modifier.padding(horizontal = padding)
-                                DesktopPlatform.Unknown -> Modifier
-                            }
-                            val isStartCut = when (DesktopPlatform.Current) {
-                                DesktopPlatform.Linux -> true
-                                DesktopPlatform.Windows -> false
-                                DesktopPlatform.MacOS -> true
-                                DesktopPlatform.Unknown -> true
-                            }
-                            val endControlsWidth = when (DesktopPlatform.Current) {
-                                DesktopPlatform.Linux -> 0.dp
-                                DesktopPlatform.Windows -> 140.dp
-                                DesktopPlatform.MacOS -> 80.dp
-                                DesktopPlatform.Unknown -> 0.dp
-                            }
-                            Box(Modifier.then(modifierPadding).fillMaxSize()) {
+                val toolbarState = remember(state.isFullscreen) {
+                    val padding = if (state.isFullscreen) 0.dp else 40.dp
 
-                                titleBarContent(
-                                    ToolbarState(
-                                        isFullscreen = state.isFullscreen,
-                                        menuButtonsWidth = padding * 2f,
-                                        isFirstCut = isStartCut,
-                                        controlsWidthToCut = endControlsWidth
+                    val modifierPadding = when (DesktopPlatform.Current) {
+                        DesktopPlatform.Linux -> Modifier
+                        DesktopPlatform.Windows -> Modifier
+                            .padding(start = 70.dp)
+                            .padding(end = 70.dp)
+
+                        DesktopPlatform.MacOS -> Modifier.padding(horizontal = padding)
+                        DesktopPlatform.Unknown -> Modifier
+                    }
+                    val isStartCut = when (DesktopPlatform.Current) {
+                        DesktopPlatform.Linux -> true
+                        DesktopPlatform.Windows -> false
+                        DesktopPlatform.MacOS -> true
+                        DesktopPlatform.Unknown -> true
+                    }
+                    val endControlsWidth = when (DesktopPlatform.Current) {
+                        DesktopPlatform.Linux -> 0.dp
+                        DesktopPlatform.Windows -> 140.dp
+                        DesktopPlatform.MacOS -> 80.dp
+                        DesktopPlatform.Unknown -> 0.dp
+                    }
+                    JvmToolbarState(
+                        isFullscreen = state.isFullscreen,
+                        modifier = modifierPadding,
+                        isFirstCut = isStartCut,
+                        endControlsWidth = endControlsWidth,
+                        controlsWidthToCut = padding * 2f
+                    )
+                }
+                LaunchedEffect(Unit) {
+                    addMagnifyListener(window.contentPane) { magnifyValue ->
+                        root.shareMagnifyValue(magnifyValue)
+                    }
+                }
+
+                CompositionLocalProvider(LocalJvmToolbarState provides toolbarState) {
+                    ActualPredictiveBackGestureOverlay(
+                        backDispatcher = backDispatcher,
+                        modifier = Modifier
+                    ) {
+                        MainApp(root = root) { titleBarContent ->
+                            TitleBar(Modifier) { state ->
+                                Box(Modifier.then(toolbarState.modifier).fillMaxSize()) {
+                                    titleBarContent(
+//                                        ToolbarState(
+//                                            isFullscreen = state.isFullscreen,
+//                                            menuButtonsWidth = toolbarState.controlsWidthToCut,
+//                                            isFirstCut = toolbarState.isFirstCut,
+//                                            controlsWidthToCut = toolbarState.endControlsWidth
+//                                        )
                                     )
-                                )
+                                }
                             }
                         }
                     }

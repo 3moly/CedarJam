@@ -26,12 +26,17 @@ import com.moly3.cedarjam.ui.pages.tag.TagComponentImpl
 import com.moly3.cedarjam.ui.pages.tags.TagsComponentImpl
 import com.moly3.cedarjam.core.domain.func.doNothing
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
-import com.moly3.cedarjam.core.domain.model.PageNameData
+import com.moly3.cedarjam.core.ui.model.PageNameData
 import com.moly3.cedarjam.core.domain.func.nowInMs
 import com.moly3.cedarjam.core.domain.model.request.RenameDataCollectionRequest
 import com.moly3.cedarjam.core.domain.model.request.RenameDataCollectionRowRequest
 import com.moly3.cedarjam.core.domain.model.request.RenameTagRequest
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
+import com.moly3.cedarjam.core.ui.model.CJText
+import com.moly3.cedarjam.ui.Res
+import com.moly3.cedarjam.ui.graph
+import com.moly3.cedarjam.ui.home
+import com.moly3.cedarjam.ui.tags
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -170,7 +175,7 @@ class TabComponentImpl(
             is TabComponent.Child.File -> instance.component.nameFlow
             is TabComponent.Child.Graph -> flowOf(
                 PageNameData(
-                    name = "Graph",
+                    name = CJText.Res(Res.string.graph),
                     pageType = PageNameData.PageType.Graph,
                     modifiedTime = null
                 )
@@ -178,7 +183,7 @@ class TabComponentImpl(
 
             is TabComponent.Child.Home -> flowOf(
                 PageNameData(
-                    name = "Home",
+                    name = CJText.Res(Res.string.home),
                     pageType = PageNameData.PageType.Home,
                     modifiedTime = null
                 )
@@ -187,7 +192,7 @@ class TabComponentImpl(
             is TabComponent.Child.Tag -> instance.component.nameFlow
             is TabComponent.Child.Tags -> flowOf(
                 PageNameData(
-                    name = "Tags",
+                    name =CJText.Res(Res.string.tags),
                     pageType = PageNameData.PageType.Tags,
                     modifiedTime = null
                 )

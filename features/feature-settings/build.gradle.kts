@@ -23,7 +23,8 @@ kotlin {
                 implementation(libs.decompose.compose.experimental)
 
                 implementation(libs.shared.logger.kermit)
-                implementation(compose.foundation)
+                implementation(libs.compose.foundation)
+                implementation(libs.filekit.dialogs)
             }
         }
 

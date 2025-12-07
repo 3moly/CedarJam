@@ -4,9 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.imePadding
@@ -18,6 +16,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
+import com.moly3.cedarjam.core.ui.JvmWindowScope
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.uikit.CJWorkspaceTheme
 import com.moly3.cedarjam.features.feature_settings.ui.DialogSettingsUI
@@ -26,7 +25,7 @@ import com.moly3.cedarjam.pages.page_workspace.ui.internal.WorkspacePageContent
 import com.skydoves.compose.stability.runtime.TraceRecomposition
 import kotlin.time.ExperimentalTime
 
-const val ToolbarHeight = 40f
+
 
 data class ToolbarState(
     val isFullscreen: Boolean,
@@ -38,9 +37,9 @@ data class ToolbarState(
 @OptIn(ExperimentalTime::class)
 @Composable
 @TraceRecomposition
-fun WorkspacePage(
+fun JvmWindowScope.WorkspacePage(
     component: WorkspaceComponent,
-    titleBarContent: @Composable (@Composable (ToolbarState) -> Unit) -> Unit = {}
+    titleBarContent: @Composable (@Composable () -> Unit) -> Unit = {}
 ) {
     val state by component.state.collectAsState()
 

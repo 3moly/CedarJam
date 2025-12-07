@@ -49,9 +49,7 @@ dependencies {
     implementation(libs.decompose)
     implementation(libs.decompose.compose)
 
-    implementation(compose.foundation)
-    implementation(compose.ui)
-    implementation(compose.uiTooling)
-    implementation(compose.preview)
-    implementation(compose.material3)
+    implementation(libs.compose.foundation)
+    implementation(libs.compose.ui)
+    implementation(libs.compose.material3)
 }

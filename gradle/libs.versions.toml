@@ -20,14 +20,12 @@ modulegraph-mermaid = { id = "dev.iurysouza.modulegraph", version = "0.13.0" }
 # primary
 agp = "8.13.1"
 
+componentsResources = "1.10.0-rc01"
 kotlin = "2.2.21"
 
-foundation = "1.10.0-rc01"
 compose = "1.10.0-rc01"
-material = "1.10.0-rc01"
+localina = "1.0.0-alpha3"
 material3 = "1.9.0"
-uiToolingPreview = "1.10.0-rc01"
-runtime = "1.10.0-rc01"
 
 serialization = "1.9.0"
 datetime = "0.7.1"
@@ -79,13 +77,18 @@ androidx-activity-compose = "1.12.1"
 
 [libraries]
 
-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "foundation" }
-jewel-decorated-window = { module = "org.jetbrains.jewel:jewel-decorated-window", version.ref = "jewelDecoratedWindow" }
-jewel-int-ui-standalone = { module = "org.jetbrains.jewel:jewel-int-ui-standalone", version.ref = "jewelDecoratedWindow" }
+compose-components-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "componentsResources" }
+compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "compose" }
+compose-material = { module = "org.jetbrains.compose.material:material", version.ref = "compose" }
+compose-material3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "material3" }
+compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "compose" }
+compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "compose" }
+compose-ui-tooling-preview = { module = "org.jetbrains.compose.ui:ui-tooling-preview", version.ref = "compose" }
+compose-ui-tooling = { module = "org.jetbrains.compose.ui:ui-tooling", version.ref = "compose" }
+
 lazytable = { module = "io.github.oleksandrbalan:lazytable", version.ref = "lazytable" }
-material = { module = "org.jetbrains.compose.material:material", version.ref = "material" }
-material3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "material3" }
-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "runtime" }
+
+localina = { module = "io.github.sudarshanmhasrup.localina:localina", version.ref = "localina" }
 serialization = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
 decompose = { group = "com.arkivanov.decompose", name = "decompose", version.ref = "decompose" }
 decompose-compose = { group = "com.arkivanov.decompose", name = "extensions-compose", version.ref = "decompose" }
@@ -132,8 +135,8 @@ constraintlayout-compose-multiplatform = { module = "tech.annexflow.compose:cons
 kotlinx-immutable-list = { module = "org.jetbrains.kotlinx:kotlinx-collections-immutable", version.ref = "kotlinx-immutable-list" }
 koin = { group = "io.insert-koin", name = "koin-core", version.ref = "koin" }
 shared-logger-kermit = { module = "co.touchlab:kermit", version.ref = "shared-logger-kermit" }
-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "uiToolingPreview" }
-ui-tooling-preview = { module = "org.jetbrains.compose.ui:ui-tooling-preview", version.ref = "uiToolingPreview" }
+
+
 videoplayer = { group = "io.github.kdroidfilter", name = "composemediaplayer", version.ref = "video-player" }
 haze = { module = "dev.chrisbanes.haze:haze", version.ref = "haze" }
 webview = { group = "io.github.kevinnzou", name = "compose-webview-multiplatform", version.ref = "webview" }
@@ -166,3 +169,6 @@ jai-imageio-jpeg2000 = { module = "com.github.jai-imageio:jai-imageio-jpeg2000",
 pdfbox = { module = "org.apache.pdfbox:pdfbox", version.ref = "pdfbox" }
 compose-data-viz-core = { module = "io.github.3moly:compose-data-viz-core", version.ref = "compose-data-viz" }
 compose-data-viz = { module = "io.github.3moly:compose-data-viz", version.ref = "compose-data-viz" }
+
+jewel-decorated-window = { module = "org.jetbrains.jewel:jewel-decorated-window", version.ref = "jewelDecoratedWindow" }
+jewel-int-ui-standalone = { module = "org.jetbrains.jewel:jewel-int-ui-standalone", version.ref = "jewelDecoratedWindow" }

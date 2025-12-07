@@ -21,7 +21,7 @@ kotlin {
                 implementation(projects.core.ui)
 
                 implementation(libs.shared.logger.kermit)
-                implementation(compose.foundation)
+                implementation(libs.compose.foundation)
             }
         }
 

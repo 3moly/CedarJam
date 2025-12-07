@@ -4,7 +4,6 @@ import androidx.compose.runtime.Immutable
 import com.arkivanov.decompose.Child
 import com.arkivanov.decompose.router.slot.ChildSlot
 import com.arkivanov.decompose.value.Value
-import com.moly3.cedarjam.core.domain.dialog.DialogWorkspaceSettingsService
 import com.moly3.cedarjam.navigation.Route
 import com.moly3.cedarjam.pages.page_tabs.TabsComponent
 import com.moly3.cedarjam.core.domain.dialog.DialogSelectTagService
@@ -20,7 +19,6 @@ interface WorkspaceComponent {
 
     val dialogSelectTagService: DialogSelectTagService
     val dialogTagToTagService: DialogTagToTagService
-    val dialogWorkspaceSettingsService: DialogWorkspaceSettingsService
     val children: Value<Children<*, TabsComponent>>
     val workspaceSession: WorkspaceSession
     val state: StateFlow<State>

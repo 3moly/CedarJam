@@ -6,10 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -25,6 +22,13 @@ import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.extensions.compose.experimental.stack.ChildStack
 import com.arkivanov.decompose.extensions.compose.experimental.stack.animation.stackAnimation
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
+import com.moly3.cedarjam.core.ui.JvmWindowScope
+import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
+import com.moly3.cedarjam.core.ui.compositions.LocalHazeState
+import com.moly3.cedarjam.core.ui.compositions.LocalVideoPlayer
+import com.moly3.cedarjam.core.ui.onPointerEvent
+import com.moly3.cedarjam.core.ui.uikit.CJApplicationTheme
+import com.moly3.cedarjam.core.ui.uikit.CJButton
 import com.moly3.cedarjam.navigation.Root
 import com.moly3.cedarjam.navigation.Route
 import com.moly3.cedarjam.pages.page_select_workspace.ui.SelectWorkspacePage
@@ -36,34 +40,19 @@ import com.moly3.cedarjam.ui.dialog.DialogCreateWorkspaceService
 import com.moly3.cedarjam.ui.dialog.DialogDeleteUI
 import com.moly3.cedarjam.ui.dialog.DialogSelectWorkspaceUI
 import com.moly3.cedarjam.ui.dialog.SuccessSnackbarComponent
-import com.moly3.cedarjam.core.ui.uikit.CJApplicationTheme
-import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
-import com.moly3.cedarjam.core.ui.compositions.LocalHazeState
-import com.moly3.cedarjam.core.ui.compositions.LocalVideoPlayer
-import com.moly3.cedarjam.core.ui.onPointerEvent
-import com.moly3.cedarjam.core.ui.uikit.CJButton
-import com.moly3.cedarjam.pages.page_workspace.ui.ToolbarState
 import com.skydoves.compose.stability.runtime.TraceRecomposition
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
 import io.github.kdroidfilter.composemediaplayer.VideoPlayerSurface
 import io.github.kdroidfilter.composemediaplayer.rememberVideoPlayerState
 
-
 @OptIn(ExperimentalDecomposeApi::class)
 @Composable
 @TraceRecomposition
-fun MainApp(
+fun JvmWindowScope.MainApp(
     root: Root,
-    titleBarContent: @Composable (@Composable (ToolbarState) -> Unit) -> Unit = {
-        it(
-            ToolbarState(
-                isFullscreen = true,
-                0.dp,
-                isFirstCut = true,
-                controlsWidthToCut = 0.dp
-            )
-        )
+    titleBarContent: @Composable (@Composable () -> Unit) -> Unit = {
+        it()
     }
 ) {
     val stack by root.childStack.subscribeAsState()

@@ -40,12 +40,15 @@ import com.moly3.cedarjam.core.domain.func.getPlatform
 import com.moly3.cedarjam.core.domain.model.Platform
 import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.domain.model.error.DatabaseError
+import com.moly3.cedarjam.core.ui.ToolbarHeight
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalDragAndDrop
+import com.moly3.cedarjam.core.ui.compositions.LocalJvmToolbarState
 import com.moly3.cedarjam.core.ui.func.PointerIconType
 import com.moly3.cedarjam.core.ui.func.absoluteOffset
 import com.moly3.cedarjam.core.ui.func.getPointerIcon
 import com.moly3.cedarjam.core.ui.func.rememberWindowSize
+import com.moly3.cedarjam.core.ui.model.CJText
 import com.moly3.cedarjam.core.ui.model.FileTreeItemPresentation
 import com.moly3.cedarjam.core.ui.model.WindowSize
 import com.moly3.cedarjam.core.ui.motions.PointerRequisite
@@ -65,23 +68,21 @@ import com.moly3.cedarjam.pages.page_workspace.State
 import com.moly3.cedarjam.pages.page_workspace.WorkspaceComponent
 import com.moly3.cedarjam.pages.page_workspace.func.getTab
 import com.moly3.cedarjam.pages.page_workspace.model.LockedMenuData
-import com.moly3.cedarjam.pages.page_workspace.ui.ToolbarHeight
-import com.moly3.cedarjam.pages.page_workspace.ui.ToolbarState
 import com.moly3.cedarjam.pages.page_workspace.ui.dialog.DialogSelectTagUI
 import com.moly3.cedarjam.pages.page_workspace.ui.dialog.DialogTagToTagUI
-import com.moly3.cedarjam.pages.page_workspace.ui.dialog.DialogWorkspaceSettingsUI
 import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 internal fun WorkspacePageContent(
     component: WorkspaceComponent,
     state: State,
-    titleBarContent: @Composable (@Composable (ToolbarState) -> Unit) -> Unit = {},
+    titleBarContent: @Composable (@Composable () -> Unit) -> Unit = {},
     onIntent: (Intent) -> Unit
 ) {
     val hazeState = rememberHazeState(blurEnabled = false)
@@ -258,8 +259,9 @@ internal fun WorkspacePageContent(
                     CompositionLocalProvider(
                         LocalDragAndDrop provides dragAndDropState
                     ) {
+                        val toolbarState = LocalJvmToolbarState.current
                         Column {
-                            titleBarContent { toolbarState ->
+                            titleBarContent {
 
                                 val menuWidth = remember(state.menuWidth, state.isMenuOpened) {
                                     if (state.isMenuOpened) {
@@ -273,7 +275,7 @@ internal fun WorkspacePageContent(
                                     toolbarState
                                 ) {
                                     if (toolbarState.isFirstCut) {
-                                        (menuWidth - toolbarState.menuButtonsWidth).coerceAtLeast(
+                                        (menuWidth - toolbarState.controlsWidthToCut).coerceAtLeast(
                                             45.dp
                                         )
                                     } else {
@@ -488,7 +490,11 @@ internal fun WorkspacePageContent(
                         columnModifier = Modifier
                     ) {
                         for (button in state.contextMenuData!!.menuButtons) {
-                            CJContextMenuButton(text = button.title, onClick = button.onClick)
+                            val rawText = when(val name = button.title){
+                                is CJText.Raw -> name.text
+                                is CJText.Res -> stringResource(name.res)
+                            }
+                            CJContextMenuButton(text = rawText, onClick = button.onClick)
                         }
                     }
                 }
@@ -500,16 +506,6 @@ internal fun WorkspacePageContent(
             DialogSelectTagUI(
                 dialog = component.dialogSelectTagService,
                 workspaceSession = component.workspaceSession
-            )
-            DialogWorkspaceSettingsUI(
-                settings = state.settings,
-                dialog = component.dialogWorkspaceSettingsService,
-                onSetSettings = {
-                    component.onIntent(Intent.SetSettings(it))
-                },
-                onChangeFont = {
-                    onIntent(Intent.ChangeFont)
-                }
             )
         }
     }

@@ -17,7 +17,6 @@ import com.moly3.cedarjam.navigation.Root.Child.Workspace
 import com.moly3.cedarjam.pages.page_select_workspace.SelectWorkspaceComponent
 import com.moly3.cedarjam.pages.page_workspace.WorkspaceComponentImpl
 import com.moly3.cedarjam.core.domain.dialog.DialogAddCollectionRowService
-import com.moly3.cedarjam.core.domain.dialog.DialogWorkspaceSettingsService
 import com.moly3.cedarjam.core.domain.dialog.DialogColorPickerService
 import com.moly3.cedarjam.core.domain.dialog.DialogCreateWorkspaceService
 import com.moly3.cedarjam.core.domain.dialog.DialogDeleteService
@@ -74,13 +73,7 @@ class RootComponent(
             navigator = navigation,
             stack = _stack,
             serializer = Config.serializer(),
-            pathMapper = {
-//             TODO   when(val config = it.configuration){
-//                    Config.Empty -> "empty"
-//                    is Config.Workspace -> "workspace/${config.workspace.name}"
-//                }
-                null
-            },
+            pathMapper = { null },
             childSelector = {
                 null
             },
@@ -138,10 +131,13 @@ class RootComponent(
                 }
 
                 Route.Back,
+                Route.Forward -> {
+                    bringTabAndRoute(configuration, route)
+                }
+
                 is Route.CollRow,
                 is Route.Collection,
                 is Route.File,
-                Route.Forward,
                 Route.MainGraph,
                 Route.MainHome,
                 is Route.Tag,

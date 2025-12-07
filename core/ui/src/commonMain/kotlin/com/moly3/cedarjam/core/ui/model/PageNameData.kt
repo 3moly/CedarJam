@@ -1,7 +1,9 @@
-package com.moly3.cedarjam.core.domain.model
+package com.moly3.cedarjam.core.ui.model
+
+import com.moly3.cedarjam.core.domain.model.FileTreeNode
 
 data class PageNameData(
-    val name: String,
+    val name: CJText,
     val pageType: PageType,
     val modifiedTime: Long?
 ) {

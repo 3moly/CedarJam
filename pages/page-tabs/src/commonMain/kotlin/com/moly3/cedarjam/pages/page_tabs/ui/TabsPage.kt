@@ -30,9 +30,11 @@ import com.moly3.cedarjam.pages.page_tabs.Intent
 import com.moly3.cedarjam.pages.page_tabs.TabsComponent
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.func.getPageTypeIcon
+import com.moly3.cedarjam.core.ui.model.CJText
 import com.moly3.cedarjam.core.ui.uikit.CJIcon
 import com.moly3.cedarjam.core.ui.vectors.Add
 import com.moly3.cedarjam.core.ui.vectors.AddRow
+import org.jetbrains.compose.resources.stringResource
 
 @OptIn(ExperimentalDecomposeApi::class)
 @Composable
@@ -57,11 +59,16 @@ fun TabsPage(
                 val pageIcon = remember(name) {
                     name?.pageType?.getPageTypeIcon()
                 }
+                val rawText = when(val name = name?.name){
+                    is CJText.Raw -> name.text
+                    is CJText.Res -> stringResource(name.res)
+                    null -> ""
+                }
                 TabUI(
                     isActive = isActive,
                     icon = if (pageIcon != null) rememberVectorPainter(pageIcon) else null,
                     isSelected = isSelected,
-                    name = name?.name ?: "",
+                    name = rawText,
                     onClick = {
                         component.onIntent(Intent.BringToFrontTab(item.index))
                         onSelectedTab()
