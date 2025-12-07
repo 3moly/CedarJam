@@ -209,11 +209,10 @@ class WorkspaceSession(
         )
         val newNode = newFile ?: node
         val font = try {
-//            if (filesRepository.isNodeExists(newNode)) {
-//
-//            } else
-//                null
-            WorkspaceFont(newNode, timestamp = nowInMs())
+            if (filesRepository.isNodeExists(newNode)) {
+                WorkspaceFont(newNode, timestamp = nowInMs())
+            } else
+                null
         } catch (exc: Exception) {
             null
         }

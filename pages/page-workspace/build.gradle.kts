@@ -25,6 +25,7 @@ kotlin {
             implementation(projects.core.navigation)
             implementation(projects.core.ui)
             implementation(projects.pages.pageTabs)
+            implementation(projects.features.featureSettings)
 
             implementation(libs.filekit.core)
             implementation(libs.filekit.dialogs)

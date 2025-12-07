@@ -18,7 +18,7 @@ fun ComponentContext.canvasDialogScopeFactory(
         key = "DefaultCanvasChildSlot",
         source = dialogNavigation,
         serializer = DialogConfig.serializer(),
-        handleBackButton = true,
+        handleBackButton = false,
         childFactory = { config, context ->
             DialogCanvasComponentImpl(
                 workspaceSession = workspaceSession,

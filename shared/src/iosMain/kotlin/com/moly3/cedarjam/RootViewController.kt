@@ -1,13 +1,21 @@
 package com.moly3.cedarjam
 
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.ComposeUIViewController
+import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.essenty.backhandler.BackDispatcher
 import com.moly3.cedarjam.navigation.Root
+import com.moly3.cedarjam.navigation.ui.ActualPredictiveBackGestureOverlay
 import com.moly3.cedarjam.ui.MainApp
 import platform.UIKit.UIViewController
 
+@OptIn(ExperimentalDecomposeApi::class)
 fun RootViewController(root: Root, backDispatcher: BackDispatcher): UIViewController {
     return ComposeUIViewController {
-        MainApp(root)
+        ActualPredictiveBackGestureOverlay(
+            backDispatcher = backDispatcher,
+            modifier = Modifier.fillMaxSize(),
+        ) {     MainApp(root) }
     }
 }

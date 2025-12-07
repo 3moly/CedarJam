@@ -37,6 +37,7 @@ include(
     ":features:feature-browser",
     ":features:feature-file",
     ":features:feature-file-view",
+    ":features:feature-settings",
 
     ":pages:page-home",
     ":pages:page-file",

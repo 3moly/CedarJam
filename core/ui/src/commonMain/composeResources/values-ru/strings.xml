@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <resources>
     <string name="common_typ">Localina Шоукейс</string>
+
+    <string name="f_settings_title">Настройки</string>
 </resources>

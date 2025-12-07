@@ -33,7 +33,11 @@ fun CJWorkspaceTheme(
         changeLanguage(settings.language ?: "en")
     }
     var textStyleState by remember { mutableStateOf<FontFamily>(FontFamily.Default) }
-    val textStyle = remember(textStyleState, file?.timestamp) {
+    val textStyle = remember(
+        textStyleState,
+        file?.timestamp,
+        settings.theme.colors.primaryFont
+    ) {
         TextStyle(
             fontWeight = FontWeight.Normal,
             fontSize = 16.sp,

@@ -352,8 +352,8 @@ internal class HomeStoreFactory(
                         val env = workspaceSession.workspaceEnvStateFlow.value
 
                         dispatch(HomeStore.Msg.SetUploadState(resultss.mapToUIState(onError = { "" })))
-//                        env.downloadSync()
-                        env.updateTimes()
+
+                        env.initConfigAndFiles()
                         env.reinitDatabase()
                         refreshStatusFiles()
                     }

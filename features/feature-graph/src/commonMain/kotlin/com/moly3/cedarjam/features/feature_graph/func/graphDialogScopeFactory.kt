@@ -18,7 +18,7 @@ fun ComponentContext.graphDialogScopeFactory(
         key = "DefaultGraphChildSlot",
         source = dialogNavigation,
         serializer = DialogConfig.serializer(),
-        handleBackButton = true,
+        handleBackButton = false,
         childFactory = { config, context ->
             DialogGraphComponentImpl(
                 workspaceSession = workspaceSession,

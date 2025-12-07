@@ -1,0 +1,100 @@
+package com.moly3.cedarjam.pages.page_select_workspace.store
+
+import com.arkivanov.essenty.lifecycle.Lifecycle
+import com.arkivanov.mvikotlin.core.store.Reducer
+import com.arkivanov.mvikotlin.core.store.SimpleBootstrapper
+import com.arkivanov.mvikotlin.core.store.Store
+import com.arkivanov.mvikotlin.core.store.StoreFactory
+import com.moly3.cedarjam.core.domain.dialog.DialogCreateWorkspaceService
+import com.moly3.cedarjam.core.domain.io
+import com.moly3.cedarjam.core.domain.model.ResultWrapper
+import com.moly3.cedarjam.core.domain.model.WorkspaceInput
+import com.moly3.cedarjam.core.domain.repository.IAppEnvironment
+import com.moly3.cedarjam.core.domain.service.IMessageService
+import com.moly3.cedarjam.navigation.BaseExecutor
+import com.moly3.cedarjam.pages.page_select_workspace.Intent
+import com.moly3.cedarjam.pages.page_select_workspace.State
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
+
+internal class SelectWorkspaceStoreFactory(
+    private val storeFactory: StoreFactory,
+    private val lifecycle: Lifecycle,
+    private val onSelectWorkspace: (WorkspaceInput) -> Unit
+) : KoinComponent {
+
+    private val appEnvironment: IAppEnvironment by inject()
+    private val dialogCreateWorkspaceService: DialogCreateWorkspaceService by inject()
+    private val coroutineScope: CoroutineScope by inject()
+    private val isd: IMessageService by inject()
+
+    fun create(): SelectWorkspaceStore = object : SelectWorkspaceStore,
+        Store<Intent, State, Unit> by storeFactory.create(
+            name = SelectWorkspaceStore::class.simpleName,
+            initialState = State(),
+            bootstrapper = SimpleBootstrapper(Unit),
+            executorFactory = ::ExecutorImpl,
+            reducer = ReducerImpl
+        ) {}
+
+    private inner class ExecutorImpl :
+        BaseExecutor<Intent, Unit, State, SelectWorkspaceStore.Msg, Unit>(lifecycle) {
+
+        @OptIn(ExperimentalCoroutinesApi::class)
+        override fun onStart(scopeFromStartToStop: CoroutineScope) {
+            super.onStart(scopeFromStartToStop)
+
+
+            scopeFromStartToStop.launch {
+                appEnvironment.getWorkspacesFlow().collectLatest {
+                    dispatch(SelectWorkspaceStore.Msg.SetWorkspaces(it))
+                }
+            }
+        }
+
+        override fun executeIntent(intent: Intent) {
+            when (intent) {
+                is Intent.SelectWorkspace -> {
+                    onSelectWorkspace(WorkspaceInput(intent.workspace.name))
+                }
+
+                Intent.CreateWorkspace -> {
+                    coroutineScope.launch(io) {
+                        val result = dialogCreateWorkspaceService.open(Unit)
+                        if (result != null) {
+                            val result = appEnvironment.createWorkspace(result)
+                            when (result) {
+                                is ResultWrapper.Error -> {
+                                    isd.sendMessage(result.error)
+                                }
+
+                                is ResultWrapper.Success -> {
+
+                                }
+                            }
+                        }
+                    }
+                }
+
+                is Intent.DeleteWorkspace -> {
+                    coroutineScope.launch(io) {
+                        appEnvironment.deleteWorkspace(intent.workspace)
+                    }
+                }
+            }
+        }
+    }
+
+    private object ReducerImpl : Reducer<State, SelectWorkspaceStore.Msg> {
+        override fun State.reduce(msg: SelectWorkspaceStore.Msg): State {
+            return when (msg) {
+                is SelectWorkspaceStore.Msg.SetWorkspaces -> copy(workspacesState = msg.value)
+            }
+        }
+    }
+}

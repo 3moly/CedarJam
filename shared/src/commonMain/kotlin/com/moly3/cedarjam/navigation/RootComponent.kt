@@ -91,6 +91,7 @@ class RootComponent(
             Config.Empty -> Empty(
                 SelectWorkspaceComponent(
                     componentContext = componentContext,
+                    storeFactory = storeFactory,
                     onSelectWorkspace = {
                         Logger.d("onSelectWorkspace: ${it.name}")
                         try {

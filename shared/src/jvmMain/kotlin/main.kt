@@ -22,6 +22,7 @@ import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberTrayState
 import androidx.compose.ui.window.rememberWindowState
 import co.touchlab.kermit.Logger
+import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.extensions.compose.lifecycle.LifecycleController
 import com.arkivanov.essenty.backhandler.BackDispatcher
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
@@ -37,6 +38,7 @@ import com.moly3.cedarjam.core.ui.vectors.Tag
 import com.moly3.cedarjam.di.initApp
 import com.moly3.cedarjam.navigation.Root
 import com.moly3.cedarjam.navigation.createRootComponentSafe
+import com.moly3.cedarjam.navigation.ui.ActualPredictiveBackGestureOverlay
 import com.moly3.cedarjam.pages.page_workspace.ui.ToolbarHeight
 import com.moly3.cedarjam.pages.page_workspace.ui.ToolbarState
 import com.moly3.cedarjam.ui.MainApp
@@ -84,7 +86,9 @@ fun File.readSerializableContainer(): SerializableContainer? =
 
 private const val SAVED_STATE_FILE_NAME = "saved_state.dat"
 
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalJewelApi::class)
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalJewelApi::class,
+    ExperimentalDecomposeApi::class
+)
 fun main() {
     ComposeStabilityAnalyzer.setEnabled(false)
 //    ComposeStabilityAnalyzer.setLogger(object : RecompositionLogger {
@@ -219,40 +223,45 @@ fun main() {
                     windowState,
                     windowInfo = windowInfo
                 )
-                MainApp(root = root) { titleBarContent ->
-                    TitleBar(Modifier) { state ->
-                        val padding = if (state.isFullscreen) 0.dp else 40.dp
-                        val modifierPadding = when (DesktopPlatform.Current) {
-                            DesktopPlatform.Linux -> Modifier
-                            DesktopPlatform.Windows -> Modifier
-                                .padding(start = 70.dp)
-                                .padding(end = 70.dp)
+                ActualPredictiveBackGestureOverlay(
+                    backDispatcher = backDispatcher,
+                    modifier = Modifier
+                ) {
+                    MainApp(root = root) { titleBarContent ->
+                        TitleBar(Modifier) { state ->
+                            val padding = if (state.isFullscreen) 0.dp else 40.dp
+                            val modifierPadding = when (DesktopPlatform.Current) {
+                                DesktopPlatform.Linux -> Modifier
+                                DesktopPlatform.Windows -> Modifier
+                                    .padding(start = 70.dp)
+                                    .padding(end = 70.dp)
 
-                            DesktopPlatform.MacOS -> Modifier.padding(horizontal = padding)
-                            DesktopPlatform.Unknown -> Modifier
-                        }
-                        val isStartCut = when (DesktopPlatform.Current) {
-                            DesktopPlatform.Linux -> true
-                            DesktopPlatform.Windows -> false
-                            DesktopPlatform.MacOS -> true
-                            DesktopPlatform.Unknown -> true
-                        }
-                        val endControlsWidth = when (DesktopPlatform.Current) {
-                            DesktopPlatform.Linux -> 0.dp
-                            DesktopPlatform.Windows -> 140.dp
-                            DesktopPlatform.MacOS -> 80.dp
-                            DesktopPlatform.Unknown -> 0.dp
-                        }
-                        Box(Modifier.then(modifierPadding).fillMaxSize()) {
+                                DesktopPlatform.MacOS -> Modifier.padding(horizontal = padding)
+                                DesktopPlatform.Unknown -> Modifier
+                            }
+                            val isStartCut = when (DesktopPlatform.Current) {
+                                DesktopPlatform.Linux -> true
+                                DesktopPlatform.Windows -> false
+                                DesktopPlatform.MacOS -> true
+                                DesktopPlatform.Unknown -> true
+                            }
+                            val endControlsWidth = when (DesktopPlatform.Current) {
+                                DesktopPlatform.Linux -> 0.dp
+                                DesktopPlatform.Windows -> 140.dp
+                                DesktopPlatform.MacOS -> 80.dp
+                                DesktopPlatform.Unknown -> 0.dp
+                            }
+                            Box(Modifier.then(modifierPadding).fillMaxSize()) {
 
-                            titleBarContent(
-                                ToolbarState(
-                                    isFullscreen = state.isFullscreen,
-                                    menuButtonsWidth = padding * 2f,
-                                    isFirstCut = isStartCut,
-                                    controlsWidthToCut = endControlsWidth
+                                titleBarContent(
+                                    ToolbarState(
+                                        isFullscreen = state.isFullscreen,
+                                        menuButtonsWidth = padding * 2f,
+                                        isFirstCut = isStartCut,
+                                        controlsWidthToCut = endControlsWidth
+                                    )
                                 )
-                            )
+                            }
                         }
                     }
                 }

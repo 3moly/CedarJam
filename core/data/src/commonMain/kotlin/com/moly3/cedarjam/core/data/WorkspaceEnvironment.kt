@@ -1,6 +1,5 @@
 package com.moly3.cedarjam.core.data
 
-import androidx.compose.runtime.MutableState
 import com.moly3.cedarjam.core.net.IRemoteSyncRepository
 import com.moly3.data.DataCollectionRow
 import com.moly3.data.Tag
@@ -31,6 +30,7 @@ import com.moly3.cedarjam.core.domain.model.WorkspacePresentation
 import com.moly3.cedarjam.core.domain.model.bind
 import com.moly3.cedarjam.core.domain.model.ensure
 import com.moly3.cedarjam.core.domain.model.error.DatabaseError
+import com.moly3.cedarjam.core.domain.model.fold
 import com.moly3.cedarjam.core.domain.model.getSettingsJsonFile
 import com.moly3.cedarjam.core.domain.model.resultBlock
 import com.moly3.cedarjam.core.domain.model.shouldBeSuccess
@@ -49,7 +49,6 @@ import com.moly3.cedarjam.core.domain.model.request.RenameTagRequest
 import com.moly3.cedarjam.core.domain.model.request.UpdateDataCollectionRequest
 import com.moly3.cedarjam.core.domain.model.request.UpdateDataCollectionRowRequest
 import com.moly3.cedarjam.core.domain.model.request.UpdateTagRequest
-import com.moly3.cedarjam.core.domain.model.settings.AppSettings
 import com.moly3.cedarjam.core.domain.model.settings.WorkspaceSettings
 import com.moly3.cedarjam.core.domain.service.FileManagerService
 import com.moly3.cedarjam.core.storage.ISqlStorage
@@ -69,15 +68,14 @@ import kotlin.time.ExperimentalTime
 class WorkspaceEnvironment(
     private val sqlStorageFactory: () -> ISqlStorage,//core:data
     private val workspace: WorkspacePresentation,
-    private val filesRepo: IFilesRepository,//core:data
+    private val filesRepository: IFilesRepository,//core:data
     private val fileManagerService: FileManagerService, //core:data
     private val syncNetRepository: IRemoteSyncRepository, //-> core:net,
-    settings: WorkspaceSettings
 ) : IWorkspaceEnvironment {
 
     private val fileNodesState: MutableStateFlow<UIState<List<FileTreeNode>, String>> =
         MutableStateFlow(UIState.Loading)
-    private val _appSettingsStateFlow = MutableStateFlow(settings)
+    private val _appSettingsStateFlow = MutableStateFlow(WorkspaceSettings.defaultSettings)
 
     private val deletedFilesMeta = FileTreeNode.File(
         name = FileName(name = "deleted_files", extension = null),
@@ -107,10 +105,28 @@ class WorkspaceEnvironment(
     }
 
     override suspend fun initConfigAndFiles() {
-        updateTimes()
-        try {
+        withContext(io) {
+            updateTimes()
+            updateWorkspaceSettings()
+        }
+    }
 
-        }catch (exc: Exception){}
+    suspend fun updateWorkspaceSettings() {
+        val settingsFile = workspace.getSettingsJsonFile()
+        val settings = try {
+            val jsonResult = filesRepository.getNodeText(settingsFile)
+            jsonResult.fold(
+                onFailure = {
+                    WorkspaceSettings.defaultSettings
+                },
+                onSuccess = {
+                    DefaultJson.decodeFromString<WorkspaceSettings>(it)
+                }
+            )
+        } catch (exc: Exception) {
+            WorkspaceSettings.defaultSettings
+        }
+        _appSettingsStateFlow.emit(settings)
     }
 
 
@@ -121,14 +137,14 @@ class WorkspaceEnvironment(
     override suspend fun setWorkspaceSettings(settings: WorkspaceSettings) {
         withContext(io) {
             val json = DefaultJson.encodeToString(settings)
-            filesRepo.setNodeText(workspace.getSettingsJsonFile(), json)
+            filesRepository.setNodeText(workspace.getSettingsJsonFile(), json)
             _appSettingsStateFlow.emit(settings)
         }
     }
 
     override fun getNodes(parentFolder: FileTreeNode.Directory?): List<FileTreeNode> {
         val directoryNode = parentFolder ?: FileTreeNode.Directory.create(workspace.absolutePath)
-        return filesRepo.getNodes(directoryNode)
+        return filesRepository.getNodes(directoryNode)
     }
 
     private fun tryToGet(): UIState<List<FileTreeNode>, String> {
@@ -146,11 +162,11 @@ class WorkspaceEnvironment(
     ): ResultWrapper<ByteArray, String> {
         return resultBlock {
             try {
-                val fileNode = filesRepo.getFileNodeFromFullPath(
+                val fileNode = filesRepository.getFileNodeFromFullPath(
                     archiveFullPath,
                     isDirectory = false
                 ) as FileTreeNode.File
-                val byteArray = filesRepo.getNodeBytes(fileNode)
+                val byteArray = filesRepository.getNodeBytes(fileNode)
                 val uploadResult = syncNetRepository.upload(
                     userName = "bulat",
                     workspaceName = workspace.name,
@@ -391,7 +407,7 @@ class WorkspaceEnvironment(
 
     override fun isWorkspaceExists(): Boolean {
         val result =
-            filesRepo.isNodeExists(FileTreeNode.Directory.create(getWorkspace().fullpath))
+            filesRepository.isNodeExists(FileTreeNode.Directory.create(getWorkspace().fullpath))
         println("workspace env - isWorkspaceExists(): $result")
         return result
     }
@@ -412,17 +428,17 @@ class WorkspaceEnvironment(
                     parentPath = parentFolder?.getFullPath() ?: workspace.fullpath,
                     fileSize = 0L
                 )
-                if (!filesRepo.isNodeExists(newNameFileNode)) {
+                if (!filesRepository.isNodeExists(newNameFileNode)) {
                     break
                 }
                 index++
             }
-            filesRepo.createNode(
+            filesRepository.createNode(
                 newNameFileNode,
                 byteArray = byteArray
             )
         } else {
-            filesRepo.createNode(
+            filesRepository.createNode(
                 FileTreeNode.File(
                     name = fileName,
                     parentPath = parentFolder?.getFullPath() ?: workspace.fullpath,
@@ -455,15 +471,15 @@ class WorkspaceEnvironment(
                     children = listOf(),
                     fileSize = 0L
                 )
-                if (!filesRepo.isNodeExists(ss)) {
+                if (!filesRepository.isNodeExists(ss)) {
                     ff = ss
                     break
                 }
                 index++
             }
-            filesRepo.createNode(ff, byteArray = null)
+            filesRepository.createNode(ff, byteArray = null)
         } else {
-            filesRepo.createNode(
+            filesRepository.createNode(
                 FileTreeNode.Directory(
                     name = name,
                     parentPath = parentFolder?.getFullPath() ?: workspace.fullpath,
@@ -528,12 +544,12 @@ class WorkspaceEnvironment(
         return resultBlock {
 
             ensure(newNode.getShortName().isNotEmpty()) { "new name is empty" }
-            ensure(filesRepo.isNodeExists(oldNode)) { "file is not exists" }
-            ensure(!filesRepo.isNodeExists(newNode)) { "target path is already exists" }
+            ensure(filesRepository.isNodeExists(oldNode)) { "file is not exists" }
+            ensure(!filesRepository.isNodeExists(newNode)) { "target path is already exists" }
 
             val oldRelativePath = oldNode.getRelativePath(workspacePath = workspace.fullpath)
             val updatedNode = bind(
-                filesRepo.moveNode(
+                filesRepository.moveNode(
                     oldNode,
                     newNode
                 )
@@ -573,11 +589,11 @@ class WorkspaceEnvironment(
         newFile: FileTreeNode.File,
         byteArray: ByteArray?
     ) {
-        if (filesRepo.isNodeExists(newFile)) {
+        if (filesRepository.isNodeExists(newFile)) {
             doNothing()
             return
         }
-        filesRepo.createNode(
+        filesRepository.createNode(
             node = newFile,
             byteArray = byteArray
         )
@@ -605,7 +621,7 @@ class WorkspaceEnvironment(
                 deleteNode(item)
             }
         }
-        filesRepo.deleteNode(node)
+        filesRepository.deleteNode(node)
         val metadataList = getDeletedFilesMetadata().toMutableMap()
         val relativePath = node.getRelativePath(workspacePath = workspace.absolutePath)
         val addedTime = Clock.System.now().toEpochMilliseconds()
@@ -642,14 +658,14 @@ class WorkspaceEnvironment(
     }
 
     override fun getNodeText(node: FileTreeNode.File): ResultWrapper<String, String> {
-        return filesRepo.getNodeText(node)
+        return filesRepository.getNodeText(node)
     }
 
     override suspend fun setNodeText(
         node: FileTreeNode.File,
         text: String
     ): ResultWrapper<Unit, String> {
-        return filesRepo.setNodeText(node, text)
+        return filesRepository.setNodeText(node, text)
     }
 
     override fun createCollection(request: CreateCollectionRequest): ResultWrapper<Long, String> {

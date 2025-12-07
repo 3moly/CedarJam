@@ -89,7 +89,8 @@ import org.koin.core.parameter.parametersOf
 internal class WorkspaceStoreFactory(
     private val storeFactory: StoreFactory,
     private val lifecycle: Lifecycle,
-    private val workspaceSession: WorkspaceSession
+    private val workspaceSession: WorkspaceSession,
+    private val onSettingsOpen: () -> Unit
 ) : KoinComponent {
 
     private val systemFilesManager: IFilesRepository by inject()
@@ -796,9 +797,10 @@ internal class WorkspaceStoreFactory(
                 }
 
                 Intent.ChangeAppSettings -> {
-                    scope.launch {
-                        dialogWorkspaceSettingsService.open(Unit)
-                    }
+                    onSettingsOpen()
+//                    scope.launch {
+//                        dialogWorkspaceSettingsService.open(Unit)
+//                    }
                 }
 
                 Intent.ChangeAppColors -> {
