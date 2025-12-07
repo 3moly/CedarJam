@@ -3,4 +3,7 @@
     <string name="common_typ">Localina Шоукейс</string>
 
     <string name="f_settings_title">Настройки</string>
+    <string name="f_settings_options">Опции</string>
+
+    <string name="f_settings_general_title">Общее</string>
 </resources>

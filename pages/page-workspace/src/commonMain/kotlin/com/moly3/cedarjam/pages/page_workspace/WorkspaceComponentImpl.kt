@@ -73,7 +73,7 @@ class WorkspaceComponentImpl(
     override val dialogWorkspaceSettingsService: DialogWorkspaceSettingsService by inject()
 
     private val settingsDialogScope by lazy {
-        settingsDialogScopeFactory()
+        settingsDialogScopeFactory(workspaceSession)
     }
 
     override val settingsDialogSlot = settingsDialogScope.slot

@@ -6,6 +6,16 @@ import org.koin.core.component.KoinComponent
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SettingsMainComponent(
-    componentContext: ComponentContext
+    componentContext: ComponentContext,
+    private val onOpenGeneral: () -> Unit,
+    private val close: () -> Unit
 ) : ISettingsMainComponent,
-    ComponentContext by componentContext, KoinComponent
+    ComponentContext by componentContext, KoinComponent {
+    override fun openGeneral() {
+        onOpenGeneral()
+    }
+
+    override fun onClose() {
+        close()
+    }
+}

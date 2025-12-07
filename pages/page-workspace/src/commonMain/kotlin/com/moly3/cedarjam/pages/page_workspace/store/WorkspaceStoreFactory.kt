@@ -1138,7 +1138,6 @@ internal class WorkspaceStoreFactory(
 
                 is Intent.OnOffsetTabChangeOffset -> {
                     scope.launch(Dispatchers.Main.immediate) {
-                        println("backlevel ${intent.data}")
                         val state = state()
                         val lockedMenuCovered = state.lockedMenuCovered
                         if (lockedMenuCovered != null) {
@@ -1164,7 +1163,6 @@ internal class WorkspaceStoreFactory(
                             }
                         }
                     }
-
                 }
             }
         }

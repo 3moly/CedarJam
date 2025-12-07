@@ -3,4 +3,7 @@
     <string name="common_typ">Localina Showcase</string>
 
     <string name="f_settings_title">Settings</string>
+    <string name="f_settings_options">Options</string>
+
+    <string name="f_settings_general_title">General</string>
 </resources>

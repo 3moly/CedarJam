@@ -61,7 +61,7 @@ class HorizontalPredictiveAnimatable(
 
     override val enterModifier: Modifier
         get() = Modifier.graphicsLayer {
-            translationX = offsetAnim.value
+            //translationX = offsetAnim.value
         }
 
     override val exitModifier: Modifier

@@ -1,11 +1,9 @@
-package com.moly3.cedarjam.features.feature_settings.child.main.ui
+package com.moly3.cedarjam.features.feature_settings.child.general.ui
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,6 +13,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -30,79 +31,26 @@ import com.moly3.cedarjam.core.ui.uikit.CJIcon
 import com.moly3.cedarjam.core.ui.uikit.CJText
 import com.moly3.cedarjam.core.ui.vectors.CloseSM
 import com.moly3.cedarjam.core.ui.vectors.Right2
-import com.moly3.cedarjam.core.ui.vectors.TrashCan
-import com.moly3.cedarjam.features.feature_settings.child.main.ISettingsMainComponent
+import com.moly3.cedarjam.features.feature_settings.child.general.ISettingsGeneralComponent
+import com.moly3.cedarjam.features.feature_settings.child.general.ui.internal.SettingsGeneralUIContent
 import com.moly3.cedarjam.ui.Res
 import com.moly3.cedarjam.ui.*
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
-fun SettingsMainUI(component: ISettingsMainComponent) {
-    val appTheme = LocalAppTheme.current
-    Box(
-        Modifier
-            .fillMaxSize()
-            .background(appTheme.colors.backgroundPrimary)
-            .flatClickable {}
-            .statusBarsPadding()
-            .navigationBarsPadding()
-    ) {
-        Column {
-            Box(Modifier.height(46.dp).fillMaxWidth().drawUnder(borderThickness = 0.5.dp)) {
-                CJText(
-                    modifier = Modifier.align(Alignment.Center),
-                    text = stringResource(Res.string.f_settings_title)
-                )
-                CJIcon(
-                    modifier = Modifier.padding(end = 16.dp).size(24.dp).align(Alignment.CenterEnd),
-                    painter = rememberVectorPainter(CloseSM)
-                ) {
-                    component.onClose()
-                }
-            }
-
-            Column(Modifier.weight(1f).fillMaxWidth()) {
-                CJText(
-                    modifier = Modifier.padding(start = 24.dp, top = 24.dp, bottom = 8.dp),
-                    text = stringResource(Res.string.f_settings_options)
-                )
-                SelectOption(
-                    isShowBorder = true,
-                    text = stringResource(Res.string.f_settings_general_title),
-                    onClick = {
-                        component.openGeneral()
-                    }
-                )
-                SelectOption(
-                    isShowBorder = true,
-                    text = "Editor",
-                    onClick = {
-
-                    }
-                )
-                SelectOption(
-                    isShowBorder = true,
-                    text = "Toolbar",
-                    onClick = {
-
-                    }
-                )
-                SelectOption(
-                    isShowBorder = true,
-                    text = "Files and links",
-                    onClick = {
-
-                    }
-                )
-                SelectOption(
-                    isShowBorder = false,
-                    text = "Community plugins",
-                    onClick = {
-
-                    }
-                )
+fun SettingsGeneralUI(component: ISettingsGeneralComponent) {
+    val settings by component.settingsState.collectAsState()
+    val scope = rememberCoroutineScope()
+    SettingsGeneralUIContent(
+        settings = settings,
+        onSetSettings = {
+            scope.launch {
+                component.onSetSettings(it)
             }
         }
+    ) {
+        component.onClose()
     }
 }
 

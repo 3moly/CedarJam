@@ -11,6 +11,7 @@ import com.moly3.cedarjam.core.domain.service.WorkspaceSession
 import com.moly3.cedarjam.features.feature_settings.model.DialogScope
 
 fun ComponentContext.settingsDialogScopeFactory(
+    workspaceSession: WorkspaceSession
 ): DialogScope {
     val dialogNavigation = SlotNavigation<DialogConfig>()
     val slot = childSlot(
@@ -21,6 +22,7 @@ fun ComponentContext.settingsDialogScopeFactory(
         childFactory = { config, context ->
             DialogSettingsComponentImpl(
                 componentContext = context,
+                workspaceSession = workspaceSession,
                 onClose = {
                     dialogNavigation.dismiss()
                 }

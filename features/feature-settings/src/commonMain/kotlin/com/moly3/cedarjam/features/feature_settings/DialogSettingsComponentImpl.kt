@@ -5,8 +5,12 @@ import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.backStack
 import com.arkivanov.decompose.router.stack.childStack
+import com.arkivanov.decompose.router.stack.navigate
 import com.arkivanov.decompose.router.stack.pop
 import com.arkivanov.decompose.value.Value
+import com.moly3.cedarjam.core.domain.service.WorkspaceSession
+import com.moly3.cedarjam.features.feature_settings.IDialogSettingsComponent.Child.*
+import com.moly3.cedarjam.features.feature_settings.child.general.SettingsGeneralComponent
 import com.moly3.cedarjam.features.feature_settings.child.main.SettingsMainComponent
 import com.moly3.cedarjam.features.feature_settings.child.transparent.SettingsTransparentComponent
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -16,6 +20,7 @@ import org.koin.core.component.KoinComponent
 @OptIn(ExperimentalCoroutinesApi::class)
 class DialogSettingsComponentImpl(
     componentContext: ComponentContext,
+    private val workspaceSession: WorkspaceSession,
     private val onClose: () -> Unit
 ) : IDialogSettingsComponent,
     ComponentContext by componentContext, KoinComponent {
@@ -25,15 +30,33 @@ class DialogSettingsComponentImpl(
         componentContext: ComponentContext
     ): IDialogSettingsComponent.Child =
         when (config) {
-            Config.Transparent -> IDialogSettingsComponent.Child.Transparent(
+            Config.Transparent -> Transparent(
                 SettingsTransparentComponent(
                     componentContext = componentContext
                 )
             )
 
-            is Config.Main -> IDialogSettingsComponent.Child.Main(
+            is Config.Main -> Main(
                 SettingsMainComponent(
-                    componentContext = componentContext
+                    componentContext = componentContext,
+                    close = {
+                        onClose()
+                    },
+                    onOpenGeneral = {
+                        navigation.navigate {
+                            it + Config.General
+                        }
+                    }
+                )
+            )
+
+            Config.General -> General(
+                SettingsGeneralComponent(
+                    componentContext = componentContext,
+                    workspaceSession = workspaceSession,
+                    close = {
+                        onClose()
+                    }
                 )
             )
         }
@@ -70,5 +93,8 @@ class DialogSettingsComponentImpl(
 
         @Serializable
         data object Main : Config
+
+        @Serializable
+        data object General : Config
     }
 }
