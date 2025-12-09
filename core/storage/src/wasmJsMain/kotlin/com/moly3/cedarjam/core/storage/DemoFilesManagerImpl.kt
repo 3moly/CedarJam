@@ -70,14 +70,6 @@ class DemoFilesManagerImpl : ISystemFilesManager {
         }
     }
 
-    override fun extractZipFromBytes(
-        bytes: ByteArray,
-        destinationPath: String,
-        fileStructure: FileStructure
-    ) {
-
-    }
-
     override fun toAbsoluteAppPath(relativePath: IPathWrapper): IPathWrapper {
         return relativePath
     }

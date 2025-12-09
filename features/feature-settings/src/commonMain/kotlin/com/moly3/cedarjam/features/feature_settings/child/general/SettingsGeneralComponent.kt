@@ -7,6 +7,7 @@ import com.moly3.cedarjam.core.domain.io
 import com.moly3.cedarjam.core.domain.model.FileName
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.FileTreeNode.*
+import com.moly3.cedarjam.core.domain.model.settings.WorkspaceSettings
 import com.moly3.cedarjam.core.domain.repository.IFilesRepository
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
 import io.github.vinceglb.filekit.FileKit
@@ -32,6 +33,16 @@ class SettingsGeneralComponent(
     private val coroutineScope: CoroutineScope by inject()
     private val systemFilesManager: IFilesRepository by inject()
     override val settingsState = workspaceSession.getSettingsFlow()
+
+    private fun setSettings(newSettings: WorkspaceSettings) {
+        coroutineScope.launch(io) {
+            val state = workspaceSession.getSettingsFlow().value
+            if (state != newSettings) {
+                workspaceSession.setSettings(newSettings)
+            }
+        }
+    }
+
     override fun onIntent(intent: Intent) {
         when (intent) {
             Intent.Back -> back()
@@ -59,10 +70,35 @@ class SettingsGeneralComponent(
                 }
             }
 
-            is Intent.SetSettings -> {
-                coroutineScope.launch(io){
-                    workspaceSession.setSettings(intent.data)
-                }
+            is Intent.SetDensity -> {
+                val state = workspaceSession.getSettingsFlow().value
+                setSettings(
+                    state.copy(
+                        density = intent.density,
+                        fontScale = intent.fontScale
+                    )
+                )
+            }
+
+            is Intent.SetLanguage -> {
+                val state = workspaceSession.getSettingsFlow().value
+                setSettings(
+                    state.copy(
+                        language = intent.code
+                    )
+                )
+            }
+
+            is Intent.SetTheme -> {
+                val state = workspaceSession.getSettingsFlow().value
+                setSettings(
+                    state.copy(
+                        theme = state.theme.copy(
+                            colorsType = intent.colorsType,
+                            colors = intent.colors
+                        )
+                    )
+                )
             }
         }
     }

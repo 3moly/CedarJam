@@ -116,13 +116,15 @@ interface IWorkspaceEnvironment {
     fun deleteCollectionRow(id: Long)
     fun deleteCollection(id: Long)
     suspend fun deleteNode(node: FileTreeNode)
+    suspend fun deleteNodes(nodes: List<FileTreeNode>)
     fun deleteTag(id: Long)
     fun deleteTagLink(id: Long)
     fun deleteAnnotation(id: Long)
     fun deleteTagToTag(id: Long)
     fun deleteTagCollectionRow(id: Long)
     suspend fun createDatabase()
-    fun getDeletedFilesMetadata(workspace: IWorkspaceEnvironment): Map<String, Long>
+    suspend fun saveDeletedMetadata(list: Map<String, Long>): ResultWrapper<Unit, String>
+    fun getDeletedFilesMetadata(): Map<String, Long>
 
     companion object Companion {
         const val hiddenResources = "resources"

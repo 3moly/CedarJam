@@ -17,6 +17,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.isBackPressed
 import androidx.compose.ui.input.pointer.isForwardPressed
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.extensions.compose.experimental.stack.ChildStack
@@ -63,7 +65,7 @@ fun JvmWindowScope.MainApp(
         val playerState = rememberVideoPlayerState()
         CompositionLocalProvider(
             LocalHazeState provides hazeState,
-            LocalVideoPlayer provides playerState,
+            LocalVideoPlayer provides playerState
         ) {
             Box(
                 modifier = Modifier.fillMaxSize()

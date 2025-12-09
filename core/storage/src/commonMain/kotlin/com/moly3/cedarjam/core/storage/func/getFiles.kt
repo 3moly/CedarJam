@@ -28,7 +28,7 @@ fun getFiles(
             nodes = filesResult.first
         }
         val node = getFileNodeFromPath(
-            filePath,
+            filePath = filePath,
             meta.isDirectory,
             nodes = nodes,
             fileSize = childFileSize

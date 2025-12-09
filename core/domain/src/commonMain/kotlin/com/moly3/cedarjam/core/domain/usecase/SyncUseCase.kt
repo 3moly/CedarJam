@@ -2,13 +2,15 @@ package com.moly3.cedarjam.core.domain.usecase
 
 import com.moly3.cedarjam.core.domain.func.getRelativePath
 import com.moly3.cedarjam.core.domain.func.hiddenDirectory
+import com.moly3.cedarjam.core.domain.func.isMoreThan
+import com.moly3.cedarjam.core.domain.func.isMoreThanOrExact
+import com.moly3.cedarjam.core.domain.func.normalizeText
 import com.moly3.cedarjam.core.domain.func.pathWrapper
 import com.moly3.cedarjam.core.domain.model.FileTreeNode.Companion.getAll
 import com.moly3.cedarjam.core.domain.model.shouldBeSuccess
 import com.moly3.cedarjam.core.domain.model.FileItem
 import com.moly3.cedarjam.core.domain.model.FileMetadata
 import com.moly3.cedarjam.core.domain.model.FileName
-import com.moly3.cedarjam.core.domain.model.FileStructure
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.ResultWrapper
 import com.moly3.cedarjam.core.domain.model.WorkspacePresentation
@@ -42,7 +44,7 @@ class SyncUseCase(
         localNodes: List<FileTreeNode>,
         serverFiles: List<FileItem>,
         workspace: IWorkspaceEnvironment
-    ) {
+    ): List<FileTreeNode> {
         val deleteFiles = localNodes.filter { localNode ->
             val localRelativePath =
                 localNode.getRelativePath(workspacePath = workspaceAbsolutePath)
@@ -50,13 +52,11 @@ class SyncUseCase(
             serverFiles.firstOrNull { d ->
                 d.relativePath == localRelativePath &&
                         d.isDeleted &&
-                        d.modifiedTime > localNode.modifiedTime
+                        d.modifiedTime.isMoreThan(localNode.modifiedTime)
             } != null
         }
-        //delete local file nodes
-        for (item in deleteFiles) {
-            workspace.deleteNode(item)
-        }
+        workspace.deleteNodes(deleteFiles)
+        return deleteFiles
     }
 
     private suspend fun step3(
@@ -64,11 +64,6 @@ class SyncUseCase(
         filesToArchive: List<String>,
         archivePath: String
     ) {
-//        zipFolder(
-//            workspaceFolderAbsolutePath = workspacePresentation.absolutePath,
-//            filesToArchive = filesToArchive,
-//            archive = archivePath
-//        )
         filesRepo.packFilesToZip(
             workspaceFolderAbsolutePath = workspacePresentation.absolutePath,
             filesToArchive = filesToArchive,
@@ -77,14 +72,13 @@ class SyncUseCase(
     }
 
     private fun step4(
-        workspace: IWorkspaceEnvironment,
+        localDeletedFiles: Map<String, Long>,
         filesToArchive: List<FileMetadata>
     ): List<FileMetadata> {
         val metadataList = filesToArchive.toMutableList()
-        val deleted = workspace.getDeletedFilesMetadata(workspace = workspace)
-        for (deletedMeta in deleted) {
+        for (deletedMeta in localDeletedFiles) {
             val upload = metadataList.firstOrNull { d -> d.path == deletedMeta.key }
-            if (upload != null && deletedMeta.value > upload.modifiedTime || upload == null) {
+            if (upload != null && deletedMeta.value.isMoreThan(upload.modifiedTime) || upload == null) {
                 metadataList.remove(upload)
                 metadataList.add(
                     FileMetadata(
@@ -104,15 +98,27 @@ class SyncUseCase(
         serverNodes: List<FileItem>
     ): List<String> {
         return serverNodes.filter { serverNode ->
-            if (!serverNode.isDeleted) {
-                val localNode =
-                    allMetadata.firstOrNull { m -> m.path == serverNode.relativePath && !m.isDeleted }
-                if (localNode != null) {
-                    localNode.modifiedTime < serverNode.modifiedTime
-                } else
-                    true
-            } else
+            if (serverNode.isDirectory)
                 false
+            else {
+                if (!serverNode.isDeleted) {
+                    val localNode =
+                        allMetadata.firstOrNull { m ->
+                            m.path == serverNode.relativePath.normalizeText()
+                        } //&& !m.isDeleted
+                    if (localNode != null) {
+                        if (localNode.isDeleted &&
+                            localNode.modifiedTime.isMoreThanOrExact(serverNode.modifiedTime)
+                        ) false
+                        else {
+                            val result = serverNode.modifiedTime.isMoreThan(localNode.modifiedTime)
+                            result
+                        }
+                    } else
+                        true
+                } else
+                    false
+            }
         }.map { v -> v.relativePath }
     }
 
@@ -153,7 +159,7 @@ class SyncUseCase(
                 localFile.getRelativePath(workspacePath = workspacePresentation.absolutePath)
             val foundServerFile =
                 serverNodes.firstOrNull { d -> d.relativePath == localRelativePath }
-            if (foundServerFile == null || foundServerFile.modifiedTime < localFile.modifiedTime) {
+            if (foundServerFile == null || localFile.modifiedTime.isMoreThan(foundServerFile.modifiedTime)) {
                 addMeta(localFile)
             }
         }
@@ -161,23 +167,49 @@ class SyncUseCase(
     }
 
 
-    override suspend fun invoke(workspace: IWorkspaceEnvironment): ResultWrapper<Unit, String> {
+    override suspend fun invoke(workspace: IWorkspaceEnvironment): ResultWrapper<SyncStatus, String> {
+        val filesDirPath = filesRepo.toAbsoluteAppPath(pathWrapper("")).pathString
+
+        val archivePath = filesRepo.toAbsoluteAppPath(pathWrapper("meme.zip")).pathString
+        val dbWall =
+            FileTreeNode.File(
+                name = FileName(
+                    "sqlite",
+                    extension = "db-wal"
+                ),
+                parentPath = pathWrapper(filesDirPath, hiddenDirectory).pathString
+            )
+        val dbShm =
+            FileTreeNode.File(
+                name = FileName(
+                    "sqlite",
+                    extension = "db-shm"
+                ),
+                parentPath = pathWrapper(filesDirPath, hiddenDirectory).pathString
+            )
+        val exportArchiveNode =
+            FileTreeNode.File(
+                name = FileName(
+                    "meme_export",
+                    extension = "zip"
+                ),
+                parentPath = filesDirPath
+            )
         return resultBlock {
             try {
                 val workspaceAbsolutePath = workspace.getWorkspace().absolutePath
-                val localStructure = workspace.getNodes(null)
-                val localNodes = localStructure.getAll(isSkipOwnNode = true)
+                val localNodes = workspace.getNodes(null).getAll(isSkipOwnNode = true)
 
+                //get server file structure
                 val serverNodes = step1(workspace = workspace)
-                step2(
+                //delete local files
+                val deletedLocalFiles = step2(
                     workspaceAbsolutePath = workspaceAbsolutePath,
                     localNodes = localNodes,
-                    serverFiles = serverNodes,
+                    serverFiles = serverNodes.map { d -> d.copy(relativePath = d.relativePath.normalizeText()) },
                     workspace = workspace
                 )
-                val archivePath = filesRepo.toAbsoluteAppPath(pathWrapper("meme.zip")).pathString
-//                val file = filesRepo.getFileNodeFromFullPath(archivePath, isDirectory = false)
-//                filesRepo.deleteNode(file)
+
                 try {
                     SystemFileSystem.delete(Path(archivePath))
                 } catch (exc: Exception) {
@@ -186,15 +218,17 @@ class SyncUseCase(
                 val filesToArchive = getFilesToArchive(
                     workspacePresentation = workspace.getWorkspace(),
                     localNodes = localNodes,
-                    serverNodes = serverNodes
+                    serverNodes = serverNodes.map { d -> d.copy(relativePath = d.relativePath.normalizeText()) }
                 )
+                //pack filesToArchive to zip
                 step3(
                     workspacePresentation = workspace.getWorkspace(),
                     filesToArchive = filesToArchive.map { d -> d.path },
                     archivePath = archivePath
                 )
+                val localDeletedFiles = workspace.getDeletedFilesMetadata().toMutableMap()
                 val metadata = step4(
-                    workspace = workspace,
+                    localDeletedFiles = localDeletedFiles,
                     filesToArchive = filesToArchive
                 )
                 val metadatasd = metadata.toMutableList()
@@ -222,76 +256,48 @@ class SyncUseCase(
                 val uploadResult = workspace.uploadSync(
                     filesToDownload = filesToDownload,
                     archiveFullPath = archivePath,
-                    metadata = metadata
+                    metadata = metadatasd
                 )
                 uploadResult.shouldBeSuccess()
 
-                //                serverFilesResult.shouldBeSuccess()
-                val serverFiles2 = when (val serverFilesResult2 = workspace.getServerFiles()) {
-                    is ResultWrapper.Error -> {
-                        //todo check by server error
-                        listOf()
-                    }
-
-                    is ResultWrapper.Success -> {
-                        serverFilesResult2.value.files
-                    }
-                }
-
-                val filesDirPath = filesRepo.toAbsoluteAppPath(pathWrapper("")).pathString
-                val exportArchiveNode =
-                    FileTreeNode.File(
-                        name = FileName(
-                            "meme_export",
-                            extension = "zip"
-                        ),
-                        parentPath = filesDirPath
-                    )
                 val exportArchivePath = exportArchiveNode.getFullPath()
                 filesRepo.deleteNode(exportArchiveNode)
                 val createdExportArchive =
                     filesRepo.createNode(exportArchiveNode, byteArray = uploadResult.value)
                 createdExportArchive.shouldBeSuccess()
-                val dbWall =
-                    FileTreeNode.File(
-                        name = FileName(
-                            "sqlite",
-                            extension = "db-wal"
-                        ),
-                        parentPath = pathWrapper(filesDirPath, hiddenDirectory).pathString
-                    )
-                val dbShm =
-                    FileTreeNode.File(
-                        name = FileName(
-                            "sqlite",
-                            extension = "db-shm"
-                        ),
-                        parentPath = pathWrapper(filesDirPath, hiddenDirectory).pathString
-                    )
+
                 try {
                     filesRepo.deleteNode(dbWall)
                     filesRepo.deleteNode(dbShm)
                 } catch (exc: Exception) {
 
                 }
-                //filesRepo.extractZipFromBytes()
-                filesRepo.extractFilesFromZip(
+
+                val serverFiles2 = step1(workspace)
+                val extractedFiles = filesRepo.extractFilesFromZip(
                     archivePath = exportArchivePath,
                     workspaceFullPath = workspaceAbsolutePath,
                     serverFiles = serverFiles2,
                 )
-//                extractZipFromBytes(
-//                    bytes = uploadResult.value,
-//                    destinationPath = workspaceAbsolutePath,
-//                    fileStructure = FileStructure(modifiedTime = 0L, files = serverFiles2)
-//                )
-
+                if (localDeletedFiles.isNotEmpty() &&
+                    extractedFiles.isNotEmpty()
+                ) {
+                    var someDeleted = false
+                    for (extractFile in extractedFiles) {
+                        if (localDeletedFiles.remove(extractFile) != null) {
+                            someDeleted = true
+                        }
+                    }
+                    if (someDeleted) {
+                        workspace.saveDeletedMetadata(localDeletedFiles)
+                    }
+                }
+                SyncStatus(
+                    filesDownloaded = extractedFiles
+                )
             } catch (exc: Exception) {
                 raise(exc.message ?: "")
             }
         }
-//        return either {
-//
-//        }.toResult()
     }
 }

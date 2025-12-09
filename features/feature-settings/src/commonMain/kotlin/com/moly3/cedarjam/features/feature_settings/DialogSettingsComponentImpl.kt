@@ -8,10 +8,13 @@ import com.arkivanov.decompose.router.stack.childStack
 import com.arkivanov.decompose.router.stack.navigate
 import com.arkivanov.decompose.router.stack.pop
 import com.arkivanov.decompose.value.Value
+import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
 import com.moly3.cedarjam.features.feature_settings.IDialogSettingsComponent.Child.*
 import com.moly3.cedarjam.features.feature_settings.child.general.SettingsGeneralComponent
 import com.moly3.cedarjam.features.feature_settings.child.main.SettingsMainComponent
+import com.moly3.cedarjam.features.feature_settings.child.storage.SettingsStorageComponent
+import com.moly3.cedarjam.features.feature_settings.child.sync.SettingsSyncComponent
 import com.moly3.cedarjam.features.feature_settings.child.transparent.SettingsTransparentComponent
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.serialization.Serializable
@@ -20,6 +23,7 @@ import org.koin.core.component.KoinComponent
 @OptIn(ExperimentalCoroutinesApi::class)
 class DialogSettingsComponentImpl(
     componentContext: ComponentContext,
+    private val storeFactory: StoreFactory,
     private val workspaceSession: WorkspaceSession,
     private val onClose: () -> Unit
 ) : IDialogSettingsComponent,
@@ -42,11 +46,21 @@ class DialogSettingsComponentImpl(
                     close = {
                         onClose()
                     },
-                    onOpenGeneral = {
+                    openGeneral = {
                         navigation.navigate {
                             it + Config.General
                         }
-                    }
+                    },
+                    openSync = {
+                        navigation.navigate {
+                            it + Config.Sync
+                        }
+                    },
+                    openStorage = {
+                        navigation.navigate {
+                            it + Config.Storage
+                        }
+                    },
                 )
             )
 
@@ -54,6 +68,34 @@ class DialogSettingsComponentImpl(
                 SettingsGeneralComponent(
                     componentContext = componentContext,
                     workspaceSession = workspaceSession,
+                    back = {
+                        navigation.pop()
+                    },
+                    close = {
+                        onClose()
+                    }
+                )
+            )
+
+            Config.Storage -> Storage(
+                SettingsStorageComponent(
+                    componentContext = componentContext,
+                    workspaceSession = workspaceSession,
+                    storeFactory = storeFactory,
+                    back = {
+                        navigation.pop()
+                    },
+                    close = {
+                        onClose()
+                    }
+                )
+            )
+
+            Config.Sync -> Sync(
+                SettingsSyncComponent(
+                    componentContext = componentContext,
+                    workspaceSession = workspaceSession,
+                    storeFactory = storeFactory,
                     back = {
                         navigation.pop()
                     },
@@ -99,5 +141,10 @@ class DialogSettingsComponentImpl(
 
         @Serializable
         data object General : Config
+
+        @Serializable
+        data object Storage : Config
+        @Serializable
+        data object Sync : Config
     }
 }

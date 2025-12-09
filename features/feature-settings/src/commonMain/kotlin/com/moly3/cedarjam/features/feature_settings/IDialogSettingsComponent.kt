@@ -6,6 +6,8 @@ import com.arkivanov.decompose.value.Value
 import com.arkivanov.essenty.backhandler.BackHandlerOwner
 import com.moly3.cedarjam.features.feature_settings.child.general.ISettingsGeneralComponent
 import com.moly3.cedarjam.features.feature_settings.child.main.ISettingsMainComponent
+import com.moly3.cedarjam.features.feature_settings.child.storage.ISettingsStorageComponent
+import com.moly3.cedarjam.features.feature_settings.child.sync.ISettingsSyncComponent
 import com.moly3.cedarjam.features.feature_settings.child.transparent.ISettingsTransparentComponent
 
 @Stable
@@ -18,5 +20,7 @@ interface IDialogSettingsComponent : BackHandlerOwner {
         class Transparent(val component: ISettingsTransparentComponent) : Child()
         class Main(val component: ISettingsMainComponent) : Child()
         class General(val component: ISettingsGeneralComponent) : Child()
+        class Storage(val component: ISettingsStorageComponent) : Child()
+        class Sync(val component: ISettingsSyncComponent) : Child()
     }
 }

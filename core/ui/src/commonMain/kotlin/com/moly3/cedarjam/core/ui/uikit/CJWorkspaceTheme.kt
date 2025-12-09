@@ -5,19 +5,23 @@ import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.sp
 import co.touchlab.kermit.Logger
 import com.moly3.cedarjam.core.domain.io
 import com.moly3.cedarjam.core.domain.model.settings.WorkspaceFont
 import com.moly3.cedarjam.core.domain.model.settings.WorkspaceSettings
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
+import com.moly3.cedarjam.core.ui.compositions.LocalSystemDensity
 import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
 import com.moly3.cedarjam.core.ui.func.changeLanguage
 import com.moly3.cedarjam.core.ui.func.getFontByPath
@@ -61,14 +65,25 @@ fun CJWorkspaceTheme(
             currentTheme = settings.theme.colorsType
         )
     }
+    val density by remember(settings) {
+        derivedStateOf {
+            Density(settings.density.coerceIn(0.75f .. 3f), settings.fontScale.coerceIn(0.75f .. 3f))
+        }
+    }
     val customTextSelectionColors = TextSelectionColors(
         handleColor = settings.theme.primaryColor,
         backgroundColor = settings.theme.primaryColor.copy(alpha = 0.4f)
     )
+    val systemDensity = LocalDensity.current
     CompositionLocalProvider(
         LocalTextSelectionColors provides customTextSelectionColors,
         LocalAppTheme provides appTheme,
-        LocalTextStyle provides textStyle
+        LocalTextStyle provides textStyle,
+        LocalDensity provides Density(
+            density = density.density * systemDensity.density,
+            fontScale = density.fontScale * systemDensity.fontScale
+        ),
+        LocalSystemDensity provides systemDensity
     ) {
         content()
     }

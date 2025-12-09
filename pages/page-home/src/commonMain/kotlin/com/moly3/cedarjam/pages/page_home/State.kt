@@ -1,7 +1,6 @@
 package com.moly3.cedarjam.pages.page_home
 
 import androidx.compose.ui.text.input.TextFieldValue
-import com.moly3.cedarjam.pages.page_home.model.FileVersionLine
 import com.moly3.cedarjam.pages.page_home.model.TimeMachine
 import com.moly3.cedarjam.core.domain.model.UIState
 import kotlinx.collections.immutable.ImmutableList
@@ -11,8 +10,8 @@ data class State(
     val searchTextFieldValue: TextFieldValue = TextFieldValue(""),
     val count: Int = 0,
     val timeMachinesState: UIState<ImmutableList<TimeMachine>, Nothing> = UIState.Loading,
-    val fileVersionsState: UIState<ImmutableList<FileVersionLine>, String> = UIState.Loading,
-    val uploadState: UIState<Unit, String> = UIState.Loading,
+
+
 ) {
     @Serializable
     data class SaveableState(

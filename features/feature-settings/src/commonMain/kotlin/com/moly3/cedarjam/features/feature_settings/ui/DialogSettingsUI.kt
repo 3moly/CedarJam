@@ -8,6 +8,9 @@ import com.moly3.cedarjam.core.ui.JvmWindowScope
 import com.moly3.cedarjam.features.feature_settings.IDialogSettingsComponent
 import com.moly3.cedarjam.features.feature_settings.child.general.ui.SettingsGeneralUI
 import com.moly3.cedarjam.features.feature_settings.child.main.ui.SettingsMainUI
+import com.moly3.cedarjam.features.feature_settings.child.storage.ui.SettingsStorageUI
+import com.moly3.cedarjam.features.feature_settings.child.sync.SettingsSyncComponent
+import com.moly3.cedarjam.features.feature_settings.child.sync.ui.SettingsSyncUI
 import com.moly3.cedarjam.features.feature_settings.child.transparent.ui.SettingsTransparentUI
 import com.moly3.cedarjam.navigation.func.backAnimation2
 
@@ -29,6 +32,8 @@ fun JvmWindowScope.DialogSettingsUI(
             is IDialogSettingsComponent.Child.Transparent -> SettingsTransparentUI()
             is IDialogSettingsComponent.Child.Main -> SettingsMainUI(instance.component)
             is IDialogSettingsComponent.Child.General -> SettingsGeneralUI(instance.component)
+            is IDialogSettingsComponent.Child.Storage -> SettingsStorageUI(component = instance.component)
+            is IDialogSettingsComponent.Child.Sync -> SettingsSyncUI(component = instance.component)
         }
     }
 }

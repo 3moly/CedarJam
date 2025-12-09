@@ -22,7 +22,6 @@ import com.moly3.cedarjam.pages.page_home.Intent
 import com.moly3.cedarjam.pages.page_home.State
 import com.moly3.cedarjam.pages.page_home.State.Companion.fromSaveable
 import com.moly3.cedarjam.pages.page_home.State.Companion.toSaveable
-import com.moly3.cedarjam.pages.page_home.model.FileVersionLine
 import com.moly3.cedarjam.pages.page_home.model.LineMatch
 import com.moly3.cedarjam.pages.page_home.model.TimeMachine
 import com.moly3.cedarjam.core.domain.func.combine
@@ -75,7 +74,7 @@ internal class HomeStoreFactory(
     }
     private val navigator: Navigator by inject()
     private val filesRepository: IFilesRepository by inject()
-    private val syncUseCase: ISyncUseCase by inject()
+
     private val navigateToFileUseCase: INavigateToFileUseCase by inject {
         parametersOf(fileManagerService)
     }
@@ -110,62 +109,11 @@ internal class HomeStoreFactory(
 
         private val _searchTextState = MutableStateFlow("")
 
-        private fun refreshStatusFiles() {
-            val env = workspaceSession.workspaceEnvStateFlow.value
-            val workspace = env.getWorkspace()
-            scope.launch(io) {
-                try {
-                    val getLocalFiles = env.getNodes(null).getAll(isSkipOwnNode = true)
-                    val getServerFiles = env.getServerFiles()
-                    getServerFiles.shouldBeSuccess()
-                    val virtFiles = mutableListOf<FileVersionLine>()
-                    for (item in getServerFiles.value.files) {
-                        val foundItem =
-                            getLocalFiles.firstOrNull { d ->
-                                d.getRelativePath(workspacePath = workspace.absolutePath) == item.relativePath
-                            }
-                        if (foundItem != null && foundItem.modifiedTime != item.modifiedTime && !item.isDirectory) {
-                            virtFiles.add(
-                                FileVersionLine(
-                                    fileRelativePath = item.relativePath,
-                                    currentTime = foundItem.modifiedTime,
-                                    serverTime = item.modifiedTime
-                                )
-                            )
-                        }
-                    }
-                    for (localNode in getLocalFiles) {
-                        if (localNode.isDirectory())
-                            continue
-                        val ww = localNode.getRelativePath(workspacePath = workspace.absolutePath)
-                        val foundVirtFile =
-                            getServerFiles.value.files.firstOrNull { s -> ww == s.relativePath }
-                        if (foundVirtFile == null) {
-                            virtFiles.add(
-                                FileVersionLine(
-                                    fileRelativePath = ww,
-                                    currentTime = localNode.modifiedTime,
-                                    serverTime = null
-                                )
-                            )
-                        }
-                    }
-                    val state = UIState.Success(virtFiles.toPersistentList())
-                    launch(Dispatchers.Main) {
-                        dispatch(HomeStore.Msg.SetFileVersions(state))
-                    }
-                } catch (exc: Exception) {
-                    val msg = "" + exc.message
-                }
-            }
-        }
+
 
         override fun executeAction(action: Unit) {
             super.executeAction(action)
 
-            lifecycle.doOnResume {
-                refreshStatusFiles()
-            }
             lifecycle.subToLog("HomeStoreState")
         }
 
@@ -345,20 +293,6 @@ internal class HomeStoreFactory(
                     navigator.navigate(Tags)
                 }
 
-                is Intent.Sync -> {
-                    scope.launch {
-                        val resultss =
-                            syncUseCase.invoke(workspace = workspaceSession.workspaceEnvStateFlow.value)
-                        val env = workspaceSession.workspaceEnvStateFlow.value
-
-                        dispatch(HomeStore.Msg.SetUploadState(resultss.mapToUIState(onError = { "" })))
-
-                        env.initConfigAndFiles()
-                        env.reinitDatabase()
-                        refreshStatusFiles()
-                    }
-                }
-
                 is Intent.SetSearchText -> {
                     scope.launch {
                         _searchTextState.emit(intent.value.text)
@@ -375,8 +309,6 @@ internal class HomeStoreFactory(
                 is HomeStore.Msg.SetCount -> copy(count = msg.value)
                 is HomeStore.Msg.SetTimes -> copy(timeMachinesState = msg.value)
                 is HomeStore.Msg.SetSearchTextFieldValue -> copy(searchTextFieldValue = msg.value)
-                is HomeStore.Msg.SetFileVersions -> copy(fileVersionsState = msg.value)
-                is HomeStore.Msg.SetUploadState -> copy(uploadState = msg.value)
             }
         }
     }

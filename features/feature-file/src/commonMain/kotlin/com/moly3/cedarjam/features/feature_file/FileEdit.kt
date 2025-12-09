@@ -28,6 +28,7 @@ import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.moly3.cedarjam.core.domain.io
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
 import com.moly3.cedarjam.core.ui.uikit.CJText
@@ -35,6 +36,7 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.launchIn
 
 @OptIn(FlowPreview::class)
 @Composable
@@ -50,8 +52,9 @@ fun FileEdit(
     onSave: (String) -> Unit = {}
 ) {
     val appTheme = LocalAppTheme.current
-    val textEdit =
-        remember(text) { mutableStateOf(TextFieldValue(text, TextRange(text.length))) }
+    val textEdit = remember {
+        mutableStateOf(TextFieldValue(text))
+    }
     val focusRequester = remember {
         FocusRequester()
     }
@@ -70,49 +73,61 @@ fun FileEdit(
 
     val scrollState = rememberScrollState()
     var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
-    val lineNumbers = remember(textEdit.value, textLayoutResult) {
-        textLayoutResult?.let { layout ->
-            val text = textEdit.value.text
-            val logicalLines = text.split('\n')
-            val totalVisualLines = layout.lineCount
+    val lineNumbers = remember {
+        mutableStateOf("")
+    }
+    if(true){
+        LaunchedEffect(Unit) {
+            snapshotFlow {
+                textEdit.value to textLayoutResult
+            }
+                .debounce(300L)
+                .collectLatest {
+                    lineNumbers.value = textLayoutResult?.let { layout ->
+                        val text = textEdit.value.text
+                        val logicalLines = text.split('\n')
+                        val totalVisualLines = layout.lineCount
 
-            buildString {
-                var logicalLineIndex = 0
+                        buildString {
+                            var logicalLineIndex = 0
 
-                for (visualLine in 0 until totalVisualLines) {
+                            for (visualLine in 0 until totalVisualLines) {
 
-                    // Check if this visual line starts a new logical line
-                    val isLogicalLineStart = if (visualLine == 0) {
-                        true
-                    } else {
-                        val prevLineEnd = layout.getLineEnd(visualLine - 1)
-                        prevLineEnd < text.length && text[prevLineEnd] == '\n'
-                    }
+                                // Check if this visual line starts a new logical line
+                                val isLogicalLineStart = if (visualLine == 0) {
+                                    true
+                                } else {
+                                    val prevLineEnd = layout.getLineEnd(visualLine - 1)
+                                    prevLineEnd < text.length && text[prevLineEnd] == '\n'
+                                }
 
-                    if (isLogicalLineStart && logicalLineIndex < logicalLines.size) {
-                        append(logicalLineIndex + 1)
-                        logicalLineIndex++
-                    } else {
-                        // This is a wrapped line, show empty space
-                        append("")
-                    }
+                                if (isLogicalLineStart && logicalLineIndex < logicalLines.size) {
+                                    append(logicalLineIndex + 1)
+                                    logicalLineIndex++
+                                } else {
+                                    // This is a wrapped line, show empty space
+                                    append("")
+                                }
 
-                    if (visualLine < totalVisualLines - 1) {
-                        append("\n")
+                                if (visualLine < totalVisualLines - 1) {
+                                    append("\n")
+                                }
+                            }
+                        }
+                    } ?: run {
+                        // Fallback: count logical lines if layout not available yet
+                        val logicalLines = textEdit.value.text.count { it == '\n' } + 1
+                        buildString {
+                            for (i in 1..logicalLines) {
+                                append(i)
+                                if (i < logicalLines) append("\n")
+                            }
+                        }
                     }
                 }
-            }
-        } ?: run {
-            // Fallback: count logical lines if layout not available yet
-            val logicalLines = textEdit.value.text.count { it == '\n' } + 1
-            buildString {
-                for (i in 1..logicalLines) {
-                    append(i)
-                    if (i < logicalLines) append("\n")
-                }
-            }
         }
     }
+
     val lineNumberTextStyle = LocalTextStyle.current.copy(
         color = Color(0xFF808080),
         fontSize = linesTextSize.sp,
@@ -144,7 +159,7 @@ fun FileEdit(
                     .padding(end = (zoom * 24).dp)
                     .defaultMinSize(minWidth = (30 * zoom).dp)
                     .verticalScroll(scrollState),
-                text = lineNumbers,
+                text = lineNumbers.value,
                 style = lineNumberTextStyle.copy(textAlign = TextAlign.End)
             )
 

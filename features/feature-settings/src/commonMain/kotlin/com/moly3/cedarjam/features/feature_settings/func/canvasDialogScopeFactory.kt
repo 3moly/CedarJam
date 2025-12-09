@@ -4,12 +4,14 @@ import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.router.slot.SlotNavigation
 import com.arkivanov.decompose.router.slot.childSlot
 import com.arkivanov.decompose.router.slot.dismiss
+import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.moly3.cedarjam.features.feature_settings.DialogSettingsComponentImpl
 import com.moly3.cedarjam.features.feature_settings.model.DialogConfig
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
 import com.moly3.cedarjam.features.feature_settings.model.DialogScope
 
 fun ComponentContext.settingsDialogScopeFactory(
+    storeFactory: StoreFactory,
     workspaceSession: WorkspaceSession
 ): DialogScope {
     val dialogNavigation = SlotNavigation<DialogConfig>()
@@ -20,6 +22,7 @@ fun ComponentContext.settingsDialogScopeFactory(
         handleBackButton = true,
         childFactory = { _, context ->
             DialogSettingsComponentImpl(
+                storeFactory = storeFactory,
                 componentContext = context,
                 workspaceSession = workspaceSession,
                 onClose = {

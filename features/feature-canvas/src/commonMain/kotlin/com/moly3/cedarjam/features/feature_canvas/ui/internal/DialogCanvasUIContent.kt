@@ -100,7 +100,7 @@ internal fun DialogCanvasUIContent(
             val dragAndDropState = LocalDragAndDrop.current
             val isDraggable = remember { mutableStateOf(false) }
             CompositionLocalProvider(
-                LocalDensity provides Density(1f, 1f)
+
             ) {
                 Whiteboard(
                     modifier = Modifier.dropTarget(

@@ -6,12 +6,16 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class WorkspaceSettings(
     val theme: AppThemeData,
+    val density: Float,
+    val fontScale: Float,
     val language: String?
 ) {
     companion object {
         val defaultSettings = WorkspaceSettings(
             theme = AppThemeData.Default,
-            language = "en"
+            language = "en",
+            density = 1f,
+            fontScale = 1f
         )
     }
 }

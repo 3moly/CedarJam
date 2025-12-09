@@ -7,6 +7,7 @@ import com.moly3.cedarjam.core.domain.DefaultJson
 import com.moly3.cedarjam.core.domain.func.doNothing
 import com.moly3.cedarjam.core.domain.func.getRelativePath
 import com.moly3.cedarjam.core.domain.func.hiddenDirectory
+import com.moly3.cedarjam.core.domain.func.nowInMs
 import com.moly3.cedarjam.core.domain.func.pathWrapper
 import com.moly3.cedarjam.core.domain.func.toColor
 import com.moly3.cedarjam.core.domain.func.toHexString
@@ -561,15 +562,21 @@ class WorkspaceEnvironment(
                     oldNode.getChildrenOrNull()
                 )
             }
+            val newRelativePath = newNode.getRelativePath(workspacePath = workspace.fullpath)
             sqlStorage.renameFileNode(
                 oldRelativePath = oldRelativePath,
-                newRelativePath = newNode.getRelativePath(workspacePath = workspace.fullpath)
+                newRelativePath = newRelativePath
             )
             updateTimes()
             fileManagerService.movedFile(
                 oldNode,
                 newNode
             )
+            val deletedFiles = getDeletedFilesMetadata().toMutableMap()
+            deletedFiles[oldRelativePath] = nowInMs()
+            deletedFiles.remove(newRelativePath)
+            saveDeletedMetadata(deletedFiles)
+
             updatedNode
         }
     }
@@ -616,45 +623,28 @@ class WorkspaceEnvironment(
 
     @OptIn(ExperimentalTime::class)
     override suspend fun deleteNode(node: FileTreeNode) {
-        if (node is FileTreeNode.Directory) {
-            for (item in node.children) {
-                deleteNode(item)
-            }
-        }
-        filesRepository.deleteNode(node)
+        deleteNodes(listOf(node))
+    }
+
+    @OptIn(ExperimentalTime::class)
+    override suspend fun deleteNodes(nodes: List<FileTreeNode>) {
         val metadataList = getDeletedFilesMetadata().toMutableMap()
-        val relativePath = node.getRelativePath(workspacePath = workspace.absolutePath)
-        val addedTime = Clock.System.now().toEpochMilliseconds()
-        metadataList[relativePath] = addedTime
+
+        for (node in nodes) {
+            val relativePath = node.getRelativePath(workspacePath = workspace.absolutePath)
+            val addedTime = Clock.System.now().toEpochMilliseconds()
+            metadataList[relativePath] = addedTime
+            if (node is FileTreeNode.Directory) {
+                for (item in node.children) {
+                    deleteNode(item)
+                }
+            }
+            filesRepository.deleteNode(node)
+        }
+
         saveDeletedMetadata(metadataList)
 
         updateTimes()
-    }
-
-    private fun getDeletedFilesMetadata(): Map<String, Long> {
-        var deletedMetadata = mutableListOf<DeletedFileMetadata>()
-        val deletedNode = getNodeText(node = deletedFilesMeta)
-        when (deletedNode) {
-            is ResultWrapper.Error -> {}
-
-            is ResultWrapper.Success -> {
-                try {
-                    deletedMetadata = DefaultJson.decodeFromString(deletedNode.value)
-                } catch (exc: Exception) {
-                }
-            }
-        }
-        return deletedMetadata.associate { Pair(it.relativePath, it.deletedTime) }
-    }
-
-    private suspend fun saveDeletedMetadata(list: Map<String, Long>): ResultWrapper<Unit, String> {
-        val json = DefaultJson.encodeToString(list.map { d ->
-            DeletedFileMetadata(
-                relativePath = d.key,
-                deletedTime = d.value
-            )
-        })
-        return setNodeText(deletedFilesMeta, json)
     }
 
     override fun getNodeText(node: FileTreeNode.File): ResultWrapper<String, String> {
@@ -760,9 +750,19 @@ class WorkspaceEnvironment(
         sqlStorage.createDatabase()
     }
 
-    override fun getDeletedFilesMetadata(workspace: IWorkspaceEnvironment): Map<String, Long> {
+    override suspend fun saveDeletedMetadata(list: Map<String, Long>): ResultWrapper<Unit, String> {
+        val json = DefaultJson.encodeToString(list.map { d ->
+            DeletedFileMetadata(
+                relativePath = d.key,
+                deletedTime = d.value
+            )
+        })
+        return setNodeText(deletedFilesMeta, json)
+    }
+
+    override fun getDeletedFilesMetadata(): Map<String, Long> {
         var deletedMetadata = mutableListOf<DeletedFileMetadata>()
-        val deletedNode = workspace.getNodeText(node = deletedFilesMeta)
+        val deletedNode = getNodeText(node = deletedFilesMeta)
         when (deletedNode) {
             is ResultWrapper.Error -> {}
 

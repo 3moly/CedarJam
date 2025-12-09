@@ -21,6 +21,10 @@ fun CJSlider(
         onValueChange = onValueChange,
         valueRange = valueRange,
         onValueChangeFinished = onValueChangeFinished,
-        colors = SliderDefaults.colors(thumbColor = appTheme.primaryColor,)
+        colors = SliderDefaults.colors(
+            thumbColor = appTheme.primaryColor,
+            activeTrackColor = appTheme.colors.primaryFont,
+            inactiveTrackColor = appTheme.colors.secondaryFont,
+        )
     )
 }

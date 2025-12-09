@@ -7,15 +7,19 @@ import org.koin.core.component.KoinComponent
 @OptIn(ExperimentalCoroutinesApi::class)
 class SettingsMainComponent(
     componentContext: ComponentContext,
-    private val onOpenGeneral: () -> Unit,
-    private val close: () -> Unit
+    private val openGeneral: () -> Unit,
+    private val close: () -> Unit,
+    private val openStorage: () -> Unit,
+    private val openSync: () -> Unit,
 ) : ISettingsMainComponent,
     ComponentContext by componentContext, KoinComponent {
-    override fun openGeneral() {
-        onOpenGeneral()
-    }
 
-    override fun onClose() {
-        close()
+    override fun onIntent(intent: Intent) {
+        when (intent) {
+            Intent.Close -> close()
+            Intent.General -> openGeneral()
+            Intent.Storage -> openStorage()
+            Intent.Sync -> openSync()
+        }
     }
 }

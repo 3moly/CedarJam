@@ -1,6 +1,7 @@
 package com.moly3.cedarjam.core.net
 
 import com.moly3.cedarjam.core.domain.func.getPlatform
+import com.moly3.cedarjam.core.domain.func.normalizeText
 import com.moly3.cedarjam.core.domain.model.FileMetadata
 import com.moly3.cedarjam.core.domain.model.FileStructure
 import com.moly3.cedarjam.core.domain.model.Platform
@@ -71,14 +72,19 @@ class RemoteSyncRepository(
 
             if (response.status.isSuccess()) {
                 val fileStructure: FileStructure = response.body()
-                if (getPlatform() == Platform.Android) {
-                    success(fileStructure.copy(files = fileStructure.files.map {
+                val fileStructurePrepared = if (getPlatform() == Platform.Android) {
+                    fileStructure.copy(files = fileStructure.files.map {
                         val asd = (it.modifiedTime / 1000) * 1000
                         it.copy(modifiedTime = asd)
-                    }))
+                    })
                 } else {
-                    success(fileStructure)
+                    fileStructure
                 }
+                success(fileStructurePrepared.copy(files = fileStructurePrepared.files.map { d ->
+                    d.copy(
+                        relativePath = d.relativePath
+                    )
+                }))
             } else {
                 error("Upload failed with status: ${response.status.value}")
             }

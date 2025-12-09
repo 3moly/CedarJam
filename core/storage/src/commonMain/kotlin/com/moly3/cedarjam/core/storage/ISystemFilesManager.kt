@@ -1,13 +1,11 @@
 package com.moly3.cedarjam.core.storage
 
-import com.moly3.cedarjam.core.domain.model.FileStructure
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.ResultWrapper
 import com.moly3.cedarjam.core.domain.util.IPathWrapper
 import com.moly3.cedarjam.core.domain.model.canvas.CanvasDataWithErrors
 
 interface ISystemFilesManager {
-    fun extractZipFromBytes(bytes: ByteArray, destinationPath: String, fileStructure: FileStructure)
     fun toAbsoluteAppPath(relativePath: IPathWrapper): IPathWrapper
     fun toRelativeAppPath(relativePath: IPathWrapper): IPathWrapper
     fun getFileNodeFromFullPath(fullPath: String): FileTreeNode.File

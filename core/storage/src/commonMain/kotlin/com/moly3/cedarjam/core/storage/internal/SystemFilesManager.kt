@@ -33,7 +33,6 @@ internal class SystemFilesManager : ISystemFilesManager {
 
     private val fs: FileSystem = SystemFileSystem
 
-
     private fun copyFile(sourcePath: ByteArray, destinationPath: String) {
         val destination = Path(destinationPath)
         val parentDir = destination.parent
@@ -58,19 +57,6 @@ internal class SystemFilesManager : ISystemFilesManager {
             }
         }
     }
-
-    override fun extractZipFromBytes(
-        bytes: ByteArray,
-        destinationPath: String,
-        fileStructure: FileStructure
-    ) {
-        com.moly3.cedarjam.core.storage.func.extractZipFromBytes(
-            bytes,
-            destinationPath,
-            fileStructure
-        )
-    }
-
 
     override fun toAbsoluteAppPath(relativePath: IPathWrapper): IPathWrapper {
         return when (getPlatform()) {

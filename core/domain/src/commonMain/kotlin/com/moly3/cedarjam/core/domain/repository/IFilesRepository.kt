@@ -9,12 +9,11 @@ import com.moly3.cedarjam.core.domain.util.IPathWrapper
 
 interface IFilesRepository {
     fun toAbsoluteAppPath(relativePath: IPathWrapper): IPathWrapper
-    fun extractZipFromBytes(bytes: ByteArray, destinationPath: String, fileStructure: FileStructure)
     suspend fun extractFilesFromZip(
         archivePath: String,
         workspaceFullPath: String,
         serverFiles: List<FileItem>
-    )
+    ): List<String>
 
     suspend fun packFilesToZip(
         workspaceFolderAbsolutePath: String,

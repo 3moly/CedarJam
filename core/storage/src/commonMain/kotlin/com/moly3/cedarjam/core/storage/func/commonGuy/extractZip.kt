@@ -16,7 +16,9 @@ suspend fun extractZip(
     archivePath: String,
     workspaceFullPath: String,
     serverFiles: List<FileItem>
-) {
+): List<String> {
+    //only for logging
+    val extractedFiles = mutableListOf<String>()
     ZipFile(File(archivePath), mode = FileMode.Read).use { zip ->
         for (entry in zip.entries) {
             val absolutePath = pathWrapper(workspaceFullPath, entry.name).pathString
@@ -37,10 +39,13 @@ suspend fun extractZip(
                             file.write(ByteBuffer(bytes = content.copyOf(count.toInt())))
                         }
                     }
+                    setLastWriteTimeUtc(absolutePath, modifiedTime = serverNode.modifiedTime)
+                    extractedFiles.add(entry.name)
                 } catch (exc: Exception) {
+                    val msg = "" + exc.message
                 }
-                setLastWriteTimeUtc(absolutePath, modifiedTime = serverNode.modifiedTime)
             }
         }
     }
+    return extractedFiles
 }

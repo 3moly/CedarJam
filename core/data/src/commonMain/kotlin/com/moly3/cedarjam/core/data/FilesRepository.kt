@@ -25,20 +25,12 @@ class FilesRepository(
         return filesStorage.toAbsoluteAppPath(relativePath = relativePath)
     }
 
-    override fun extractZipFromBytes(
-        bytes: ByteArray,
-        destinationPath: String,
-        fileStructure: FileStructure
-    ) {
-        filesStorage.extractZipFromBytes(bytes, destinationPath, fileStructure)
-    }
-
     override suspend fun extractFilesFromZip(
         archivePath: String,
         workspaceFullPath: String,
         serverFiles: List<FileItem>
-    ) {
-        extractZip(
+    ): List<String> {
+        return extractZip(
             archivePath,
             workspaceFullPath,
             serverFiles
