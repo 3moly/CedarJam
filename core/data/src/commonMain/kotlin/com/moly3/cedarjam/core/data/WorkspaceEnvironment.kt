@@ -20,6 +20,7 @@ import com.moly3.cedarjam.core.domain.model.FileMetadata
 import com.moly3.cedarjam.core.domain.model.FileName
 import com.moly3.cedarjam.core.domain.model.FileStructure
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
+import com.moly3.cedarjam.core.domain.model.FileTreeNode.Companion.getAll
 import com.moly3.cedarjam.core.domain.model.ResultWrapper
 import com.moly3.cedarjam.core.domain.model.TagCollectionRowDTO
 import com.moly3.cedarjam.core.domain.model.TagDTO
@@ -63,6 +64,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlin.collections.map
+import kotlin.collections.set
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
@@ -449,11 +451,11 @@ class WorkspaceEnvironment(
             )
         }
 
-        return resultBlock<FileTreeNode.File, String> {
+        return resultBlock {
             val fileNode = bind(newNode)
             ensure(fileNode is FileTreeNode.File) { "Expected file to be created" }
             updateTimes()
-            fileNode as FileTreeNode.File
+            fileNode
         }
     }
 
@@ -490,22 +492,34 @@ class WorkspaceEnvironment(
                 byteArray = null
             )
         }
-        return resultBlock {
 
+
+        return resultBlock {
             val fileNode = bind(newNode)
             ensure(fileNode is FileTreeNode.Directory) { "Expected directory to be created" }
+
+            val deletedFiles = getDeletedFilesMetadata().toMutableMap()
+            deletedFiles.remove(fileNode.getRelativePath(workspacePath = workspace.absolutePath))
+            saveDeletedMetadata(deletedFiles)
+
             updateTimes()
-            fileNode as FileTreeNode.Directory
+            fileNode
         }
     }
 
-    private fun renameDD(
+    data class RenamedFileSnap(
+        val oldNode: FileTreeNode,
+        val renamed: FileTreeNode
+    )
+
+    private fun renameAllChildNodes(
         oldDirectoryRelativePath: String,
         newDirectoryRelativePath: String,
         children: List<FileTreeNode>?
-    ) {
+    ): List<RenamedFileSnap> {
+        val listOfOldChilds = mutableListOf<RenamedFileSnap>()
         if (children == null)
-            return
+            return listOfOldChilds
         for (child in children) {
             val oldRelativePath = child.getRelativePath(workspacePath = workspace.fullpath)
 
@@ -524,18 +538,27 @@ class WorkspaceEnvironment(
                     )
                 )
             }
+            listOfOldChilds.add(
+                RenamedFileSnap(
+                    oldNode = child,
+                    renamed = newNode
+                )
+            )
             sqlStorage.renameFileNode(
                 oldRelativePath = oldRelativePath,
                 newRelativePath = newNode.getRelativePath(workspacePath = workspace.fullpath)
             )
             if (newNode.isDirectory()) {
-                renameDD(
-                    oldDirectoryRelativePath = oldRelativePath,
-                    newDirectoryRelativePath = newNode.getRelativePath(workspacePath = workspace.fullpath),
-                    newNode.getChildrenOrNull()
+                listOfOldChilds.addAll(
+                    renameAllChildNodes(
+                        oldDirectoryRelativePath = oldRelativePath,
+                        newDirectoryRelativePath = newNode.getRelativePath(workspacePath = workspace.fullpath),
+                        newNode.getChildrenOrNull()
+                    )
                 )
             }
         }
+        return listOfOldChilds
     }
 
     override suspend fun renameNode(
@@ -543,6 +566,9 @@ class WorkspaceEnvironment(
         newNode: FileTreeNode
     ): ResultWrapper<FileTreeNode, String> {
         return resultBlock {
+            //todo remove unnecessary
+            val oldNode = getNodes(null).getAll(true)
+                .firstOrNull { b -> b.getFullPath() == oldNode.getFullPath() }!!
 
             ensure(newNode.getShortName().isNotEmpty()) { "new name is empty" }
             ensure(filesRepository.isNodeExists(oldNode)) { "file is not exists" }
@@ -555,27 +581,39 @@ class WorkspaceEnvironment(
                     newNode
                 )
             )
+            val deletedFiles = getDeletedFilesMetadata().toMutableMap()
+
             if (oldNode.isDirectory()) {
-                renameDD(
+                val listOfRenamedSnaps = renameAllChildNodes(
                     oldDirectoryRelativePath = oldRelativePath,
                     newDirectoryRelativePath = updatedNode.getRelativePath(workspacePath = workspace.fullpath),
                     oldNode.getChildrenOrNull()
                 )
+                for (snap in listOfRenamedSnaps) {
+                    val oldNodePath =
+                        snap.oldNode.getRelativePath(workspacePath = workspace.fullpath)
+                    val newNodePath =
+                        snap.renamed.getRelativePath(workspacePath = workspace.fullpath)
+                    deletedFiles[oldNodePath] = nowInMs()
+                    deletedFiles.remove(newNodePath)
+                }
             }
             val newRelativePath = newNode.getRelativePath(workspacePath = workspace.fullpath)
             sqlStorage.renameFileNode(
                 oldRelativePath = oldRelativePath,
                 newRelativePath = newRelativePath
             )
-            updateTimes()
+
             fileManagerService.movedFile(
                 oldNode,
                 newNode
             )
-            val deletedFiles = getDeletedFilesMetadata().toMutableMap()
+
             deletedFiles[oldRelativePath] = nowInMs()
             deletedFiles.remove(newRelativePath)
             saveDeletedMetadata(deletedFiles)
+
+            updateTimes()
 
             updatedNode
         }
@@ -626,24 +664,30 @@ class WorkspaceEnvironment(
         deleteNodes(listOf(node))
     }
 
+    private fun internalDeleteNodes(child: FileTreeNode): List<FileTreeNode> {
+        val files = mutableListOf<FileTreeNode>()
+        files.add(child)
+        if (child is FileTreeNode.Directory) {
+            for (childNode in child.children) {
+                files.addAll(internalDeleteNodes(childNode))
+            }
+        }
+        filesRepository.deleteNode(child)
+        return files
+    }
+
     @OptIn(ExperimentalTime::class)
     override suspend fun deleteNodes(nodes: List<FileTreeNode>) {
         val metadataList = getDeletedFilesMetadata().toMutableMap()
-
         for (node in nodes) {
-            val relativePath = node.getRelativePath(workspacePath = workspace.absolutePath)
-            val addedTime = Clock.System.now().toEpochMilliseconds()
-            metadataList[relativePath] = addedTime
-            if (node is FileTreeNode.Directory) {
-                for (item in node.children) {
-                    deleteNode(item)
-                }
+            val files = internalDeleteNodes(node)
+            for (item in files) {
+                val relativePath = item.getRelativePath(workspacePath = workspace.absolutePath)
+                val addedTime = Clock.System.now().toEpochMilliseconds()
+                metadataList[relativePath] = addedTime
             }
-            filesRepository.deleteNode(node)
         }
-
         saveDeletedMetadata(metadataList)
-
         updateTimes()
     }
 

@@ -50,7 +50,7 @@ class SyncUseCase(
                 localNode.getRelativePath(workspacePath = workspaceAbsolutePath)
 
             serverFiles.firstOrNull { d ->
-                d.relativePath == localRelativePath &&
+                d.relativePath.normalizeText() == localRelativePath.normalizeText() &&
                         d.isDeleted &&
                         d.modifiedTime.isMoreThan(localNode.modifiedTime)
             } != null

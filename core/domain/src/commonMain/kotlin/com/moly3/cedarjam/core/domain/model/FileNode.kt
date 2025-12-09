@@ -175,20 +175,21 @@ sealed class FileTreeNode {
         }
 
         fun List<FileTreeNode>.getAll(isSkipOwnNode: Boolean = false): List<FileTreeNode> {
-            val textFiles = mutableListOf<FileTreeNode>()
+            val files = mutableListOf<FileTreeNode>()
             for (item in this) {
-                if (!isSkipOwnNode)
-                    textFiles.add(item)
+                if (!isSkipOwnNode && item.getFullName() != "deleted_files") {
+                    files.add(item)
+                }
                 when (item) {
                     is Directory -> {
-                        textFiles.addAll(item.children.getAll())
+                        files.addAll(item.children.getAll())
                     }
 
                     is File -> {
                     }
                 }
             }
-            return textFiles
+            return files
         }
 
         fun List<FileTreeNode>.hideHiddenDirectory(): List<FileTreeNode> {

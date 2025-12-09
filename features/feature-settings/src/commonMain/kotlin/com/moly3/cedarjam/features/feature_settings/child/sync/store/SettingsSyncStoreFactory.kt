@@ -6,6 +6,8 @@ import com.arkivanov.mvikotlin.core.store.SimpleBootstrapper
 import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.moly3.cedarjam.core.domain.func.getRelativePath
+import com.moly3.cedarjam.core.domain.func.hiddenDirectory
+import com.moly3.cedarjam.core.domain.func.isMoreThanOrExact
 import com.moly3.cedarjam.core.domain.func.isNotExact
 import com.moly3.cedarjam.core.domain.func.normalizeText
 import com.moly3.cedarjam.core.domain.io
@@ -55,29 +57,45 @@ internal class SettingsSyncStoreFactory(
             val workspace = env.getWorkspace()
             scope.launch(io) {
                 try {
-                    val getLocalFiles = env.getNodes(null).getAll(isSkipOwnNode = true)
+                    val getLocalFiles = env
+                        .getNodes(null)
+                        .getAll(isSkipOwnNode = true)
+
                     val getServerFiles = env.getServerFiles()
                     getServerFiles.shouldBeSuccess()
 
+                    val deletedFiles = env.getDeletedFilesMetadata()
                     val versionsFiles = mutableListOf<FileVersionLine>()
-                    for (item in getServerFiles.value.files) {
-
+                    for (item in getServerFiles.value.files.filter { d -> !d.isDeleted }) {
+                        //1765222361651
+                        //1765018075521
                         if (!item.isDirectory) {
                             val foundLocalItem = getLocalFiles.firstOrNull { d ->
                                 val localRelativePath =
                                     d.getRelativePath(workspacePath = workspace.absolutePath)
                                 val soResult =
-                                    localRelativePath == item.relativePath.normalizeText()
+                                    localRelativePath.normalizeText() == item.relativePath.normalizeText()
                                 soResult
                             }
-                            if (foundLocalItem == null || foundLocalItem.modifiedTime.isNotExact(item.modifiedTime)) {
-                                versionsFiles.add(
-                                    FileVersionLine(
-                                        fileRelativePath = item.relativePath.normalizeText(),
-                                        currentTime = foundLocalItem?.modifiedTime,
-                                        serverTime = item.modifiedTime
-                                    )
+                            if (foundLocalItem == null || foundLocalItem.modifiedTime.isNotExact(
+                                    item.modifiedTime
                                 )
+                            ) {
+                                val foundDeletedFile = deletedFiles.asSequence()
+                                    .firstOrNull { b -> b.key.normalizeText() == item.relativePath.normalizeText() }
+                                val toAdd = if (foundDeletedFile != null) {
+                                    item.modifiedTime.isMoreThanOrExact(foundDeletedFile.value)
+                                } else {
+                                    true
+                                }
+                                if (toAdd)
+                                    versionsFiles.add(
+                                        FileVersionLine(
+                                            fileRelativePath = item.relativePath.normalizeText(),
+                                            currentTime = foundLocalItem?.modifiedTime,
+                                            serverTime = item.modifiedTime
+                                        )
+                                    )
                             }
                         }
                     }
@@ -88,7 +106,7 @@ internal class SettingsSyncStoreFactory(
                         val fileRelativePath =
                             localNode.getRelativePath(workspacePath = workspace.absolutePath)
                         val foundVirtFile =
-                            getServerFiles.value.files.firstOrNull { s -> fileRelativePath == s.relativePath.normalizeText() }
+                            getServerFiles.value.files.firstOrNull { s -> fileRelativePath.normalizeText() == s.relativePath.normalizeText() }
                         if (foundVirtFile == null) {
                             versionsFiles.add(
                                 FileVersionLine(
