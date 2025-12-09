@@ -52,11 +52,6 @@ class RemoteSyncRepository(
                 var sd = response.bodyAsText()
                 error("Upload failed with status: ${response.status.value} error: ${sd}")
             }
-//            if (response.status.isSuccess()) {
-//                success(Unit)
-//            } else {
-//                core.domain.model.error("Upload failed with status: ${response.status.value}")
-//            }
         } catch (e: Exception) {
             error("Upload error: ${e.message ?: "Unknown error"}")
         }

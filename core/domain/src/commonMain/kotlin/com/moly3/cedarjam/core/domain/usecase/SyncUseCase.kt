@@ -77,7 +77,8 @@ class SyncUseCase(
     ): List<FileMetadata> {
         val metadataList = filesToArchive.toMutableList()
         for (deletedMeta in localDeletedFiles) {
-            val upload = metadataList.firstOrNull { d -> d.path == deletedMeta.key }
+            val upload =
+                metadataList.firstOrNull { d -> d.path.normalizeText() == deletedMeta.key.normalizeText() }
             if (upload != null && deletedMeta.value.isMoreThan(upload.modifiedTime) || upload == null) {
                 metadataList.remove(upload)
                 metadataList.add(
@@ -135,16 +136,19 @@ class SyncUseCase(
                 }
 
                 is FileTreeNode.File -> {
+                    val relativePath = meta.getRelativePath(workspacePath = workspacePresentation.absolutePath)
                     if (meta.name.extension == "db-shm" ||
                         meta.name.extension == "db-wal" ||
                         meta.name.name == "deleted_files" ||
-                        meta.name.extension == "db-journal"
+                        meta.name.extension == "db-journal" ||
+                        relativePath == "${hiddenDirectory}/import.zip" ||
+                        relativePath == "${hiddenDirectory}/export.zip"
                     ) {
 
                     } else {
                         metadataList.add(
                             FileMetadata(
-                                path = meta.getRelativePath(workspacePath = workspacePresentation.absolutePath),
+                                path = relativePath,
                                 createdTime = meta.createdTime,
                                 modifiedTime = meta.modifiedTime,
                                 isDeleted = false
@@ -168,16 +172,23 @@ class SyncUseCase(
 
 
     override suspend fun invoke(workspace: IWorkspaceEnvironment): ResultWrapper<SyncStatus, String> {
-        val filesDirPath = filesRepo.toAbsoluteAppPath(pathWrapper("")).pathString
+        val workspaceAbsolutePath = workspace.getWorkspace().absolutePath
 
-        val archivePath = filesRepo.toAbsoluteAppPath(pathWrapper("meme.zip")).pathString
+        val archivePath =
+            FileTreeNode.File(
+                name = FileName(
+                    "import",
+                    extension = "zip"
+                ),
+                parentPath = pathWrapper(workspaceAbsolutePath, hiddenDirectory).pathString
+            ).getFullPath()
         val dbWall =
             FileTreeNode.File(
                 name = FileName(
                     "sqlite",
                     extension = "db-wal"
                 ),
-                parentPath = pathWrapper(filesDirPath, hiddenDirectory).pathString
+                parentPath = pathWrapper(workspaceAbsolutePath, hiddenDirectory).pathString
             )
         val dbShm =
             FileTreeNode.File(
@@ -185,19 +196,19 @@ class SyncUseCase(
                     "sqlite",
                     extension = "db-shm"
                 ),
-                parentPath = pathWrapper(filesDirPath, hiddenDirectory).pathString
+                parentPath = pathWrapper(workspaceAbsolutePath, hiddenDirectory).pathString
             )
         val exportArchiveNode =
             FileTreeNode.File(
                 name = FileName(
-                    "meme_export",
+                    "export",
                     extension = "zip"
                 ),
-                parentPath = filesDirPath
+                parentPath = pathWrapper(workspaceAbsolutePath, hiddenDirectory).pathString
             )
         return resultBlock {
             try {
-                val workspaceAbsolutePath = workspace.getWorkspace().absolutePath
+
                 val localNodes = workspace.getNodes(null).getAll(isSkipOwnNode = true)
 
                 //get server file structure
@@ -274,11 +285,15 @@ class SyncUseCase(
                 }
 
                 val serverFiles2 = step1(workspace)
-                val extractedFiles = filesRepo.extractFilesFromZip(
-                    archivePath = exportArchivePath,
-                    workspaceFullPath = workspaceAbsolutePath,
-                    serverFiles = serverFiles2,
-                )
+                var extractedFiles = listOf<String>()
+                try {
+                    extractedFiles = filesRepo.extractFilesFromZip(
+                        archivePath = exportArchivePath,
+                        workspaceFullPath = workspaceAbsolutePath,
+                        serverFiles = serverFiles2,
+                    )
+                } catch (exc: Exception) {
+                }
                 if (localDeletedFiles.isNotEmpty() &&
                     extractedFiles.isNotEmpty()
                 ) {
@@ -293,7 +308,10 @@ class SyncUseCase(
                     }
                 }
                 SyncStatus(
-                    filesDownloaded = extractedFiles
+                    filesDownloaded = extractedFiles,
+                    filesToDownload = filesToDownload,
+                    localDeletedFilesByServer = deletedLocalFiles,
+                    filesToArchive = filesToArchive
                 )
             } catch (exc: Exception) {
                 raise(exc.message ?: "")

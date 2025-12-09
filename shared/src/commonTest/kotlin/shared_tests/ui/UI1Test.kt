@@ -9,6 +9,7 @@ import shared_tests.base.UITest
 import co.touchlab.kermit.Logger
 import com.arkivanov.decompose.router.stack.active
 import com.moly3.cedarjam.core.domain.dialog.DialogCreateWorkspaceService
+import com.moly3.cedarjam.core.domain.model.FileName
 import com.moly3.cedarjam.core.domain.model.Workspace
 import com.moly3.cedarjam.navigation.Root
 import com.moly3.cedarjam.navigation.Route
@@ -97,10 +98,16 @@ class UI1Test : UITest() {
         onNodeWithText(workspace.name).performClick()
         val instance = waitAndGetComponent<Root.Child.Workspace>()
         instance.component.onIntent(Intent.CreateWorkspace)
-        val tabComponent = waitAndWorkspaceGetComponent<TabsComponent.Child.Tab>(instance.component)
+        Logger.e { "01 CreateWorkspace" }
+        val tabComponent = waitAndWorkspaceGetComponent<TabsComponent.Child.Tab>(instance.component,5000L)
+        Logger.e { "02 waitAndWorkspaceGetComponent<TabsComponent.Child.Tab>(instance.component)" }
         val home = waitAndTabGetComponent<TabComponent.Child.Home>(tabComponent.component)
         instance.component.onNavigate(Route.MainGraph)
-        val graph = waitAndTabGetComponent<TabComponent.Child.Graph>(tabComponent.component)
+        Logger.e { "03 waitAndTabGetComponent<TabComponent.Child.Home>(tabComponent.component)" }
+//        val env = instance.component.workspaceSession.workspaceEnvStateFlow.value
+//        env.createFileNode(null, fileName = FileName(name="ad", extension = "md"), isAbsoluteNew = true)
+        val graph = waitAndTabGetComponent<TabComponent.Child.Graph>(tabComponent.component, 5000L)
+        Logger.e { "04 waitAndTabGetComponent<TabComponent.Child.Graph>(tabComponent.component, 5000L)" }
         delay(1000L)
     }
 }

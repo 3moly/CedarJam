@@ -51,4 +51,3 @@ include(
     ":pages:page-select-workspace",
     ":pages:page-workspace",
 )
-include(":shared-tests")

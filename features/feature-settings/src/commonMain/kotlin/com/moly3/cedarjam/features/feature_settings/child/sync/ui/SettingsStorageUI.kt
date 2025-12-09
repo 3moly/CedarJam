@@ -63,6 +63,11 @@ fun JvmWindowScope.SettingsSyncUI(component: ISettingsSyncComponent) {
         Column(
             Modifier.weight(1f).fillMaxWidth().padding(12.dp).verticalScroll(rememberScrollState())
         ) {
+            Column {
+                for (pair in state.deletedFiles) {
+                    CJText(text = pair.key, fontSize = 8.sp)
+                }
+            }
             CJButton(text = "sync") {
                 component.onIntent(Intent.Sync)
             }
@@ -150,8 +155,33 @@ fun JvmWindowScope.SettingsSyncUI(component: ISettingsSyncComponent) {
             }
             UIStateContentNoBox(state = state.uploadState) {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    CJText(
+                        modifier = Modifier,
+                        text = "filesToArchive: ${it.filesToArchive.size}"
+                    )
+                    for (item in it.filesToArchive) {
+                        CJText(text = item.toString())
+                    }
+                    CJText(
+                        modifier = Modifier.padding(top = 12.dp),
+                        text = "files Downloaded:   ${it.filesDownloaded.size}"
+                    )
                     for (item in it.filesDownloaded) {
                         CJText(text = item.toString())
+                    }
+                    CJText(
+                        modifier = Modifier.padding(top = 12.dp),
+                        text = "files To Download:  ${it.filesToDownload.size}"
+                    )
+                    for (item in it.filesToDownload) {
+                        CJText(text = item)
+                    }
+                    CJText(
+                        modifier = Modifier.padding(top = 12.dp),
+                        text = "local Deleted Files By Server: ${it.localDeletedFilesByServer.size}"
+                    )
+                    for (item in it.localDeletedFilesByServer) {
+                        CJText(text = item.getFullName())
                     }
                 }
             }

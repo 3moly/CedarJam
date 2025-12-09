@@ -66,7 +66,7 @@ class SettingsGeneralComponent(
                     )
                     val bb = file.readBytes()
                     systemFilesManager.setNodeBytes(fileNode, byteArray = bb)
-                    workspaceSession.loadLocalFont(fileNode)
+                    workspaceSession.loadLocalFont()
                 }
             }
 

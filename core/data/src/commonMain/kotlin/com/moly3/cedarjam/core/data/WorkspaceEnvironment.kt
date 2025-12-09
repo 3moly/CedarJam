@@ -1,5 +1,6 @@
 package com.moly3.cedarjam.core.data
 
+import co.touchlab.kermit.Logger
 import com.moly3.cedarjam.core.net.IRemoteSyncRepository
 import com.moly3.data.DataCollectionRow
 import com.moly3.data.Tag
@@ -111,6 +112,7 @@ class WorkspaceEnvironment(
         withContext(io) {
             updateTimes()
             updateWorkspaceSettings()
+
         }
     }
 
@@ -574,7 +576,7 @@ class WorkspaceEnvironment(
             ensure(filesRepository.isNodeExists(oldNode)) { "file is not exists" }
             ensure(!filesRepository.isNodeExists(newNode)) { "target path is already exists" }
 
-            val oldRelativePath = oldNode.getRelativePath(workspacePath = workspace.fullpath)
+            val oldRelativePath = oldNode.getRelativePath(workspacePath = workspace.absolutePath)
             val updatedNode = bind(
                 filesRepository.moveNode(
                     oldNode,
@@ -586,19 +588,19 @@ class WorkspaceEnvironment(
             if (oldNode.isDirectory()) {
                 val listOfRenamedSnaps = renameAllChildNodes(
                     oldDirectoryRelativePath = oldRelativePath,
-                    newDirectoryRelativePath = updatedNode.getRelativePath(workspacePath = workspace.fullpath),
+                    newDirectoryRelativePath = updatedNode.getRelativePath(workspacePath = workspace.absolutePath),
                     oldNode.getChildrenOrNull()
                 )
                 for (snap in listOfRenamedSnaps) {
                     val oldNodePath =
-                        snap.oldNode.getRelativePath(workspacePath = workspace.fullpath)
+                        snap.oldNode.getRelativePath(workspacePath = workspace.absolutePath)
                     val newNodePath =
-                        snap.renamed.getRelativePath(workspacePath = workspace.fullpath)
+                        snap.renamed.getRelativePath(workspacePath = workspace.absolutePath)
                     deletedFiles[oldNodePath] = nowInMs()
                     deletedFiles.remove(newNodePath)
                 }
             }
-            val newRelativePath = newNode.getRelativePath(workspacePath = workspace.fullpath)
+            val newRelativePath = newNode.getRelativePath(workspacePath = workspace.absolutePath)
             sqlStorage.renameFileNode(
                 oldRelativePath = oldRelativePath,
                 newRelativePath = newRelativePath
@@ -795,9 +797,11 @@ class WorkspaceEnvironment(
     }
 
     override suspend fun saveDeletedMetadata(list: Map<String, Long>): ResultWrapper<Unit, String> {
+        val fullpath = workspace.absolutePath
+        Logger.e { "saveDeletedMetadata absolutePath  $fullpath" }
         val json = DefaultJson.encodeToString(list.map { d ->
             DeletedFileMetadata(
-                relativePath = d.key,
+                relativePath = pathWrapper(d.key.replace(fullpath, "")).pathString,
                 deletedTime = d.value
             )
         })

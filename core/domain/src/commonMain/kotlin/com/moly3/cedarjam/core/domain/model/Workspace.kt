@@ -2,7 +2,6 @@ package com.moly3.cedarjam.core.domain.model
 
 import com.moly3.cedarjam.core.domain.func.hiddenDirectory
 import com.moly3.cedarjam.core.domain.func.pathWrapper
-import com.moly3.cedarjam.core.domain.model.settings.WorkspaceSettings
 import kotlinx.serialization.Serializable
 
 @Serializable

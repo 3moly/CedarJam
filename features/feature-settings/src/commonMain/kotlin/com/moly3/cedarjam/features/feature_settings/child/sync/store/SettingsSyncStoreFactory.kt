@@ -26,6 +26,7 @@ import com.moly3.cedarjam.features.feature_settings.child.sync.Intent
 import com.moly3.cedarjam.features.feature_settings.child.sync.State
 import com.moly3.cedarjam.features.feature_settings.child.sync.model.FileVersionLine
 import kotlinx.collections.immutable.toPersistentList
+import kotlinx.collections.immutable.toPersistentMap
 import kotlinx.coroutines.Dispatchers
 import org.koin.core.component.inject
 import kotlin.getValue
@@ -53,22 +54,32 @@ internal class SettingsSyncStoreFactory(
         BaseExecutor<Intent, Unit, State, SettingsSyncStore.Msg, Unit>(lifecycle) {
 
         private fun refreshStatusFiles() {
+
+
             val env = workspaceSession.workspaceEnvStateFlow.value
+            val deletedFiles = env.getDeletedFilesMetadata()
+            dispatch(SettingsSyncStore.Msg.SetFileMetadata(deletedFiles.toPersistentMap()))
             val workspace = env.getWorkspace()
             scope.launch(io) {
                 try {
                     val getLocalFiles = env
                         .getNodes(null)
                         .getAll(isSkipOwnNode = true)
+                        .filter {
+                            val relativePath =
+                                it.getRelativePath(workspacePath = env.getWorkspace().absolutePath)
+                            if (relativePath == "${hiddenDirectory}/import.zip" || relativePath == "${hiddenDirectory}/export.zip")
+                                false
+                            else
+                                true
+                        }
 
                     val getServerFiles = env.getServerFiles()
                     getServerFiles.shouldBeSuccess()
 
-                    val deletedFiles = env.getDeletedFilesMetadata()
+
                     val versionsFiles = mutableListOf<FileVersionLine>()
                     for (item in getServerFiles.value.files.filter { d -> !d.isDeleted }) {
-                        //1765222361651
-                        //1765018075521
                         if (!item.isDirectory) {
                             val foundLocalItem = getLocalFiles.firstOrNull { d ->
                                 val localRelativePath =
@@ -150,6 +161,7 @@ internal class SettingsSyncStoreFactory(
                         dispatch(SettingsSyncStore.Msg.SetUploadState(resultss.mapToUIState(onError = { "" })))
 
                         env.initConfigAndFiles()
+                        workspaceSession.loadLocalFont()
                         env.reinitDatabase()
                         refreshStatusFiles()
                     }
@@ -163,6 +175,7 @@ internal class SettingsSyncStoreFactory(
             return when (msg) {
                 is SettingsSyncStore.Msg.SetFilesVersions -> copy(fileVersionsState = msg.value)
                 is SettingsSyncStore.Msg.SetUploadState -> copy(uploadState = msg.value)
+                is SettingsSyncStore.Msg.SetFileMetadata -> copy(deletedFiles = msg.value)
             }
         }
     }
