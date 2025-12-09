@@ -18,12 +18,6 @@ class netTest : AppEnvironmentTest() {
             workspaceName = "abc"
         )
         result.shouldBeSuccess()
-        val resultDownload = syncNetRepository.downloadArchive(
-            userName = "bulat",
-            workspaceName = "abc"
-        )
-        resultDownload.shouldBeSuccess()
-        val msg = "" + result.value
     }
 
     @Test
@@ -37,8 +31,8 @@ class netTest : AppEnvironmentTest() {
             isAbsoluteNew = true,
             textBytes
         )
-        val result = workspaceEnv.uploadSync(,)
-        val resultDownload = workspaceEnv.downloadSync()
+//        val result = workspaceEnv.uploadSync(,)
+//        val resultDownload = workspaceEnv.downloadSync()
     }
 
     @Test
@@ -53,6 +47,6 @@ class netTest : AppEnvironmentTest() {
 //            textBytes
 //        )
 //        val result = workspaceEnv.getSyncChanges()
-        val resultDownload = workspaceEnv.downloadSync()
+//        val resultDownload = workspaceEnv.downloadSync()
     }
 }

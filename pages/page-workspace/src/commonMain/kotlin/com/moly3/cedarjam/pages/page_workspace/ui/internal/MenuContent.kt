@@ -133,7 +133,7 @@ internal fun MenuContent(
                         onIntent(Intent.SelectWorkspace)
                     },
                     onChangeSettings = {
-                        onIntent(Intent.ChangeAppSettings)
+                        onIntent(Intent.OpenSettings)
                     })
             }
         }

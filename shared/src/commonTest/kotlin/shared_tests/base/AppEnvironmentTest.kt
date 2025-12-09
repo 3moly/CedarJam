@@ -42,7 +42,7 @@ abstract class AppEnvironmentTest : BaseTest() {
 
             Platform.Jvm -> {
                 FileTreeNode.Directory(
-                    parentPath = "/Users/{user_name}/Desktop/", //todo replace
+                    parentPath = "build/.test_workspace",
                     name = "asa",
                     children = listOf(),
                     fileSize = 0L

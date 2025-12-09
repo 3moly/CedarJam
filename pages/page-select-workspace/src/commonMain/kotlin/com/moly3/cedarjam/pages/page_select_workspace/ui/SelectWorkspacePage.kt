@@ -41,7 +41,6 @@ import com.moly3.cedarjam.pages.page_select_workspace.Intent
 import com.moly3.cedarjam.pages.page_select_workspace.State
 import com.moly3.cedarjam.core.ui.func.rememberWindowSize
 import com.moly3.cedarjam.core.ui.model.WindowSize
-import com.moly3.cedarjam.core.ui.uikit.CJDraggableArea
 import com.moly3.cedarjam.core.ui.uikit.CJText
 import com.moly3.cedarjam.core.ui.uikit.UIStateContentLazy
 import com.moly3.cedarjam.core.ui.vectors.SettingsFuture

@@ -13,6 +13,7 @@ interface ISystemFilesManager {
     fun getNodes(nodePath: String): List<FileTreeNode>
     fun isNodeExists(path: String): Boolean
     fun deleteNode(nodePath: String)
+    fun deleteNodeHeavy(nodePath: String)
     fun moveNode(
         nodePath: String,
         moveNodePath: String,

@@ -17,8 +17,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.isBackPressed
 import androidx.compose.ui.input.pointer.isForwardPressed
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.extensions.compose.experimental.stack.ChildStack
@@ -91,7 +89,7 @@ fun JvmWindowScope.MainApp(
                             titleBarContent = titleBarContent
                         )
 
-                        is Root.Child.Empty -> SelectWorkspacePage(component = instance.component)
+                        is Root.Child.SelectWorkspace -> SelectWorkspacePage(component = instance.component)
                     }
                 }
                 Box(Modifier.fillMaxSize()) {

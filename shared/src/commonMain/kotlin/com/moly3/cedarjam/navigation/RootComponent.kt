@@ -12,7 +12,7 @@ import com.arkivanov.decompose.router.webhistory.WebNavigation
 import com.arkivanov.decompose.value.Value
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.arkivanov.mvikotlin.main.store.DefaultStoreFactory
-import com.moly3.cedarjam.navigation.Root.Child.Empty
+import com.moly3.cedarjam.navigation.Root.Child.SelectWorkspace
 import com.moly3.cedarjam.navigation.Root.Child.Workspace
 import com.moly3.cedarjam.pages.page_select_workspace.SelectWorkspaceComponent
 import com.moly3.cedarjam.pages.page_workspace.WorkspaceComponentImpl
@@ -81,7 +81,7 @@ class RootComponent(
 
     private fun child(config: Config, componentContext: ComponentContext): Root.Child =
         when (config) {
-            Config.Empty -> Empty(
+            Config.Empty -> SelectWorkspace(
                 SelectWorkspaceComponent(
                     componentContext = componentContext,
                     storeFactory = storeFactory,

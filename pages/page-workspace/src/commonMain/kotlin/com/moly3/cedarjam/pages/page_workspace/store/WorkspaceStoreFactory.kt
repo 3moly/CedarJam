@@ -36,8 +36,6 @@ import com.moly3.cedarjam.core.domain.func.hiddenDirectory
 import com.moly3.cedarjam.core.domain.func.nowInMs
 import com.moly3.cedarjam.core.domain.func.openFileInExplorer
 import com.moly3.cedarjam.core.domain.func.pathWrapper
-import com.moly3.cedarjam.core.domain.model.AppColorsData
-import com.moly3.cedarjam.core.domain.model.ColorsType
 import com.moly3.cedarjam.core.domain.model.FileName
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.NavigateToFile
@@ -46,7 +44,6 @@ import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.domain.model.bind
 import com.moly3.cedarjam.core.domain.model.fold
 import com.moly3.cedarjam.core.domain.model.navigation.input.FilePageInput
-import com.moly3.cedarjam.core.domain.repository.IAppEnvironment
 import com.moly3.cedarjam.core.domain.model.request.CreateCollectionRequest
 import com.moly3.cedarjam.core.domain.model.request.CreateTagRequest
 import com.moly3.cedarjam.core.domain.model.request.RenameDataCollectionRequest
@@ -84,7 +81,6 @@ import kotlinx.collections.immutable.toPersistentList
 import kotlinx.collections.immutable.toPersistentSet
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.firstOrNull
@@ -777,11 +773,8 @@ internal class WorkspaceStoreFactory(
                     dispatch(SetIsFullMenu(intent.value))
                 }
 
-                Intent.ChangeAppSettings -> {
+                Intent.OpenSettings -> {
                     onSettingsOpen()
-//                    scope.launch {
-//                        dialogWorkspaceSettingsService.open(Unit)
-//                    }
                 }
 
                 is Intent.SelectActiveTabs -> dispatch(SetActiveTab(intent.index))

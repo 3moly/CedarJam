@@ -30,7 +30,7 @@ interface Root : NavigationComponent<Root.Child>, WebNavigationOwner {
     fun shareMagnifyValue(value: Double)
 
     sealed class Child {
-        class Empty(val component: ISelectWorkspaceComponent) : Child()
+        class SelectWorkspace(val component: ISelectWorkspaceComponent) : Child()
         class Workspace(val component: WorkspaceComponent) : Child()
     }
 }

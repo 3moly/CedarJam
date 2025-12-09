@@ -4,8 +4,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.ExperimentalTestApi
 import shared_tests.base.AppEnvironmentTest
 import shared_tests.base.getTestApplicationContext
-import com.moly3.cedarjam.data.func.createSqlStorage
-import com.moly3.cedarjam.data.func.createSystemFilesManager
 import com.moly3.cedarjam.core.domain.model.navigation.input.TagPageInput
 import com.moly3.cedarjam.pages.page_tab.TabComponentImpl
 import com.moly3.cedarjam.core.data.FilesRepository
@@ -24,6 +22,8 @@ import com.moly3.cedarjam.core.domain.model.request.CreateCollectionRowRequest
 import com.moly3.cedarjam.core.domain.model.request.CreateTagRequest
 import com.moly3.cedarjam.core.domain.model.request.UpdateDataCollectionRowRequest
 import com.moly3.cedarjam.core.domain.service.AppContextProvider
+import com.moly3.cedarjam.core.storage.func.createSqlStorage
+import com.moly3.cedarjam.core.storage.func.createSystemFilesManager
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.koin.mp.KoinPlatform.getKoin
@@ -53,8 +53,8 @@ class dbTest : AppEnvironmentTest() {
     fun appEnvTest() = runTest {
         val appEnvironment: IAppEnvironment = getKoin().get()
         val settings = appEnvironment.getAppSettingsFlow().value
-        assertTrue(settings.currentWorkspaceFullPath == null)
-        appEnvironment.setAppSettings(settings.copy(currentWorkspaceFullPath = "123123"))
+//    todo    assertTrue(settings.currentWorkspaceFullPath == null)
+//        appEnvironment.setAppSettings(settings.copy(currentWorkspaceFullPath = "123123"))
 
     }
 

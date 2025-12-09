@@ -12,12 +12,14 @@ import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import com.arkivanov.essenty.lifecycle.destroy
 import com.arkivanov.essenty.lifecycle.resume
 import com.arkivanov.essenty.lifecycle.stop
-import com.moly3.cedarjam.data.func.init
 import com.moly3.cedarjam.di.initApp
 import com.moly3.cedarjam.navigation.Root
 import com.moly3.cedarjam.navigation.RootComponent
 import com.moly3.cedarjam.ui.MainApp
 import com.moly3.cedarjam.core.domain.func.runBlocking
+import com.moly3.cedarjam.core.storage.func.init
+import com.moly3.cedarjam.pages.page_tab.TabComponent
+import com.moly3.cedarjam.pages.page_workspace.WorkspaceComponent
 import io.github.vinceglb.filekit.FileKit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -25,6 +27,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
 import org.koin.core.context.stopKoin
 import org.koin.mp.KoinPlatformTools
+import shared_tests.ui.JvmScopeCover
 import kotlin.test.BeforeTest
 
 @OptIn(ExperimentalTestApi::class)
@@ -35,10 +38,10 @@ abstract class UITest : BaseTest() {
     @BeforeTest
     fun before() = runTest {
         cleanupState()
-        Logger.setLogWriters(CommonWriter())
+//        Logger.setLogWriters(CommonWriter())
         FileKit.init(getTestApplicationContext())
         initApp(getTestApplicationContext(), isTest = true)
-        runBlocking(Dispatchers.Main.immediate){
+        runBlocking(Dispatchers.Main.immediate) {
             lifecycle = LifecycleRegistry()
             component = RootComponent(
                 parentComponentContext = DefaultComponentContext(lifecycle = lifecycle!!)
@@ -84,10 +87,37 @@ abstract class UITest : BaseTest() {
     }
 
 
-    inline fun <reified CurrentPage> ComposeUiTest.checkAndWaitCurrentPage() {
-        waitUntil("", 1_000L) {
+    inline fun <reified CurrentPage> ComposeUiTest.checkAndWaitCurrentPage(timeoutMillis: Long = 1_000L) {
+        waitUntil("", timeoutMillis) {
             currentPage<CurrentPage>()
         }
+    }
+
+    inline fun <reified CurrentPage> ComposeUiTest.waitAndGetComponent(timeoutMillis: Long = 1_000L): CurrentPage {
+        waitUntil("", timeoutMillis) {
+            currentPage<CurrentPage>()
+        }
+        return component!!.childStack.active.instance as CurrentPage
+    }
+
+    inline fun <reified CurrentPage> ComposeUiTest.waitAndWorkspaceGetComponent(
+        component: WorkspaceComponent,
+        timeoutMillis: Long = 1_000L
+    ): CurrentPage {
+        waitUntil("", timeoutMillis) {
+            component.children.value.items.first() is CurrentPage
+        }
+        return component.children.value.items.first() as CurrentPage
+    }
+
+    inline fun <reified CurrentPage> ComposeUiTest.waitAndTabGetComponent(
+        component: TabComponent,
+        timeoutMillis: Long = 1_000L
+    ): CurrentPage {
+        waitUntil("", timeoutMillis) {
+            component.childStack.active is CurrentPage
+        }
+        return component.childStack.active as CurrentPage
     }
 
     inline fun <reified CurrentPage> currentPage(): Boolean {
@@ -95,12 +125,20 @@ abstract class UITest : BaseTest() {
         return component!!.childStack.active.instance is CurrentPage
     }
 
-    fun runUITest(beforeSetContent: ComposeUiTest.() -> Unit, run: ComposeUiTest.() -> Unit) =
+    fun runUITest(
+        beforeSetContent: suspend ComposeUiTest.() -> Unit,
+        run: suspend ComposeUiTest.(Root) -> Unit
+    ) =
         runComposeUiTest {
             beforeSetContent()
-            setContent { MainApp(component!!) }
-            run()
-
+            setContent {
+                JvmScopeCover {
+                    MainApp(component!!)
+                }
+            }
+            io.kotest.engine.runBlocking {
+                run(component!!)
+            }
             lifecycle?.stop()
             lifecycle?.destroy()
             while (lifecycle?.state != Lifecycle.State.DESTROYED) {

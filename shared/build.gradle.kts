@@ -78,6 +78,8 @@ kotlin {
 
             implementation(projects.pages.pageWorkspace)
             implementation(projects.pages.pageSelectWorkspace)
+            implementation(projects.pages.pageTab)
+            implementation(projects.pages.pageTabs)
 
             implementation(libs.shared.logger.kermit)
 
@@ -165,7 +167,7 @@ android {
     namespace = "com.moly3.cedarjam"
     compileSdk = 36
     defaultConfig {
-        minSdk = 24
+        minSdk = 26
     }
     buildFeatures.compose = true
     compileOptions {

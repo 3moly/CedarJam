@@ -115,9 +115,22 @@ internal class SystemFilesManager : ISystemFilesManager {
         ) as FileTreeNode.Directory
     }
 
-
     override fun deleteNode(nodePath: String) {
         try {
+            fs.delete(Path(nodePath), true)
+        } catch (exc: Exception) {
+        }
+    }
+
+    override fun deleteNodeHeavy(nodePath: String) {
+        try {
+            val path = Path(nodePath)
+            if (fs.metadataOrNull(path)!!.isDirectory) {
+                val child = fs.list(Path(nodePath))
+                for (childPath in child) {
+                    deleteNodeHeavy(childPath.toString())
+                }
+            }
             fs.delete(Path(nodePath), true)
         } catch (exc: Exception) {
         }
@@ -199,7 +212,7 @@ internal class SystemFilesManager : ISystemFilesManager {
                 fileSize = 0L
             )
             if (byteArray != null) {
-               copyFile(byteArray, se.getFullPath())
+                copyFile(byteArray, se.getFullPath())
             }
             se
         }

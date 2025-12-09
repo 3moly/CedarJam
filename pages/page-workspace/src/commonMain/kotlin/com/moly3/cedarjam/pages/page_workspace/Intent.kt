@@ -1,17 +1,15 @@
 package com.moly3.cedarjam.pages.page_workspace
 
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.unit.Density
 import com.moly3.cedarjam.core.ui.model.PageNameData
 import com.moly3.cedarjam.core.domain.model.settings.WorkspaceSettings
 import com.moly3.cedarjam.core.ui.model.FileTreeItemPresentation
 import com.moly3.cedarjam.pages.page_workspace.model.LockedMenuData
-import com.moly3.cedarjam.pages.page_workspace.model.TabWeightsData
 import kotlinx.collections.immutable.ImmutableSet
 
 sealed interface Intent {
     data class SetIsFullMenu(val value: Boolean) : Intent
-    data object ChangeAppSettings : Intent
+    data object OpenSettings : Intent
     data class SetCursorPosition(val offset: Offset) : Intent
     data class SetLockedMenuUnder(val value: LockedMenuData?) : Intent
     data class SetMenuUnder(val tab: Int?) : Intent

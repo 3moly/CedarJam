@@ -6,7 +6,7 @@ import com.arkivanov.mvikotlin.extensions.coroutines.stateFlow
 import com.moly3.cedarjam.core.domain.model.WorkspaceInput
 import com.moly3.cedarjam.pages.page_select_workspace.store.SelectWorkspaceStoreFactory
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
 import org.koin.core.component.KoinComponent
 
 class SelectWorkspaceComponent(
@@ -27,7 +27,7 @@ class SelectWorkspaceComponent(
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    override val state: Flow<State> = store.stateFlow
+    override val state: StateFlow<State> = store.stateFlow
 
     override fun onIntent(intent: Intent) {
         store.accept(intent)
