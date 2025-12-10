@@ -7,8 +7,8 @@ import com.moly3.cedarjam.core.storage.func.getFileNodeFromPath
 import com.moly3.cedarjam.core.storage.func.getFiles
 import com.moly3.cedarjam.core.domain.util.IPathWrapper
 import com.moly3.cedarjam.core.domain.func.getPlatform
+import com.moly3.cedarjam.core.domain.func.nowInMs
 import com.moly3.cedarjam.core.domain.func.pathWrapper
-import com.moly3.cedarjam.core.domain.model.FileStructure
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.Platform
 import com.moly3.cedarjam.core.domain.model.ResultWrapper
@@ -18,6 +18,7 @@ import com.moly3.cedarjam.core.domain.model.resultBlock
 import com.moly3.cedarjam.core.domain.util.PathWrapper
 import com.moly3.cedarjam.core.storage.json.canvas.CanvasDataParser
 import com.moly3.cedarjam.core.domain.model.canvas.CanvasDataWithErrors
+import com.moly3.cedarjam.core.storage.func.setLastWriteTimeUtc
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.utils.toPath
 import kotlinx.io.buffered
@@ -97,6 +98,7 @@ internal class SystemFilesManager : ISystemFilesManager {
     override fun getFileNodeFromFullPath(fullPath: String): FileTreeNode.File {
         val abs = toAbsoluteAppPath(pathWrapper(fullPath))
         return getFileNodeFromPath(
+            workspacePathToRemove = fullPath,
             Path(abs.pathString),
             false,
             fileSize = 0L
@@ -109,6 +111,7 @@ internal class SystemFilesManager : ISystemFilesManager {
             createNode(true, abs.pathString, byteArray = null)
         }
         return getFileNodeFromPath(
+            workspacePathToRemove = fullPath,
             abs.pathString.toPath(),
             true,
             fileSize = 0L
@@ -152,7 +155,9 @@ internal class SystemFilesManager : ISystemFilesManager {
             ensure(!isTrans || path.parent.toString() == newFilePath.parent.toString()) { "cannot move to child directory" }
 
             fs.atomicMove(path, newFilePath)
+            setLastWriteTimeUtc(newFilePath.toString(), nowInMs())
             getFileNodeFromPath(
+                workspacePathToRemove = newFilePath.toString(),
                 newFilePath,
                 isDirectory = isDirectory,
                 fileSize = 0L
@@ -160,10 +165,10 @@ internal class SystemFilesManager : ISystemFilesManager {
         }
     }
 
-    override fun getNodes(nodePath: String): List<FileTreeNode> {
-        val abs = toAbsoluteAppPath(pathWrapper(nodePath))
+    override fun getNodes(directoryAbsolutePath: String): List<FileTreeNode> {
         return getFiles(
-            parentPath = abs.pathString.toPath()
+            workspacePathToRemove = directoryAbsolutePath,
+            parentPath = Path(directoryAbsolutePath)
         ).first
     }
 
@@ -207,7 +212,8 @@ internal class SystemFilesManager : ISystemFilesManager {
                 bind(writeTextResult)
             }
             val se = getFileNodeFromPath(
-                path,
+                workspacePathToRemove = path.toString(),
+                filePath = path,
                 isDirectory,
                 fileSize = 0L
             )

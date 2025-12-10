@@ -2,6 +2,7 @@ package com.moly3.cedarjam.core.domain.model
 
 import com.moly3.cedarjam.core.domain.func.hiddenDirectory
 import com.moly3.cedarjam.core.domain.func.pathWrapper
+import com.moly3.cedarjam.core.domain.func.relativeTo
 import kotlinx.io.files.Path
 import kotlinx.serialization.Serializable
 
@@ -28,15 +29,18 @@ sealed class FileTreeNode {
     abstract val fileSize: Long
     abstract val modifiedTime: Long
     abstract val createdTime: Long
-    abstract val parentPath: String
+    abstract val parentRelativePath: String
+    abstract val parentFullPath: String
     abstract fun getShortName(): String
     abstract fun getFullName(): String
     abstract fun getFullPath(): String
+    abstract fun getRelativePath(): String
 
     @Serializable
     data class File(
         val name: FileName,
-        override val parentPath: String,
+        override val parentRelativePath: String,
+        override val parentFullPath: String,
         override val createdTime: Long = 0L,
         override val modifiedTime: Long = 0L,
         override val fileSize: Long = 0L,
@@ -56,13 +60,17 @@ sealed class FileTreeNode {
             }
         }
 
+        override fun getRelativePath(): String {
+            return pathWrapper(parentRelativePath, getFullName()).pathString
+        }
+
         override fun getFullPath(): String {
             val fullName = getFullName()
             if (fullName.isEmpty())
-                return parentPath
+                return parentFullPath
 
             return pathWrapper(
-                parentPath,
+                parentFullPath,
                 getFullName()
             ).toString()
         }
@@ -71,7 +79,8 @@ sealed class FileTreeNode {
     @Serializable
     data class Directory(
         val name: String,
-        override val parentPath: String,
+        override val parentRelativePath: String,
+        override val parentFullPath: String,
         val children: List<FileTreeNode>,
         override val createdTime: Long = 0L,
         override val modifiedTime: Long = 0L,
@@ -81,8 +90,6 @@ sealed class FileTreeNode {
             fun create(fullPath: Path, children: List<FileTreeNode> = listOf()): Directory {
                 return create(fullPath.toString(), children = children)
             }
-
-            //, fileSize: Long = 0L
             fun create(fullPath: String, children: List<FileTreeNode> = listOf()): Directory {
                 val name = if (fullPath.contains("/")) {
                     fullPath.substringAfterLast("/")
@@ -96,11 +103,16 @@ sealed class FileTreeNode {
                 }
                 return Directory(
                     name = name,
-                    parentPath = parentPath,
+                    parentRelativePath = "",
+                    parentFullPath = parentPath,
                     children = children,
                     fileSize = children.sumOf { x -> x.fileSize }
                 )
             }
+        }
+
+        override fun getRelativePath(): String {
+            return pathWrapper(parentRelativePath, getFullName()).pathString
         }
 
         override fun getShortName(): String {
@@ -111,9 +123,10 @@ sealed class FileTreeNode {
             return name
         }
 
+
         override fun getFullPath(): String {
             return pathWrapper(
-                parentPath,
+                parentFullPath,
                 getFullName()
             ).toString()
         }
@@ -177,7 +190,7 @@ sealed class FileTreeNode {
         fun List<FileTreeNode>.getAll(isSkipOwnNode: Boolean = false): List<FileTreeNode> {
             val files = mutableListOf<FileTreeNode>()
             for (item in this) {
-                if (!isSkipOwnNode && item.getFullName() != "deleted_files") {
+                if (!isSkipOwnNode) {
                     files.add(item)
                 }
                 when (item) {
@@ -194,17 +207,6 @@ sealed class FileTreeNode {
 
         fun List<FileTreeNode>.hideHiddenDirectory(): List<FileTreeNode> {
             return this.filter { x -> x.getFullName() != hiddenDirectory }
-        }
-
-        fun List<FileTreeNode>.sortByIsDirectory(): List<FileTreeNode> {
-            return this.sortedWith(compareBy<FileTreeNode> { !it.isDirectory() }
-                .thenBy { it.getFullName() })
-        }
-
-        fun List<FileTreeNode>.hideDsStore(): List<FileTreeNode> {
-            return this.filter { x -> x.getFullName().lowercase() != ".DS_Store".lowercase() }
-                .sortedWith(compareBy<FileTreeNode> { !it.isDirectory() }
-                    .thenBy { it.getFullName() })
         }
     }
 }

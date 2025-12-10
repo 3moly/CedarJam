@@ -23,6 +23,8 @@ data class WorkspacePresentation(
 fun WorkspacePresentation.getSettingsJsonFile(): FileTreeNode.File {
     return FileTreeNode.File(
         name = FileName("workspace_settings", extension = "json"),
-        parentPath = pathWrapper(this.absolutePath, hiddenDirectory).pathString
+        //todo adapt relativePath
+        parentRelativePath = pathWrapper(this.absolutePath, hiddenDirectory).pathString,
+        parentFullPath = pathWrapper(this.absolutePath, hiddenDirectory).pathString
     )
 }

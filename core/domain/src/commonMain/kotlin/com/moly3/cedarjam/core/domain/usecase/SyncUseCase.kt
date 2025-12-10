@@ -1,6 +1,5 @@
 package com.moly3.cedarjam.core.domain.usecase
 
-import com.moly3.cedarjam.core.domain.func.getRelativePath
 import com.moly3.cedarjam.core.domain.func.hiddenDirectory
 import com.moly3.cedarjam.core.domain.func.isMoreThan
 import com.moly3.cedarjam.core.domain.func.isMoreThanOrExact
@@ -39,27 +38,22 @@ class SyncUseCase(
     }
 
     //step 1: delete local files
-    private suspend fun step2(
-        workspaceAbsolutePath: String,
+    private fun getWhatToDeleteInLocal(
         localNodes: List<FileTreeNode>,
-        serverFiles: List<FileItem>,
-        workspace: IWorkspaceEnvironment
+        serverFiles: List<FileItem>
     ): List<FileTreeNode> {
         val deleteFiles = localNodes.filter { localNode ->
-            val localRelativePath =
-                localNode.getRelativePath(workspacePath = workspaceAbsolutePath)
-
+            val localRelativePath = localNode.getRelativePath().normalizeText()
             serverFiles.firstOrNull { d ->
-                d.relativePath.normalizeText() == localRelativePath.normalizeText() &&
+                d.relativePath.normalizeText() == localRelativePath &&
                         d.isDeleted &&
                         d.modifiedTime.isMoreThan(localNode.modifiedTime)
             } != null
         }
-        workspace.deleteNodes(deleteFiles)
         return deleteFiles
     }
 
-    private suspend fun step3(
+    private suspend fun packToZip(
         workspacePresentation: WorkspacePresentation,
         filesToArchive: List<String>,
         archivePath: String
@@ -79,8 +73,11 @@ class SyncUseCase(
         for (deletedMeta in localDeletedFiles) {
             val upload =
                 metadataList.firstOrNull { d -> d.path.normalizeText() == deletedMeta.key.normalizeText() }
-            if (upload != null && deletedMeta.value.isMoreThan(upload.modifiedTime) || upload == null) {
-                metadataList.remove(upload)
+            // Fixed: Proper condition with correct precedence
+            if (upload == null || deletedMeta.value.isMoreThan(upload.modifiedTime)) {
+                if (upload != null) {
+                    metadataList.remove(upload)
+                }
                 metadataList.add(
                     FileMetadata(
                         path = deletedMeta.key,
@@ -94,7 +91,41 @@ class SyncUseCase(
         return metadataList
     }
 
-    private fun step5(
+    private fun getAllMetadata(
+        localDeletedFiles: Map<String, Long>,
+        filesToArchive: List<FileMetadata>,
+        localNodes: List<FileTreeNode>,
+    ): List<FileMetadata> {
+        val metadata = step4(
+            localDeletedFiles = localDeletedFiles,
+            filesToArchive = filesToArchive
+        )
+        val metadatasd = metadata.toMutableList()
+        for (localNode in localNodes) {
+            val relativePath = localNode.getRelativePath()
+            val isFound =
+                metadatasd.firstOrNull { b -> relativePath.normalizeText() == b.path.normalizeText() }
+            // Fixed: Proper condition with parentheses and remove old entry before adding new one
+            if (isFound == null || (isFound.isDeleted &&
+                        localNode.modifiedTime.isMoreThanOrExact(isFound.modifiedTime))
+            ) {
+                if (isFound != null) {
+                    metadatasd.remove(isFound)
+                }
+                metadatasd.add(
+                    FileMetadata(
+                        path = relativePath,
+                        createdTime = localNode.createdTime,
+                        modifiedTime = localNode.modifiedTime,
+                        isDeleted = false
+                    )
+                )
+            }
+        }
+        return metadatasd
+    }
+
+    private fun getFilesToDownload(
         allMetadata: List<FileMetadata>,
         serverNodes: List<FileItem>
     ): List<String> {
@@ -103,18 +134,15 @@ class SyncUseCase(
                 false
             else {
                 if (!serverNode.isDeleted) {
+                    // Fixed: Normalize both sides of comparison
                     val localNode =
                         allMetadata.firstOrNull { m ->
-                            m.path == serverNode.relativePath.normalizeText()
-                        } //&& !m.isDeleted
-                    if (localNode != null) {
-                        if (localNode.isDeleted &&
-                            localNode.modifiedTime.isMoreThanOrExact(serverNode.modifiedTime)
-                        ) false
-                        else {
-                            val result = serverNode.modifiedTime.isMoreThan(localNode.modifiedTime)
-                            result
+                            m.path.normalizeText() == serverNode.relativePath.normalizeText() && !m.isDeleted
                         }
+                    if (localNode != null) {
+                        // Fixed: Removed redundant check since we filter !m.isDeleted above
+                        val result = serverNode.modifiedTime.isMoreThan(localNode.modifiedTime)
+                        result
                     } else
                         true
                 } else
@@ -124,7 +152,6 @@ class SyncUseCase(
     }
 
     private fun getFilesToArchive(
-        workspacePresentation: WorkspacePresentation,
         localNodes: List<FileTreeNode>,
         serverNodes: List<FileItem>
     ): List<FileMetadata> {
@@ -132,37 +159,25 @@ class SyncUseCase(
         fun addMeta(meta: FileTreeNode) {
             when (meta) {
                 is FileTreeNode.Directory -> {
-
+                    // Directories don't need metadata
                 }
 
                 is FileTreeNode.File -> {
-                    val relativePath = meta.getRelativePath(workspacePath = workspacePresentation.absolutePath)
-                    if (meta.name.extension == "db-shm" ||
-                        meta.name.extension == "db-wal" ||
-                        meta.name.name == "deleted_files" ||
-                        meta.name.extension == "db-journal" ||
-                        relativePath == "${hiddenDirectory}/import.zip" ||
-                        relativePath == "${hiddenDirectory}/export.zip"
-                    ) {
-
-                    } else {
-                        metadataList.add(
-                            FileMetadata(
-                                path = relativePath,
-                                createdTime = meta.createdTime,
-                                modifiedTime = meta.modifiedTime,
-                                isDeleted = false
-                            )
+                    metadataList.add(
+                        FileMetadata(
+                            path = meta.getRelativePath(),
+                            createdTime = meta.createdTime,
+                            modifiedTime = meta.modifiedTime,
+                            isDeleted = false
                         )
-                    }
+                    )
                 }
             }
         }
         for (localFile in localNodes) {
-            val localRelativePath =
-                localFile.getRelativePath(workspacePath = workspacePresentation.absolutePath)
+            val localRelativePath = localFile.getRelativePath().normalizeText()
             val foundServerFile =
-                serverNodes.firstOrNull { d -> d.relativePath == localRelativePath }
+                serverNodes.firstOrNull { d -> d.relativePath.normalizeText() == localRelativePath }
             if (foundServerFile == null || localFile.modifiedTime.isMoreThan(foundServerFile.modifiedTime)) {
                 addMeta(localFile)
             }
@@ -170,6 +185,41 @@ class SyncUseCase(
         return metadataList
     }
 
+    override suspend fun getStatus(workspace: IWorkspaceEnvironment): ResultWrapper<SyncStatus, String> {
+        return resultBlock {
+            try {
+                val localNodes = workspace.getNodes(null).getAll(isSkipOwnNode = true)
+                val serverNodes = step1(workspace = workspace)
+
+                val deletedLocalFiles = getWhatToDeleteInLocal(
+                    localNodes = localNodes,
+                    serverFiles = serverNodes
+                )
+                val filesToArchive = getFilesToArchive(
+                    localNodes = localNodes,
+                    serverNodes = serverNodes
+                )
+                val localDeletedFiles = workspace.getDeletedFilesMetadata().toMutableMap()
+                val allMetadata = getAllMetadata(
+                    localDeletedFiles = localDeletedFiles,
+                    filesToArchive = filesToArchive,
+                    localNodes = localNodes
+                )
+                val filesToDownload = getFilesToDownload(
+                    allMetadata = allMetadata,
+                    serverNodes = serverNodes
+                )
+                SyncStatus(
+                    filesDownloaded = listOf(),
+                    filesToDownload = filesToDownload,
+                    localDeletedFilesByServer = deletedLocalFiles,
+                    filesToArchive = filesToArchive
+                )
+            } catch (exc: Exception) {
+                raise(exc.message ?: "")
+            }
+        }
+    }
 
     override suspend fun invoke(workspace: IWorkspaceEnvironment): ResultWrapper<SyncStatus, String> {
         val workspaceAbsolutePath = workspace.getWorkspace().absolutePath
@@ -180,94 +230,69 @@ class SyncUseCase(
                     "import",
                     extension = "zip"
                 ),
-                parentPath = pathWrapper(workspaceAbsolutePath, hiddenDirectory).pathString
+                //todo adapt relativePath
+                parentFullPath = pathWrapper(workspaceAbsolutePath, hiddenDirectory).pathString,
+                parentRelativePath = pathWrapper(workspaceAbsolutePath, hiddenDirectory).pathString
             ).getFullPath()
-        val dbWall =
-            FileTreeNode.File(
-                name = FileName(
-                    "sqlite",
-                    extension = "db-wal"
-                ),
-                parentPath = pathWrapper(workspaceAbsolutePath, hiddenDirectory).pathString
-            )
-        val dbShm =
-            FileTreeNode.File(
-                name = FileName(
-                    "sqlite",
-                    extension = "db-shm"
-                ),
-                parentPath = pathWrapper(workspaceAbsolutePath, hiddenDirectory).pathString
-            )
         val exportArchiveNode =
             FileTreeNode.File(
                 name = FileName(
                     "export",
                     extension = "zip"
                 ),
-                parentPath = pathWrapper(workspaceAbsolutePath, hiddenDirectory).pathString
+                //todo adapt relativePath
+                parentRelativePath = pathWrapper(workspaceAbsolutePath, hiddenDirectory).pathString,
+                parentFullPath = pathWrapper(workspaceAbsolutePath, hiddenDirectory).pathString
             )
         return resultBlock {
             try {
-
-                val localNodes = workspace.getNodes(null).getAll(isSkipOwnNode = true)
-
-                //get server file structure
-                val serverNodes = step1(workspace = workspace)
-                //delete local files
-                val deletedLocalFiles = step2(
-                    workspaceAbsolutePath = workspaceAbsolutePath,
-                    localNodes = localNodes,
-                    serverFiles = serverNodes.map { d -> d.copy(relativePath = d.relativePath.normalizeText()) },
-                    workspace = workspace
-                )
-
                 try {
                     SystemFileSystem.delete(Path(archivePath))
                 } catch (exc: Exception) {
+                    // Ignore deletion errors
                 }
 
-                val filesToArchive = getFilesToArchive(
-                    workspacePresentation = workspace.getWorkspace(),
+                val localNodes = workspace.getNodes(null).getAll(isSkipOwnNode = true)
+                val serverNodes = step1(workspace = workspace)
+                //delete local files
+                val deletedLocalFiles = getWhatToDeleteInLocal(
                     localNodes = localNodes,
-                    serverNodes = serverNodes.map { d -> d.copy(relativePath = d.relativePath.normalizeText()) }
+                    serverFiles = serverNodes
                 )
-                //pack filesToArchive to zip
-                step3(
+                workspace.deleteNodes(deletedLocalFiles)
+
+                val filesToArchive = getFilesToArchive(
+                    localNodes = localNodes,
+                    serverNodes = serverNodes
+                )
+                packToZip(
                     workspacePresentation = workspace.getWorkspace(),
                     filesToArchive = filesToArchive.map { d -> d.path },
                     archivePath = archivePath
                 )
-                val localDeletedFiles = workspace.getDeletedFilesMetadata().toMutableMap()
-                val metadata = step4(
-                    localDeletedFiles = localDeletedFiles,
-                    filesToArchive = filesToArchive
-                )
-                val metadatasd = metadata.toMutableList()
-                for (localNode in localNodes) {
-                    val relativePath =
-                        localNode.getRelativePath(workspacePath = workspaceAbsolutePath)
-                    val isFound =
-                        metadatasd.firstOrNull { b -> relativePath == b.path }
-                    if (isFound == null) {
-                        metadatasd.add(
-                            FileMetadata(
-                                path = relativePath,
-                                createdTime = localNode.createdTime,
-                                modifiedTime = localNode.modifiedTime,
-                                isDeleted = false
-                            )
-                        )
+                val localDeletedFiles = workspace.getDeletedFilesMetadata()
+                    .filter { d ->
+                        val found =
+                            localNodes.firstOrNull { b ->
+                                b.getRelativePath().normalizeText() == d.key.normalizeText() &&
+                                        b.modifiedTime.isMoreThanOrExact(d.value)
+                            }
+                        found == null
                     }
-                }
-                val filesToDownload = step5(
-                    allMetadata = metadatasd,
+                    .toMutableMap()
+                val allMetadata = getAllMetadata(
+                    localDeletedFiles = localDeletedFiles,
+                    filesToArchive = filesToArchive,
+                    localNodes = localNodes
+                )
+                val filesToDownload = getFilesToDownload(
+                    allMetadata = allMetadata,
                     serverNodes = serverNodes
                 )
-
                 val uploadResult = workspace.uploadSync(
                     filesToDownload = filesToDownload,
                     archiveFullPath = archivePath,
-                    metadata = metadatasd
+                    metadata = allMetadata
                 )
                 uploadResult.shouldBeSuccess()
 
@@ -276,13 +301,6 @@ class SyncUseCase(
                 val createdExportArchive =
                     filesRepo.createNode(exportArchiveNode, byteArray = uploadResult.value)
                 createdExportArchive.shouldBeSuccess()
-
-                try {
-                    filesRepo.deleteNode(dbWall)
-                    filesRepo.deleteNode(dbShm)
-                } catch (exc: Exception) {
-
-                }
 
                 val serverFiles2 = step1(workspace)
                 var extractedFiles = listOf<String>()
@@ -293,6 +311,7 @@ class SyncUseCase(
                         serverFiles = serverFiles2,
                     )
                 } catch (exc: Exception) {
+                    // Ignore extraction errors
                 }
                 if (localDeletedFiles.isNotEmpty() &&
                     extractedFiles.isNotEmpty()

@@ -2,6 +2,7 @@ package com.moly3.cedarjam.pages.page_workspace.ui.internal
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,9 +13,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.mohamedrejeb.compose.dnd.DragAndDropState
@@ -25,7 +28,12 @@ import com.moly3.cedarjam.core.ui.model.PageNameData
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalHazeState
 import com.moly3.cedarjam.core.ui.compositions.LocalHazeStyle
+import com.moly3.cedarjam.core.ui.model.CJText
 import com.moly3.cedarjam.core.ui.model.FileTreeItemPresentation
+import com.moly3.cedarjam.core.ui.uikit.CJButton
+import com.moly3.cedarjam.core.ui.uikit.CJText
+import com.moly3.cedarjam.core.ui.uikit.UIStateContentNoBox
+import com.moly3.cedarjam.core.ui.volumedBorderStroke
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.hazeSource
@@ -126,7 +134,49 @@ internal fun MenuContent(
                         }
                     }
                 }
+                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    UIStateContentNoBox(boxModifier = Modifier, state = state.fileVersionsState) {
+                        Row(
+                            modifier = Modifier,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Row(
+                                Modifier
+                                    .border(volumedBorderStroke, RoundedCornerShape(8.dp))
+                                    .padding(4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                CJText(text = "->")
+                                CJText(text = it.filesToArchive.size.toString())
+                            }
+                            Row(
+                                Modifier
+                                    .border(volumedBorderStroke, RoundedCornerShape(8.dp))
+                                    .padding(4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                CJText(text = "<-")
+                                CJText(text = it.filesToDownload.size.toString())
+                            }
+                            Row(
+                                Modifier
+                                    .border(volumedBorderStroke, RoundedCornerShape(8.dp))
+                                    .padding(4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                CJText(text = "D")
+                                CJText(text = it.localDeletedFilesByServer.size.toString())
+                            }
+                            CJButton(text = "sync") {
+                                onIntent(Intent.Sync)
+                            }
+                        }
+                    }
 
+                }
                 WorkspaceSelect(
                     activeWorkspace = state.activeWorkspace,
                     onChangeWorkspace = {

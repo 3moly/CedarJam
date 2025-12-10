@@ -1,18 +1,28 @@
 package com.moly3.cedarjam.core.storage.func
 
+import com.moly3.cedarjam.core.domain.func.relativeTo
 import com.moly3.cedarjam.core.domain.model.FileName
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import kotlinx.io.files.Path
 import kotlin.time.ExperimentalTime
 
+
+
 @OptIn(ExperimentalTime::class)
 fun getFileNodeFromPath(
+    workspacePathToRemove: String,
     filePath: Path,
     isDirectory: Boolean,
     nodes: List<FileTreeNode>? = null,
     fileSize: Long
 ): FileTreeNode {
     val fullName = filePath.name
+    val relativePath = filePath
+        .toString()
+        .relativeTo(workspacePathToRemove)
+        .removePrefix("/")
+        .removeSuffix(filePath.name)
+    val parentFullPath = filePath.parent?.toString() ?: ""
     val isLastDotExists = fullName.last() == '.'
 
     val splited = fullName.split(".")
@@ -27,7 +37,8 @@ fun getFileNodeFromPath(
     val file = if (isDirectory) {
         FileTreeNode.Directory(
             name = fullName,
-            parentPath = filePath.parent.toString(),
+            parentRelativePath = relativePath,
+            parentFullPath = parentFullPath,
             children = nodes ?: listOf(),
             createdTime = getOtherFileMeta.createdDateTime.toEpochMilliseconds(),
             modifiedTime = getOtherFileMeta.modifiedDateTime.toEpochMilliseconds(),
@@ -35,7 +46,8 @@ fun getFileNodeFromPath(
         )
     } else
         FileTreeNode.File(
-            parentPath = if (filePath.parent == null) "" else filePath.parent.toString(),
+            parentRelativePath = relativePath,
+            parentFullPath = parentFullPath,
             name = FileName(
                 name = shortName + if (isLastDotExists) "." else "",
                 extension = fileExtension

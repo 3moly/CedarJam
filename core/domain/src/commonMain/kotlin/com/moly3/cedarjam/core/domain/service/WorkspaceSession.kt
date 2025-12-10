@@ -206,7 +206,9 @@ class WorkspaceSession(
     suspend fun loadLocalFont(newFile: FileTreeNode.File? = null) {
         val node = FileTreeNode.File(
             name = FileName(name = "default", extension = "otf"),
-            pathWrapper(workspace.getWorkspace().absolutePath, hiddenDirectory).pathString
+            //todo adapt relativePath
+            parentFullPath = pathWrapper(workspace.getWorkspace().absolutePath, hiddenDirectory).pathString,
+            parentRelativePath = pathWrapper(workspace.getWorkspace().absolutePath, hiddenDirectory).pathString
         )
         val newNode = newFile ?: node
         val font = try {

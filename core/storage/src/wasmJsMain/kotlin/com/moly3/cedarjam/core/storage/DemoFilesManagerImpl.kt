@@ -2,7 +2,6 @@ package com.moly3.cedarjam.core.storage
 
 import co.touchlab.kermit.Logger
 import com.moly3.cedarjam.core.domain.model.FileName
-import com.moly3.cedarjam.core.domain.model.FileStructure
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.ResultWrapper
 import com.moly3.cedarjam.core.domain.model.canvas.CanvasDataWithErrors
@@ -28,7 +27,7 @@ class DemoFilesManagerImpl : ISystemFilesManager {
 
         return FileTreeNode.File(
             name = FileName(baseName, ext.ifEmpty { null }),
-            parentPath = parentPath,
+            parentRelativePath = parentPath,
             createdTime = 0L,
             modifiedTime = 0L,
             fileSize = data?.size?.toLong() ?: 0L
@@ -41,7 +40,7 @@ class DemoFilesManagerImpl : ISystemFilesManager {
 
         return FileTreeNode.Directory(
             name = name,
-            parentPath = parentPath,
+            parentRelativePath = parentPath,
             children = children,
             createdTime = 0L,
             modifiedTime = 0L,
@@ -88,8 +87,8 @@ class DemoFilesManagerImpl : ISystemFilesManager {
         return dirNode(norm, listOf())
     }
 
-    override fun getNodes(nodePath: String): List<FileTreeNode> {
-        val parent = normalize(nodePath).trimEnd('/')
+    override fun getNodes(directoryAbsolutePath: String): List<FileTreeNode> {
+        val parent = normalize(directoryAbsolutePath).trimEnd('/')
         return fs.keys
             .filter { it.startsWith("$parent/") && it != parent }
             .map {

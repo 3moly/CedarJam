@@ -3,7 +3,9 @@ package com.moly3.cedarjam.pages.page_workspace.ui.internal
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,6 +21,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.moly3.cedarjam.pages.page_workspace.Intent
 import com.moly3.cedarjam.pages.page_workspace.Label
 import com.moly3.cedarjam.pages.page_workspace.State
@@ -26,6 +29,8 @@ import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalDragAndDrop
 import com.moly3.cedarjam.core.ui.func.rememberWindowSize
 import com.moly3.cedarjam.core.ui.model.WindowSize
+import com.moly3.cedarjam.core.ui.uikit.CJText
+import com.moly3.cedarjam.core.ui.uikit.UIStateContentNoBox
 import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
@@ -132,7 +137,24 @@ fun PageContent(
                     .fillMaxHeight()
                     .background(Color(0xFF3F3F3F))
             ) {
-                content()
+                //content()
+                UIStateContentNoBox(state = state.fileVersionsState) {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        CJText(text = "filesToArchive", fontSize = 16.sp)
+                        for (item in it.filesToArchive) {
+                            CJText(text = item.path, fontSize = 12.sp)
+                        }
+                        CJText(text = "filesToDownload", fontSize = 16.sp)
+                        for (item in it.filesToDownload) {
+                            CJText(text = item, fontSize = 12.sp)
+                        }
+                        CJText(text = "delete local", fontSize = 16.sp)
+                        for (item in it.localDeletedFilesByServer) {
+                            CJText(text = item.getRelativePath(), fontSize = 12.sp)
+                        }
+                    }
+                }
+
             }
         }
     }

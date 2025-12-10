@@ -19,6 +19,7 @@ import com.moly3.cedarjam.core.domain.func.doNothing
 import com.moly3.cedarjam.core.domain.func.hiddenDirectory
 import com.moly3.cedarjam.core.domain.func.nowInMs
 import com.moly3.cedarjam.core.domain.func.pathWrapper
+import com.moly3.cedarjam.core.domain.func.sqlDatabaseName
 import com.moly3.cedarjam.core.domain.func.toHexString
 import com.moly3.cedarjam.core.domain.io
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
@@ -82,7 +83,7 @@ internal class SqlStorage(
         return pathWrapper(
             workspaceDirectoryPath,
             hiddenDirectory,
-            "sqlite.db"
+            "$sqlDatabaseName.db"
         ).pathString
     }
 

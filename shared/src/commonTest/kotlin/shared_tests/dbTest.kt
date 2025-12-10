@@ -247,7 +247,7 @@ class dbTest : AppEnvironmentTest() {
         val filesRepository = FilesRepository(filesStorage)
 
         val file = FileTreeNode.File(
-            parentPath = getWorkspaceDirectory().getFullPath(),
+            parentRelativePath = getWorkspaceDirectory().getFullPath(),
             name = FileName(
                 name = "mmm",
                 extension = null
@@ -269,7 +269,7 @@ class dbTest : AppEnvironmentTest() {
         val filesRepository = FilesRepository(filesStorage)
 
         val file = FileTreeNode.File(
-            parentPath = getWorkspaceDirectory().getFullPath(),
+            parentRelativePath = getWorkspaceDirectory().getFullPath(),
             name = FileName(
                 name = "mmm",
                 extension = null
@@ -288,14 +288,14 @@ class dbTest : AppEnvironmentTest() {
         val filesStorage = createSystemFilesManager()
         val filesRepository = FilesRepository(filesStorage)
         val file = FileTreeNode.File(
-            parentPath = getWorkspaceDirectory().getFullPath(),
+            parentRelativePath = getWorkspaceDirectory().getFullPath(),
             name = FileName(
                 name = "mmm",
                 extension = null
             )
         )
         val file2 = FileTreeNode.File(
-            parentPath = getWorkspaceDirectory().getFullPath(),
+            parentRelativePath = getWorkspaceDirectory().getFullPath(),
             name = FileName(
                 name = "mmm2",
                 extension = null

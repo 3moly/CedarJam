@@ -179,7 +179,7 @@ internal class DialogCanvasStoreFactory(
                     val stat = state().userCoordinate
                     val work = workspaceSession.workspaceEnvStateFlow.value.getWorkspace()
                     val shapes = state().shapes.toMutableList()
-                    val relative = intent.file.getRelativePath(workspacePath = work.absolutePath)
+                    val relative = intent.file.getRelativePath()
                     shapes.add(
                         ShapeImpl(
                             Clock.System.now().toEpochMilliseconds(),

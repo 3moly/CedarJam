@@ -1,11 +1,13 @@
 package com.moly3.cedarjam.core.storage.func
 
-import com.moly3.cedarjam.core.domain.func.dsStoreFile
+import com.moly3.cedarjam.core.domain.func.ignoreByRelativePath
+import com.moly3.cedarjam.core.domain.func.ignoredDsStoreFile
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 
 fun getFiles(
+    workspacePathToRemove: String,
     parentPath: Path
 ): Pair<List<FileTreeNode>, Long> {
     var parentFileSize = 0L
@@ -22,12 +24,13 @@ fun getFiles(
         var childFileSize = meta.size
 
         if (meta.isDirectory) {
-            val filesResult = getFiles(childPath)
+            val filesResult = getFiles(workspacePathToRemove, childPath)
             childFileSize = filesResult.second
             parentFileSize += filesResult.second
             nodes = filesResult.first
         }
         val node = getFileNodeFromPath(
+            workspacePathToRemove = workspacePathToRemove,
             filePath = filePath,
             meta.isDirectory,
             nodes = nodes,
@@ -36,7 +39,10 @@ fun getFiles(
         when (node) {
             is FileTreeNode.Directory -> {}
             is FileTreeNode.File -> {
-                if (node.getFullName() == dsStoreFile)
+                val relativePath = node.getRelativePath()
+                if (ignoreByRelativePath.firstOrNull { d -> d == relativePath } != null)
+                    continue
+                if (node.getFullName() == ignoredDsStoreFile)
                     continue
             }
         }

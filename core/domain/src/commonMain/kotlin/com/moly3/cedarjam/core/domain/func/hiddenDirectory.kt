@@ -1,15 +1,24 @@
 package com.moly3.cedarjam.core.domain.func
 
-import com.moly3.cedarjam.core.domain.model.Platform
 
-val hiddenDirectory: String
-    get() {
-        return when (getPlatform()) {
-            Platform.Android -> "moly3"
-            Platform.Ios -> "moly3"
-            is Platform.Jvm -> "moly3"
-            Platform.Wasm -> "moly3"
-        }
-    }
+const val hiddenDirectory: String = "moly3"
+const val ignoredDsStoreFile: String = ".DS_Store"
+const val deletedFiles = "deleted_files"
+const val ignoredDeletedFiles: String = "${hiddenDirectory}/$deletedFiles"
+const val ignoredFont: String = "${hiddenDirectory}/default.otf"
+const val ignoredImportArchive: String = "${hiddenDirectory}/import.zip"
+const val ignoredExportArchive: String = "${hiddenDirectory}/export.zip"
+const val sqlDatabaseName = "sqlite"
+const val ignoredDbShm: String = "${hiddenDirectory}/$sqlDatabaseName.db-shm"
+const val ignoredDbWal: String = "${hiddenDirectory}/$sqlDatabaseName.db-wal"
+const val ignoredDbJournal: String = "${hiddenDirectory}/$sqlDatabaseName.db-journal"
 
-val dsStoreFile: String = ".DS_Store"
+val ignoreByRelativePath = listOf(
+    ignoredDeletedFiles,
+    ignoredFont,
+    ignoredImportArchive,
+    ignoredExportArchive,
+    ignoredDbShm,
+    ignoredDbWal,
+    ignoredDbJournal
+)

@@ -144,7 +144,7 @@ internal class FileStoreFactory(
                 foundNodeFlow.collectLatest { fileNode ->
                     if (fileNode != null) {
                         val rl =
-                            fileNode.getRelativePath(workspacePath = workspaceEnv.getWorkspace().fullpath)
+                            fileNode.getRelativePath()
                         dispatch(FileStore.Msg.SetFileRelativePath(rl))
 
                         val fileType = fileNode.toGetFileType(

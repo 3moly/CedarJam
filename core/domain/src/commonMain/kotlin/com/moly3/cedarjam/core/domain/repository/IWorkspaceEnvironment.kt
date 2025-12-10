@@ -142,7 +142,9 @@ interface IWorkspaceEnvironment {
             return listOf(
                 FileTreeNode.Directory(
                     name = name,
-                    parentPath = path.toString(),
+                    //todo adapt relativePath
+                    parentRelativePath = path.toString(),
+                    parentFullPath = path.toString(),
                     children = child,
                     fileSize = child.sumOf { d -> d.fileSize }
                 )

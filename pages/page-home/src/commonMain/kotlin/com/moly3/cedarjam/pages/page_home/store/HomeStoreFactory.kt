@@ -153,11 +153,7 @@ internal class HomeStoreFactory(
                             is UIState.Loading -> {}
                             is UIState.Success -> {
                                 for (file in state.data.getAllFilesByExtension(null)) {
-                                    if (file.name.extension == "db" ||
-                                        file.name.extension == "db-wal" ||
-                                        file.name.extension == "db-shm"
-                                    ) continue
-                                    var matches = mutableListOf<LineMatch>()
+                                    val matches = mutableListOf<LineMatch>()
                                     if (isSearch) {
 
                                         val isTitleContains = file.getShortName().lowercase()

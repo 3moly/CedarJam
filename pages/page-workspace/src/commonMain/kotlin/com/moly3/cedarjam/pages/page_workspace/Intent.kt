@@ -45,6 +45,7 @@ sealed interface Intent {
     data class RevealFile(val data: PageNameData.PageType) : Intent
     data class ClearingTabs(val data: List<Int>) : Intent
     data class SetSettings(val data: WorkspaceSettings) : Intent
+    data object Sync: Intent
 
 
 }

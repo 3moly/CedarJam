@@ -1,5 +1,6 @@
 package com.moly3.cedarjam.core.domain.usecase
 
+import com.moly3.cedarjam.core.domain.model.FileItem
 import com.moly3.cedarjam.core.domain.model.FileMetadata
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.ResultWrapper
@@ -7,6 +8,7 @@ import com.moly3.cedarjam.core.domain.repository.IWorkspaceEnvironment
 
 interface ISyncUseCase {
     suspend fun invoke(workspace: IWorkspaceEnvironment): ResultWrapper<SyncStatus, String>
+    suspend fun getStatus(workspace: IWorkspaceEnvironment): ResultWrapper<SyncStatus, String>
 }
 
 data class SyncStatus(

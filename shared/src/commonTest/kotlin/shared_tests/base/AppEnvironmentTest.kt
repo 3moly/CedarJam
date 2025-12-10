@@ -33,7 +33,7 @@ abstract class AppEnvironmentTest : BaseTest() {
             Platform.Android,
             Platform.Ios -> {
                 FileTreeNode.Directory(
-                    parentPath = FileKit.filesDirPath(),
+                    parentRelativePath = FileKit.filesDirPath(),
                     name = "/test_env2",
                     children = listOf(),
                     fileSize = 0L
@@ -42,7 +42,7 @@ abstract class AppEnvironmentTest : BaseTest() {
 
             Platform.Jvm -> {
                 FileTreeNode.Directory(
-                    parentPath = "build/.test_workspace",
+                    parentRelativePath = "build/.test_workspace",
                     name = "asa",
                     children = listOf(),
                     fileSize = 0L
