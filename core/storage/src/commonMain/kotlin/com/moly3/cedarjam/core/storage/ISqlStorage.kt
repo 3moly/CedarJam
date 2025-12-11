@@ -62,6 +62,11 @@ interface ISqlStorage {
         serverNodes: List<FileItem>
     ): ResultWrapper<Unit, String>
 
+    fun setFilesAsSynced(
+        paths: List<String>,
+        serverNodes: List<FileItem>
+    ): ResultWrapper<Unit, String>
+
     fun createCollection(request: CreateCollectionRequest): ResultWrapper<Long, String>
     fun createCollectionRow(request: CreateCollectionRowRequest): ResultWrapper<Long, String>
 

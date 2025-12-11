@@ -50,16 +50,16 @@ internal class SettingsSyncStoreFactory(
             dispatch(SettingsSyncStore.Msg.SetFileMetadata(deletedFiles.toPersistentMap()))
             scope.launch(io) {
                 try {
-                    val resultss =
+
                         syncUseCase.getStatus(workspace = workspaceSession.workspaceEnvStateFlow.value)
-                    launch(Dispatchers.Main) {
-                        dispatch(
-                            SettingsSyncStore.Msg.SetPrepareStatus(
-                                resultss.mapToUIState(
-                                    onError = { "" })
-                            )
-                        )
-                    }
+//              todo      launch(Dispatchers.Main) {
+//                        dispatch(
+//                            SettingsSyncStore.Msg.SetPrepareStatus(
+//                                resultss.mapToUIState(
+//                                    onError = { "" })
+//                            )
+//                        )
+//                    }
                 } catch (exc: Exception) {
                     val msg = "" + exc.message
                 }

@@ -55,7 +55,6 @@ import com.moly3.cedarjam.core.domain.model.request.UpdateDataCollectionRowReque
 import com.moly3.cedarjam.core.domain.model.request.UpdateTagRequest
 import com.moly3.cedarjam.core.domain.model.settings.WorkspaceSettings
 import com.moly3.cedarjam.core.domain.service.FileManagerService
-import com.moly3.cedarjam.core.domain.usecase.SyncStatus
 import com.moly3.cedarjam.core.storage.ISqlStorage
 import com.moly3.cedarjam.db.DataCollectionRow
 import com.moly3.cedarjam.db.Tag
@@ -754,6 +753,16 @@ class WorkspaceEnvironment(
     ): ResultWrapper<Unit, String> {
         return sqlStorage.updateIndexFilesFlow(
             localNodes = localNodes,
+            serverNodes = serverNodes
+        )
+    }
+
+    override fun setFilesAsSynced(
+        paths: List<String>,
+        serverNodes: List<FileItem>
+    ): ResultWrapper<Unit, String> {
+        return sqlStorage.setFilesAsSynced(
+            paths = paths,
             serverNodes = serverNodes
         )
     }

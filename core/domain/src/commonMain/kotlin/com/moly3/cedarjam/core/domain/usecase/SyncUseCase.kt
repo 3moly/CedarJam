@@ -12,11 +12,14 @@ import com.moly3.cedarjam.core.domain.model.FileItem
 import com.moly3.cedarjam.core.domain.model.FileMetadata
 import com.moly3.cedarjam.core.domain.model.FileName
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
+import com.moly3.cedarjam.core.domain.model.IndexFileDto
 import com.moly3.cedarjam.core.domain.model.ResultWrapper
+import com.moly3.cedarjam.core.domain.model.SyncStatus
 import com.moly3.cedarjam.core.domain.model.WorkspacePresentation
 import com.moly3.cedarjam.core.domain.model.resultBlock
 import com.moly3.cedarjam.core.domain.repository.IFilesRepository
 import com.moly3.cedarjam.core.domain.repository.IWorkspaceEnvironment
+import kotlinx.coroutines.flow.first
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 
@@ -199,183 +202,310 @@ class SyncUseCase(
         return metadataList
     }
 
-    override suspend fun getStatus(workspace: IWorkspaceEnvironment): ResultWrapper<SyncStatus, String> {
-        return resultBlock {
+    override suspend fun getStatus(workspace: IWorkspaceEnvironment) {
+        resultBlock {
             try {
                 val tree = workspace.getNodes(null)
-                val localNodes = tree.getAll(isSkipOwnNode = true)
                 val serverNodes = step1(workspace = workspace)
                 workspace.updateIndexFilesFlow(
                     localNodes = tree.firstOrNull()?.getChildrenOrNull() ?: listOf(),
                     serverNodes = serverNodes
                 )
-
-                val deletedLocalFiles = getWhatToDeleteInLocal(
-                    localNodes = localNodes,
-                    serverFiles = serverNodes
-                )
-                val filesToArchive = getFilesToArchive(
-                    localNodes = localNodes,
-                    serverNodes = serverNodes
-                )
-                val localDeletedFiles = workspace.getDeletedFilesMetadata().toMutableMap()
-
-//                val allMetadata = getAllMetadata(
-//                    localDeletedFiles = localDeletedFiles,
-//                    filesToArchive = filesToArchive,
-//                    localNodes = localNodes
-//                )
-                val filesToDownload = getFilesToDownload(
-                    localNodes = localNodes,
-                    serverNodes = serverNodes
-                )
-                SyncStatus(
-                    filesDownloaded = listOf(),
-                    filesToDownload = filesToDownload,
-                    localDeletedFilesByServer = deletedLocalFiles,
-                    filesToArchive = filesToArchive
-                )
             } catch (exc: Exception) {
                 raise(exc.message ?: "")
             }
         }
     }
 
-    override suspend fun invoke(workspace: IWorkspaceEnvironment): ResultWrapper<SyncStatus, String> {
-        val workspaceAbsolutePath = workspace.getWorkspace().absolutePath
+    private fun IndexFileDto.toMetadata(): FileMetadata {
+        return FileMetadata(
+            relativePath = this.relativePath,
+            modifiedTime = this.modifiedTime,
+            contentHash = this.contentHash ?: "",
+            isDeleted = this.serverSyncStatus == SyncStatus.DELETED,
+            isDirectory = this.isDirectory == 1L
+        )
+    }
 
-        val archivePath =
-            FileTreeNode.File(
-                name = FileName(
-                    "import",
-                    extension = "zip"
-                ),
-                //todo adapt relativePath
-                parentFullPath = pathWrapper(workspaceAbsolutePath, hiddenDirectory).pathString,
-                parentRelativePath = pathWrapper(workspaceAbsolutePath, hiddenDirectory).pathString
-            ).getFullPath()
-        val exportArchiveNode =
-            FileTreeNode.File(
-                name = FileName(
-                    "export",
-                    extension = "zip"
-                ),
-                //todo adapt relativePath
-                parentRelativePath = pathWrapper(workspaceAbsolutePath, hiddenDirectory).pathString,
-                parentFullPath = pathWrapper(workspaceAbsolutePath, hiddenDirectory).pathString
-            )
+    override suspend fun invoke(workspace: IWorkspaceEnvironment): ResultWrapper<SyncStatus2, String> {
+        val workspaceAbsolutePath = workspace.getWorkspace().absolutePath
+        val hiddenDirPath = pathWrapper(workspaceAbsolutePath, hiddenDirectory).pathString
+
+        // Temp file for upload
+        val importArchivePath = FileTreeNode.File(
+            name = FileName("import", "zip"),
+            parentFullPath = hiddenDirPath,
+            parentRelativePath = hiddenDirPath
+        ).getFullPath()
+
+        // Temp file for download (server response)
+        val exportArchiveNode = FileTreeNode.File(
+            name = FileName("export", "zip"),
+            parentRelativePath = hiddenDirPath,
+            parentFullPath = hiddenDirPath
+        )
+
         return resultBlock {
             try {
+                // 0. Cleanup temp files
                 try {
-                    SystemFileSystem.delete(Path(archivePath))
-                } catch (exc: Exception) {
-                    // Ignore deletion errors
+                    SystemFileSystem.delete(Path(importArchivePath))
+                } catch (e: Exception) { /* ignore */ }
+
+                // --- PHASE 1: DISCOVERY & RECONCILIATION ---
+
+                // 1. Get Real State (Disk)
+                // Flatten the tree immediately to list of nodes
+                val diskTree = workspace.getNodes(null)
+                val localNodes = diskTree.firstOrNull()?.getChildrenOrNull()?.getAll() ?: listOf()
+
+                // 2. Get Server State (API)
+                val serverFiles = step1(workspace)
+
+                // 3. Update Local DB Index (The Core Logic)
+                // This marks files as NEW, DIRTY, DELETED or SYNCED based on comparison
+                workspace.updateIndexFilesFlow(
+                    localNodes = localNodes,
+                    serverNodes = serverFiles
+                )
+
+                // --- PHASE 2: GENERATE SYNC PLAN ---
+
+                // 4. Query DB to find what changed locally
+                // You need to add `getIndexedFiles()` to IWorkspaceEnvironment that performs `SELECT * FROM IndexFile`
+                val dbIndexState = workspace.getIndexFilesFlow().first()
+
+                val filesToUploadMeta = mutableListOf<FileMetadata>()
+                val filesToPackInZip = mutableListOf<String>()
+
+                for (file in dbIndexState) {
+                    val status = file.serverSyncStatus
+
+                    // Filter: We only care about things that are NOT SYNCED
+                    if (status == SyncStatus.SYNCED) continue
+
+                    // Add to Metadata List (JSON)
+                    val meta = file.toMetadata()
+                    filesToUploadMeta.add(meta)
+
+                    // Decide if we need to send the physical body
+                    // We send body ONLY for NEW or DIRTY files (and not directories)
+                    if ((status == SyncStatus.NEW || status == SyncStatus.DIRTY) &&
+                        !meta.isDeleted &&
+                        !meta.isDirectory
+                    ) {
+                        filesToPackInZip.add(meta.relativePath)
+                    }
                 }
 
-                val localNodes = workspace.getNodes(null).getAll(isSkipOwnNode = true)
-                val serverNodes = step1(workspace = workspace)
-                //delete local files
-                val deletedLocalFiles = getWhatToDeleteInLocal(
-                    localNodes = localNodes,
-                    serverFiles = serverNodes
-                )
-                workspace.deleteNodes(deletedLocalFiles)
+                // --- PHASE 3: NETWORK EXECUTION ---
 
-                val localMetadata = getFilesToArchive(
-                    localNodes = localNodes,
-                    serverNodes = serverNodes
-                ).toMutableList()
-                packToZip(
-                    workspacePresentation = workspace.getWorkspace(),
-                    filesToArchive = localMetadata.map { d -> d.relativePath },
-                    archivePath = archivePath
-                )
-
-                val localDeletedFiles = workspace.getDeletedFilesMetadata()
-                    .filter { d ->
-                        val localFound =
-                            localNodes.firstOrNull { b ->
-                                b.getRelativePath().normalizeText() == d.key.normalizeText() &&
-                                        b.modifiedTime.isMoreThanOrExact(d.value)
-                            }
-                        val serverFound =
-                            serverNodes.firstOrNull { b ->
-                                b.relativePath.normalizeText() == d.key.normalizeText() &&
-                                        b.modifiedTime.isMoreThanOrExact(d.value)
-                            }
-
-                        localFound == null && serverFound == null
-                    }
-                    .toMutableMap()
-                for (item in localDeletedFiles) {
-                    localMetadata.add(
-                        FileMetadata(
-                            relativePath = item.key,
-                            modifiedTime = item.value,
-                            contentHash = "",
-                            isDirectory = false,
-                            isDeleted = true
-                        )
+                // 5. Pack ZIP (Only modified content)
+                if (filesToPackInZip.isNotEmpty() || true) {
+                    packToZip(
+                        workspacePresentation = workspace.getWorkspace(),
+                        filesToArchive = filesToPackInZip,
+                        archivePath = importArchivePath
                     )
                 }
-                localMetadata
-//                val allMetadata = getAllMetadata(
-//                    localDeletedFiles = localDeletedFiles,
-//                    filesToArchive = filesToArchive,
-//                    localNodes = localNodes
-//                )
-                val filesToDownload = getFilesToDownload(
-                    localNodes = localNodes,
-                    serverNodes = serverNodes
-                )
+
+                // 6. Upload
+                // filesToDownload here is just a hint for UI, the server decides the real diff
+                val filesToDownloadEstimation = getFilesToDownload(localNodes, serverFiles)
 
                 val uploadResult = workspace.uploadSync(
-                    filesToDownload = filesToDownload,
-                    archiveFullPath = archivePath,
-                    metadata = localMetadata
+                    filesToDownload = filesToDownloadEstimation,
+//                    archiveFullPath = if (filesToPackInZip.isNotEmpty()) importArchivePath else "",
+                    archiveFullPath = importArchivePath,
+                    metadata = filesToUploadMeta
                 )
                 uploadResult.shouldBeSuccess()
 
-                val exportArchivePath = exportArchiveNode.getFullPath()
-                filesRepo.deleteNode(exportArchiveNode)
-                val createdExportArchive =
-                    filesRepo.createNode(exportArchiveNode, byteArray = uploadResult.value)
-                createdExportArchive.shouldBeSuccess()
+                // --- PHASE 4: APPLY SERVER RESPONSE ---
 
-                val serverFiles2 = step1(workspace)
+                val responseZipBytes = uploadResult.value
                 var extractedFiles = listOf<String>()
-                try {
-                    extractedFiles = filesRepo.extractFilesFromZip(
-                        archivePath = exportArchivePath,
-                        workspaceFullPath = workspaceAbsolutePath,
-                        serverFiles = serverFiles2
-                    )
-                    Logger.w { "exctracted files: ${extractedFiles.size}" }
-                } catch (exc: Exception) {
-                    // Ignore extraction errors
+
+                if (responseZipBytes.isNotEmpty()) {
+                    // 7. Save and Extract Response ZIP
+                    filesRepo.deleteNode(exportArchiveNode)
+                    filesRepo.createNode(exportArchiveNode, byteArray = responseZipBytes)
+
+                    val exportArchivePath = exportArchiveNode.getFullPath()
+
+                    try {
+                        // Extracts files and Overwrites local ones
+                        // CRITICAL: extractFilesFromZip must set the LastModifiedTime from the zip entry!
+                        extractedFiles = filesRepo.extractFilesFromZip(
+                            archivePath = exportArchivePath,
+                            workspaceFullPath = workspaceAbsolutePath,
+                            serverFiles = serverFiles // Pass server files to verify hashes if needed
+                        )
+                        Logger.d { "Extracted ${extractedFiles.size} files from server" }
+
+                        // 8. FINALIZATION: Mark downloaded files as SYNCED in DB
+                        // If we don't do this, next run will think we modified them locally.
+                        workspace.setFilesAsSynced(extractedFiles, serverNodes = serverFiles)
+
+                    } catch (e: Exception) {
+                        Logger.e(e) { "Failed to extract server response" }
+                    }
                 }
-//                if (localDeletedFiles.isNotEmpty() &&
-//                    extractedFiles.isNotEmpty()
-//                ) {
-//                    var someDeleted = false
-//                    for (extractFile in extractedFiles) {
-//                        if (localDeletedFiles.remove(extractFile) != null) {
-//                            someDeleted = true
-//                        }
-//                    }
-//                    if (someDeleted) {
-//                        workspace.saveDeletedMetadata(localDeletedFiles)
-//                    }
-//                }
-                SyncStatus(
-                    filesDownloaded = listOf(),
-                    filesToDownload = filesToDownload,
-                    localDeletedFilesByServer = deletedLocalFiles,
-                    filesToArchive = localMetadata
+
+                // 9. Cleanup
+                try {
+                    SystemFileSystem.delete(Path(importArchivePath))
+                    filesRepo.deleteNode(exportArchiveNode)
+                } catch (e: Exception) { }
+
+                SyncStatus2(
+                    filesDownloaded = extractedFiles,
+                    filesToDownload = filesToDownloadEstimation,
+                    localDeletedFilesByServer = listOf(), // Handled by updateIndexFilesFlow logic implicitly
+                    filesToArchive = filesToUploadMeta
                 )
             } catch (exc: Exception) {
-                raise(exc.message ?: "")
+                Logger.e(exc) { "Sync failed ${exc.message}" }
+                raise(exc.message ?: "Unknown sync error")
             }
         }
     }
+
+//    override suspend fun invoke(workspace: IWorkspaceEnvironment): ResultWrapper<SyncStatus, String> {
+//        val workspaceAbsolutePath = workspace.getWorkspace().absolutePath
+//
+//        val archivePath =
+//            FileTreeNode.File(
+//                name = FileName(
+//                    "import",
+//                    extension = "zip"
+//                ),
+//                //todo adapt relativePath
+//                parentFullPath = pathWrapper(workspaceAbsolutePath, hiddenDirectory).pathString,
+//                parentRelativePath = pathWrapper(workspaceAbsolutePath, hiddenDirectory).pathString
+//            ).getFullPath()
+//        val exportArchiveNode =
+//            FileTreeNode.File(
+//                name = FileName(
+//                    "export",
+//                    extension = "zip"
+//                ),
+//                //todo adapt relativePath
+//                parentRelativePath = pathWrapper(workspaceAbsolutePath, hiddenDirectory).pathString,
+//                parentFullPath = pathWrapper(workspaceAbsolutePath, hiddenDirectory).pathString
+//            )
+//        return resultBlock {
+//            try {
+//                try {
+//                    SystemFileSystem.delete(Path(archivePath))
+//                } catch (exc: Exception) {
+//                    // Ignore deletion errors
+//                }
+//
+//                val localNodes = workspace.getNodes(null).getAll(isSkipOwnNode = true)
+//                val serverNodes = step1(workspace = workspace)
+//                //delete local files
+//                val deletedLocalFiles = getWhatToDeleteInLocal(
+//                    localNodes = localNodes,
+//                    serverFiles = serverNodes
+//                )
+//                workspace.deleteNodes(deletedLocalFiles)
+//
+//                val localMetadata = getFilesToArchive(
+//                    localNodes = localNodes,
+//                    serverNodes = serverNodes
+//                ).toMutableList()
+//                packToZip(
+//                    workspacePresentation = workspace.getWorkspace(),
+//                    filesToArchive = localMetadata.map { d -> d.relativePath },
+//                    archivePath = archivePath
+//                )
+//
+//                val localDeletedFiles = workspace.getDeletedFilesMetadata()
+//                    .filter { d ->
+//                        val localFound =
+//                            localNodes.firstOrNull { b ->
+//                                b.getRelativePath().normalizeText() == d.key.normalizeText() &&
+//                                        b.modifiedTime.isMoreThanOrExact(d.value)
+//                            }
+//                        val serverFound =
+//                            serverNodes.firstOrNull { b ->
+//                                b.relativePath.normalizeText() == d.key.normalizeText() &&
+//                                        b.modifiedTime.isMoreThanOrExact(d.value)
+//                            }
+//
+//                        localFound == null && serverFound == null
+//                    }
+//                    .toMutableMap()
+//                for (item in localDeletedFiles) {
+//                    localMetadata.add(
+//                        FileMetadata(
+//                            relativePath = item.key,
+//                            modifiedTime = item.value,
+//                            contentHash = "",
+//                            isDirectory = false,
+//                            isDeleted = true
+//                        )
+//                    )
+//                }
+//                localMetadata
+////                val allMetadata = getAllMetadata(
+////                    localDeletedFiles = localDeletedFiles,
+////                    filesToArchive = filesToArchive,
+////                    localNodes = localNodes
+////                )
+//                val filesToDownload = getFilesToDownload(
+//                    localNodes = localNodes,
+//                    serverNodes = serverNodes
+//                )
+//
+//                val uploadResult = workspace.uploadSync(
+//                    filesToDownload = filesToDownload,
+//                    archiveFullPath = archivePath,
+//                    metadata = localMetadata
+//                )
+//                uploadResult.shouldBeSuccess()
+//
+//                val exportArchivePath = exportArchiveNode.getFullPath()
+//                filesRepo.deleteNode(exportArchiveNode)
+//                val createdExportArchive =
+//                    filesRepo.createNode(exportArchiveNode, byteArray = uploadResult.value)
+//                createdExportArchive.shouldBeSuccess()
+//
+//                val serverFiles2 = step1(workspace)
+//                var extractedFiles = listOf<String>()
+//                try {
+//                    extractedFiles = filesRepo.extractFilesFromZip(
+//                        archivePath = exportArchivePath,
+//                        workspaceFullPath = workspaceAbsolutePath,
+//                        serverFiles = serverFiles2
+//                    )
+//                    Logger.w { "exctracted files: ${extractedFiles.size}" }
+//                } catch (exc: Exception) {
+//                    // Ignore extraction errors
+//                }
+////                if (localDeletedFiles.isNotEmpty() &&
+////                    extractedFiles.isNotEmpty()
+////                ) {
+////                    var someDeleted = false
+////                    for (extractFile in extractedFiles) {
+////                        if (localDeletedFiles.remove(extractFile) != null) {
+////                            someDeleted = true
+////                        }
+////                    }
+////                    if (someDeleted) {
+////                        workspace.saveDeletedMetadata(localDeletedFiles)
+////                    }
+////                }
+//                SyncStatus(
+//                    filesDownloaded = listOf(),
+//                    filesToDownload = filesToDownload,
+//                    localDeletedFilesByServer = deletedLocalFiles,
+//                    filesToArchive = localMetadata
+//                )
+//            } catch (exc: Exception) {
+//                raise(exc.message ?: "")
+//            }
+//        }
+//    }
 }

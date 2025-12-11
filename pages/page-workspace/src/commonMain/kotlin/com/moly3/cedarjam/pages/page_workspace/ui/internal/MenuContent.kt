@@ -135,47 +135,53 @@ internal fun MenuContent(
                     }
                 }
                 Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    UIStateContentNoBox(boxModifier = Modifier, state = state.fileVersionsState) {
+                    val new = remember(state.indexes) {
+                        state.indexes.count { d -> d.serverSyncStatus == com.moly3.cedarjam.core.domain.model.SyncStatus.NEW }
+                    }
+                    val upload = remember(state.indexes) {
+                        state.indexes.count { d -> d.serverSyncStatus == com.moly3.cedarjam.core.domain.model.SyncStatus.DIRTY }
+                    }
+                    val deleted = remember(state.indexes) {
+                        state.indexes.count { d -> d.serverSyncStatus == com.moly3.cedarjam.core.domain.model.SyncStatus.DELETED }
+                    }
+                    Row(
+                        modifier = Modifier,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
                         Row(
-                            modifier = Modifier,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            Modifier
+                                .border(volumedBorderStroke, RoundedCornerShape(8.dp))
+                                .padding(4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Row(
-                                Modifier
-                                    .border(volumedBorderStroke, RoundedCornerShape(8.dp))
-                                    .padding(4.dp),
-                                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                CJText(text = "->")
-                                CJText(text = it.filesToArchive.size.toString())
-                            }
-                            Row(
-                                Modifier
-                                    .border(volumedBorderStroke, RoundedCornerShape(8.dp))
-                                    .padding(4.dp),
-                                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                CJText(text = "<-")
-                                CJText(text = it.filesToDownload.size.toString())
-                            }
-                            Row(
-                                Modifier
-                                    .border(volumedBorderStroke, RoundedCornerShape(8.dp))
-                                    .padding(4.dp),
-                                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                CJText(text = "D")
-                                CJText(text = it.localDeletedFilesByServer.size.toString())
-                            }
-                            CJButton(text = "sync") {
-                                onIntent(Intent.Sync)
-                            }
+                            CJText(text = "->")
+                            CJText(text = (upload + new).toString())
+                        }
+//                       todo Row(
+//                            Modifier
+//                                .border(volumedBorderStroke, RoundedCornerShape(8.dp))
+//                                .padding(4.dp),
+//                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+//                            verticalAlignment = Alignment.CenterVertically
+//                        ) {
+//                            CJText(text = "<-")
+//                            CJText(text = new.toString())
+//                        }
+                        Row(
+                            Modifier
+                                .border(volumedBorderStroke, RoundedCornerShape(8.dp))
+                                .padding(4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            CJText(text = "D")
+                            CJText(text = deleted.toString())
+                        }
+                        CJButton(text = "sync") {
+                            onIntent(Intent.Sync)
                         }
                     }
-
                 }
                 WorkspaceSelect(
                     activeWorkspace = state.activeWorkspace,

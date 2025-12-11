@@ -94,6 +94,11 @@ interface IWorkspaceEnvironment {
         serverNodes: List<FileItem>
     ): ResultWrapper<Unit, String>
 
+    fun setFilesAsSynced(
+        paths: List<String>,
+        serverNodes: List<FileItem>
+    ): ResultWrapper<Unit, String>
+
 
 
     fun getNodeText(node: FileTreeNode.File): ResultWrapper<String, String>

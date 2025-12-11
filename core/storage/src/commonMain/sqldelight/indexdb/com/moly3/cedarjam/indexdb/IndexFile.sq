@@ -36,3 +36,23 @@ WHERE relativePath = ?;
 deleteItem:
 DELETE FROM IndexFile
 WHERE relativePath = ?;
+
+upsertSyncedFile:
+INSERT OR REPLACE INTO IndexFile(
+    relativePath,
+    contentHash,
+    modifiedTime,
+    size,
+    isDirectory,
+    lastSyncedHash,
+    serverSyncStatus
+)
+VALUES (
+    :relativePath,
+    :contentHash,
+    :modifiedTime,
+    :size,
+    :isDirectory,
+    :contentHash, -- lastSyncedHash становится равен текущему, так как мы только что синхронизировались
+    0 -- serverSyncStatus = SYNCED
+);

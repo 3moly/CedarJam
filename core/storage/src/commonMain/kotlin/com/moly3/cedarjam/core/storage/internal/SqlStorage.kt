@@ -41,7 +41,6 @@ import com.moly3.cedarjam.core.domain.model.request.UpdateDataCollectionRequest
 import com.moly3.cedarjam.core.domain.model.request.UpdateDataCollectionRowRequest
 import com.moly3.cedarjam.core.domain.model.request.UpdateTagRequest
 import com.moly3.cedarjam.core.domain.service.AppContextProvider
-import com.moly3.cedarjam.core.storage.di.db
 import com.moly3.cedarjam.core.storage.func.updateIndex
 import com.moly3.cedarjam.db.DataCollection
 import com.moly3.cedarjam.db.DataCollectionRow
@@ -382,6 +381,22 @@ internal class SqlStorage(
                     localNodes,
                     serverNodes,
                     db
+                )
+            }
+        }
+    }
+
+    override fun setFilesAsSynced(
+        paths: List<String>,
+        serverNodes: List<FileItem>
+    ): ResultWrapper<Unit, String> {
+        return runQueryOrThrowIndex { db ->
+            resultBlock {
+                com.moly3.cedarjam.core.storage.func.setFilesAsSynced(
+                    paths,
+                    serverNodes,
+                    db,
+                    systemFilesManager
                 )
             }
         }

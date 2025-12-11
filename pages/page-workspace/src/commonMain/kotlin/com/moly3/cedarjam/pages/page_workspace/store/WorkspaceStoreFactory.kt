@@ -37,7 +37,6 @@ import com.moly3.cedarjam.core.domain.func.nowInMs
 import com.moly3.cedarjam.core.domain.func.openFileInExplorer
 import com.moly3.cedarjam.core.domain.func.pathWrapper
 import com.moly3.cedarjam.core.domain.func.relativeTo
-import com.moly3.cedarjam.core.domain.io
 import com.moly3.cedarjam.core.domain.model.FileName
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.NavigateToFile
@@ -283,16 +282,18 @@ internal class WorkspaceStoreFactory(
 
         private fun updateSyncStatus() {
             scope.launch {
-                dispatch(WorkspaceStore.Msg.SetPrepareStatus(UIState.Loading))
-                val status =
-                    syncUseCase.getStatus(workspace = workspaceSession.workspaceEnvStateFlow.value)
-                dispatch(WorkspaceStore.Msg.SetPrepareStatus(status.mapToUIState { "" }))
+                syncUseCase.getStatus(workspace = workspaceSession.workspaceEnvStateFlow.value)
             }
         }
 
         override fun onStart(scopeFromStartToStop: CoroutineScope) {
             super.onStart(scopeFromStartToStop)
 
+            scopeFromStartToStop.launch {
+                workspaceSession.workspaceEnvStateFlow.value.getIndexFilesFlow().collectLatest {
+                    dispatch(WorkspaceStore.Msg.SetIndexFiles(it.toPersistentList()))
+                }
+            }
             scopeFromStartToStop.launch {
                 updateSyncStatus()
             }
@@ -812,8 +813,10 @@ internal class WorkspaceStoreFactory(
 //                                    isDirectory
 //                                )
 //                            }
-                            val workspaceAbsolute =workspaceSession.workspaceEnvStateFlow.value.getWorkspace().absolutePath
-                            val directoryRelativePath = directory.getFullPath().relativeTo(workspaceAbsolute)
+                            val workspaceAbsolute =
+                                workspaceSession.workspaceEnvStateFlow.value.getWorkspace().absolutePath
+                            val directoryRelativePath =
+                                directory.getFullPath().relativeTo(workspaceAbsolute)
                             val newNode = when (draggingItemPath) {
                                 is FileTreeNode.Directory -> draggingItemPath.copy(
                                     parentRelativePath = directoryRelativePath,
@@ -1060,8 +1063,10 @@ internal class WorkspaceStoreFactory(
                 is Intent.Sync -> {
                     scope.launch {
                         syncUseCase.invoke(workspaceSession.workspaceEnvStateFlow.value)
+                        syncUseCase.getStatus(workspaceSession.workspaceEnvStateFlow.value)
                         workspaceSession.initConfigAndFiles()
                         workspaceSession.loadLocalFont()
+
                         updateSyncStatus()
                     }
                 }
@@ -1156,7 +1161,7 @@ internal class WorkspaceStoreFactory(
                 is SetPosition -> copy(cursorPosition = msg.value)
                 is SetWorkspaceFont -> copy(workspaceFont = msg.value)
                 is SetWorkspaceSettings -> copy(settings = msg.value)
-                is SetPrepareStatus -> copy(fileVersionsState = msg.value)
+                is SetIndexFiles -> copy(indexes = msg.value)
             }
         }
     }

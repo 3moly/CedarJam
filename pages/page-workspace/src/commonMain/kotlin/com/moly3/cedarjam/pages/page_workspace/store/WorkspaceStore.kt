@@ -3,6 +3,7 @@ package com.moly3.cedarjam.pages.page_workspace.store
 import androidx.compose.ui.geometry.Offset
 import com.arkivanov.mvikotlin.core.store.Store
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
+import com.moly3.cedarjam.core.domain.model.IndexFileDto
 import com.moly3.cedarjam.pages.page_workspace.Intent
 import com.moly3.cedarjam.pages.page_workspace.Label
 import com.moly3.cedarjam.pages.page_workspace.PageNameWorkspace
@@ -14,7 +15,6 @@ import com.moly3.cedarjam.core.domain.model.WorkspacePresentation
 import com.moly3.cedarjam.core.domain.model.error.DatabaseError
 import com.moly3.cedarjam.core.domain.model.settings.WorkspaceFont
 import com.moly3.cedarjam.core.domain.model.settings.WorkspaceSettings
-import com.moly3.cedarjam.core.domain.usecase.SyncStatus
 import com.moly3.cedarjam.core.ui.model.FileTreeItemPresentation
 import com.moly3.cedarjam.pages.page_workspace.model.LockedMenuData
 import com.moly3.cedarjam.pages.page_workspace.model.TabWeightsData
@@ -44,7 +44,7 @@ internal interface WorkspaceStore : Store<Intent, State, Label> {
         data class SetMenuWidth(val value: Float) : Msg
         data class SetWorkspaceFont(val value: WorkspaceFont?) : Msg
         data class SetWorkspaceSettings(val value: WorkspaceSettings) : Msg
-        data class SetPrepareStatus(val value: UIState<SyncStatus, String>) : Msg
+        data class SetIndexFiles(val value: ImmutableList<IndexFileDto>) : Msg
 
     }
 }

@@ -93,22 +93,20 @@ fun PageContent(
                         .background(Color(0xFF3F3F3F))
                 ) {
                     content()
-                    UIStateContentNoBox(state = state.fileVersionsState) {
-                        Column(modifier=Modifier.padding(8.dp).background(Color.DarkGray),verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            CJText(text = "filesToArchive", fontSize = 16.sp)
-                            for (item in it.filesToArchive) {
-                                CJText(text = item.relativePath, fontSize = 12.sp)
-                            }
-                            CJText(text = "filesToDownload", fontSize = 16.sp)
-                            for (item in it.filesToDownload) {
-                                CJText(text = item, fontSize = 12.sp)
-                            }
-                            CJText(text = "delete local", fontSize = 16.sp)
-                            for (item in it.localDeletedFilesByServer) {
-                                CJText(text = item.getRelativePath(), fontSize = 12.sp)
-                            }
-                        }
-                    }
+//                    todo    Column(modifier=Modifier.padding(8.dp).background(Color.DarkGray),verticalArrangement = Arrangement.spacedBy(4.dp)) {
+//                            CJText(text = "filesToArchive", fontSize = 16.sp)
+//                            for (item in it.filesToArchive) {
+//                                CJText(text = item.relativePath, fontSize = 12.sp)
+//                            }
+//                            CJText(text = "filesToDownload", fontSize = 16.sp)
+//                            for (item in it.filesToDownload) {
+//                                CJText(text = item, fontSize = 12.sp)
+//                            }
+//                            CJText(text = "delete local", fontSize = 16.sp)
+//                            for (item in it.localDeletedFilesByServer) {
+//                                CJText(text = item.getRelativePath(), fontSize = 12.sp)
+//                            }
+//                        }
                 }
             }
         }
@@ -155,22 +153,22 @@ fun PageContent(
                     .background(Color(0xFF3F3F3F))
             ) {
                 content()
-                UIStateContentNoBox(state = state.fileVersionsState) {
-                    Column(modifier=Modifier.padding(8.dp).background(Color.DarkGray),verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        CJText(text = "filesToArchive", fontSize = 16.sp)
-                        for (item in it.filesToArchive) {
-                            CJText(text = item.relativePath, fontSize = 12.sp)
-                        }
-                        CJText(text = "filesToDownload", fontSize = 16.sp)
-                        for (item in it.filesToDownload) {
-                            CJText(text = item, fontSize = 12.sp)
-                        }
-                        CJText(text = "delete local", fontSize = 16.sp)
-                        for (item in it.localDeletedFilesByServer) {
-                            CJText(text = item.getRelativePath(), fontSize = 12.sp)
-                        }
-                    }
-                }
+//             todo   UIStateContentNoBox(state = state.fileVersionsState) {
+//                    Column(modifier=Modifier.padding(8.dp).background(Color.DarkGray),verticalArrangement = Arrangement.spacedBy(4.dp)) {
+//                        CJText(text = "filesToArchive", fontSize = 16.sp)
+//                        for (item in it.filesToArchive) {
+//                            CJText(text = item.relativePath, fontSize = 12.sp)
+//                        }
+//                        CJText(text = "filesToDownload", fontSize = 16.sp)
+//                        for (item in it.filesToDownload) {
+//                            CJText(text = item, fontSize = 12.sp)
+//                        }
+//                        CJText(text = "delete local", fontSize = 16.sp)
+//                        for (item in it.localDeletedFilesByServer) {
+//                            CJText(text = item.getRelativePath(), fontSize = 12.sp)
+//                        }
+//                    }
+//                }
 
             }
         }
