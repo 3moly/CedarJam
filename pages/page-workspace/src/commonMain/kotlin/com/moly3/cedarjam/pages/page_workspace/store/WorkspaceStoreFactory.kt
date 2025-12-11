@@ -282,7 +282,7 @@ internal class WorkspaceStoreFactory(
         }
 
         private fun updateSyncStatus() {
-            scope.launch(io) {
+            scope.launch {
                 dispatch(WorkspaceStore.Msg.SetPrepareStatus(UIState.Loading))
                 val status =
                     syncUseCase.getStatus(workspace = workspaceSession.workspaceEnvStateFlow.value)
@@ -1060,6 +1060,8 @@ internal class WorkspaceStoreFactory(
                 is Intent.Sync -> {
                     scope.launch {
                         syncUseCase.invoke(workspaceSession.workspaceEnvStateFlow.value)
+                        workspaceSession.initConfigAndFiles()
+                        workspaceSession.loadLocalFont()
                         updateSyncStatus()
                     }
                 }

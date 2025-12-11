@@ -29,6 +29,7 @@ compose = "1.10.0-rc01"
 localina = "1.0.0-alpha3"
 material3 = "1.9.0"
 
+okio = "3.16.4"
 serialization = "1.9.0"
 datetime = "0.7.1"
 coroutines = "1.10.2"
@@ -95,6 +96,7 @@ compose-ui-tooling = { module = "org.jetbrains.compose.ui:ui-tooling", version.r
 lazytable = { module = "io.github.oleksandrbalan:lazytable", version.ref = "lazytable" }
 
 localina = { module = "io.github.sudarshanmhasrup.localina:localina", version.ref = "localina" }
+okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
 serialization = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
 decompose = { group = "com.arkivanov.decompose", name = "decompose", version.ref = "decompose" }
 decompose-compose = { group = "com.arkivanov.decompose", name = "extensions-compose", version.ref = "decompose" }

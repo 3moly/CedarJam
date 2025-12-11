@@ -28,12 +28,12 @@ class FilesRepository(
     override suspend fun extractFilesFromZip(
         archivePath: String,
         workspaceFullPath: String,
-        serverFiles: List<FileItem>
+        serverFiles:List<FileItem>,
     ): List<String> {
         return extractZip(
             archivePath,
             workspaceFullPath,
-            serverFiles
+            serverFiles=serverFiles
         )
     }
 
@@ -139,5 +139,9 @@ class FilesRepository(
         data: CanvasDataWithErrors
     ): ResultWrapper<Unit, String> {
         return filesStorage.saveNodeCanvas(nodePath = nodePath, data = data)
+    }
+
+    override fun getFileHash(fullPath: String): String {
+        return filesStorage.getFileHash(fullPath)
     }
 }

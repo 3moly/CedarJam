@@ -35,6 +35,7 @@ kotlin {
                 implementation(libs.compose.foundation)
                 implementation(libs.filekit.core)
                 implementation(libs.filekit.dialogs)
+                api(libs.okio)
             }
         }
         commonTest.dependencies{

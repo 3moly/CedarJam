@@ -1,5 +1,6 @@
 package com.moly3.cedarjam.core.domain.usecase
 
+import co.touchlab.kermit.Logger
 import com.moly3.cedarjam.core.domain.func.hiddenDirectory
 import com.moly3.cedarjam.core.domain.func.isMoreThan
 import com.moly3.cedarjam.core.domain.func.isMoreThanOrExact
@@ -18,7 +19,6 @@ import com.moly3.cedarjam.core.domain.repository.IFilesRepository
 import com.moly3.cedarjam.core.domain.repository.IWorkspaceEnvironment
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
-import kotlin.collections.iterator
 
 class SyncUseCase(
     private val filesRepo: IFilesRepository
@@ -44,10 +44,10 @@ class SyncUseCase(
     ): List<FileTreeNode> {
         val deleteFiles = localNodes.filter { localNode ->
             val localRelativePath = localNode.getRelativePath().normalizeText()
-            serverFiles.firstOrNull { d ->
-                d.relativePath.normalizeText() == localRelativePath &&
-                        d.isDeleted &&
-                        d.modifiedTime.isMoreThan(localNode.modifiedTime)
+            serverFiles.firstOrNull { serverNode ->
+                serverNode.relativePath.normalizeText() == localRelativePath &&
+                        serverNode.isDeleted &&
+                        serverNode.modifiedTime.isMoreThan(localNode.modifiedTime)
             } != null
         }
         return deleteFiles
@@ -65,68 +65,68 @@ class SyncUseCase(
         )
     }
 
-    private fun step4(
-        localDeletedFiles: Map<String, Long>,
-        filesToArchive: List<FileMetadata>
-    ): List<FileMetadata> {
-        val metadataList = filesToArchive.toMutableList()
-        for (deletedMeta in localDeletedFiles) {
-            val upload =
-                metadataList.firstOrNull { d -> d.path.normalizeText() == deletedMeta.key.normalizeText() }
-            // Fixed: Proper condition with correct precedence
-            if (upload == null || deletedMeta.value.isMoreThan(upload.modifiedTime)) {
-                if (upload != null) {
-                    metadataList.remove(upload)
-                }
-                metadataList.add(
-                    FileMetadata(
-                        path = deletedMeta.key,
-                        createdTime = deletedMeta.value,
-                        modifiedTime = deletedMeta.value,
-                        isDeleted = true
-                    )
-                )
-            }
-        }
-        return metadataList
-    }
+//    private fun step4(
+//        localDeletedFiles: Map<String, Long>,
+//        filesToArchive: List<FileMetadata>
+//    ): List<FileMetadata> {
+//        val metadataList = filesToArchive.toMutableList()
+//        for (deletedMeta in localDeletedFiles) {
+//            val upload =
+//                metadataList.firstOrNull { d -> d.relativePath.normalizeText() == deletedMeta.key.normalizeText() }
+//            // Fixed: Proper condition with correct precedence
+//            if (upload == null || deletedMeta.value.isMoreThan(upload.modifiedTime)) {
+//                if (upload != null) {
+//                    metadataList.remove(upload)
+//                }
+//                metadataList.add(
+//                    FileMetadata(
+//                        relativePath = deletedMeta.key,
+//                        createdTime = deletedMeta.value,
+//                        modifiedTime = deletedMeta.value,
+//                        isDeleted = true
+//                    )
+//                )
+//            }
+//        }
+//        return metadataList
+//    }
 
-    private fun getAllMetadata(
-        localDeletedFiles: Map<String, Long>,
-        filesToArchive: List<FileMetadata>,
-        localNodes: List<FileTreeNode>,
-    ): List<FileMetadata> {
-        val metadata = step4(
-            localDeletedFiles = localDeletedFiles,
-            filesToArchive = filesToArchive
-        )
-        val metadatasd = metadata.toMutableList()
-        for (localNode in localNodes) {
-            val relativePath = localNode.getRelativePath()
-            val isFound =
-                metadatasd.firstOrNull { b -> relativePath.normalizeText() == b.path.normalizeText() }
-            // Fixed: Proper condition with parentheses and remove old entry before adding new one
-            if (isFound == null || (isFound.isDeleted &&
-                        localNode.modifiedTime.isMoreThanOrExact(isFound.modifiedTime))
-            ) {
-                if (isFound != null) {
-                    metadatasd.remove(isFound)
-                }
-                metadatasd.add(
-                    FileMetadata(
-                        path = relativePath,
-                        createdTime = localNode.createdTime,
-                        modifiedTime = localNode.modifiedTime,
-                        isDeleted = false
-                    )
-                )
-            }
-        }
-        return metadatasd
-    }
+//    private fun getAllMetadata(
+//        localDeletedFiles: Map<String, Long>,
+//        filesToArchive: List<FileMetadata>,
+//        localNodes: List<FileTreeNode>,
+//    ): List<FileMetadata> {
+//        val metadata = step4(
+//            localDeletedFiles = localDeletedFiles,
+//            filesToArchive = filesToArchive
+//        )
+//        val metadatasd = metadata.toMutableList()
+//        for (localNode in localNodes) {
+//            val relativePath = localNode.getRelativePath()
+//            val isFound =
+//                metadatasd.firstOrNull { b -> relativePath.normalizeText() == b.relativePath.normalizeText() }
+//            // Fixed: Proper condition with parentheses and remove old entry before adding new one
+//            if (isFound == null || (isFound.isDeleted &&
+//                        localNode.modifiedTime.isMoreThanOrExact(isFound.modifiedTime))
+//            ) {
+//                if (isFound != null) {
+//                    metadatasd.remove(isFound)
+//                }
+//                metadatasd.add(
+//                    FileMetadata(
+//                        relativePath = relativePath,
+//                        createdTime = localNode.createdTime,
+//                        modifiedTime = localNode.modifiedTime,
+//                        isDeleted = false
+//                    )
+//                )
+//            }
+//        }
+//        return metadatasd
+//    }
 
     private fun getFilesToDownload(
-        allMetadata: List<FileMetadata>,
+        localNodes: List<FileTreeNode>,
         serverNodes: List<FileItem>
     ): List<String> {
         return serverNodes.filter { serverNode ->
@@ -135,14 +135,21 @@ class SyncUseCase(
             else {
                 if (!serverNode.isDeleted) {
                     // Fixed: Normalize both sides of comparison
+
                     val localNode =
-                        allMetadata.firstOrNull { m ->
-                            m.path.normalizeText() == serverNode.relativePath.normalizeText() && !m.isDeleted
+                        localNodes.firstOrNull { m ->
+                            m.getRelativePath()
+                                .normalizeText() == serverNode.relativePath.normalizeText()
                         }
                     if (localNode != null) {
+                        if (serverNode.modifiedTime.isMoreThan(localNode.modifiedTime)) {
+                            true
+                        } else {
+                            false
+                        }
                         // Fixed: Removed redundant check since we filter !m.isDeleted above
-                        val result = serverNode.modifiedTime.isMoreThan(localNode.modifiedTime)
-                        result
+//                        val result = serverNode.modifiedTime.isMoreThan(localNode.modifiedTime)
+//                        result
                     } else
                         true
                 } else
@@ -156,18 +163,16 @@ class SyncUseCase(
         serverNodes: List<FileItem>
     ): List<FileMetadata> {
         val metadataList = mutableListOf<FileMetadata>()
-        fun addMeta(meta: FileTreeNode) {
+        fun addMeta(meta: FileTreeNode, sha256: String? = null) {
             when (meta) {
-                is FileTreeNode.Directory -> {
-                    // Directories don't need metadata
-                }
-
+                is FileTreeNode.Directory -> {}
                 is FileTreeNode.File -> {
                     metadataList.add(
                         FileMetadata(
-                            path = meta.getRelativePath(),
-                            createdTime = meta.createdTime,
+                            relativePath = meta.getRelativePath(),
                             modifiedTime = meta.modifiedTime,
+                            contentHash = sha256 ?: filesRepo.getFileHash(meta.getFullPath()),
+                            isDirectory = false,
                             isDeleted = false
                         )
                     )
@@ -178,8 +183,17 @@ class SyncUseCase(
             val localRelativePath = localFile.getRelativePath().normalizeText()
             val foundServerFile =
                 serverNodes.firstOrNull { d -> d.relativePath.normalizeText() == localRelativePath }
-            if (foundServerFile == null || localFile.modifiedTime.isMoreThan(foundServerFile.modifiedTime)) {
+            if (foundServerFile == null) {
                 addMeta(localFile)
+            } else {
+                if (localFile.modifiedTime.isMoreThan(foundServerFile.modifiedTime)) {
+                    addMeta(localFile)
+                } else {
+                    val localSha256 = filesRepo.getFileHash(localFile.getFullPath())
+                    if (localSha256 != foundServerFile.contentHash) {
+                        addMeta(localFile, localSha256)
+                    }
+                }
             }
         }
         return metadataList
@@ -200,13 +214,14 @@ class SyncUseCase(
                     serverNodes = serverNodes
                 )
                 val localDeletedFiles = workspace.getDeletedFilesMetadata().toMutableMap()
-                val allMetadata = getAllMetadata(
-                    localDeletedFiles = localDeletedFiles,
-                    filesToArchive = filesToArchive,
-                    localNodes = localNodes
-                )
+
+//                val allMetadata = getAllMetadata(
+//                    localDeletedFiles = localDeletedFiles,
+//                    filesToArchive = filesToArchive,
+//                    localNodes = localNodes
+//                )
                 val filesToDownload = getFilesToDownload(
-                    allMetadata = allMetadata,
+                    localNodes = localNodes,
                     serverNodes = serverNodes
                 )
                 SyncStatus(
@@ -261,38 +276,58 @@ class SyncUseCase(
                 )
                 workspace.deleteNodes(deletedLocalFiles)
 
-                val filesToArchive = getFilesToArchive(
+                val localMetadata = getFilesToArchive(
                     localNodes = localNodes,
                     serverNodes = serverNodes
-                )
+                ).toMutableList()
                 packToZip(
                     workspacePresentation = workspace.getWorkspace(),
-                    filesToArchive = filesToArchive.map { d -> d.path },
+                    filesToArchive = localMetadata.map { d -> d.relativePath },
                     archivePath = archivePath
                 )
+
                 val localDeletedFiles = workspace.getDeletedFilesMetadata()
                     .filter { d ->
-                        val found =
+                        val localFound =
                             localNodes.firstOrNull { b ->
                                 b.getRelativePath().normalizeText() == d.key.normalizeText() &&
                                         b.modifiedTime.isMoreThanOrExact(d.value)
                             }
-                        found == null
+                        val serverFound =
+                            serverNodes.firstOrNull { b ->
+                                b.relativePath.normalizeText() == d.key.normalizeText() &&
+                                        b.modifiedTime.isMoreThanOrExact(d.value)
+                            }
+
+                        localFound == null && serverFound == null
                     }
                     .toMutableMap()
-                val allMetadata = getAllMetadata(
-                    localDeletedFiles = localDeletedFiles,
-                    filesToArchive = filesToArchive,
-                    localNodes = localNodes
-                )
+                for (item in localDeletedFiles) {
+                    localMetadata.add(
+                        FileMetadata(
+                            relativePath = item.key,
+                            modifiedTime = item.value,
+                            contentHash = "",
+                            isDirectory = false,
+                            isDeleted = true
+                        )
+                    )
+                }
+                localMetadata
+//                val allMetadata = getAllMetadata(
+//                    localDeletedFiles = localDeletedFiles,
+//                    filesToArchive = filesToArchive,
+//                    localNodes = localNodes
+//                )
                 val filesToDownload = getFilesToDownload(
-                    allMetadata = allMetadata,
+                    localNodes = localNodes,
                     serverNodes = serverNodes
                 )
+
                 val uploadResult = workspace.uploadSync(
                     filesToDownload = filesToDownload,
                     archiveFullPath = archivePath,
-                    metadata = allMetadata
+                    metadata = localMetadata
                 )
                 uploadResult.shouldBeSuccess()
 
@@ -308,29 +343,30 @@ class SyncUseCase(
                     extractedFiles = filesRepo.extractFilesFromZip(
                         archivePath = exportArchivePath,
                         workspaceFullPath = workspaceAbsolutePath,
-                        serverFiles = serverFiles2,
+                        serverFiles = serverFiles2
                     )
+                    Logger.w { "exctracted files: ${extractedFiles.size}" }
                 } catch (exc: Exception) {
                     // Ignore extraction errors
                 }
-                if (localDeletedFiles.isNotEmpty() &&
-                    extractedFiles.isNotEmpty()
-                ) {
-                    var someDeleted = false
-                    for (extractFile in extractedFiles) {
-                        if (localDeletedFiles.remove(extractFile) != null) {
-                            someDeleted = true
-                        }
-                    }
-                    if (someDeleted) {
-                        workspace.saveDeletedMetadata(localDeletedFiles)
-                    }
-                }
+//                if (localDeletedFiles.isNotEmpty() &&
+//                    extractedFiles.isNotEmpty()
+//                ) {
+//                    var someDeleted = false
+//                    for (extractFile in extractedFiles) {
+//                        if (localDeletedFiles.remove(extractFile) != null) {
+//                            someDeleted = true
+//                        }
+//                    }
+//                    if (someDeleted) {
+//                        workspace.saveDeletedMetadata(localDeletedFiles)
+//                    }
+//                }
                 SyncStatus(
-                    filesDownloaded = extractedFiles,
+                    filesDownloaded = listOf(),
                     filesToDownload = filesToDownload,
                     localDeletedFilesByServer = deletedLocalFiles,
-                    filesToArchive = filesToArchive
+                    filesToArchive = localMetadata
                 )
             } catch (exc: Exception) {
                 raise(exc.message ?: "")

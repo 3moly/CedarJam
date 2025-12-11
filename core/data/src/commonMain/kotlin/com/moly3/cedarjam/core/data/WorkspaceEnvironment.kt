@@ -56,6 +56,7 @@ import com.moly3.cedarjam.core.domain.model.request.UpdateTagRequest
 import com.moly3.cedarjam.core.domain.model.settings.WorkspaceSettings
 import com.moly3.cedarjam.core.domain.service.FileManagerService
 import com.moly3.cedarjam.core.storage.ISqlStorage
+import com.moly3.cedarjam.core.storage.func.calculateFileHash
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -157,7 +158,8 @@ class WorkspaceEnvironment(
 
     private fun tryToGet(): UIState<List<FileTreeNode>, String> {
         return try {
-            UIState.Success(getNodes(null))
+            val files = getNodes(null)
+            UIState.Success(files)
         } catch (exc: Exception) {
             UIState.Error(exc.message ?: "")
         }
@@ -597,7 +599,7 @@ class WorkspaceEnvironment(
                 for (snap in listOfRenamedSnaps) {
                     val oldNodePath = snap.oldNode.getRelativePath()
                     val newNodePath = snap.renamed.getRelativePath()
-                    deletedFiles[oldNodePath] = snap.oldNode.modifiedTime
+                    deletedFiles[oldNodePath] = nowInMs() // snap.oldNode.modifiedTime
                     if (deletedFiles.contains(newNodePath)) {
                         deletedFiles.remove(newNodePath)
                     }
@@ -614,7 +616,7 @@ class WorkspaceEnvironment(
                 newNode
             )
 
-            deletedFiles[oldRelativePath] = oldNode.modifiedTime
+            deletedFiles[oldRelativePath] = nowInMs() // oldNode.modifiedTime
             if (deletedFiles.contains(newRelativePath)) {
                 deletedFiles.remove(newRelativePath)
             }

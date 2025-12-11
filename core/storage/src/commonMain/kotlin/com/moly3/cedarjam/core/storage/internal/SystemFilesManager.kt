@@ -18,6 +18,7 @@ import com.moly3.cedarjam.core.domain.model.resultBlock
 import com.moly3.cedarjam.core.domain.util.PathWrapper
 import com.moly3.cedarjam.core.storage.json.canvas.CanvasDataParser
 import com.moly3.cedarjam.core.domain.model.canvas.CanvasDataWithErrors
+import com.moly3.cedarjam.core.storage.func.calculateFileHash
 import com.moly3.cedarjam.core.storage.func.setLastWriteTimeUtc
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.utils.toPath
@@ -26,14 +27,13 @@ import kotlinx.io.files.FileNotFoundException
 import kotlinx.io.files.FileSystem
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
+import kotlinx.io.files.source
 import kotlinx.io.readByteArray
 import kotlinx.io.readString
 import kotlinx.io.writeString
-
 internal class SystemFilesManager : ISystemFilesManager {
 
     private val fs: FileSystem = SystemFileSystem
-
     private fun copyFile(sourcePath: ByteArray, destinationPath: String) {
         val destination = Path(destinationPath)
         val parentDir = destination.parent
@@ -93,6 +93,10 @@ internal class SystemFilesManager : ISystemFilesManager {
             is Platform.Jvm,
             Platform.Wasm -> pathWrapper(relativePath.pathString)
         }
+    }
+
+    override fun getFileHash(fullPath: String): String {
+        return calculateFileHash(fullPath)
     }
 
     override fun getFileNodeFromFullPath(fullPath: String): FileTreeNode.File {

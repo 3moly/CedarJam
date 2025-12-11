@@ -12,9 +12,8 @@ data class FileStructure @OptIn(ExperimentalTime::class) constructor(
 @Serializable
 data class FileItem(
     val relativePath: String,
-    val createdTime: Long,
+    val contentHash: String,
     val modifiedTime: Long,
-    val isDirectory: Boolean,
-    val size: Long,
-    val isDeleted: Boolean
+    val isDeleted: Boolean,
+    val isDirectory: Boolean
 )

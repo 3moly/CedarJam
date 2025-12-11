@@ -12,7 +12,7 @@ interface IFilesRepository {
     suspend fun extractFilesFromZip(
         archivePath: String,
         workspaceFullPath: String,
-        serverFiles: List<FileItem>
+        serverFiles:List<FileItem>
     ): List<String>
 
     suspend fun packFilesToZip(
@@ -37,4 +37,5 @@ interface IFilesRepository {
     fun getNodeBytes(node: FileTreeNode.File): ByteArray
     fun getNodeCanvas(nodePath: String): ResultWrapper<CanvasDataWithErrors, String>
     fun saveNodeCanvas(nodePath: String, data: CanvasDataWithErrors): ResultWrapper<Unit, String>
+    fun getFileHash(fullPath: String): String
 }

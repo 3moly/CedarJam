@@ -28,6 +28,8 @@ import com.badoo.reaktive.coroutinesinterop.asScheduler
 import com.badoo.reaktive.scheduler.overrideSchedulers
 import com.moly3.cedarjam.core.domain.DefaultJson
 import com.moly3.cedarjam.core.domain.model.AndroidApplicationContext
+import com.moly3.cedarjam.core.domain.repository.IFilesRepository
+import com.moly3.cedarjam.core.storage.ISystemFilesManager
 import com.moly3.cedarjam.core.ui.ToolbarHeight
 import com.moly3.cedarjam.core.ui.compositions.LocalJvmToolbarState
 import com.moly3.cedarjam.core.ui.model.JvmToolbarState
@@ -58,6 +60,7 @@ import org.jetbrains.jewel.window.styling.TitleBarColors
 import org.jetbrains.jewel.window.styling.TitleBarMetrics
 import org.jetbrains.jewel.window.styling.TitleBarStyle
 import org.jetbrains.jewel.window.utils.DesktopPlatform
+import org.koin.mp.KoinPlatform.getKoin
 import java.io.File
 
 
