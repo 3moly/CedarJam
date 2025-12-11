@@ -30,6 +30,7 @@ interface ISqlStorage {
     suspend fun createDatabase()
     fun getDatabaseStatus(): Flow<UIState<Unit, DatabaseError>>
     fun getIndexFilesFlow(): Flow<List<IndexFile>>
+    fun getIndexFiles(): List<IndexFile>
 
     fun getTagToTagsFlow(): Flow<List<TagToTag>>
     fun getTagsFlow(): Flow<List<Tag>>
@@ -64,6 +65,9 @@ interface ISqlStorage {
 
     fun finishIndexFiles(
     ): ResultWrapper<Unit, String>
+
+    fun deleteIndexFiles(list:List<String>): ResultWrapper<Unit, String>
+    fun addIndexFiles(list: Map<String, Long>): ResultWrapper<Unit, String>
 
     fun setFilesAsSynced(
         paths: List<String>,

@@ -23,6 +23,7 @@ import com.moly3.cedarjam.core.domain.model.FileItem
 import com.moly3.cedarjam.core.domain.model.FileMetadata
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.ResultWrapper
+import com.moly3.cedarjam.core.domain.model.SyncStatus
 import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.domain.model.bind
 import com.moly3.cedarjam.core.domain.model.ensure
@@ -57,6 +58,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.io.files.Path
+import kotlinx.io.files.SystemFileSystem
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class, ExperimentalCoroutinesApi::class)
@@ -234,6 +237,12 @@ internal class SqlStorage(
         }
     }
 
+    override fun getIndexFiles(): List<IndexFile> {
+        return runQueryOrThrowIndex { db ->
+            db.indexFileQueries.selectAll().executeAsList()
+        }
+    }
+
     override fun getTagToTagsFlow(): Flow<List<TagToTag>> {
         return dbFlow.flatMapLatest { db ->
             if (db != null) {
@@ -394,6 +403,42 @@ internal class SqlStorage(
                         0,
                         it.relativePath
                     )
+                }
+            }
+        }
+    }
+
+
+    override fun deleteIndexFiles(list: List<String>): ResultWrapper<Unit, String> {
+        return runQueryOrThrowIndex { db ->
+            resultBlock {
+                db.indexFileQueries.transaction {
+                    for (item in list) {
+                        db.indexFileQueries.deleteItem(item)
+                    }
+                }
+            }
+        }
+    }
+
+    override fun addIndexFiles(list: Map<String, Long>): ResultWrapper<Unit, String> {
+        return runQueryOrThrowIndex { db ->
+            resultBlock {
+                db.indexFileQueries.transaction {
+
+                    for (item in list) {
+                        val absolute = pathWrapper(workspaceDirectoryPath,item.key).pathString
+                        val meta = SystemFileSystem.metadataOrNull(Path(absolute))
+                        db.indexFileQueries.insertItem(
+                            relativePath = item.key,
+                            contentHash = null,
+                            modifiedTime = nowInMs(),
+                            size = 0L,
+                            lastSyncedHash = null,
+                            serverSyncStatus = SyncStatus.DELETED.code,
+                            isDirectory = if (meta?.isDirectory ?: false) 1L else 0L
+                        )
+                    }
                 }
             }
         }

@@ -94,8 +94,8 @@ interface IWorkspaceEnvironment {
         serverNodes: List<FileItem>
     ): ResultWrapper<Unit, String>
 
-    fun finishIndexFiles(
-    ): ResultWrapper<Unit, String>
+    fun finishIndexFiles(): ResultWrapper<Unit, String>
+    fun deleteIndexFiles(list:List<String>): ResultWrapper<Unit, String>
 
     fun setFilesAsSynced(
         paths: List<String>,

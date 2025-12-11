@@ -12,7 +12,6 @@ import kotlinx.collections.immutable.PersistentMap
 internal interface SettingsSyncStore : Store<Intent, State, Unit> {
 
     sealed interface Msg {
-        data class SetFileMetadata(val value: PersistentMap<String, Long>) : Msg
         data class SetIndexFiles(val value: PersistentList<IndexFileDto>) : Msg
 
         data class SetPrepareStatus(val value: UIState<SyncStatus2, String>) : Msg

@@ -46,8 +46,6 @@ internal class SettingsSyncStoreFactory(
 
         private fun refreshStatusFiles() {
             val env = workspaceSession.workspaceEnvStateFlow.value
-            val deletedFiles = env.getDeletedFilesMetadata()
-            dispatch(SettingsSyncStore.Msg.SetFileMetadata(deletedFiles.toPersistentMap()))
             scope.launch(io) {
                 try {
 
@@ -108,7 +106,6 @@ internal class SettingsSyncStoreFactory(
             return when (msg) {
                 is SettingsSyncStore.Msg.SetPrepareStatus -> copy(fileVersionsState = msg.value)
                 is SettingsSyncStore.Msg.SetUploadState -> copy(uploadState = msg.value)
-                is SettingsSyncStore.Msg.SetFileMetadata -> copy(deletedFiles = msg.value)
                 is SettingsSyncStore.Msg.SetIndexFiles -> copy(indexFiles = msg.value)
             }
         }

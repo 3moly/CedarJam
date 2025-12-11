@@ -1,12 +1,9 @@
 package com.moly3.cedarjam.core.data
 
-import co.touchlab.kermit.Logger
 import com.moly3.cedarjam.core.net.IRemoteSyncRepository
 import com.moly3.cedarjam.core.domain.DefaultJson
-import com.moly3.cedarjam.core.domain.func.deletedFiles
 import com.moly3.cedarjam.core.domain.func.doNothing
 import com.moly3.cedarjam.core.domain.func.getRelativePath
-import com.moly3.cedarjam.core.domain.func.hiddenDirectory
 import com.moly3.cedarjam.core.domain.func.nowInMs
 import com.moly3.cedarjam.core.domain.func.pathWrapper
 import com.moly3.cedarjam.core.domain.func.toColor
@@ -24,6 +21,7 @@ import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.FileTreeNode.Companion.getAll
 import com.moly3.cedarjam.core.domain.model.IndexFileDto
 import com.moly3.cedarjam.core.domain.model.ResultWrapper
+import com.moly3.cedarjam.core.domain.model.SyncStatus
 import com.moly3.cedarjam.core.domain.model.TagCollectionRowDTO
 import com.moly3.cedarjam.core.domain.model.TagDTO
 import com.moly3.cedarjam.core.domain.model.TagLinkDTO
@@ -84,16 +82,6 @@ class WorkspaceEnvironment(
     private val fileNodesState: MutableStateFlow<UIState<List<FileTreeNode>, String>> =
         MutableStateFlow(UIState.Loading)
     private val _appSettingsStateFlow = MutableStateFlow(WorkspaceSettings.defaultSettings)
-
-    private val deletedFilesMeta = FileTreeNode.File(
-        name = FileName(name = deletedFiles, extension = null),
-        //todo adapt relativePath
-        parentRelativePath = hiddenDirectory,
-        parentFullPath = pathWrapper(
-            workspace.absolutePath,
-            hiddenDirectory
-        ).pathString,
-    )
 
     private val sqlStorage: ISqlStorage by lazy {
         println("--- workspace sqlstorage init ${workspace.name} ---")
@@ -750,6 +738,10 @@ class WorkspaceEnvironment(
         return sqlStorage.finishIndexFiles()
     }
 
+    override fun deleteIndexFiles(list: List<String>): ResultWrapper<Unit, String> {
+        return sqlStorage.deleteIndexFiles(list)
+    }
+
     override fun updateIndexFilesFlow(
         localNodes: List<FileTreeNode>,
         serverNodes: List<FileItem>
@@ -864,29 +856,19 @@ class WorkspaceEnvironment(
 
     override suspend fun saveDeletedMetadata(list: Map<String, Long>): ResultWrapper<Unit, String> {
         val fullpath = workspace.absolutePath
-        Logger.e { "saveDeletedMetadata absolutePath  $fullpath" }
-        val json = DefaultJson.encodeToString(list.map { d ->
-            DeletedFileMetadata(
-                relativePath = pathWrapper(d.key.replace(fullpath, "")).pathString,
-                deletedTime = d.value
-            )
-        })
-        return setNodeText(deletedFilesMeta, json)
+
+        return resultBlock {
+            sqlStorage.addIndexFiles(list.toList().associate { d ->
+                pathWrapper(d.first.replace(fullpath, "")).pathString to d.second
+            })
+        }
     }
 
     override fun getDeletedFilesMetadata(): Map<String, Long> {
-        var deletedMetadata = mutableListOf<DeletedFileMetadata>()
-        val deletedNode = getNodeText(node = deletedFilesMeta)
-        when (deletedNode) {
-            is ResultWrapper.Error -> {}
-
-            is ResultWrapper.Success -> {
-                try {
-                    deletedMetadata = DefaultJson.decodeFromString(deletedNode.value)
-                } catch (exc: Exception) {
-                }
+        return sqlStorage.getIndexFiles()
+            .filter { d -> d.serverSyncStatus == SyncStatus.DELETED.code }
+            .associate { d ->
+                d.relativePath to d.modifiedTime
             }
-        }
-        return deletedMetadata.associate { Pair(it.relativePath, it.deletedTime) }
     }
 }

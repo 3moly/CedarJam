@@ -16,6 +16,7 @@ import com.moly3.cedarjam.core.domain.model.IndexFileDto
 import com.moly3.cedarjam.core.domain.model.ResultWrapper
 import com.moly3.cedarjam.core.domain.model.SyncStatus
 import com.moly3.cedarjam.core.domain.model.WorkspacePresentation
+import com.moly3.cedarjam.core.domain.model.bind
 import com.moly3.cedarjam.core.domain.model.resultBlock
 import com.moly3.cedarjam.core.domain.repository.IFilesRepository
 import com.moly3.cedarjam.core.domain.repository.IWorkspaceEnvironment
@@ -26,19 +27,6 @@ import kotlinx.io.files.SystemFileSystem
 class SyncUseCase(
     private val filesRepo: IFilesRepository
 ) : ISyncUseCase {
-
-    private suspend fun step1(workspace: IWorkspaceEnvironment): List<FileItem> {
-        return when (val serverFilesResult = workspace.getServerFiles()) {
-            is ResultWrapper.Error -> {
-                //todo check by server error
-                listOf()
-            }
-
-            is ResultWrapper.Success -> {
-                serverFilesResult.value.files
-            }
-        }
-    }
 
     private suspend fun packToZip(
         workspacePresentation: WorkspacePresentation,
@@ -89,7 +77,8 @@ class SyncUseCase(
         resultBlock {
             try {
                 val tree = workspace.getNodes(null)
-                val serverNodes = step1(workspace = workspace)
+                val serverFilesResult = workspace.getServerFiles()
+                val serverNodes = bind(serverFilesResult).files
                 workspace.updateIndexFilesFlow(
                     localNodes = tree.firstOrNull()?.getChildrenOrNull() ?: listOf(),
                     serverNodes = serverNodes
@@ -133,7 +122,8 @@ class SyncUseCase(
                 // 0. Cleanup temp files
                 try {
                     SystemFileSystem.delete(Path(importArchivePath))
-                } catch (e: Exception) { /* ignore */ }
+                } catch (e: Exception) { /* ignore */
+                }
 
                 // --- PHASE 1: DISCOVERY & RECONCILIATION ---
 
@@ -143,7 +133,8 @@ class SyncUseCase(
                 val localNodes = diskTree.firstOrNull()?.getChildrenOrNull()?.getAll() ?: listOf()
 
                 // 2. Get Server State (API)
-                val serverFiles = step1(workspace)
+                val serverFilesResult = workspace.getServerFiles()
+                val serverFiles = bind(serverFilesResult).files
 
                 // 3. Update Local DB Index (The Core Logic)
                 // This marks files as NEW, DIRTY, DELETED or SYNCED based on comparison
@@ -202,11 +193,20 @@ class SyncUseCase(
                     archiveFullPath = importArchivePath,
                     metadata = filesToUploadMeta
                 )
-                uploadResult.shouldBeSuccess()
+
+                // 3. --- КРИТИЧЕСКИЙ МОМЕНТ ---
+// Если мы здесь, значит сервер принял наши данные (200 OK).
+// Значит, сервер теперь знает, что эти файлы удалены.
+// Мы можем со спокойной душой удалить эти записи из своей локальной базы.
 
                 // --- PHASE 4: APPLY SERVER RESPONSE ---
 
-                val responseZipBytes = uploadResult.value
+                val responseZipBytes = bind(uploadResult)
+
+                val deletedPathsConfirmed = filesToUploadMeta.filter { d -> d.isDeleted }
+                if (deletedPathsConfirmed.isNotEmpty()) {
+                    workspace.deleteIndexFiles(deletedPathsConfirmed.map { d->d.relativePath })
+                }
                 var extractedFiles = listOf<String>()
 
                 if (responseZipBytes.isNotEmpty()) {
@@ -239,7 +239,8 @@ class SyncUseCase(
                 try {
                     SystemFileSystem.delete(Path(importArchivePath))
                     filesRepo.deleteNode(exportArchiveNode)
-                } catch (e: Exception) { }
+                } catch (e: Exception) {
+                }
 
                 workspace.finishIndexFiles()
                 SyncStatus2(

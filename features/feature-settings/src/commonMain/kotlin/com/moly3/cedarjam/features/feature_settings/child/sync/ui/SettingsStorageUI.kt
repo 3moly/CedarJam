@@ -58,9 +58,9 @@ fun JvmWindowScope.SettingsSyncUI(component: ISettingsSyncComponent) {
             Modifier.weight(1f).fillMaxWidth().padding(12.dp).verticalScroll(rememberScrollState())
         ) {
             Column {
-                for (pair in state.deletedFiles) {
-                    CJText(text = pair.key, fontSize = 8.sp)
-                }
+//                for (pair in state.deletedFiles) {
+//                    CJText(text = pair.key, fontSize = 8.sp)
+//                }
             }
             UIStateContentNoBox(state = state.fileVersionsState) {
                 Column(

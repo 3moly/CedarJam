@@ -9,7 +9,6 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentMapOf
 
 data class State(
-    val deletedFiles: PersistentMap<String, Long> = persistentMapOf(),
     val fileVersionsState: UIState<SyncStatus2, String> = UIState.Loading,
     val uploadState: UIState<SyncStatus2, String> = UIState.Loading,
     val indexFiles: ImmutableList<IndexFileDto> = persistentListOf()

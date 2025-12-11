@@ -78,7 +78,8 @@ fun updateIndex(
                         // Smart Check:
                         // Maybe we reverted the file to the state of last sync?
                         // If current hash == lastSyncedHash, then we are actually SYNCED again.
-                        val status = if (newHash == dbRecord.lastSyncedHash) {
+                        val status = if (newHash.cleanToNullIfEmpty() ==
+                            dbRecord.lastSyncedHash.cleanToNullIfEmpty()) {
                             SyncStatus.SYNCED
                         } else {
                             SyncStatus.DIRTY
@@ -116,4 +117,10 @@ fun updateIndex(
             }
         }
     }
+}
+
+fun String?.cleanToNullIfEmpty():String?{
+    if(this.isNullOrEmpty())
+        return null
+    return this
 }
