@@ -2,8 +2,6 @@ package com.moly3.cedarjam.core.data
 
 import co.touchlab.kermit.Logger
 import com.moly3.cedarjam.core.net.IRemoteSyncRepository
-import com.moly3.data.DataCollectionRow
-import com.moly3.data.Tag
 import com.moly3.cedarjam.core.domain.DefaultJson
 import com.moly3.cedarjam.core.domain.func.deletedFiles
 import com.moly3.cedarjam.core.domain.func.doNothing
@@ -18,11 +16,13 @@ import com.moly3.cedarjam.core.domain.model.AnnotationDTO
 import com.moly3.cedarjam.core.domain.model.CollectionDTO
 import com.moly3.cedarjam.core.domain.model.CollectionRowDTO
 import com.moly3.cedarjam.core.domain.model.DeletedFileMetadata
+import com.moly3.cedarjam.core.domain.model.FileItem
 import com.moly3.cedarjam.core.domain.model.FileMetadata
 import com.moly3.cedarjam.core.domain.model.FileName
 import com.moly3.cedarjam.core.domain.model.FileStructure
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.FileTreeNode.Companion.getAll
+import com.moly3.cedarjam.core.domain.model.IndexFileDto
 import com.moly3.cedarjam.core.domain.model.ResultWrapper
 import com.moly3.cedarjam.core.domain.model.TagCollectionRowDTO
 import com.moly3.cedarjam.core.domain.model.TagDTO
@@ -55,8 +55,10 @@ import com.moly3.cedarjam.core.domain.model.request.UpdateDataCollectionRowReque
 import com.moly3.cedarjam.core.domain.model.request.UpdateTagRequest
 import com.moly3.cedarjam.core.domain.model.settings.WorkspaceSettings
 import com.moly3.cedarjam.core.domain.service.FileManagerService
+import com.moly3.cedarjam.core.domain.usecase.SyncStatus
 import com.moly3.cedarjam.core.storage.ISqlStorage
-import com.moly3.cedarjam.core.storage.func.calculateFileHash
+import com.moly3.cedarjam.db.DataCollectionRow
+import com.moly3.cedarjam.db.Tag
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -66,6 +68,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import kotlin.collections.listOf
 import kotlin.collections.map
 import kotlin.collections.set
 import kotlin.time.Clock
@@ -344,6 +347,40 @@ class WorkspaceEnvironment(
         return sqlStorage
             .getCollectionRow(rowId = rowId)
             .map { d -> d?.toDTO() }
+            .flowOn(io)
+    }
+
+    override fun getIndexFilesFlow(): Flow<List<IndexFileDto>> {
+        return sqlStorage
+            .getIndexFilesFlow()
+            .map { d ->
+                d.map {
+                    val syncStatus = when (it.serverSyncStatus) {
+                        com.moly3.cedarjam.core.domain.model.SyncStatus.SYNCED.code ->
+                            com.moly3.cedarjam.core.domain.model.SyncStatus.SYNCED
+
+                        com.moly3.cedarjam.core.domain.model.SyncStatus.DIRTY.code ->
+                            com.moly3.cedarjam.core.domain.model.SyncStatus.DIRTY
+
+                        com.moly3.cedarjam.core.domain.model.SyncStatus.NEW.code ->
+                            com.moly3.cedarjam.core.domain.model.SyncStatus.NEW
+
+                        com.moly3.cedarjam.core.domain.model.SyncStatus.DELETED.code ->
+                            com.moly3.cedarjam.core.domain.model.SyncStatus.DELETED
+
+                        else -> null
+                    }
+                    IndexFileDto(
+                        relativePath = it.relativePath,
+                        contentHash = it.contentHash,
+                        modifiedTime = it.modifiedTime,
+                        size = it.size,
+                        isDirectory = it.isDirectory,
+                        lastSyncedHash = it.lastSyncedHash,
+                        serverSyncStatus = syncStatus
+                    )
+                }
+            }
             .flowOn(io)
     }
 
@@ -709,6 +746,16 @@ class WorkspaceEnvironment(
         text: String
     ): ResultWrapper<Unit, String> {
         return filesRepository.setNodeText(node, text)
+    }
+
+    override fun updateIndexFilesFlow(
+        localNodes: List<FileTreeNode>,
+        serverNodes: List<FileItem>
+    ): ResultWrapper<Unit, String> {
+        return sqlStorage.updateIndexFilesFlow(
+            localNodes = localNodes,
+            serverNodes = serverNodes
+        )
     }
 
     override fun createCollection(request: CreateCollectionRequest): ResultWrapper<Long, String> {

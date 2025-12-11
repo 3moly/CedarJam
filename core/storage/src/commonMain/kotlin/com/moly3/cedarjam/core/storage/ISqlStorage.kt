@@ -1,11 +1,6 @@
 package com.moly3.cedarjam.core.storage
 
-import com.moly3.data.Tag
-import com.moly3.data.TagCollectionRow
-import com.moly3.data.TagFileNode
-import com.moly3.data.DataCollection
-import com.moly3.data.DataCollectionRow
-import com.moly3.data.TagToTag
+import com.moly3.cedarjam.core.domain.model.FileItem
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.ResultWrapper
 import com.moly3.cedarjam.core.domain.model.UIState
@@ -20,12 +15,22 @@ import com.moly3.cedarjam.core.domain.model.request.RenameTagRequest
 import com.moly3.cedarjam.core.domain.model.request.UpdateDataCollectionRequest
 import com.moly3.cedarjam.core.domain.model.request.UpdateDataCollectionRowRequest
 import com.moly3.cedarjam.core.domain.model.request.UpdateTagRequest
+import com.moly3.cedarjam.db.DataCollection
+import com.moly3.cedarjam.db.DataCollectionRow
+import com.moly3.cedarjam.db.Tag
+import com.moly3.cedarjam.db.TagCollectionRow
+import com.moly3.cedarjam.db.TagFileNode
+import com.moly3.cedarjam.db.TagToTag
+import com.moly3.cedarjam.indexdb.IndexFile
+
 import kotlinx.coroutines.flow.Flow
 
 interface ISqlStorage {
     fun init()
     suspend fun createDatabase()
     fun getDatabaseStatus(): Flow<UIState<Unit, DatabaseError>>
+    fun getIndexFilesFlow(): Flow<List<IndexFile>>
+
     fun getTagToTagsFlow(): Flow<List<TagToTag>>
     fun getTagsFlow(): Flow<List<Tag>>
     fun getTagFlow(id: Long): Flow<Tag?>
@@ -52,10 +57,16 @@ interface ISqlStorage {
     fun createTagCollectionRow(request: CreateTagCollectionRowRequest)
 
     //    fun createAnnotation(data: Annotation)
+    fun updateIndexFilesFlow(
+        localNodes: List<FileTreeNode>,
+        serverNodes: List<FileItem>
+    ): ResultWrapper<Unit, String>
+
     fun createCollection(request: CreateCollectionRequest): ResultWrapper<Long, String>
     fun createCollectionRow(request: CreateCollectionRowRequest): ResultWrapper<Long, String>
 
     fun insertOrUpdateFileNodes(workspaceFullPath: String, data: List<FileTreeNode>)
+
 
     fun renameCollection(request: RenameDataCollectionRequest)
     fun renameTag(request: RenameTagRequest)

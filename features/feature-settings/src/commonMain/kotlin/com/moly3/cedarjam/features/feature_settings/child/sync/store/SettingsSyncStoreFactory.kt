@@ -12,10 +12,12 @@ import com.moly3.cedarjam.core.domain.usecase.ISyncUseCase
 import com.moly3.cedarjam.features.feature_settings.child.sync.Intent
 import com.moly3.cedarjam.features.feature_settings.child.sync.State
 import com.moly3.cedarjam.navigation.BaseExecutor
+import kotlinx.collections.immutable.toPersistentList
 import kotlinx.collections.immutable.toPersistentMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -51,7 +53,12 @@ internal class SettingsSyncStoreFactory(
                     val resultss =
                         syncUseCase.getStatus(workspace = workspaceSession.workspaceEnvStateFlow.value)
                     launch(Dispatchers.Main) {
-                        dispatch(SettingsSyncStore.Msg.SetPrepareStatus(resultss.mapToUIState(onError = { "" })))
+                        dispatch(
+                            SettingsSyncStore.Msg.SetPrepareStatus(
+                                resultss.mapToUIState(
+                                    onError = { "" })
+                            )
+                        )
                     }
                 } catch (exc: Exception) {
                     val msg = "" + exc.message
@@ -64,6 +71,11 @@ internal class SettingsSyncStoreFactory(
         override fun onStart(scopeFromStartToStop: CoroutineScope) {
             super.onStart(scopeFromStartToStop)
 
+            scopeFromStartToStop.launch {
+                workspaceSession.workspaceEnvStateFlow.value.getIndexFilesFlow().collectLatest {
+                    dispatch(SettingsSyncStore.Msg.SetIndexFiles(it.toPersistentList()))
+                }
+            }
             scopeFromStartToStop.launch {
                 refreshStatusFiles()
             }
@@ -97,6 +109,7 @@ internal class SettingsSyncStoreFactory(
                 is SettingsSyncStore.Msg.SetPrepareStatus -> copy(fileVersionsState = msg.value)
                 is SettingsSyncStore.Msg.SetUploadState -> copy(uploadState = msg.value)
                 is SettingsSyncStore.Msg.SetFileMetadata -> copy(deletedFiles = msg.value)
+                is SettingsSyncStore.Msg.SetIndexFiles -> copy(indexFiles = msg.value)
             }
         }
     }

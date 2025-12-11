@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.moly3.cedarjam.core.domain.func.formatEpochMillis
+import com.moly3.cedarjam.core.domain.model.IndexFileDto
 import com.moly3.cedarjam.core.ui.JvmWindowScope
 import com.moly3.cedarjam.core.ui.model.CJText
 import com.moly3.cedarjam.core.ui.uikit.CJButton
@@ -157,8 +158,36 @@ fun JvmWindowScope.SettingsSyncUI(component: ISettingsSyncComponent) {
 //                    )
 //                }
 //            }
+            val headers: List<Header<IndexFileDto>> = remember(state.indexFiles) {
+                listOf(
+                    Header(
+                        headerName = "relativePath",
+                        contentStr = {
+                            it.relativePath
+                        }
+                    ),
+                    Header(
+                        headerName = "status",
+                        rowWidth = 100.dp,
+                        contentStr = {
+                            it.serverSyncStatus .toString()
+                        }
+                    ))
+            }
+            CJText(
+                modifier = Modifier,
+                text = "indexes: ${state.indexFiles.size}"
+            )
+            CJDataTable(
+                isLazyColumn = false,
+                isFixedHeader = false,
+                modifier = Modifier,
+                headers = headers,
+                data = state.indexFiles
+            )
             UIStateContentNoBox(state = state.uploadState) {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+
                     CJText(
                         modifier = Modifier,
                         text = "filesToArchive: ${it.filesToArchive.size}"

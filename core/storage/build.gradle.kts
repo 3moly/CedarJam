@@ -105,7 +105,14 @@ sqldelight {
     linkSqlite.set(true)
     databases {
         create("Database") {
-            packageName.set("com.moly3.cedarjam.core.storage")
+            packageName.set("com.moly3.cedarjam.db")
+            srcDirs("src/commonMain/sqldelight/maindb")
+            schemaOutputDirectory.set(file("src/commonMain/sqldelight/databases/schemas"))
+        }
+        create("IndexDatabase") {
+            packageName.set("com.moly3.cedarjam.indexdb")
+            srcDirs("src/commonMain/sqldelight/indexdb")
+            schemaOutputDirectory.set(file("src/commonMain/sqldelight/databases/schemas"))
         }
     }
 }

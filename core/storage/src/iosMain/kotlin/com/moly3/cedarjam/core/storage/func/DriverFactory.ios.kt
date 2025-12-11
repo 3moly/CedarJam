@@ -1,6 +1,8 @@
 package com.moly3.cedarjam.core.storage.func
 
+import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlDriver
+import app.cash.sqldelight.db.SqlSchema
 import app.cash.sqldelight.driver.native.NativeSqliteDriver
 import co.touchlab.sqliter.DatabaseConfiguration
 import co.touchlab.sqliter.JournalMode
@@ -9,12 +11,12 @@ import com.moly3.cedarjam.core.domain.model.ResultWrapper
 import com.moly3.cedarjam.core.domain.model.ensureNotNull
 import com.moly3.cedarjam.core.domain.model.error.DatabaseError
 import com.moly3.cedarjam.core.domain.model.resultBlock
-import com.moly3.cedarjam.core.storage.Database
 import kotlinx.io.files.Path
 
 actual fun createSqlDriver(
     androidApplicationContext: AndroidApplicationContext?,
-    dbPath: String
+    dbPath: String,
+    schema: SqlSchema<QueryResult.Value<Unit>>
 ): ResultWrapper<SqlDriver, DatabaseError> {
     return resultBlock {
         ensureNotNull(dbPath) { DatabaseError.WrongFile("db path is null") }
@@ -26,7 +28,8 @@ actual fun createSqlDriver(
             basePath = parentPath.toString()
         )
         NativeSqliteDriver(
-            Database.Schema, path.name,
+            schema,
+            path.name,
             onConfiguration = {
                 it.copy(extendedConfig = extendedConfig, journalMode = JournalMode.DELETE)
             }

@@ -202,8 +202,13 @@ class SyncUseCase(
     override suspend fun getStatus(workspace: IWorkspaceEnvironment): ResultWrapper<SyncStatus, String> {
         return resultBlock {
             try {
-                val localNodes = workspace.getNodes(null).getAll(isSkipOwnNode = true)
+                val tree = workspace.getNodes(null)
+                val localNodes = tree.getAll(isSkipOwnNode = true)
                 val serverNodes = step1(workspace = workspace)
+                workspace.updateIndexFilesFlow(
+                    localNodes = tree.firstOrNull()?.getChildrenOrNull() ?: listOf(),
+                    serverNodes = serverNodes
+                )
 
                 val deletedLocalFiles = getWhatToDeleteInLocal(
                     localNodes = localNodes,

@@ -5,11 +5,13 @@ import com.moly3.cedarjam.core.domain.func.pathWrapper
 import com.moly3.cedarjam.core.domain.model.AnnotationDTO
 import com.moly3.cedarjam.core.domain.model.CollectionDTO
 import com.moly3.cedarjam.core.domain.model.CollectionRowDTO
+import com.moly3.cedarjam.core.domain.model.FileItem
 import com.moly3.cedarjam.core.domain.model.FileMetadata
 import com.moly3.cedarjam.core.domain.model.FileName
 import com.moly3.cedarjam.core.domain.model.FileStructure
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.FileTreeNode.Companion.getHiddenNodes
+import com.moly3.cedarjam.core.domain.model.IndexFileDto
 import com.moly3.cedarjam.core.domain.model.ResultWrapper
 import com.moly3.cedarjam.core.domain.model.TagCollectionRowDTO
 import com.moly3.cedarjam.core.domain.model.TagDTO
@@ -60,6 +62,7 @@ interface IWorkspaceEnvironment {
     fun getCollectionFlow(collectionId: Long): Flow<CollectionDTO?>
     fun getCollectionRowsFlow(collectionId: Long?): Flow<List<CollectionRowDTO>>
     fun getCollectionRowFlow(rowId: Long): Flow<CollectionRowDTO?>
+    fun getIndexFilesFlow(): Flow<List<IndexFileDto>>
     fun getCollectionRowsCount(collectionId: Long?): Flow<Long>
     fun getCollectionRowsPaginated(
         offset: Long,
@@ -85,6 +88,13 @@ interface IWorkspaceEnvironment {
         name: String,
         isAbsoluteNew: Boolean
     ): ResultWrapper<FileTreeNode.Directory, String>
+
+    fun updateIndexFilesFlow(
+        localNodes: List<FileTreeNode>,
+        serverNodes: List<FileItem>
+    ): ResultWrapper<Unit, String>
+
+
 
     fun getNodeText(node: FileTreeNode.File): ResultWrapper<String, String>
     suspend fun setNodeText(node: FileTreeNode.File, text: String): ResultWrapper<Unit, String>
