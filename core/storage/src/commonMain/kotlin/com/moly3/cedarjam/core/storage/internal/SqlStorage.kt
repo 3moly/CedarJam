@@ -386,6 +386,19 @@ internal class SqlStorage(
         }
     }
 
+    override fun finishIndexFiles(): ResultWrapper<Unit, String> {
+        return runQueryOrThrowIndex { db ->
+            resultBlock {
+                db.indexFileQueries.selectAll().executeAsList().map {
+                    db.indexFileQueries.updateStatus(
+                        0,
+                        it.relativePath
+                    )
+                }
+            }
+        }
+    }
+
     override fun setFilesAsSynced(
         paths: List<String>,
         serverNodes: List<FileItem>

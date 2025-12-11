@@ -118,7 +118,6 @@ class WorkspaceEnvironment(
         withContext(io) {
             updateTimes()
             updateWorkspaceSettings()
-
         }
     }
 
@@ -745,6 +744,10 @@ class WorkspaceEnvironment(
         text: String
     ): ResultWrapper<Unit, String> {
         return filesRepository.setNodeText(node, text)
+    }
+
+    override fun finishIndexFiles(): ResultWrapper<Unit, String> {
+        return sqlStorage.finishIndexFiles()
     }
 
     override fun updateIndexFilesFlow(

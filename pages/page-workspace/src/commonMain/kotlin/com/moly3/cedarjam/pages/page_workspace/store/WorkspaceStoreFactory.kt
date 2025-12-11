@@ -1064,7 +1064,9 @@ internal class WorkspaceStoreFactory(
                     scope.launch {
                         syncUseCase.invoke(workspaceSession.workspaceEnvStateFlow.value)
                         syncUseCase.getStatus(workspaceSession.workspaceEnvStateFlow.value)
+
                         workspaceSession.initConfigAndFiles()
+
                         workspaceSession.loadLocalFont()
 
                         updateSyncStatus()

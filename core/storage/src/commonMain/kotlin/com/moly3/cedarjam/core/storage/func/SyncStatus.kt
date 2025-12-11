@@ -1,53 +1,23 @@
 package com.moly3.cedarjam.core.storage.func
 
-import com.moly3.cedarjam.core.domain.func.normalizeText
-import com.moly3.cedarjam.core.domain.func.pathWrapper
 import com.moly3.cedarjam.core.domain.model.FileItem
-import com.moly3.cedarjam.core.domain.model.FileMetadata
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.SyncStatus
-import com.moly3.cedarjam.core.storage.ISystemFilesManager
 import com.moly3.cedarjam.indexdb.IndexDatabase
-import kotlinx.io.files.Path
-import kotlinx.io.files.SystemFileSystem
-import kotlin.time.ExperimentalTime
-
-// Enum for readability (maps to your INTEGER columns)
-
-
-// Helper to flatten the tree into a Map<RelativePath, Node>
-fun List<FileTreeNode>.flattenToMap(): Map<String, FileTreeNode> {
-    val result = mutableMapOf<String, FileTreeNode>()
-
-    fun traverse(nodes: List<FileTreeNode>) {
-        for (node in nodes) {
-            // Normalize path (remove leading slashes, handle windows separators if needed)
-            val path = node.getRelativePath().replace("\\", "/")
-            result[path] = node
-
-            if (node is FileTreeNode.Directory) {
-                traverse(node.children)
-            }
-        }
-    }
-    traverse(this)
-    return result
-}
 
 fun updateIndex(
     localNodes: List<FileTreeNode>,
     serverNodes: List<FileItem>,
-    dbHelper: IndexDatabase // Wrapper around your SQLDelight Database
+    dbHelper: IndexDatabase
 ) {
     // 1. Prepare Data Structures
     val onDiskFiles = localNodes.flattenToMap()
     val serverFiles = serverNodes.associateBy { it.relativePath }
 
-    // 2. Run inside a Transaction for performance and consistency
     dbHelper.indexFileQueries.transaction {
         val dbQueries = dbHelper.indexFileQueries
 
-        // Fetch current DB state
+        // FIX: Remove the filter. We need ALL records to detect changes to SYNCED files.
         val dbRecords = dbQueries.selectAll().executeAsList().associateBy { it.relativePath }
 
         // --- PHASE A: Handle Files Present on Disk ---
@@ -57,25 +27,16 @@ fun updateIndex(
 
             val isDirectory = if (node.isDirectory()) 1L else 0L
 
-            // Logic to calculate Hash:
-            // Only calculate if file is NEW or ModifiedTime/Size changed.
-            // In a real app, do the hashing in a background thread/Job, not here in the DB transaction.
-            // For this example, we assume we have a helper `calculateHashOrNull`.
-
             if (dbRecord == null) {
-                // CASE 1: NEW FILE (On Disk, Not in DB)
-                // If it exists on server with same hash -> It's SYNCED (we just missed it locally)
-                // Otherwise -> It's NEW
-
+                // CASE 1: TRULY NEW FILE (Not in DB at all)
                 val currentHash = calculateHash(node)
 
-                // Check if we are actually just downloading a file that exists on server
+                // If the file exists on server with exact same hash, we are in sync.
                 val status = if (serverRecord != null && serverRecord.contentHash == currentHash) {
                     SyncStatus.SYNCED
                 } else {
                     SyncStatus.NEW
                 }
-
 
                 dbQueries.insertItem(
                     relativePath = path,
@@ -83,116 +44,75 @@ fun updateIndex(
                     modifiedTime = node.modifiedTime,
                     size = node.fileSize,
                     isDirectory = isDirectory,
-                    lastSyncedHash = serverRecord?.contentHash, // If on server, this is our base
+                    lastSyncedHash = serverRecord?.contentHash,
                     serverSyncStatus = status.code
                 )
             } else {
-                // CASE 2: EXISTING FILE (On Disk, In DB)
+                // CASE 2: EXISTING FILE (Could be SYNCED, NEW, DIRTY, or DELETED)
 
-                // Check if modified locally
-                val isModified =
-                    node.modifiedTime != dbRecord.modifiedTime || node.fileSize != dbRecord.size
-
-                if (isModified) {
-                    // It changed on disk!
-                    val newHash = calculateHash(node)
-
-                    // Check for CONFLICT:
-                    // If Server has changed since we last synced (serverHash != lastSyncedHash)
-                    // AND we have also changed (isModified) -> Conflict logic is usually handled in UI or separate logic.
-                    // Here we just mark as DIRTY (Modified).
-
-                    val status =
-                        if (newHash == dbRecord.lastSyncedHash) SyncStatus.SYNCED else SyncStatus.DIRTY
-
+                // 2.1 Handle "Ghost" Deletions
+                // If it was marked DELETED in DB, but User recreated it (or we missed the delete)
+                // We treat it as a modification/restoration.
+                if (dbRecord.serverSyncStatus == SyncStatus.DELETED.code) {
+                    val currentHash = calculateHash(node)
+                    // If user restored exactly what was there before delete, it might be SYNCED?
+                    // Usually safer to mark DIRTY or NEW. Let's mark DIRTY.
                     dbQueries.updateItem(
-                        contentHash = newHash,
+                        contentHash = currentHash,
                         modifiedTime = node.modifiedTime,
                         size = node.fileSize,
-                        serverSyncStatus = status.code,
+                        serverSyncStatus = SyncStatus.DIRTY.code,
                         relativePath = path
                     )
-                } else {
-                    // File on disk matches DB. 
-                    // But wait... did we previously mark it as DELETED? If so, user restored it.
-                    if (dbRecord.serverSyncStatus == SyncStatus.DELETED.code) {
-                        dbQueries.updateStatus(SyncStatus.DIRTY.code, path)
+                }
+                // 2.2 Standard Check
+                else {
+                    // Check modification against the DB record
+                    val isModified = node.modifiedTime != dbRecord.modifiedTime ||
+                            node.fileSize != dbRecord.size
+
+                    if (isModified) {
+                        // File changed on disk vs what we remember
+                        val newHash = calculateHash(node)
+
+                        // Smart Check:
+                        // Maybe we reverted the file to the state of last sync?
+                        // If current hash == lastSyncedHash, then we are actually SYNCED again.
+                        val status = if (newHash == dbRecord.lastSyncedHash) {
+                            SyncStatus.SYNCED
+                        } else {
+                            SyncStatus.DIRTY
+                        }
+
+                        dbQueries.updateItem(
+                            contentHash = newHash,
+                            modifiedTime = node.modifiedTime,
+                            size = node.fileSize,
+                            serverSyncStatus = status.code,
+                            relativePath = path
+                        )
+                    } else {
+                        // File is strictly identical to DB record.
+                        // Do nothing. Ideally, verify if dbRecord.serverSyncStatus is correct.
                     }
                 }
             }
         }
 
         // --- PHASE B: Handle Files Missing from Disk (Deletions) ---
+        // Iterate over ALL DB records. If it's in DB but not on Disk -> Deleted.
         dbRecords.keys.forEach { path ->
             if (!onDiskFiles.containsKey(path)) {
                 val dbRecord = dbRecords[path]!!
 
-                // If it's already marked DELETED, ignore.
-                // If it was NEW (never synced), just remove from DB entirely.
-                // If it was SYNCED or DIRTY, mark as DELETED.
-
                 if (dbRecord.serverSyncStatus == SyncStatus.NEW.code) {
+                    // It was never sent to server, so we can just forget it.
                     dbQueries.deleteItem(path)
                 } else if (dbRecord.serverSyncStatus != SyncStatus.DELETED.code) {
+                    // It was SYNCED or DIRTY. Now it is DELETED.
+                    // This line executes now because we included SYNCED files in dbRecords!
                     dbQueries.updateStatus(SyncStatus.DELETED.code, path)
                 }
-            }
-        }
-
-        // --- PHASE C: Handle Server-Only Files (Downloads) ---
-        // These are files on Server, but NOT in DB and NOT on Disk.
-        // Usually, we don't insert them into "IndexFile" until we actually download them.
-        // But if you want to show them in UI as "Cloud Only", you might handle them here or in a separate query.
-    }
-}
-
-// Pseudo-code helper for Hashing
-fun calculateHash(node: FileTreeNode): String? {
-    if (node.isDirectory()) return null
-    // Use your Okio/KMP hashing logic here
-    // return FileSystem.SYSTEM.read(node.getFullPath().toPath()) { ... }
-    return calculateFileHash(node.getFullPath())
-}
-
-@OptIn(ExperimentalTime::class)
-fun setFilesAsSynced(
-    paths: List<String>,
-    serverFiles: List<FileItem>,
-    dbHelper: IndexDatabase,
-    filesManager: ISystemFilesManager
-) {
-    // Превращаем список серверных файлов в Map для быстрого поиска хеша по пути
-    // Нормализуем пути, чтобы не зависеть от слешей
-    val serverFilesMap = serverFiles.associateBy { it.relativePath.normalizeText() }
-
-    dbHelper.transaction {
-        paths.forEach { relativePathStr ->
-            val normalizedPath = relativePathStr.normalizeText()
-            val fullPath = filesManager.toAbsoluteAppPath(pathWrapper(relativePathStr)).pathString
-
-            // 1. Получаем реальные метаданные с диска
-            val metadata = SystemFileSystem.metadataOrNull(Path(fullPath))
-            val other = getOtherFileMeta(fullPath)
-            if (metadata != null && metadata.isRegularFile) {
-
-                val realModifiedTime = other.modifiedDateTime.toEpochMilliseconds() ?: 0L
-                val realSize = metadata.size ?: 0L
-
-                // 2. Ищем хеш, который прислал сервер
-                // Если вдруг файла нет в списке (странно), то хеш пустой,
-                // но лучше так, чем краш. В идеале можно пересчитать.
-                val serverFile = serverFilesMap[normalizedPath]
-                val hash = serverFile?.contentHash ?: ""
-
-                // 3. Пишем в базу
-                dbHelper.indexFileQueries.upsertSyncedFile(
-                    relativePath = relativePathStr,
-                    contentHash = hash,
-                    modifiedTime = realModifiedTime,
-                    size = realSize,
-                    isDirectory = 0L, // Мы скачиваем только файлы
-                    // lastSyncedHash и status проставятся в SQL запросе
-                )
             }
         }
     }

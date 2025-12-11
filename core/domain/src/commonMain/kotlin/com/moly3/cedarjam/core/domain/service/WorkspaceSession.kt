@@ -201,6 +201,7 @@ class WorkspaceSession(
     suspend fun initConfigAndFiles() {
         workspace.initConfigAndFiles()
         loadLocalFont()
+        workspace.reinitDatabase()
     }
 
     suspend fun loadLocalFont(newFile: FileTreeNode.File? = null) {
