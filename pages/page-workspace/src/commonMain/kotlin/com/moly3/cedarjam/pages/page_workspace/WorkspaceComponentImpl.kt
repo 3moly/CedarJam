@@ -25,6 +25,7 @@ import com.moly3.cedarjam.core.domain.dialog.DialogSelectTagService
 import com.moly3.cedarjam.core.domain.dialog.DialogTagToTagService
 import com.moly3.cedarjam.core.ui.model.PageNameData
 import com.moly3.cedarjam.core.domain.model.WorkspaceInput
+import com.moly3.cedarjam.core.domain.repository.IFilesRepository
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
 import com.moly3.cedarjam.features.feature_settings.func.settingsDialogScopeFactory
 import com.moly3.cedarjam.features.feature_settings.model.DialogConfig
@@ -53,13 +54,15 @@ data class PageNameWorkspace(
 class WorkspaceComponentImpl(
     private val workspaceInput: WorkspaceInput,
     context: ComponentContext,
-    storeFactory: StoreFactory
+    storeFactory: StoreFactory,
+
 ) : KoinComponent,
     ComponentContext by context,
     IDecomposeScopeComponent,
     WorkspaceComponent {
 
     override val scope by componentScope()
+    override val filesRepository: IFilesRepository by inject()
     private val coroutineScope: CoroutineScope by inject()
     override val workspaceSession: WorkspaceSession by inject {
         parametersOf(

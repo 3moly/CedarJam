@@ -106,26 +106,37 @@ data class ZipVersion(val version:Short) {
  */
 data class ZipTime(val modTime: UShort, val modDate: UShort) {
 
-    constructor(time: LocalDateTime): this(
+    constructor(time: LocalDateTime) : this(
         convertTime(time),
         convertDate(time)
     )
 
+    /**
+     * Convert the zip specification date and time values to LocalDateTime. If the values are
+     * invalid, return LocalDateTime with 1980-01-01T00:00:00
+     *
+     * @return LocalDateTime
+     */
     val zipTime: LocalDateTime
         get() {
-        val i = modDate.toInt()
-        val t = modTime.toInt()
-        return LocalDateTime(
-            1980 + ((i shr 9) and 0x7f),
-            ((i shr 5) and 0xf),
-            i and 0x1f,
-            ((t shr 11) and 0x1f),
-            (t shr 5) and 0x3f,
-            ((t shl 1) and 0x3e)
-        )
-    }
+            val i = modDate.toInt()
+            val t = modTime.toInt()
+            return try {
+                LocalDateTime(
+                    1980 + ((i shr 9) and 0x7f),
+                    ((i shr 5) and 0xf),
+                    i and 0x1f,
+                    ((t shr 11) and 0x1f),
+                    (t shr 5) and 0x3f,
+                    ((t shl 1) and 0x3e)
+                )
+            } catch (_: IllegalArgumentException) {
+                BAD_DATETIME_REPLACEMENT
+            }
+        }
 
     companion object {
+        val BAD_DATETIME_REPLACEMENT = LocalDateTime(1980, 1, 1, 0, 0, 0)
         fun convertDate(time: LocalDateTime): UShort {
             time.apply {
                 return if (year < 1980)

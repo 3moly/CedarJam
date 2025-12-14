@@ -10,6 +10,7 @@ import com.moly3.cedarjam.core.domain.model.WorkspacePresentation
 import com.moly3.cedarjam.core.domain.model.error.DatabaseError
 import com.moly3.cedarjam.core.domain.model.settings.WorkspaceFont
 import com.moly3.cedarjam.core.domain.model.settings.WorkspaceSettings
+import com.moly3.cedarjam.core.domain.usecase.SyncStatus2
 import com.moly3.cedarjam.core.ui.model.FileTreeItemPresentation
 import com.moly3.cedarjam.pages.page_workspace.model.LockedMenuData
 import com.moly3.cedarjam.pages.page_workspace.model.TabWeightsData
@@ -42,7 +43,8 @@ data class State(
     val lockedMenuCovered: LockedMenuData? = null,
     val workspaceFont: WorkspaceFont? = null,
     val settings: WorkspaceSettings = WorkspaceSettings.defaultSettings,
-    val indexes: ImmutableList<IndexFileDto> = persistentListOf()
+    val indexes: ImmutableList<IndexFileDto> = persistentListOf(),
+    val syncStatus: UIState<SyncStatus2, String> = UIState.Success(SyncStatus2())
 
 ) {
     @Serializable

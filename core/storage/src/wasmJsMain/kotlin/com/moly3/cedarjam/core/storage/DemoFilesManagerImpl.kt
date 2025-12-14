@@ -104,7 +104,8 @@ class DemoFilesManagerImpl : ISystemFilesManager {
     override fun createNode(
         isDirectory: Boolean,
         nodePath: String,
-        byteArray: ByteArray?
+        byteArray: ByteArray?,
+        isMustCreate: Boolean
     ): ResultWrapper<FileTreeNode, String> {
         return resultBlock {
             Logger.d("creating node: ${nodePath}")

@@ -2,7 +2,7 @@ CREATE TABLE IndexFile (
   relativePath TEXT PRIMARY KEY,
   contentHash TEXT,
   modifiedTime INTEGER NOT NULL,
-  size INTEGER NOT NULL,
+  size INTEGER,
   isDirectory INTEGER NOT NULL DEFAULT 0,
   lastSyncedHash TEXT,
   serverSyncStatus INTEGER NOT NULL
@@ -19,6 +19,11 @@ CREATE TABLE IndexFile (
 selectAll:
 SELECT * FROM IndexFile;
 
+findOne:
+SELECT *
+FROM IndexFile
+WHERE relativePath = ?;
+
 insertItem:
 INSERT OR REPLACE INTO IndexFile(relativePath, contentHash, modifiedTime, size, isDirectory, lastSyncedHash, serverSyncStatus)
 VALUES (?, ?, ?, ?, ?, ?, ?);
@@ -31,6 +36,11 @@ WHERE relativePath = ?;
 updateStatus:
 UPDATE IndexFile
 SET serverSyncStatus = ?
+WHERE relativePath = ?;
+
+updateLastSyncHash:
+UPDATE IndexFile
+SET lastSyncedHash = ?, serverSyncStatus = ?
 WHERE relativePath = ?;
 
 deleteItem:

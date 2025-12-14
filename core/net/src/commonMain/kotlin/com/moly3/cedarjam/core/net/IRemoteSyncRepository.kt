@@ -8,7 +8,7 @@ interface IRemoteSyncRepository {
     suspend fun upload(
         userName: String,
         workspaceName: String,
-        archiveByteArray: ByteArray,
+        archiveByteArray: ByteArray?,
         metadata: List<FileMetadata>,
         filesToDownload: List<String>
     ): ResultWrapper<ByteArray, String>
@@ -17,4 +17,8 @@ interface IRemoteSyncRepository {
         userName: String,
         workspaceName: String
     ): ResultWrapper<FileStructure, String>
+    suspend fun deleteWorkspace(
+        userName: String,
+        workspaceName: String
+    ): ResultWrapper<Unit, String>
 }

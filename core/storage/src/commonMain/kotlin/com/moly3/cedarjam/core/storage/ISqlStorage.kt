@@ -2,6 +2,7 @@ package com.moly3.cedarjam.core.storage
 
 import com.moly3.cedarjam.core.domain.model.FileItem
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
+import com.moly3.cedarjam.core.domain.model.IndexFileDto
 import com.moly3.cedarjam.core.domain.model.ResultWrapper
 import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.domain.model.error.DatabaseError
@@ -57,14 +58,17 @@ interface ISqlStorage {
     fun addTagLink(relativePath: String, tagId: Long)
     fun createTagCollectionRow(request: CreateTagCollectionRowRequest)
 
-    //    fun createAnnotation(data: Annotation)
-    fun updateIndexFilesFlow(
+    fun updateIndexFiles(
         localNodes: List<FileTreeNode>,
         serverNodes: List<FileItem>
     ): ResultWrapper<Unit, String>
 
-    fun finishIndexFiles(
+    fun updateIndexFilesLocal(
+        localNodes: List<FileTreeNode>
     ): ResultWrapper<Unit, String>
+
+
+    fun syncDirtyFiles(list:List<IndexFileDto>): ResultWrapper<Unit, String>
 
     fun deleteIndexFiles(list:List<String>): ResultWrapper<Unit, String>
     fun addIndexFiles(list: Map<String, Long>): ResultWrapper<Unit, String>

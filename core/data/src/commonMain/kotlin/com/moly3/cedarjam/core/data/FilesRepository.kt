@@ -2,9 +2,6 @@ package com.moly3.cedarjam.core.data
 
 import com.moly3.cedarjam.core.storage.ISystemFilesManager
 import com.moly3.cedarjam.core.storage.func.getOtherFileMeta
-import com.moly3.cedarjam.core.domain.func.pathWrapper
-import com.moly3.cedarjam.core.domain.model.FileItem
-import com.moly3.cedarjam.core.domain.model.FileStructure
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.ResultWrapper
 import com.moly3.cedarjam.core.domain.model.bind
@@ -25,15 +22,13 @@ class FilesRepository(
         return filesStorage.toAbsoluteAppPath(relativePath = relativePath)
     }
 
-    override suspend fun extractFilesFromZip(
+    override suspend fun unpackZip(
         archivePath: String,
         workspaceFullPath: String,
-        serverFiles:List<FileItem>,
     ): List<String> {
         return extractZip(
             archivePath,
             workspaceFullPath,
-            serverFiles=serverFiles
         )
     }
 
@@ -71,6 +66,11 @@ class FilesRepository(
         filesStorage.deleteNode(node.getFullPath())
     }
 
+    override fun deleteNodeHeavy(node: FileTreeNode) {
+        filesStorage.deleteNodeHeavy(node.getFullPath())
+    }
+
+
     override fun createNode(
         node: FileTreeNode,
         byteArray: ByteArray?
@@ -78,8 +78,23 @@ class FilesRepository(
         return filesStorage.createNode(
             isDirectory = node is FileTreeNode.Directory,
             nodePath = node.getFullPath(),
-            byteArray = byteArray
+            byteArray = byteArray,
+            isMustCreate = true
         )
+    }
+
+    override fun createDirectory(
+        fullPath: String,
+        isMustCreate: Boolean
+    ): ResultWrapper<Unit, String> {
+        return resultBlock {
+            filesStorage.createNode(
+                isDirectory = true,
+                nodePath = fullPath,
+                byteArray = null,
+                isMustCreate = isMustCreate
+            )
+        }
     }
 
     override fun getFileNodeFromFullPath(fullPath: String, isDirectory: Boolean): FileTreeNode {

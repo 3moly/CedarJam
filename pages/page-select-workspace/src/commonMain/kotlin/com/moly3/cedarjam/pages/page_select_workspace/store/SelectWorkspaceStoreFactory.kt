@@ -60,7 +60,12 @@ internal class SelectWorkspaceStoreFactory(
         override fun executeIntent(intent: Intent) {
             when (intent) {
                 is Intent.SelectWorkspace -> {
-                    onSelectWorkspace(WorkspaceInput(intent.workspace.name))
+                    onSelectWorkspace(
+                        WorkspaceInput(
+                            intent.workspace.name,
+                            intent.workspace.serverName
+                        )
+                    )
                 }
 
                 Intent.CreateWorkspace -> {

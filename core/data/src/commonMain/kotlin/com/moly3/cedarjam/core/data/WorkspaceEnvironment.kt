@@ -12,7 +12,6 @@ import com.moly3.cedarjam.core.domain.io
 import com.moly3.cedarjam.core.domain.model.AnnotationDTO
 import com.moly3.cedarjam.core.domain.model.CollectionDTO
 import com.moly3.cedarjam.core.domain.model.CollectionRowDTO
-import com.moly3.cedarjam.core.domain.model.DeletedFileMetadata
 import com.moly3.cedarjam.core.domain.model.FileItem
 import com.moly3.cedarjam.core.domain.model.FileMetadata
 import com.moly3.cedarjam.core.domain.model.FileName
@@ -35,7 +34,6 @@ import com.moly3.cedarjam.core.domain.model.error.DatabaseError
 import com.moly3.cedarjam.core.domain.model.fold
 import com.moly3.cedarjam.core.domain.model.getSettingsJsonFile
 import com.moly3.cedarjam.core.domain.model.resultBlock
-import com.moly3.cedarjam.core.domain.model.shouldBeSuccess
 import com.moly3.cedarjam.core.domain.model.toCollectionViewType
 import com.moly3.cedarjam.core.domain.repository.IFilesRepository
 import com.moly3.cedarjam.core.domain.repository.IWorkspaceEnvironment
@@ -56,6 +54,7 @@ import com.moly3.cedarjam.core.domain.service.FileManagerService
 import com.moly3.cedarjam.core.storage.ISqlStorage
 import com.moly3.cedarjam.db.DataCollectionRow
 import com.moly3.cedarjam.db.Tag
+import com.moly3.cedarjam.indexdb.IndexFile
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -160,26 +159,24 @@ class WorkspaceEnvironment(
         filesToDownload: List<String>,
     ): ResultWrapper<ByteArray, String> {
         return resultBlock {
+            var byteArray: ByteArray? = null
             try {
                 val fileNode = filesRepository.getFileNodeFromFullPath(
                     archiveFullPath,
                     isDirectory = false
                 ) as FileTreeNode.File
-                val byteArray = filesRepository.getNodeBytes(fileNode)
-                val uploadResult = syncNetRepository.upload(
-                    userName = "bulat",
-                    workspaceName = workspace.name,
-                    metadata = metadata,
-                    filesToDownload = filesToDownload,
-                    archiveByteArray = byteArray
-                )
-                uploadResult.shouldBeSuccess()
-                uploadResult.value
-            } catch (aa: ArithmeticException) {
-                raise(aa.message ?: "")
+                byteArray = filesRepository.getNodeBytes(fileNode)
             } catch (exc: Exception) {
-                raise("uploadSync: ${exc.message}")
+
             }
+            val uploadResult = syncNetRepository.upload(
+                userName = "bulat",
+                workspaceName = workspace.serverName,
+                metadata = metadata,
+                filesToDownload = filesToDownload,
+                archiveByteArray = byteArray
+            )
+            bind(uploadResult)
         }
     }
 
@@ -203,7 +200,14 @@ class WorkspaceEnvironment(
     override suspend fun getServerFiles(): ResultWrapper<FileStructure, String> {
         return syncNetRepository.workspaceFiles(
             userName = "bulat",
-            workspaceName = workspace.name
+            workspaceName = workspace.serverName
+        )
+    }
+
+    override suspend fun deleteWorkspace(): ResultWrapper<Unit, String> {
+        return syncNetRepository.deleteWorkspace(
+            userName = "bulat",
+            workspaceName = workspace.serverName
         )
     }
 
@@ -336,40 +340,45 @@ class WorkspaceEnvironment(
             .flowOn(io)
     }
 
+    fun IndexFile.dto(): IndexFileDto {
+        val syncStatus = when (this.serverSyncStatus) {
+            SyncStatus.SYNCED.code ->
+                SyncStatus.SYNCED
+
+            SyncStatus.DIRTY.code ->
+                SyncStatus.DIRTY
+
+            SyncStatus.NEW.code ->
+                SyncStatus.NEW
+
+            SyncStatus.DELETED.code ->
+                SyncStatus.DELETED
+
+            else -> null
+        }
+        return IndexFileDto(
+            relativePath = this.relativePath,
+            contentHash = this.contentHash,
+            modifiedTime = this.modifiedTime,
+            size = this.size,
+            isDirectory = this.isDirectory == 1L,
+            lastSyncedHash = this.lastSyncedHash,
+            serverSyncStatus = syncStatus
+        )
+    }
+
     override fun getIndexFilesFlow(): Flow<List<IndexFileDto>> {
         return sqlStorage
             .getIndexFilesFlow()
-            .map { d ->
-                d.map {
-                    val syncStatus = when (it.serverSyncStatus) {
-                        com.moly3.cedarjam.core.domain.model.SyncStatus.SYNCED.code ->
-                            com.moly3.cedarjam.core.domain.model.SyncStatus.SYNCED
-
-                        com.moly3.cedarjam.core.domain.model.SyncStatus.DIRTY.code ->
-                            com.moly3.cedarjam.core.domain.model.SyncStatus.DIRTY
-
-                        com.moly3.cedarjam.core.domain.model.SyncStatus.NEW.code ->
-                            com.moly3.cedarjam.core.domain.model.SyncStatus.NEW
-
-                        com.moly3.cedarjam.core.domain.model.SyncStatus.DELETED.code ->
-                            com.moly3.cedarjam.core.domain.model.SyncStatus.DELETED
-
-                        else -> null
-                    }
-                    IndexFileDto(
-                        relativePath = it.relativePath,
-                        contentHash = it.contentHash,
-                        modifiedTime = it.modifiedTime,
-                        size = it.size,
-                        isDirectory = it.isDirectory,
-                        lastSyncedHash = it.lastSyncedHash,
-                        serverSyncStatus = syncStatus
-                    )
-                }
-            }
+            .map { d -> d.map { it.dto() } }
             .flowOn(io)
     }
 
+    override fun getIndexFiles(): List<IndexFileDto> {
+        return sqlStorage
+            .getIndexFiles()
+            .map { d -> d.dto() }
+    }
 
     override fun getTagsFlow(): Flow<List<TagDTO>> {
         return sqlStorage.getTagsFlow()
@@ -734,21 +743,27 @@ class WorkspaceEnvironment(
         return filesRepository.setNodeText(node, text)
     }
 
-    override fun finishIndexFiles(): ResultWrapper<Unit, String> {
-        return sqlStorage.finishIndexFiles()
+    override fun syncDirtyFiles(list: List<IndexFileDto>): ResultWrapper<Unit, String> {
+        return sqlStorage.syncDirtyFiles(list)
     }
 
     override fun deleteIndexFiles(list: List<String>): ResultWrapper<Unit, String> {
         return sqlStorage.deleteIndexFiles(list)
     }
 
-    override fun updateIndexFilesFlow(
+    override fun updateIndexFiles(
         localNodes: List<FileTreeNode>,
         serverNodes: List<FileItem>
     ): ResultWrapper<Unit, String> {
-        return sqlStorage.updateIndexFilesFlow(
+        return sqlStorage.updateIndexFiles(
             localNodes = localNodes,
             serverNodes = serverNodes
+        )
+    }
+
+    override fun updateIndexFilesLocal(localNodes: List<FileTreeNode>): ResultWrapper<Unit, String> {
+        return sqlStorage.updateIndexFilesLocal(
+            localNodes = localNodes
         )
     }
 

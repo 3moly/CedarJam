@@ -53,6 +53,7 @@ interface IWorkspaceEnvironment {
     fun getDatabaseStatus(): Flow<UIState<Unit, DatabaseError>>
     fun getFileNodesFlow(): Flow<UIState<List<FileTreeNode>, String>>
     suspend fun getServerFiles(): ResultWrapper<FileStructure, String>
+    suspend fun deleteWorkspace(): ResultWrapper<Unit, String>
     fun getTagsFlow(): Flow<List<TagDTO>>
     fun getTagFlow(id: Long): Flow<TagDTO?>
     fun getTagLinksFlow(): Flow<List<TagLinkDTO>>
@@ -63,6 +64,7 @@ interface IWorkspaceEnvironment {
     fun getCollectionRowsFlow(collectionId: Long?): Flow<List<CollectionRowDTO>>
     fun getCollectionRowFlow(rowId: Long): Flow<CollectionRowDTO?>
     fun getIndexFilesFlow(): Flow<List<IndexFileDto>>
+    fun getIndexFiles(): List<IndexFileDto>
     fun getCollectionRowsCount(collectionId: Long?): Flow<Long>
     fun getCollectionRowsPaginated(
         offset: Long,
@@ -89,19 +91,22 @@ interface IWorkspaceEnvironment {
         isAbsoluteNew: Boolean
     ): ResultWrapper<FileTreeNode.Directory, String>
 
-    fun updateIndexFilesFlow(
+    fun updateIndexFiles(
         localNodes: List<FileTreeNode>,
         serverNodes: List<FileItem>
     ): ResultWrapper<Unit, String>
 
-    fun finishIndexFiles(): ResultWrapper<Unit, String>
-    fun deleteIndexFiles(list:List<String>): ResultWrapper<Unit, String>
+    fun updateIndexFilesLocal(
+        localNodes: List<FileTreeNode>
+    ): ResultWrapper<Unit, String>
+
+    fun syncDirtyFiles(list: List<IndexFileDto>): ResultWrapper<Unit, String>
+    fun deleteIndexFiles(list: List<String>): ResultWrapper<Unit, String>
 
     fun setFilesAsSynced(
         paths: List<String>,
         serverNodes: List<FileItem>
     ): ResultWrapper<Unit, String>
-
 
 
     fun getNodeText(node: FileTreeNode.File): ResultWrapper<String, String>

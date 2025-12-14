@@ -89,7 +89,7 @@ class ObsGraphEco(
             .flowOn(io)
             .shareIn(
                 scope = scope,
-                started = SharingStarted.Companion.Lazily,
+                started = SharingStarted.Lazily,
                 replay = 1
             )
     }

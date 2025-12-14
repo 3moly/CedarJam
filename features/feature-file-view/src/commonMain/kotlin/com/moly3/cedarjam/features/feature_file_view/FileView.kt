@@ -16,6 +16,7 @@ import com.moly3.cedarjam.core.ui.service.IJvmBrowserService
 import com.moly3.cedarjam.core.domain.service.IUtilsService
 import com.moly3.cedarjam.core.ui.service.MacTrackpadGestureService
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
+import com.moly3.cedarjam.core.ui.compositions.LocalImageLoader
 import com.moly3.cedarjam.core.ui.uikit.CJText
 import com.moly3.cedarjam.core.ui.uikit.CJZoomableViewLayout
 import kotlinx.coroutines.FlowPreview
@@ -67,7 +68,10 @@ fun FileView(
                     macTrackpadGestureService = macTrackpadGestureService
                 ) {
                     Image(
-                        painter = rememberAsyncImagePainter(model = fl.fileNode.getFullPath()),
+                        painter = rememberAsyncImagePainter(
+                            model = fl.fileNode.getFullPath(),
+                            imageLoader = LocalImageLoader.current
+                        ),
                         contentDescription = null,
                         modifier = Modifier.fillMaxSize()
                     )

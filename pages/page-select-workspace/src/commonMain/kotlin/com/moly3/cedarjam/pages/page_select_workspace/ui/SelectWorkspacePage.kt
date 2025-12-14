@@ -121,12 +121,21 @@ fun JvmWindowScope.SelectWorkspacePage(component: ISelectWorkspaceComponent) {
                             Column(
                                 modifier = Modifier.weight(1f) // take remaining space
                             ) {
-                                CJText(
-                                    text = item.name,
-                                    fontSize = 24.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    softWrap = false
-                                )
+                                Row {
+                                    CJText(
+                                        text = item.name,
+                                        fontSize = 24.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        softWrap = false
+                                    )
+                                    CJText(
+                                        text = item.serverName,
+                                        fontSize = 24.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        softWrap = false,
+                                        color = Color.Red
+                                    )
+                                }
                                 CJText(
                                     text = item.fullpath,
                                     fontSize = 16.sp,

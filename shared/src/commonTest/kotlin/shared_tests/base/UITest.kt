@@ -19,6 +19,7 @@ import com.moly3.cedarjam.ui.MainApp
 import com.moly3.cedarjam.core.domain.func.runBlocking
 import com.moly3.cedarjam.core.storage.func.init
 import com.moly3.cedarjam.pages.page_tab.TabComponent
+import com.moly3.cedarjam.pages.page_tabs.TabsComponent
 import com.moly3.cedarjam.pages.page_workspace.WorkspaceComponent
 import io.github.vinceglb.filekit.FileKit
 import kotlinx.coroutines.Dispatchers
@@ -103,11 +104,12 @@ abstract class UITest : BaseTest() {
     inline fun <reified CurrentPage> ComposeUiTest.waitAndWorkspaceGetComponent(
         component: WorkspaceComponent,
         timeoutMillis: Long = 1_000L
-    ): CurrentPage {
+    ): TabsComponent {
         waitUntil("", timeoutMillis) {
-            component.children.value.items.first() is CurrentPage
+            Logger.e{ "first active: ${component.children.value.items.first().instance}" }
+            component.children.value.items.first().instance is TabsComponent
         }
-        return component.children.value.items.first() as CurrentPage
+        return component.children.value.items.first().instance as TabsComponent
     }
 
     inline fun <reified CurrentPage> ComposeUiTest.waitAndTabGetComponent(
@@ -115,10 +117,12 @@ abstract class UITest : BaseTest() {
         timeoutMillis: Long = 1_000L
     ): CurrentPage {
         waitUntil("", timeoutMillis) {
-            component.childStack.active is CurrentPage
+            Logger.e("active component: ${component.childStack.active}")
+            component.childStack.active.instance is CurrentPage
         }
-        return component.childStack.active as CurrentPage
+        return component.childStack.active.instance as CurrentPage
     }
+
 
     inline fun <reified CurrentPage> currentPage(): Boolean {
 

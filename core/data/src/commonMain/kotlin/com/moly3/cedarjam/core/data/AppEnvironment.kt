@@ -67,7 +67,8 @@ class AppEnvironment(
             WorkspacePresentation(
                 name = it.name,
                 fullpath = it.fullpath,
-                absolutePath = absolutePath
+                absolutePath = absolutePath,
+                serverName = it.serverName
             )
         }
     }
@@ -75,7 +76,7 @@ class AppEnvironment(
     override fun getWorkspace(name: String): WorkspacePresentation {
         val workspaces = getWorkspaces()
         val workspace = workspaces.firstOrNull { d -> d.name == name }
-            ?: WorkspacePresentation(name = name, "", "")
+            ?: WorkspacePresentation(name = name, "", "","")
         return workspace
     }
 
@@ -122,7 +123,8 @@ class AppEnvironment(
             appStorage.deleteWorkspace(
                 Workspace(
                     name = workspace.name,
-                    fullpath = workspace.fullpath
+                    fullpath = workspace.fullpath,
+                    serverName = workspace.serverName
                 )
             )
             refreshWorkspaces()

@@ -1,4 +1,3 @@
-
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -47,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.moly3.cedarjam.core.domain.func.getPlatform
 import com.moly3.cedarjam.core.domain.model.Platform
+import com.moly3.cedarjam.core.domain.model.SyncStatus
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalHazeState
 import com.moly3.cedarjam.core.ui.compositions.LocalHazeStyle
@@ -68,6 +68,7 @@ fun FileButton(
     fileExtension: String?,
     isDirectory: Boolean,
     title: String,
+    syncStatus: SyncStatus?,
     backColor: Color?,
     onCreateDirectoryClick: (() -> Unit)?,
     onCreateFileClick: (() -> Unit)?,
@@ -180,7 +181,10 @@ fun FileButton(
                 keyboardActions = KeyboardActions(onDone = {
                     onRename(renameTextField.value.text)
                 }),
-                textStyle = TextStyle.Default.copy(LocalAppTheme.current.colors.primaryFont, fontSize = 14.sp),
+                textStyle = TextStyle.Default.copy(
+                    LocalAppTheme.current.colors.primaryFont,
+                    fontSize = 14.sp
+                ),
                 singleLine = true,
                 cursorBrush = SolidColor(primaryColor)
             )
@@ -188,6 +192,16 @@ fun FileButton(
                 focusRequester.requestFocus()
             }
         } else {
+            if (syncStatus != null) {
+                CJText(
+                    modifier = Modifier.padding(end = 8.dp),
+                    text = syncStatus.toString(),
+                    fontSize = 14.sp,
+                    color = LocalAppTheme.current.colors.primaryFont,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
             CJText(
                 modifier = Modifier.weight(1f),
                 text = title,
@@ -208,7 +222,8 @@ fun FileButton(
         }
         if (counter != null) {
             CJText(
-                modifier = Modifier.background(LocalAppTheme.current.colors.backgroundSecondary).padding(4.dp),
+                modifier = Modifier.background(LocalAppTheme.current.colors.backgroundSecondary)
+                    .padding(4.dp),
                 text = counter.toString(),
                 fontSize = 10.sp,
                 maxLines = 1
@@ -288,6 +303,7 @@ fun FileButtonPreview() {
         isRename = false,
         counter = null,
         onRename = {},
-        isContextMenuTarget = false
+        isContextMenuTarget = false,
+        syncStatus = null
     )
 }

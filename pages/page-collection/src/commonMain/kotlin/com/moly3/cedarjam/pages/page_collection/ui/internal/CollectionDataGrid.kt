@@ -33,6 +33,7 @@ import com.moly3.cedarjam.core.domain.model.TagDTO
 import com.moly3.cedarjam.core.domain.model.WorkspacePresentation
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalDragAndDrop
+import com.moly3.cedarjam.core.ui.compositions.LocalImageLoader
 import com.moly3.cedarjam.core.ui.func.getPdfImage
 import com.moly3.cedarjam.core.ui.model.FileTreeItemPresentation
 import com.moly3.cedarjam.core.ui.uikit.CJButton
@@ -140,7 +141,10 @@ internal fun CollectionDataGrid(
                             if (youtubeLink != null) {
                                 Image(
                                     modifier = Modifier.fillMaxWidth(),
-                                    painter = rememberAsyncImagePainter(youtubeLink),
+                                    painter = rememberAsyncImagePainter(
+                                        youtubeLink,
+                                        imageLoader = LocalImageLoader.current
+                                    ),
                                     contentDescription = null
                                 )
                             }

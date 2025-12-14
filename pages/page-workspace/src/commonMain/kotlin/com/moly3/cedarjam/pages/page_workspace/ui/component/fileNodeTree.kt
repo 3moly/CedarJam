@@ -73,6 +73,7 @@ fun LazyListScope.fileNodeTree(
             data = item,
         ) {
 
+
             FileButton(
                 modifier = Modifier.onSecondaryClickWithPosition(
                     key = item,
@@ -106,6 +107,11 @@ fun LazyListScope.fileNodeTree(
                         else
                             it
                     },
+                syncStatus = when (val data = item.data) {
+                    is FileTreeItemPresentation.FileTreeItemPresentationData.Directory -> data.syncStatus
+                    is FileTreeItemPresentation.FileTreeItemPresentationData.File -> data.syncStatus
+                    else -> null
+                },
                 backColor = item.backColor,
                 isOpen = isOpened,
                 isSelected = selectedKey == item.key,

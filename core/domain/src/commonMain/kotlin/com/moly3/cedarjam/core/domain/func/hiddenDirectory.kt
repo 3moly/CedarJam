@@ -8,10 +8,12 @@ const val ignoredImportArchive: String = "${hiddenDirectory}/import.zip"
 const val ignoredExportArchive: String = "${hiddenDirectory}/export.zip"
 const val sqlDatabaseName = "sqlite"
 const val indexSqlDatabaseName = "indexes"
+const val imgCache = "img_cache"
 const val ignoreIndexSqlDatabaseName: String = "${hiddenDirectory}/$indexSqlDatabaseName.db"
 const val ignoredDbShm: String = "${hiddenDirectory}/$sqlDatabaseName.db-shm"
 const val ignoredDbWal: String = "${hiddenDirectory}/$sqlDatabaseName.db-wal"
 const val ignoredDbJournal: String = "${hiddenDirectory}/$sqlDatabaseName.db-journal"
+//const val ignoredImgCacheJournal: String = "${hiddenDirectory}/$imgCache/journal"
 
 val ignoreByRelativePath = listOf(
     ignoredFont,

@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.rememberAsyncImagePainter
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
+import com.moly3.cedarjam.core.ui.compositions.LocalImageLoader
 import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
 import com.moly3.cedarjam.core.ui.uikit.CJText
 import com.moly3.cedarjam.core.ui.vectors.SettingsFuture
@@ -95,7 +96,12 @@ fun FlowerCard(
             )
         }
         if (youtubeLink != null) {
-            Image(rememberAsyncImagePainter(model = youtubeLink), contentDescription = null)
+            Image(
+                rememberAsyncImagePainter(
+                    model = youtubeLink,
+                    imageLoader = LocalImageLoader.current
+                ), contentDescription = null
+            )
         } else if (documentImage != null) {
             Image(
                 bitmap = documentImage,

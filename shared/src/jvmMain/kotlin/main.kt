@@ -40,7 +40,6 @@ import com.moly3.cedarjam.navigation.createRootComponentSafe
 import com.moly3.cedarjam.navigation.ui.ActualPredictiveBackGestureOverlay
 import com.moly3.cedarjam.pages.page_workspace.ui.ToolbarState
 import com.moly3.cedarjam.ui.MainApp
-import com.skydoves.compose.stability.runtime.ComposeStabilityAnalyzer
 import dev.datlag.kcef.KCEF
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.filesDir
@@ -88,7 +87,7 @@ private const val SAVED_STATE_FILE_NAME = "saved_state.dat"
     ExperimentalDecomposeApi::class
 )
 fun main() {
-    ComposeStabilityAnalyzer.setEnabled(false)
+//    ComposeStabilityAnalyzer.setEnabled(false)
 //    ComposeStabilityAnalyzer.setLogger(object : RecompositionLogger {
 //        override fun log(event: RecompositionEvent) {
 //            if (false) {

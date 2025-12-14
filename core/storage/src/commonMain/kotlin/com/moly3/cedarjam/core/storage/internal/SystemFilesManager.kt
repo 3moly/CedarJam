@@ -27,10 +27,10 @@ import kotlinx.io.files.FileNotFoundException
 import kotlinx.io.files.FileSystem
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
-import kotlinx.io.files.source
 import kotlinx.io.readByteArray
 import kotlinx.io.readString
 import kotlinx.io.writeString
+
 internal class SystemFilesManager : ISystemFilesManager {
 
     private val fs: FileSystem = SystemFileSystem
@@ -112,7 +112,7 @@ internal class SystemFilesManager : ISystemFilesManager {
     override fun getDirectoryNodeFromFullPath(fullPath: String): FileTreeNode.Directory {
         val abs = toAbsoluteAppPath(pathWrapper(fullPath))
         if (!isNodeExists(abs.pathString)) {
-            createNode(true, abs.pathString, byteArray = null)
+            createNode(true, abs.pathString, byteArray = null, isMustCreate = true)
         }
         return getFileNodeFromPath(
             workspacePathToRemove = fullPath,
@@ -192,7 +192,8 @@ internal class SystemFilesManager : ISystemFilesManager {
     override fun createNode(
         isDirectory: Boolean,
         nodePath: String,
-        byteArray: ByteArray?
+        byteArray: ByteArray?,
+        isMustCreate: Boolean
     ): ResultWrapper<FileTreeNode, String> {
         Logger.w {
             "create node: ${nodePath}"
@@ -201,6 +202,11 @@ internal class SystemFilesManager : ISystemFilesManager {
         return resultBlock {
             val path = Path(nodePath)
             val meta = fs.metadataOrNull(path)
+            if (meta != null && isMustCreate) {
+                if (isDirectory != meta.isDirectory) {
+                    fs.delete(path)
+                }
+            }
             ensure(!(fs.exists(path) && meta?.isDirectory == isDirectory)) {
                 "node $path is already exists"
             }
@@ -218,7 +224,7 @@ internal class SystemFilesManager : ISystemFilesManager {
             val se = getFileNodeFromPath(
                 workspacePathToRemove = path.toString(),
                 filePath = path,
-                isDirectory,
+                isDirectory = isDirectory,
                 fileSize = 0L
             )
             if (byteArray != null) {

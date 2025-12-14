@@ -5,6 +5,7 @@ import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.plugin.mpp.NativeBuildType
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -13,7 +14,7 @@ plugins {
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.serialization)
     alias(libs.plugins.composeHotReload)
-    alias(libs.plugins.stability.analyzer)
+//    alias(libs.plugins.stability.analyzer)
     kotlin("native.cocoapods")
 }
 
@@ -229,4 +230,46 @@ compose {
             }
         }
     }
+}
+
+val localPropertiesFile = rootProject.file("local.properties")
+val localProperties = Properties()
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.inputStream().use { localProperties.load(it) }
+}
+
+val mySyncServerUrl = localProperties.getProperty("cedarjam_server.url") ?: ""
+
+// Register cache-safe task
+abstract class GenerateBuildConfigTask : DefaultTask() {
+    @get:Input
+    abstract val syncServerUrl: Property<String>
+
+    @get:OutputDirectory
+    abstract val outputDir: DirectoryProperty
+
+    @TaskAction
+    fun generate() {
+        val outputFile = outputDir.get().file("BuildConfig.kt").asFile
+        outputFile.parentFile.mkdirs()
+        outputFile.writeText(
+            """
+            package com.moly3.core_domain
+
+            object BuildConfig {
+                const val SyncServerUrl = "${syncServerUrl.get()}"
+            }
+            """.trimIndent()
+        )
+    }
+}
+
+val generateBuildConfig by tasks.registering(GenerateBuildConfigTask::class) {
+    syncServerUrl.set(mySyncServerUrl)
+    outputDir.set(layout.buildDirectory.dir("generated/source/buildConfig/commonMain/kotlin"))
+}
+
+// Add generated source to the commonMain source set
+kotlin.sourceSets.named("commonMain") {
+    kotlin.srcDir(generateBuildConfig.map { it.outputDir })
 }

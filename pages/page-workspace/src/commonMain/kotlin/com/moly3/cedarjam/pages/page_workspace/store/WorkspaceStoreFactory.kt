@@ -4,6 +4,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import co.touchlab.kermit.Logger
 import com.arkivanov.essenty.lifecycle.Lifecycle
+import com.arkivanov.essenty.lifecycle.doOnResume
 import com.arkivanov.essenty.statekeeper.StateKeeper
 import com.arkivanov.mvikotlin.core.store.Reducer
 import com.arkivanov.mvikotlin.core.store.SimpleBootstrapper
@@ -37,9 +38,12 @@ import com.moly3.cedarjam.core.domain.func.nowInMs
 import com.moly3.cedarjam.core.domain.func.openFileInExplorer
 import com.moly3.cedarjam.core.domain.func.pathWrapper
 import com.moly3.cedarjam.core.domain.func.relativeTo
+import com.moly3.cedarjam.core.domain.io
 import com.moly3.cedarjam.core.domain.model.FileName
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
+import com.moly3.cedarjam.core.domain.model.IndexFileDto
 import com.moly3.cedarjam.core.domain.model.NavigateToFile
+import com.moly3.cedarjam.core.domain.model.ResultWrapper
 import com.moly3.cedarjam.core.ui.model.PageNameData
 import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.domain.model.bind
@@ -87,6 +91,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -135,8 +140,12 @@ internal class WorkspaceStoreFactory(
         }
     }
 
-    private fun parseFiles(fileNodes: List<FileTreeNode>): List<FileTreeItemPresentation> {
+    private fun parseFiles(
+        fileNodes: List<FileTreeNode>,
+        indexFiles: List<IndexFileDto>
+    ): List<FileTreeItemPresentation> {
         val resourceItems = mutableListOf<FileTreeItemPresentation>()
+
 
         for (fileNode in fileNodes.sortedBy { b ->
             when (b) {
@@ -144,9 +153,12 @@ internal class WorkspaceStoreFactory(
                 is FileTreeNode.File -> 1
             }
         }) {
+            val syncStatus =
+                indexFiles.firstOrNull { d -> d.relativePath == fileNode.getRelativePath() }?.serverSyncStatus
             val parse = if (fileNode.isDirectory())
                 parseFiles(
-                    fileNode.getChildrenOrNull() ?: listOf()
+                    fileNode.getChildrenOrNull() ?: listOf(),
+                    indexFiles
                 ) else null
 
             resourceItems.add(
@@ -156,11 +168,13 @@ internal class WorkspaceStoreFactory(
                     data = when (fileNode) {
                         is FileTreeNode.Directory -> FileTreeItemPresentation.FileTreeItemPresentationData.Directory(
                             fileNode,
-                            isDragEnabled = true
+                            isDragEnabled = true,
+                            syncStatus = syncStatus
                         )
 
                         is FileTreeNode.File -> FileTreeItemPresentation.FileTreeItemPresentationData.File(
-                            fileNode
+                            fileNode,
+                            syncStatus = syncStatus
                         )
                     },
                     fileExtension = when (fileNode) {
@@ -289,6 +303,13 @@ internal class WorkspaceStoreFactory(
         override fun onStart(scopeFromStartToStop: CoroutineScope) {
             super.onStart(scopeFromStartToStop)
 
+            lifecycle.doOnResume {
+                scope.launch {
+                    workspaceSession.workspaceEnvStateFlow.value.updateTimes()
+                }
+
+                updateSyncStatus()
+            }
             scopeFromStartToStop.launch {
                 workspaceSession.workspaceEnvStateFlow.value.getIndexFilesFlow().collectLatest {
                     dispatch(WorkspaceStore.Msg.SetIndexFiles(it.toPersistentList()))
@@ -316,8 +337,9 @@ internal class WorkspaceStoreFactory(
                     workspaceSession.tagsFlow,
                     workspaceSession.collectionsFlow,
                     workspaceSession.getResources(),
-                    workspaceSession.workspaceFlow
-                ) { files, tags, collections, resourcesState, workspace ->
+                    workspaceSession.workspaceFlow,
+                    workspaceSession.indexFilesFlow
+                ) { files, tags, collections, resourcesState, workspace, indexFiles ->
                     val presentations = mutableListOf<FileTreeItemPresentation>()
 
                     presentations.add(
@@ -393,10 +415,12 @@ internal class WorkspaceStoreFactory(
                                 name = CJText.Res(Res.string.resources),
                                 data = FileTreeItemPresentation.FileTreeItemPresentationData.Directory(
                                     resourcesDirectory!!,
-                                    isDragEnabled = false
+                                    isDragEnabled = false,
+                                    syncStatus = null
                                 ),
                                 children = parseFiles(
-                                    resourcesDirectory.getChildrenOrNull() ?: listOf()
+                                    resourcesDirectory.getChildrenOrNull() ?: listOf(),
+                                    indexFiles
                                 ).toPersistentList()
                             )
                         )
@@ -415,10 +439,12 @@ internal class WorkspaceStoreFactory(
                                     name = CJText.Res(Res.string.files),
                                     data = FileTreeItemPresentation.FileTreeItemPresentationData.Directory(
                                         filesDirectory,
-                                        isDragEnabled = false
+                                        isDragEnabled = false,
+                                        syncStatus = null
                                     ),
                                     children = parseFiles(
-                                        filesDirectory.getChildrenOrNull() ?: listOf()
+                                        filesDirectory.getChildrenOrNull() ?: listOf(),
+                                        indexFiles
                                     ).toPersistentList()
                                 )
                             )
@@ -431,9 +457,10 @@ internal class WorkspaceStoreFactory(
 
 
                     presentations
-                }.collectLatest {
-                    dispatch(WorkspaceStore.Msg.SetFileNodes(it.toPersistentList()))
-                }
+                }.flowOn(io)
+                    .collectLatest {
+                        dispatch(WorkspaceStore.Msg.SetFileNodes(it.toPersistentList()))
+                    }
             }
             scopeFromStartToStop.launch {
                 workspaceSession.workspaceEnvStateFlow.collectLatest {
@@ -472,7 +499,6 @@ internal class WorkspaceStoreFactory(
 
         override fun executeIntent(intent: Intent) {
             when (intent) {
-
                 is Intent.SelectWorkspace -> navigator.navigate(Route.Empty)
                 is Intent.OpenContextMenu -> {
                     val buttons = mutableListOf<ContextMenuButton>()
@@ -1062,14 +1088,26 @@ internal class WorkspaceStoreFactory(
 
                 is Intent.Sync -> {
                     scope.launch {
-                        syncUseCase.invoke(workspaceSession.workspaceEnvStateFlow.value)
-                        syncUseCase.getStatus(workspaceSession.workspaceEnvStateFlow.value)
+                        dispatch(WorkspaceStore.Msg.SetSyncStatus(UIState.Loading))
+                        val sd = syncUseCase.invoke(workspaceSession.workspaceEnvStateFlow.value)
+                        dispatch(WorkspaceStore.Msg.SetSyncStatus(sd.mapToUIState {
+                            it.message ?: ""
+                        }))
+                        when (sd) {
+                            is ResultWrapper.Error -> {
 
-                        workspaceSession.initConfigAndFiles()
+                            }
 
-                        workspaceSession.loadLocalFont()
+                            is ResultWrapper.Success -> {
+//                                syncUseCase.getStatus(workspaceSession.workspaceEnvStateFlow.value)
 
-                        updateSyncStatus()
+                                workspaceSession.initConfigAndFiles()
+
+                                workspaceSession.loadLocalFont()
+
+//                                updateSyncStatus()
+                            }
+                        }
                     }
                 }
 
@@ -1164,6 +1202,7 @@ internal class WorkspaceStoreFactory(
                 is SetWorkspaceFont -> copy(workspaceFont = msg.value)
                 is SetWorkspaceSettings -> copy(settings = msg.value)
                 is SetIndexFiles -> copy(indexes = msg.value)
+                is SetSyncStatus -> copy(syncStatus = msg.value)
             }
         }
     }

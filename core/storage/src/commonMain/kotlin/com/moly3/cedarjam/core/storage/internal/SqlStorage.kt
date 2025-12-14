@@ -22,6 +22,7 @@ import com.moly3.cedarjam.core.domain.io
 import com.moly3.cedarjam.core.domain.model.FileItem
 import com.moly3.cedarjam.core.domain.model.FileMetadata
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
+import com.moly3.cedarjam.core.domain.model.IndexFileDto
 import com.moly3.cedarjam.core.domain.model.ResultWrapper
 import com.moly3.cedarjam.core.domain.model.SyncStatus
 import com.moly3.cedarjam.core.domain.model.UIState
@@ -43,6 +44,7 @@ import com.moly3.cedarjam.core.domain.model.request.UpdateDataCollectionRowReque
 import com.moly3.cedarjam.core.domain.model.request.UpdateTagRequest
 import com.moly3.cedarjam.core.domain.service.AppContextProvider
 import com.moly3.cedarjam.core.storage.func.updateIndex
+import com.moly3.cedarjam.core.storage.func.updateIndexLocal
 import com.moly3.cedarjam.db.DataCollection
 import com.moly3.cedarjam.db.DataCollectionRow
 import com.moly3.cedarjam.db.Database
@@ -164,7 +166,8 @@ internal class SqlStorage(
             systemFilesManager.createNode(
                 isDirectory = false,
                 nodePath = dbPath,
-                byteArray = null
+                byteArray = null,
+                isMustCreate = true
             )
         }
         val indexDb = getIndexDatabasePath()
@@ -172,7 +175,8 @@ internal class SqlStorage(
             systemFilesManager.createNode(
                 isDirectory = false,
                 nodePath = indexDb,
-                byteArray = null
+                byteArray = null,
+                isMustCreate = true
             )
         }
     }
@@ -380,7 +384,18 @@ internal class SqlStorage(
         }
     }
 
-    override fun updateIndexFilesFlow(
+    override fun updateIndexFilesLocal(localNodes: List<FileTreeNode>): ResultWrapper<Unit, String> {
+        return runQueryOrThrowIndex { db ->
+            resultBlock {
+                updateIndexLocal(
+                    localNodes,
+                    db
+                )
+            }
+        }
+    }
+
+    override fun updateIndexFiles(
         localNodes: List<FileTreeNode>,
         serverNodes: List<FileItem>
     ): ResultWrapper<Unit, String> {
@@ -395,14 +410,19 @@ internal class SqlStorage(
         }
     }
 
-    override fun finishIndexFiles(): ResultWrapper<Unit, String> {
+    override fun syncDirtyFiles(list: List<IndexFileDto>): ResultWrapper<Unit, String> {
         return runQueryOrThrowIndex { db ->
             resultBlock {
                 db.indexFileQueries.selectAll().executeAsList().map {
-                    db.indexFileQueries.updateStatus(
-                        0,
-                        it.relativePath
-                    )
+                    val found = list.firstOrNull { b -> b.relativePath == it.relativePath }
+                    if (found != null) {
+                        db.indexFileQueries.updateLastSyncHash(
+                            relativePath = found.relativePath,
+                            lastSyncedHash = found.contentHash,
+                            serverSyncStatus = 0L
+
+                        )
+                    }
                 }
             }
         }
@@ -427,7 +447,7 @@ internal class SqlStorage(
                 db.indexFileQueries.transaction {
 
                     for (item in list) {
-                        val absolute = pathWrapper(workspaceDirectoryPath,item.key).pathString
+                        val absolute = pathWrapper(workspaceDirectoryPath, item.key).pathString
                         val meta = SystemFileSystem.metadataOrNull(Path(absolute))
                         db.indexFileQueries.insertItem(
                             relativePath = item.key,
@@ -454,7 +474,6 @@ internal class SqlStorage(
                     paths,
                     serverNodes,
                     db,
-                    systemFilesManager
                 )
             }
         }

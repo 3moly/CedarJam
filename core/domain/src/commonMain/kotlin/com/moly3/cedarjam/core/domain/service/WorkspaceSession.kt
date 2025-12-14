@@ -9,6 +9,7 @@ import com.moly3.cedarjam.core.domain.model.CollectionRowDTO
 import com.moly3.cedarjam.core.domain.model.FileName
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.FileTreeNode.Companion.hideHiddenDirectory
+import com.moly3.cedarjam.core.domain.model.IndexFileDto
 import com.moly3.cedarjam.core.domain.model.TagCollectionRowDTO
 import com.moly3.cedarjam.core.domain.model.TagDTO
 import com.moly3.cedarjam.core.domain.model.TagLinkDTO
@@ -61,6 +62,11 @@ class WorkspaceSession(
         println("val workspaceFlow: Flow<Workspace> ${it.getWorkspace().name}")
         it.getWorkspace()
     }
+
+    val indexFilesFlow: Flow<List<IndexFileDto>> = workspaceEnvStateFlow.flatMapLatest {
+        println("val workspaceFlow: Flow<Workspace> ${it.getWorkspace().name}")
+        it.getIndexFilesFlow()
+    }.shareScope()
 
     val databaseStatusFlow: Flow<UIState<Unit, DatabaseError>> =
         workspaceEnvStateFlow.flatMapLatest { workspaceEnv ->
@@ -124,10 +130,11 @@ class WorkspaceSession(
             Logger.d("resourcesFlow: ${files}")
             UIState.Loading
         } else {
+
             UIState.Success(
                 getHiddenDirectory(
                     workspace = workspace,
-                    name = "Resources",
+                    name = "",
                     directoryName = IWorkspaceEnvironment.hiddenResources,
                     files = files.data
                 )

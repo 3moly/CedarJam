@@ -9,7 +9,7 @@ suspend fun packToZip(
     workspaceFolderAbsolutePath: String,
     filesToArchive: List<String>,
     archivePath: String,
-){
+) {
     ZipFile(
         File(archivePath),
         mode = FileMode.Write,
@@ -17,10 +17,14 @@ suspend fun packToZip(
     ).use {
         for (absolutePath in filesToArchive) {
             val inputFile = File(pathWrapper(workspaceFolderAbsolutePath, absolutePath).pathString)
-            it.zipFile(
-                inputFile,
-                entryName = absolutePath
-            )
+            if (inputFile.isDirectory) {
+                it.zipDirectory(inputFile, shallow = true, filter = {false})
+            } else {
+                it.zipFile(
+                    inputFile,
+                    entryName = absolutePath
+                )
+            }
         }
     }
 }

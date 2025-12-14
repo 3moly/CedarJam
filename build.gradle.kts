@@ -1,5 +1,6 @@
 import dev.iurysouza.modulegraph.ModuleType
 import dev.iurysouza.modulegraph.Theme
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.androidApplication).apply(false)
@@ -12,7 +13,7 @@ plugins {
     alias(libs.plugins.sqlDelight).apply(false)
     alias(libs.plugins.composeHotReload).apply(false)
     alias(libs.plugins.compose).apply(false)
-    alias(libs.plugins.stability.analyzer).apply(false)
+//    alias(libs.plugins.stability.analyzer).apply(false)
     alias(libs.plugins.modulegraph.mermaid)
     alias(libs.plugins.android.kotlin.multiplatform.library) apply false
     alias(libs.plugins.android.lint) apply false
@@ -51,3 +52,4 @@ moduleGraphConfig {
         ),
     )
 }
+

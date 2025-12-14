@@ -7,15 +7,17 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class Workspace(
     val name: String,
+    val serverName: String,
     val fullpath: String
 )
 
 @Serializable
-data class WorkspaceInput(val name: String)
+data class WorkspaceInput(val name: String, val serverName: String)
 
 @Serializable
 data class WorkspacePresentation(
     val name: String,
+    val serverName: String,
     val fullpath: String,
     val absolutePath: String
 )

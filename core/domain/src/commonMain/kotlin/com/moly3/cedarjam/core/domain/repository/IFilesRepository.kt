@@ -1,7 +1,6 @@
 package com.moly3.cedarjam.core.domain.repository
 
 import com.moly3.cedarjam.core.domain.model.FileItem
-import com.moly3.cedarjam.core.domain.model.FileStructure
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.ResultWrapper
 import com.moly3.cedarjam.core.domain.model.canvas.CanvasDataWithErrors
@@ -9,10 +8,9 @@ import com.moly3.cedarjam.core.domain.util.IPathWrapper
 
 interface IFilesRepository {
     fun toAbsoluteAppPath(relativePath: IPathWrapper): IPathWrapper
-    suspend fun extractFilesFromZip(
+    suspend fun unpackZip(
         archivePath: String,
         workspaceFullPath: String,
-        serverFiles:List<FileItem>
     ): List<String>
 
     suspend fun packFilesToZip(
@@ -25,10 +23,16 @@ interface IFilesRepository {
     fun getNodes(node: FileTreeNode.Directory): List<FileTreeNode>
     fun isNodeExists(node: FileTreeNode): Boolean
     fun deleteNode(node: FileTreeNode)
+    fun deleteNodeHeavy(node: FileTreeNode)
     fun createNode(
         node: FileTreeNode,
         byteArray: ByteArray? = null
     ): ResultWrapper<FileTreeNode, String>
+
+    fun createDirectory(
+        fullPath: String,
+        isMustCreate: Boolean
+    ): ResultWrapper<Unit, String>
 
     fun moveNode(node: FileTreeNode, newNode: FileTreeNode): ResultWrapper<FileTreeNode, String>
     fun setNodeText(node: FileTreeNode.File, text: String): ResultWrapper<Unit, String>

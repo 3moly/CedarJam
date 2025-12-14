@@ -31,6 +31,7 @@ fun DialogCreateWorkspaceService(dialog: DialogCreateWorkspaceService) {
     val scope = rememberCoroutineScope()
     CJDialogGeneric(dialog = dialog) {
         var nameState by remember { mutableStateOf(TextFieldValue("")) }
+        var serverNameState by remember { mutableStateOf(TextFieldValue("")) }
         var fullpathState by remember { mutableStateOf(TextFieldValue("")) }
         Column(
             modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 24.dp),
@@ -42,6 +43,12 @@ fun DialogCreateWorkspaceService(dialog: DialogCreateWorkspaceService) {
                 placeholderText = "workspace name",
                 onValueChange = {
                     nameState = it
+                })
+            CJSearchTextField(
+                value = serverNameState,
+                placeholderText = "workspace server name",
+                onValueChange = {
+                    serverNameState = it
                 })
             if (getPlatform() is Platform.Jvm) {
                 Row(Modifier.fillMaxWidth()) {
@@ -58,6 +65,7 @@ fun DialogCreateWorkspaceService(dialog: DialogCreateWorkspaceService) {
                             if (directory != null) {
                                 if (nameState.text.isEmpty()) {
                                     nameState = TextFieldValue(directory.name)
+                                    serverNameState = TextFieldValue(directory.name)
                                 }
                                 fullpathState = TextFieldValue(directory.toString())
                             }
@@ -70,6 +78,7 @@ fun DialogCreateWorkspaceService(dialog: DialogCreateWorkspaceService) {
                     dialog.setResult(
                         Workspace(
                             name = nameState.text,
+                            serverName = serverNameState.text,
                             fullpath = if (getPlatform() is Platform.Jvm) fullpathState.text else nameState.text
                         )
                     )

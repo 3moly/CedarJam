@@ -40,7 +40,6 @@ import com.moly3.cedarjam.ui.dialog.DialogCreateWorkspaceService
 import com.moly3.cedarjam.ui.dialog.DialogDeleteUI
 import com.moly3.cedarjam.ui.dialog.DialogSelectWorkspaceUI
 import com.moly3.cedarjam.ui.dialog.SuccessSnackbarComponent
-import com.skydoves.compose.stability.runtime.TraceRecomposition
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
 import io.github.kdroidfilter.composemediaplayer.VideoPlayerSurface
@@ -48,13 +47,28 @@ import io.github.kdroidfilter.composemediaplayer.rememberVideoPlayerState
 
 @OptIn(ExperimentalDecomposeApi::class)
 @Composable
-@TraceRecomposition
 fun JvmWindowScope.MainApp(
     root: Root,
     titleBarContent: @Composable (@Composable () -> Unit) -> Unit = {
         it()
     }
 ) {
+//    SingletonImageLoader.setSafe { context ->
+//        ImageLoader.Builder(context)
+//            .memoryCache {
+//                MemoryCache.Builder()
+//                    .maxSizePercent(context, 0.25)
+//                    .build()
+//            }
+//            .diskCache {
+//                DiskCache.Builder()
+//                    .directory("/Users/new07/Desktop/pureTest/img_cache/".toPath(normalize = true))
+//                    .maxSizeBytes(512L * 1024 * 1024)
+//                    .build()
+//            }
+//
+//            .build()
+//    }
     val stack by root.childStack.subscribeAsState()
     val appSettings by root.appSettingsFlow.collectAsState()
 
@@ -63,7 +77,7 @@ fun JvmWindowScope.MainApp(
         val playerState = rememberVideoPlayerState()
         CompositionLocalProvider(
             LocalHazeState provides hazeState,
-            LocalVideoPlayer provides playerState
+            LocalVideoPlayer provides playerState,
         ) {
             Box(
                 modifier = Modifier.fillMaxSize()

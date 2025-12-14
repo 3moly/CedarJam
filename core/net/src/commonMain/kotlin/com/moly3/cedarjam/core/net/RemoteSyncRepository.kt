@@ -1,7 +1,6 @@
 package com.moly3.cedarjam.core.net
 
 import com.moly3.cedarjam.core.domain.func.getPlatform
-import com.moly3.cedarjam.core.domain.func.normalizeText
 import com.moly3.cedarjam.core.domain.model.FileItem
 import com.moly3.cedarjam.core.domain.model.FileMetadata
 import com.moly3.cedarjam.core.domain.model.FileStructure
@@ -11,6 +10,7 @@ import com.moly3.cedarjam.core.domain.model.error
 import com.moly3.cedarjam.core.domain.model.success
 import io.ktor.client.*
 import io.ktor.client.call.body
+import io.ktor.client.request.delete
 import io.ktor.client.request.forms.*
 import io.ktor.client.request.get
 import io.ktor.client.statement.*
@@ -26,7 +26,7 @@ class RemoteSyncRepository(
     override suspend fun upload(
         userName: String,
         workspaceName: String,
-        archiveByteArray: ByteArray,
+        archiveByteArray: ByteArray?,
         metadata: List<FileMetadata>,
         filesToDownload: List<String>
     ): ResultWrapper<ByteArray, String> {
@@ -41,10 +41,12 @@ class RemoteSyncRepository(
                     append("workspaceName", workspaceName)
                     append("metadata", metadataJson)
                     append("filesToDownload", filesToDownload)
-                    append("archive", archiveByteArray, Headers.build {
-                        append(HttpHeaders.ContentType, "application/zip")
-                        append(HttpHeaders.ContentDisposition, "filename=\"archive.zip\"")
-                    })
+                    if (archiveByteArray != null) {
+                        append("archive", archiveByteArray, Headers.build {
+                            append(HttpHeaders.ContentType, "application/zip")
+                            append(HttpHeaders.ContentDisposition, "filename=\"archive.zip\"")
+                        })
+                    }
                 }
             )
             if (response.status.isSuccess()) {
@@ -86,6 +88,24 @@ class RemoteSyncRepository(
                         relativePath = d.relativePath
                     )
                 }))
+            } else {
+                error("Upload failed with status: ${response.status.value}")
+            }
+        } catch (e: Exception) {
+            error("Upload error: ${e.message ?: "Unknown error"}")
+        }
+    }
+
+    override suspend fun deleteWorkspace(
+        userName: String,
+        workspaceName: String
+    ): ResultWrapper<Unit, String> {
+        return try {
+            val response: HttpResponse =
+                httpClient.delete("${baseUrl}api/workspaces/$userName/${workspaceName}/delete")
+
+            if (response.status.isSuccess()) {
+                success(Unit)
             } else {
                 error("Upload failed with status: ${response.status.value}")
             }
