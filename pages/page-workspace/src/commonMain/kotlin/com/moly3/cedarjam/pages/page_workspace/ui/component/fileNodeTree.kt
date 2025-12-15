@@ -15,10 +15,14 @@ import androidx.compose.ui.unit.dp
 import com.mohamedrejeb.compose.dnd.DragAndDropState
 import com.mohamedrejeb.compose.dnd.drag.DraggableItem
 import com.mohamedrejeb.compose.dnd.drop.dropTarget
+import com.moly3.cedarjam.core.domain.func.getPlatform
+import com.moly3.cedarjam.core.domain.model.Platform
 import com.moly3.cedarjam.pages.page_workspace.model.RenameFileNodeData
 import com.moly3.cedarjam.core.ui.func.onSecondaryClickWithPosition
+import com.moly3.cedarjam.core.ui.func.rememberWindowSize
 import com.moly3.cedarjam.core.ui.model.CJText
 import com.moly3.cedarjam.core.ui.model.FileTreeItemPresentation
+import com.moly3.cedarjam.core.ui.model.WindowSize
 import kotlinx.collections.immutable.ImmutableSet
 import org.jetbrains.compose.resources.stringResource
 
@@ -55,11 +59,22 @@ fun LazyListScope.fileNodeTree(
                 else -> false
             }
         }
-        val isDraggableEnabled = remember(item) {
-            when (val data = item.data) {
+        val windowSize by rememberWindowSize()
+        val isDraggableEnabled = remember(item, windowSize) {
+            val isEnable = when (val data = item.data) {
                 is FileTreeItemPresentation.FileTreeItemPresentationData.Directory -> data.isDragEnabled
                 is FileTreeItemPresentation.FileTreeItemPresentationData.File -> true
                 else -> false
+            }
+            when (getPlatform()) {
+                Platform.Android,
+                Platform.Ios -> {
+                    if (windowSize != WindowSize.Compact)
+                        isEnable
+                    else false
+                }
+                Platform.Jvm,
+                Platform.Wasm -> isEnable
             }
         }
         val isRename = remember(renameFileNodeData, item.key) {
@@ -72,8 +87,6 @@ fun LazyListScope.fileNodeTree(
             key = item.key,
             data = item,
         ) {
-
-
             FileButton(
                 modifier = Modifier.onSecondaryClickWithPosition(
                     key = item,

@@ -4,7 +4,6 @@ import org.jetbrains.compose.ExperimentalComposeLibrary
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.plugin.mpp.NativeBuildType
-import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
 import java.util.Properties
 
 plugins {
@@ -124,13 +123,13 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             implementation(libs.coroutines.test)
-            implementation(compose.uiTest)
+            implementation(libs.ui.test)
             implementation(libs.kotest.property)
         }
         jvmMain.dependencies {
 
 
-            implementation(compose.desktop.common)
+            implementation(libs.desktop)
             implementation(compose.desktop.currentOs)
             implementation(libs.coil.network.jvm)
             implementation(libs.shared.core.coroutines.swing)
@@ -162,7 +161,7 @@ dependencies {
     commonMainApi(libs.decompose)
     commonMainApi(libs.essenty.keeper)
     commonMainApi(libs.essenty.lifecycle)
-    debugApi(compose.uiTooling)
+    debugApi(libs.compose.ui.tooling)
 }
 android {
     namespace = "com.moly3.cedarjam"

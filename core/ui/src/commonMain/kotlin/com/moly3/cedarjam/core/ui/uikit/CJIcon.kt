@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.dp
@@ -15,6 +16,7 @@ fun CJIcon(
     modifier: Modifier = Modifier,
     painter: Painter,
     isEnabled: Boolean = true,
+    tintColor: Color = LocalAppTheme.current.colors.icon.copy(alpha = if (isEnabled) 1f else 0.5f),
     onClick: () -> Unit
 ) {
     CJThreeDBorderButton(
@@ -28,7 +30,7 @@ fun CJIcon(
         Image(
             painter = painter,
             contentDescription = null,
-            colorFilter = ColorFilter.tint(LocalAppTheme.current.colors.icon.copy(alpha = if (isEnabled) 1f else 0.5f))
+            colorFilter = ColorFilter.tint(tintColor)
         )
     }
 }

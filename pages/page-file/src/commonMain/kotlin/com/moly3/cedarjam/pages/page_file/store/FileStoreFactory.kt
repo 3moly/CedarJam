@@ -156,11 +156,14 @@ internal class FileStoreFactory(
                             }
 
                             is FileType.PDF -> {
-                                dispatch(
-                                    FileStore.Msg.SetFile(
-                                        FileType.PDF(fileType.fileNode,1)
+                                val state = state()
+                                if (state.fileType == null) {
+                                    dispatch(
+                                        FileStore.Msg.SetFile(
+                                            FileType.PDF(fileType.fileNode, 1)
+                                        )
                                     )
-                                )
+                                }
                             }
 
                             is FileType.Image,

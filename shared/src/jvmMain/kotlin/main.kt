@@ -87,7 +87,7 @@ private const val SAVED_STATE_FILE_NAME = "saved_state.dat"
     ExperimentalDecomposeApi::class
 )
 fun main() {
-//    ComposeStabilityAnalyzer.setEnabled(false)
+    //ComposeStabilityAnalyzer.setEnabled(false)
 //    ComposeStabilityAnalyzer.setLogger(object : RecompositionLogger {
 //        override fun log(event: RecompositionEvent) {
 //            if (false) {

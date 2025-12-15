@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -23,6 +24,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.key.Key
@@ -35,13 +38,16 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.moly3.cedarjam.core.domain.func.getPlatform
 import com.moly3.cedarjam.features.feature_file_view.ObsPdfDocument
 import com.moly3.cedarjam.features.feature_file_view.getObsPdfDocument
 import com.moly3.cedarjam.core.domain.io
 import com.moly3.cedarjam.core.domain.model.FileType
+import com.moly3.cedarjam.core.domain.model.Platform
 import com.moly3.cedarjam.core.ui.service.MacTrackpadGestureService
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
+import com.moly3.cedarjam.core.ui.func.blendMode
 import com.moly3.cedarjam.core.ui.func.darker
 import com.moly3.cedarjam.core.ui.onPointerEvent
 import com.moly3.cedarjam.core.ui.uikit.CJCircularProgressIndicator
@@ -58,6 +64,10 @@ import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
+import io.github.fletchmckee.liquid.LiquidState
+import io.github.fletchmckee.liquid.liquefiable
+import io.github.fletchmckee.liquid.liquid
+import io.github.fletchmckee.liquid.rememberLiquidState
 import kotlinx.coroutines.launch
 
 @Composable
@@ -69,6 +79,13 @@ internal fun PdfUI(
     toPage: (Int) -> Unit
 ) {
     var documentState by remember { mutableStateOf<ObsPdfDocument?>(null) }
+    LaunchedEffect(Unit) {
+        launch(io) {
+            if (documentState == null) {
+                documentState = getObsPdfDocument(fileType.fileNode.getFullPath())
+            }
+        }
+    }
     val currentPage = fileType.currentPage
     val canGoBack = remember(documentState, currentPage) {
         if (documentState != null) {
@@ -127,24 +144,45 @@ internal fun PdfUI(
             })
             .focusRequester(focusRequester)
     ) {
-
+        val liquidState: LiquidState = rememberLiquidState()
         if (documentState != null) {
             var painter by remember { mutableStateOf<Painter?>(null) }
             var text by remember { mutableStateOf<String?>(null) }
-            if (painter != null) {
+            Row(Modifier.fillMaxSize()) {
+                when (getPlatform()) {
+                    Platform.Android,
+                    Platform.Jvm,
+                    Platform.Wasm -> {
+                        Box(Modifier.weight(1f).fillMaxHeight()) {
+                            if (painter != null) {
+                                CJZoomableViewLayout(
+                                    modifier = Modifier.fillMaxSize().hazeSource(hazeState)
+                                        .liquefiable(liquidState),
+                                    macTrackpadGestureService = macTrackpadGestureService
+                                ) {
+                                    painter?.let {
+                                        Image(
+                                            painter = it,
+                                            contentDescription = null,
+                                            modifier = Modifier.fillMaxSize()
+                                        )
+                                    }
+                                }
+                            } else {
+                                CJCircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                            }
+                        }
+                    }
 
-                CJZoomableViewLayout(
-                    modifier = Modifier.fillMaxSize().hazeSource(hazeState),
-                    macTrackpadGestureService = macTrackpadGestureService
-                ) {
-                    Image(
-                        painter = painter!!,
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxSize()
-                    )
+                    Platform.Ios -> {
+                        CJPdf(
+                            Modifier.fillMaxSize().liquefiable(liquidState),
+                            currentPage = currentPage,
+                            pdf = documentState!!,
+                            filePath = fileType.fileNode.getFullPath()
+                        )
+                    }
                 }
-            } else {
-                CJCircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             }
             Row(
                 modifier = Modifier
@@ -152,16 +190,25 @@ internal fun PdfUI(
                     .align(Alignment.BottomCenter)
                     .clip(RoundedCornerShape(16.dp))
                     //todo .background(LocalAppTheme.current.colors.backgroundPrimary)
-                    .hazeEffect(state = hazeState, style = hazeStyle)
+                    //.hazeEffect(state = hazeState, style = hazeStyle)
                     .border(volumedBorderStroke, shape = RoundedCornerShape(16.dp))
+                    .liquid(liquidState) {
+                        this.frost = 1.dp
+                        refraction = 0.15f
+                        edge = 0.05f
+                        curve = 0.4f
+                        saturation = 0.5f
+                        dispersion = 1f
+                    }
                     .padding(8.dp),
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 CJIcon(
-                    modifier = Modifier,
+                    modifier = Modifier.blendMode(BlendMode.Difference),
                     painter = rememberVectorPainter(ArrowLeft),
                     isEnabled = canGoBack,
+                    tintColor = Color.White,
                     onClick = {
                         back()
                     })
@@ -175,7 +222,8 @@ internal fun PdfUI(
                     modifier = Modifier
                         .widthIn(min = 30.dp)
                         .width(IntrinsicSize.Min)
-                        .clickable {},
+                        .clickable {}
+                        .blendMode(BlendMode.Difference),
                     value = textState,
                     onValueChange = {
                         textState = it
@@ -192,14 +240,23 @@ internal fun PdfUI(
                             textState = TextFieldValue((currentPage.toString()))
                             //state.setTextAndPlaceCursorAtEnd(currentPage.toString())
                         }
-                    }
+                    },
+                    color = Color.White
                 )
-                CJText(text = "of")
-                CJText(text = documentState!!.getNumberOfPages().toString())
+                CJText(
+                    text = "of", Modifier.blendMode(BlendMode.Difference),
+                    color = Color.White
+                )
+                CJText(
+                    text = documentState?.getNumberOfPages().toString(),
+                    Modifier.blendMode(BlendMode.Difference),
+                    color = Color.White
+                )
                 CJIcon(
-                    modifier = Modifier,
+                    modifier = Modifier.blendMode(BlendMode.Difference),
                     painter = rememberVectorPainter(ArrowRight),
                     isEnabled = canGoForward,
+                    tintColor = Color.White,
                     onClick = {
                         forward()
                     })
@@ -208,9 +265,9 @@ internal fun PdfUI(
                 launch(io) {
                     if (documentState != null) {
                         try {
-                            painter = documentState!!.getPagePainter(currentPage - 1)
+                            painter = documentState?.getPagePainter(currentPage - 1)
 
-                            text = documentState!!.getPageText(currentPage - 1)
+                            text = documentState?.getPageText(currentPage - 1)
                         } catch (exc: Exception) {
                         }
 
@@ -227,10 +284,6 @@ internal fun PdfUI(
         } else {
             CJCircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
         }
-        LaunchedEffect(Unit) {
-            launch(io) {
-                documentState = getObsPdfDocument(fileType.fileNode.getFullPath())
-            }
-        }
+
     }
 }

@@ -10,13 +10,16 @@ interface IRemoteSyncRepository {
         workspaceName: String,
         archiveByteArray: ByteArray?,
         metadata: List<FileMetadata>,
-        filesToDownload: List<String>
+        filesToDownload: List<String>,
+        onDownload: suspend (Long, Long?) -> Unit,
+        onUpload: suspend (Long, Long?) -> Unit
     ): ResultWrapper<ByteArray, String>
 
     suspend fun workspaceFiles(
         userName: String,
         workspaceName: String
     ): ResultWrapper<FileStructure, String>
+
     suspend fun deleteWorkspace(
         userName: String,
         workspaceName: String

@@ -1,5 +1,6 @@
 package com.moly3.cedarjam.core.domain.service
 
+import androidx.compose.runtime.Stable
 import co.touchlab.kermit.Logger
 import com.moly3.cedarjam.core.domain.func.hiddenDirectory
 import com.moly3.cedarjam.core.domain.func.nowInMs
@@ -40,6 +41,7 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.shareIn
 
 @OptIn(ExperimentalCoroutinesApi::class)
+@Stable
 class WorkspaceSession(
     private val filesRepository: IFilesRepository,
     private val appEnvironment: IAppEnvironment,

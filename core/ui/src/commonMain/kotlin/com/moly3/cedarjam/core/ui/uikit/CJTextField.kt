@@ -34,6 +34,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -65,7 +66,10 @@ fun CJTextField(
         onValueChange = onValueChanged,
         singleLine = singleLine,
         decorationBox = {
-            Box(modifier=Modifier.background(LocalAppTheme.current.colors.backgroundPrimary).padding(4.dp)){
+            Box(
+                modifier = Modifier.background(LocalAppTheme.current.colors.backgroundPrimary)
+                    .padding(4.dp)
+            ) {
                 it()
             }
         }
@@ -196,6 +200,7 @@ fun CJTextField(
     textStyle: TextStyle = LocalTextStyle.current,
     onValueChange: (TextFieldValue) -> Unit,
     enabled: Boolean = true,
+    color: Color = Color.Unspecified,
     keyboardType: KeyboardType = KeyboardType.Unspecified,
     onDone: () -> Unit = {},
     onDecorator: (@Composable (innerTextField: @Composable (() -> Unit)) -> Unit)? = null
@@ -214,7 +219,7 @@ fun CJTextField(
             true
         }),
         maxLines = 1,
-        textStyle = textStyle,
+        textStyle = textStyle.merge(color = color),
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
         cursorBrush = SolidColor(LocalAppTheme.current.primaryColor)
     )

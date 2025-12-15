@@ -10,6 +10,8 @@ import com.moly3.cedarjam.core.domain.model.error
 import com.moly3.cedarjam.core.domain.model.success
 import io.ktor.client.*
 import io.ktor.client.call.body
+import io.ktor.client.plugins.onDownload
+import io.ktor.client.plugins.onUpload
 import io.ktor.client.request.delete
 import io.ktor.client.request.forms.*
 import io.ktor.client.request.get
@@ -28,7 +30,9 @@ class RemoteSyncRepository(
         workspaceName: String,
         archiveByteArray: ByteArray?,
         metadata: List<FileMetadata>,
-        filesToDownload: List<String>
+        filesToDownload: List<String>,
+        onDownload: suspend (Long, Long?) -> Unit,
+        onUpload: suspend (Long, Long?) -> Unit
     ): ResultWrapper<ByteArray, String> {
         return try {
 
@@ -48,13 +52,19 @@ class RemoteSyncRepository(
                         })
                     }
                 }
-            )
+            ) {
+                onUpload { bytesSentTotal: Long, contentLength: Long? ->
+                    onUpload(bytesSentTotal, contentLength)
+                }
+                onDownload { bytesDownloadTotal: Long, contentLength: Long? ->
+                    onDownload(bytesDownloadTotal, contentLength)
+                }
+            }
             if (response.status.isSuccess()) {
                 val bytes = response.bodyAsBytes()
                 success(bytes)
             } else {
-                var sd = response.bodyAsText()
-                error("Upload failed with status: ${response.status.value} error: ${sd}")
+                error("Upload failed with status: ${response.status.value}")
             }
         } catch (e: Exception) {
             error("Upload error: ${e.message ?: "Unknown error"}")

@@ -53,22 +53,6 @@ fun JvmWindowScope.MainApp(
         it()
     }
 ) {
-//    SingletonImageLoader.setSafe { context ->
-//        ImageLoader.Builder(context)
-//            .memoryCache {
-//                MemoryCache.Builder()
-//                    .maxSizePercent(context, 0.25)
-//                    .build()
-//            }
-//            .diskCache {
-//                DiskCache.Builder()
-//                    .directory("/Users/new07/Desktop/pureTest/img_cache/".toPath(normalize = true))
-//                    .maxSizeBytes(512L * 1024 * 1024)
-//                    .build()
-//            }
-//
-//            .build()
-//    }
     val stack by root.childStack.subscribeAsState()
     val appSettings by root.appSettingsFlow.collectAsState()
 

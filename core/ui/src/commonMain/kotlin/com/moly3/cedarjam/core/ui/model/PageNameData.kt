@@ -1,7 +1,9 @@
 package com.moly3.cedarjam.core.ui.model
 
+import androidx.compose.runtime.Stable
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 
+@Stable
 data class PageNameData(
     val name: CJText,
     val pageType: PageType,
@@ -20,6 +22,7 @@ data class PageNameData(
         }
     }
 
+    @Stable
     sealed class PageType {
         data class Collection(val id: Long) : PageType()
         data class CollectionRow(val id: Long) : PageType()

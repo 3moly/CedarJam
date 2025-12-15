@@ -38,13 +38,21 @@ kotlin {
             api(libs.dnd)
             api(libs.lazytable)
             api(libs.localina)
+            api(libs.liquid)
         }
-        commonTest.dependencies{
+        commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
         jvmMain.dependencies {
             api(libs.jewel.decorated.window)
             implementation(libs.pdfbox)
+            api(libs.pdfmp.compose)
+        }
+        androidMain.dependencies {
+            api(libs.pdfmp.compose)
+        }
+        iosMain.dependencies {
+
         }
     }
 }

@@ -413,6 +413,7 @@ internal class SqlStorage(
     override fun syncDirtyFiles(list: List<IndexFileDto>): ResultWrapper<Unit, String> {
         return runQueryOrThrowIndex { db ->
             resultBlock {
+
                 db.indexFileQueries.selectAll().executeAsList().map {
                     val found = list.firstOrNull { b -> b.relativePath == it.relativePath }
                     if (found != null) {
@@ -420,7 +421,6 @@ internal class SqlStorage(
                             relativePath = found.relativePath,
                             lastSyncedHash = found.contentHash,
                             serverSyncStatus = 0L
-
                         )
                     }
                 }

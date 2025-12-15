@@ -157,6 +157,8 @@ class WorkspaceEnvironment(
         archiveFullPath: String,
         metadata: List<FileMetadata>,
         filesToDownload: List<String>,
+        onDownload: suspend (Long, Long?) -> Unit,
+        onUpload: suspend (Long, Long?) -> Unit,
     ): ResultWrapper<ByteArray, String> {
         return resultBlock {
             var byteArray: ByteArray? = null
@@ -172,9 +174,11 @@ class WorkspaceEnvironment(
             val uploadResult = syncNetRepository.upload(
                 userName = "bulat",
                 workspaceName = workspace.serverName,
+                archiveByteArray = byteArray,
                 metadata = metadata,
                 filesToDownload = filesToDownload,
-                archiveByteArray = byteArray
+                onUpload = onUpload,
+                onDownload = onDownload
             )
             bind(uploadResult)
         }

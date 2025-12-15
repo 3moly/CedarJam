@@ -9,29 +9,16 @@ fun updateIndexLocal(
     localNodes: List<FileTreeNode>,
     dbHelper: IndexDatabase
 ) {
-    // 1. Prepare Data Structures
     dbHelper.indexFileQueries.transaction {
         val dbQueries = dbHelper.indexFileQueries
-
         val onDiskFiles = localNodes.flattenToMap()
         val dbRecords = dbQueries.selectAll().executeAsList().associateBy { it.relativePath }
-
-
-        // FIX: Remove the filter. We need ALL records to detect changes to SYNCED files.
-
-        // --- PHASE A: Handle Files Present on Disk ---
         onDiskFiles.forEach { (path, localNode) ->
             val dbRecord = dbRecords[path]
-
             val isDirectory = if (localNode.isDirectory()) 1L else 0L
-
             if (dbRecord == null) {
-                // CASE 1: TRULY NEW FILE (Not in DB at all)
                 val currentHash = calculateHash(localNode)
-
-                // If the file exists on server with exact same hash, we are in sync.
                 val status = SyncStatus.NEW
-
                 dbQueries.insertItem(
                     relativePath = path,
                     contentHash = currentHash,

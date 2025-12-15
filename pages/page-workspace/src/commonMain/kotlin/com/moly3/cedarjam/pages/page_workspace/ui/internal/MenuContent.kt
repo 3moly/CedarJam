@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.mohamedrejeb.compose.dnd.DragAndDropState
+import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.pages.page_workspace.Intent
 import com.moly3.cedarjam.pages.page_workspace.State
 import com.moly3.cedarjam.pages.page_workspace.ui.component.fileNodeTree
@@ -136,67 +137,79 @@ internal fun MenuContent(
                         }
                     }
                 }
-                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    val new = remember(state.indexes) {
-                        state.indexes.count { d -> d.serverSyncStatus == com.moly3.cedarjam.core.domain.model.SyncStatus.NEW }
-                    }
-                    val upload = remember(state.indexes) {
-                        state.indexes.count { d -> d.serverSyncStatus == com.moly3.cedarjam.core.domain.model.SyncStatus.DIRTY }
-                    }
-                    val deleted = remember(state.indexes) {
-                        state.indexes.count { d -> d.serverSyncStatus == com.moly3.cedarjam.core.domain.model.SyncStatus.DELETED }
-                    }
-                    Row(
-                        modifier = Modifier,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Row(
-                            Modifier
-                                .border(volumedBorderStroke, RoundedCornerShape(8.dp))
-                                .padding(4.dp),
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            CJText(text = "->")
-                            CJText(text = (upload + new).toString())
-                        }
-//                       todo Row(
+//                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+//                    val new = remember(state.indexes) {
+//                        state.indexes.count { d -> d.serverSyncStatus == com.moly3.cedarjam.core.domain.model.SyncStatus.NEW }
+//                    }
+//                    val upload = remember(state.indexes) {
+//                        state.indexes.count { d -> d.serverSyncStatus == com.moly3.cedarjam.core.domain.model.SyncStatus.DIRTY }
+//                    }
+//                    val deleted = remember(state.indexes) {
+//                        state.indexes.count { d -> d.serverSyncStatus == com.moly3.cedarjam.core.domain.model.SyncStatus.DELETED }
+//                    }
+//                    Row(
+//                        modifier = Modifier,
+//                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+//                    ) {
+//                        Row(
 //                            Modifier
 //                                .border(volumedBorderStroke, RoundedCornerShape(8.dp))
 //                                .padding(4.dp),
 //                            horizontalArrangement = Arrangement.spacedBy(4.dp),
 //                            verticalAlignment = Alignment.CenterVertically
 //                        ) {
-//                            CJText(text = "<-")
-//                            CJText(text = new.toString())
+//                            CJText(text = "->")
+//                            CJText(text = (upload + new).toString())
 //                        }
-                        Row(
-                            Modifier
-                                .border(volumedBorderStroke, RoundedCornerShape(8.dp))
-                                .padding(4.dp),
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            CJText(text = "D")
-                            CJText(text = deleted.toString())
-                        }
-                        if (!state.syncStatus.isLoading()) {
-                            CJButton(text = "sync") {
-                                onIntent(Intent.Sync)
-                            }
-                            if (state.syncStatus.isError()) {
-                                Box(Modifier.size(10.dp).background(Color.Red))
-                            }
-                        } else {
-
-                        }
-                    }
+////                       todo Row(
+////                            Modifier
+////                                .border(volumedBorderStroke, RoundedCornerShape(8.dp))
+////                                .padding(4.dp),
+////                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+////                            verticalAlignment = Alignment.CenterVertically
+////                        ) {
+////                            CJText(text = "<-")
+////                            CJText(text = new.toString())
+////                        }
+//                        Row(
+//                            Modifier
+//                                .border(volumedBorderStroke, RoundedCornerShape(8.dp))
+//                                .padding(4.dp),
+//                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+//                            verticalAlignment = Alignment.CenterVertically
+//                        ) {
+//                            CJText(text = "D")
+//                            CJText(text = deleted.toString())
+//                        }
+//                        if (!state.syncStatus.isLoading()) {
+//                            CJButton(text = "sync") {
+//                                onIntent(Intent.Sync)
+//                            }
+//                            if (state.syncStatus.isError()) {
+//                                Box(Modifier.size(10.dp).background(Color.Red))
+//                            }
+//                        } else {
+//
+//                        }
+//                    }
+//                }
+                val toDownload = when(val sync = state.syncStatus){
+                    is UIState.Error<*> -> 0
+                    UIState.Loading -> 0
+                    is UIState.Success -> sync.data.toDownload
+                }
+                val toUpload = when(val sync = state.syncStatus){
+                    is UIState.Error<*> -> 0
+                    UIState.Loading -> 0
+                    is UIState.Success -> sync.data.toUpload
                 }
                 WorkspaceSelect(
                     activeWorkspace = state.activeWorkspace,
                     onChangeWorkspace = {
                         onIntent(Intent.SelectWorkspace)
                     },
+                    toDownload = toDownload,
+                    toUpload = toUpload,
                     onChangeSettings = {
                         onIntent(Intent.OpenSettings)
                     })

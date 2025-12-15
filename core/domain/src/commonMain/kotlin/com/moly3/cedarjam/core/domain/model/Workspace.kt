@@ -1,5 +1,6 @@
 package com.moly3.cedarjam.core.domain.model
 
+import androidx.compose.runtime.Stable
 import com.moly3.cedarjam.core.domain.func.hiddenDirectory
 import com.moly3.cedarjam.core.domain.func.pathWrapper
 import kotlinx.serialization.Serializable
@@ -15,6 +16,7 @@ data class Workspace(
 data class WorkspaceInput(val name: String, val serverName: String)
 
 @Serializable
+@Stable
 data class WorkspacePresentation(
     val name: String,
     val serverName: String,

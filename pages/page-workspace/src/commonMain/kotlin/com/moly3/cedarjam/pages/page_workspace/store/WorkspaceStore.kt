@@ -16,6 +16,7 @@ import com.moly3.cedarjam.core.domain.model.WorkspacePresentation
 import com.moly3.cedarjam.core.domain.model.error.DatabaseError
 import com.moly3.cedarjam.core.domain.model.settings.WorkspaceFont
 import com.moly3.cedarjam.core.domain.model.settings.WorkspaceSettings
+import com.moly3.cedarjam.core.domain.usecase.GetSyncStatus
 import com.moly3.cedarjam.core.domain.usecase.SyncStatus2
 import com.moly3.cedarjam.core.ui.model.FileTreeItemPresentation
 import com.moly3.cedarjam.pages.page_workspace.model.LockedMenuData
@@ -47,7 +48,7 @@ internal interface WorkspaceStore : Store<Intent, State, Label> {
         data class SetWorkspaceFont(val value: WorkspaceFont?) : Msg
         data class SetWorkspaceSettings(val value: WorkspaceSettings) : Msg
         data class SetIndexFiles(val value: ImmutableList<IndexFileDto>) : Msg
-        data class SetSyncStatus(val value: UIState<SyncStatus2, String>) : Msg
+        data class SetSyncStatus(val value: UIState<GetSyncStatus, String>) : Msg
 
     }
 }

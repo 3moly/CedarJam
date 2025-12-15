@@ -47,7 +47,7 @@ internal class SettingsSyncStoreFactory(
             scope.launch(io) {
                 try {
 
-                        syncUseCase.getStatus(workspace = workspaceSession.workspaceEnvStateFlow.value)
+                    syncUseCase.getStatus(workspace = workspaceSession.workspaceEnvStateFlow.value)
 //              todo      launch(Dispatchers.Main) {
 //                        dispatch(
 //                            SettingsSyncStore.Msg.SetPrepareStatus(
@@ -67,6 +67,11 @@ internal class SettingsSyncStoreFactory(
         override fun onStart(scopeFromStartToStop: CoroutineScope) {
             super.onStart(scopeFromStartToStop)
 
+            scopeFromStartToStop.launch {
+                syncUseCase.sendingBranchFlow().collectLatest {
+                    dispatch(SettingsSyncStore.Msg.SetUploadStateChannel(it))
+                }
+            }
             scopeFromStartToStop.launch {
                 workspaceSession.workspaceEnvStateFlow.value.getIndexFilesFlow().collectLatest {
                     dispatch(SettingsSyncStore.Msg.SetIndexFiles(it.toPersistentList()))
@@ -105,6 +110,7 @@ internal class SettingsSyncStoreFactory(
                 is SettingsSyncStore.Msg.SetPrepareStatus -> copy(fileVersionsState = msg.value)
                 is SettingsSyncStore.Msg.SetUploadState -> copy(uploadState = msg.value)
                 is SettingsSyncStore.Msg.SetIndexFiles -> copy(indexFiles = msg.value)
+                is SettingsSyncStore.Msg.SetUploadStateChannel -> copy(uploadStateChannel = msg.value)
             }
         }
     }

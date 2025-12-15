@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -13,8 +14,11 @@ import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import com.arkivanov.decompose.router.slot.ChildSlot
 import com.arkivanov.decompose.value.Value
+import com.moly3.cedarjam.core.domain.func.getPlatform
 import com.moly3.cedarjam.features.feature_graph.IDialogGraphComponent
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
+import com.moly3.cedarjam.core.ui.func.rememberWindowSize
+import com.moly3.cedarjam.core.ui.model.WindowSize
 import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
@@ -48,7 +52,8 @@ fun ContentNearGraphUI(
         val dialogSlot by dialogSlot.subscribeAsState()
         dialogSlot.child?.instance?.also {
             DialogGraphUI(
-                modifier = Modifier.hazeEffect(state = hazeState, style = hazeStyle).hazeSource(hazeState, zIndex = 2f),
+                modifier = Modifier.hazeEffect(state = hazeState, style = hazeStyle)
+                    .hazeSource(hazeState, zIndex = 2f),
                 component = it
             )
         }
@@ -57,10 +62,14 @@ fun ContentNearGraphUI(
             state?.value?.isShowContent == true
         } else
             false
-        SelectOption(
-            modifier = Modifier.align(optionsAlignment).padding( 32.dp).hazeEffect(state = hazeState, style = hazeStyle),
-            isOpened = isGraphDialogOpened,
-            count = connectionsCount,
-            onSetIsShowGraph = { setIsShowGraph(it) })
+        val windowSize by rememberWindowSize()
+        if (windowSize != WindowSize.Compact) {
+            SelectOption(
+                modifier = Modifier.align(optionsAlignment).padding(32.dp)
+                    .hazeEffect(state = hazeState, style = hazeStyle),
+                isOpened = isGraphDialogOpened,
+                count = connectionsCount,
+                onSetIsShowGraph = { setIsShowGraph(it) })
+        }
     }
 }

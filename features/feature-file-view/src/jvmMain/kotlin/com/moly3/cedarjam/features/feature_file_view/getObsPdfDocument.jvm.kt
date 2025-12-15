@@ -45,6 +45,10 @@ actual fun getObsPdfDocument(absolutePath: String): ObsPdfDocument? {
             override fun getPageText(index: Int): String? {
                 return document.getPageText(index).toString()
             }
+
+            override fun getPdfData(): PdfData? {
+                return null
+            }
         }
     } catch (exc: Exception) {
         return null

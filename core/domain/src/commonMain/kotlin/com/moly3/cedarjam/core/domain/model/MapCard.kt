@@ -47,6 +47,7 @@ fun FileTreeNode.toGetFileType(
                 }
 
                 "pdf" -> {
+
                     FileType.PDF(fileNode, currentPage = 1)
                 }
 

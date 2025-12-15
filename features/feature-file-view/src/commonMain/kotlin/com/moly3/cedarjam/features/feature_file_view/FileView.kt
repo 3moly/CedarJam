@@ -7,18 +7,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import coil3.compose.rememberAsyncImagePainter
+import com.moly3.cedarjam.core.domain.model.FileType
+import com.moly3.cedarjam.core.domain.repository.IFilesRepository
+import com.moly3.cedarjam.core.domain.service.IUtilsService
+import com.moly3.cedarjam.core.domain.service.WorkspaceSession
+import com.moly3.cedarjam.core.ui.compositions.LocalImageLoader
+import com.moly3.cedarjam.core.ui.service.IJvmBrowserService
+import com.moly3.cedarjam.core.ui.service.MacTrackpadGestureService
+import com.moly3.cedarjam.core.ui.uikit.CJText
+import com.moly3.cedarjam.core.ui.uikit.CJZoomableViewLayout
 import com.moly3.cedarjam.features.feature_file_view.internal.MidiUI
 import com.moly3.cedarjam.features.feature_file_view.internal.PdfUI
 import com.moly3.cedarjam.features.feature_file_view.internal.VideoUI
-import com.moly3.cedarjam.core.domain.model.FileType
-import com.moly3.cedarjam.core.domain.repository.IFilesRepository
-import com.moly3.cedarjam.core.ui.service.IJvmBrowserService
-import com.moly3.cedarjam.core.domain.service.IUtilsService
-import com.moly3.cedarjam.core.ui.service.MacTrackpadGestureService
-import com.moly3.cedarjam.core.domain.service.WorkspaceSession
-import com.moly3.cedarjam.core.ui.compositions.LocalImageLoader
-import com.moly3.cedarjam.core.ui.uikit.CJText
-import com.moly3.cedarjam.core.ui.uikit.CJZoomableViewLayout
 import kotlinx.coroutines.FlowPreview
 
 @OptIn(FlowPreview::class)
@@ -54,13 +54,16 @@ fun FileView(
                 utilsService = utilsService
             )
 
-            is FileType.PDF -> PdfUI(
-                fileType = fl,
-                macTrackpadGestureService = macTrackpadGestureService,
-                back = { backPage(fl) },
-                forward = { nextPage(fl) },
-                toPage = { toPage(fl, it) }
-            )
+            is FileType.PDF -> {
+
+                PdfUI(
+                    fileType = fl,
+                    macTrackpadGestureService = macTrackpadGestureService,
+                    back = { backPage(fl) },
+                    forward = { nextPage(fl) },
+                    toPage = { toPage(fl, it) }
+                )
+            }
 
             is FileType.Image -> {
                 CJZoomableViewLayout(

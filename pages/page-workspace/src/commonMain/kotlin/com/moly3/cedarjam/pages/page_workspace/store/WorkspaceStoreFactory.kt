@@ -43,7 +43,6 @@ import com.moly3.cedarjam.core.domain.model.FileName
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.IndexFileDto
 import com.moly3.cedarjam.core.domain.model.NavigateToFile
-import com.moly3.cedarjam.core.domain.model.ResultWrapper
 import com.moly3.cedarjam.core.ui.model.PageNameData
 import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.domain.model.bind
@@ -296,7 +295,10 @@ internal class WorkspaceStoreFactory(
 
         private fun updateSyncStatus() {
             scope.launch {
-                syncUseCase.getStatus(workspace = workspaceSession.workspaceEnvStateFlow.value)
+                dispatch(WorkspaceStore.Msg.SetSyncStatus(UIState.Loading))
+                val sync =
+                    syncUseCase.getStatus(workspace = workspaceSession.workspaceEnvStateFlow.value)
+                dispatch(WorkspaceStore.Msg.SetSyncStatus(sync.mapToUIState { "" }))
             }
         }
 
@@ -1086,30 +1088,30 @@ internal class WorkspaceStoreFactory(
                     }
                 }
 
-                is Intent.Sync -> {
-                    scope.launch {
-                        dispatch(WorkspaceStore.Msg.SetSyncStatus(UIState.Loading))
-                        val sd = syncUseCase.invoke(workspaceSession.workspaceEnvStateFlow.value)
-                        dispatch(WorkspaceStore.Msg.SetSyncStatus(sd.mapToUIState {
-                            it.message ?: ""
-                        }))
-                        when (sd) {
-                            is ResultWrapper.Error -> {
-
-                            }
-
-                            is ResultWrapper.Success -> {
-//                                syncUseCase.getStatus(workspaceSession.workspaceEnvStateFlow.value)
-
-                                workspaceSession.initConfigAndFiles()
-
-                                workspaceSession.loadLocalFont()
-
-//                                updateSyncStatus()
-                            }
-                        }
-                    }
-                }
+//                is Intent.Sync -> {
+//                    scope.launch {
+//                        dispatch(WorkspaceStore.Msg.SetSyncStatus(UIState.Loading))
+//                        val sd = syncUseCase.invoke(workspaceSession.workspaceEnvStateFlow.value)
+//                        dispatch(WorkspaceStore.Msg.SetSyncStatus(sd.mapToUIState {
+//                            it.message ?: ""
+//                        }))
+//                        when (sd) {
+//                            is ResultWrapper.Error -> {
+//
+//                            }
+//
+//                            is ResultWrapper.Success -> {
+////                                syncUseCase.getStatus(workspaceSession.workspaceEnvStateFlow.value)
+//
+//                                workspaceSession.initConfigAndFiles()
+//
+//                                workspaceSession.loadLocalFont()
+//
+////                                updateSyncStatus()
+//                            }
+//                        }
+//                    }
+//                }
 
                 is Intent.ClearingTabs -> {
                     val sizes =

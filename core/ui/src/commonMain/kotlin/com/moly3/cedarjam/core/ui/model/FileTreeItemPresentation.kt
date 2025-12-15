@@ -8,6 +8,7 @@ import com.moly3.cedarjam.core.domain.model.TagDTO
 import kotlinx.collections.immutable.ImmutableList
 import org.jetbrains.compose.resources.StringResource
 
+@Stable
 data class FileTreeItemPresentation(
     val key: String,
     val name: CJText,

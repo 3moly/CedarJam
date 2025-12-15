@@ -26,19 +26,6 @@ kotlin {
             linkerOpts("-lsqlite3")
         }
     }
-//    cocoapods {
-//        summary = "Child module with zip support"
-//        homepage = "https://github.com/yourproject"
-//        version = "1.0"
-//        ios.deploymentTarget = "16.0"
-//        framework {
-//            baseName = "CoreData"
-//        }
-//
-//        pod("SSZipArchive") {
-//            version = "~> 2.5"  // Use 2.5 instead of 2.6
-//        }
-//    }
 
     wasmJs {
         browser()
@@ -63,30 +50,22 @@ kotlin {
                 implementation(libs.compose.foundation)
                 implementation(libs.sqldelight.extensions)
                 implementation(libs.compose.data.viz)
-
-
             }
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             implementation(libs.coroutines.test)
-
         }
         jvmMain.dependencies {
             implementation(libs.sqldelight.jvm)
-//            implementation(libs.kmp.io)
         }
         androidMain.dependencies {
             implementation(libs.sqldelight.android)
-//            implementation(libs.kmp.io)
         }
         iosMain.dependencies {
             implementation(libs.sqldelight.ios)
-//            implementation(libs.kmp.io)
         }
-        jvmMain.dependencies {
-//            implementation(libs.kmp.io)
-        }
+        jvmMain.dependencies {}
     }
 }
 android {

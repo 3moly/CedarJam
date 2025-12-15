@@ -10,6 +10,7 @@ import com.moly3.cedarjam.core.domain.model.WorkspacePresentation
 import com.moly3.cedarjam.core.domain.model.error.DatabaseError
 import com.moly3.cedarjam.core.domain.model.settings.WorkspaceFont
 import com.moly3.cedarjam.core.domain.model.settings.WorkspaceSettings
+import com.moly3.cedarjam.core.domain.usecase.GetSyncStatus
 import com.moly3.cedarjam.core.domain.usecase.SyncStatus2
 import com.moly3.cedarjam.core.ui.model.FileTreeItemPresentation
 import com.moly3.cedarjam.pages.page_workspace.model.LockedMenuData
@@ -44,7 +45,7 @@ data class State(
     val workspaceFont: WorkspaceFont? = null,
     val settings: WorkspaceSettings = WorkspaceSettings.defaultSettings,
     val indexes: ImmutableList<IndexFileDto> = persistentListOf(),
-    val syncStatus: UIState<SyncStatus2, String> = UIState.Success(SyncStatus2())
+    val syncStatus: UIState<GetSyncStatus, String> = UIState.Loading
 
 ) {
     @Serializable

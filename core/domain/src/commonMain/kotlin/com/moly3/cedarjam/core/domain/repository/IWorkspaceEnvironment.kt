@@ -47,7 +47,9 @@ interface IWorkspaceEnvironment {
     suspend fun uploadSync(
         archiveFullPath: String,
         metadata: List<FileMetadata>,
-        filesToDownload: List<String>
+        filesToDownload: List<String>,
+        onDownload: suspend (Long, Long?) -> Unit,
+        onUpload: suspend (Long, Long?) -> Unit
     ): ResultWrapper<ByteArray, String>
 
     fun getDatabaseStatus(): Flow<UIState<Unit, DatabaseError>>
