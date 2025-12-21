@@ -20,6 +20,7 @@ import com.moly3.cedarjam.core.domain.model.TagToTagDTO
 import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.domain.model.WorkspacePresentation
 import com.moly3.cedarjam.core.domain.model.error.DatabaseError
+import com.moly3.cedarjam.core.domain.model.request.CreateAnnotationRequest
 import com.moly3.cedarjam.core.domain.model.request.CreateCollectionRequest
 import com.moly3.cedarjam.core.domain.model.request.CreateCollectionRowRequest
 import com.moly3.cedarjam.core.domain.model.request.CreateTagCollectionRowRequest
@@ -98,6 +99,8 @@ interface IWorkspaceEnvironment {
         serverNodes: List<FileItem>
     ): ResultWrapper<Unit, String>
 
+    fun closeDatabase()
+
     fun updateIndexFilesLocal(
         localNodes: List<FileTreeNode>
     ): ResultWrapper<Unit, String>
@@ -113,7 +116,7 @@ interface IWorkspaceEnvironment {
 
     fun getNodeText(node: FileTreeNode.File): ResultWrapper<String, String>
     suspend fun setNodeText(node: FileTreeNode.File, text: String): ResultWrapper<Unit, String>
-    fun createAnnotation(data: AnnotationDTO)
+    fun createAnnotation(data: CreateAnnotationRequest)
     fun createTag(request: CreateTagRequest): ResultWrapper<Long, String>
     fun createTagToTag(request: CreateTagToTagRequest): ResultWrapper<Long, String>
     fun createCollection(request: CreateCollectionRequest): ResultWrapper<Long, String>

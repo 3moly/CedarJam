@@ -20,6 +20,7 @@ import com.moly3.cedarjam.core.domain.model.resultBlock
 import com.moly3.cedarjam.core.domain.model.shouldBeSuccess
 import com.moly3.cedarjam.core.domain.repository.IFilesRepository
 import com.moly3.cedarjam.core.domain.repository.IWorkspaceEnvironment
+import kotlinx.collections.immutable.toPersistentMap
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -87,8 +88,10 @@ class SyncUseCase(
                     if (serverFound == null) {
                         toUpload[b.key] = b.key
                     } else {
-                        if (localFound.isDirectory != serverFound.isDirectory ||
-                            localFound.contentHash != serverFound.contentHash ||
+                        if (localFound.isDirectory != serverFound.isDirectory &&
+                            localFound.modifiedTime > serverFound.modifiedTime ||
+                            localFound.contentHash != serverFound.contentHash &&
+                            localFound.modifiedTime > serverFound.modifiedTime ||
                             (localFound.modifiedTime > serverFound.modifiedTime &&
                                     !localFound.isDirectory)
                         ) {
@@ -118,8 +121,8 @@ class SyncUseCase(
                 }
 
                 GetSyncStatus(
-                    toDownload = toDownload.size,
-                    toUpload = toUpload.size
+                    toDownload = toDownload.toPersistentMap(),
+                    toUpload = toUpload.toPersistentMap()
                 )
             }
         }
@@ -291,7 +294,10 @@ class SyncUseCase(
                 emitChannel("upload to server", 4)
                 val uploadResult = workspace.uploadSync(
                     archiveFullPath = importArchivePath,
-                    metadata = filesToUploadMeta,
+                    metadata = filesToUploadMeta.map {
+                        val hash = filesRepo.getFileHash(fullPath = pathWrapper(workspaceAbsolutePath,it.relativePath).pathString)
+                        it.copy(contentHash = hash)
+                    },
                     filesToDownload = filesToDownloadEstimation,
                     onUpload = { one, two ->
                         val progressFile = (if (two != null) {
@@ -306,8 +312,6 @@ class SyncUseCase(
                         emitChannel("onDownload file", 6, fileProgress = progressFile)
                     }
                 )
-                //dYw8VLY49qh4vyf4GzByyyguzBwMaZbutTG8Y2fs28sADBttGv16Rgqg367DStpVN7oQtaEYJJfzj4M
-                //EGXCU9EJK5I3M9LQNF1PAFD0CED0GEAF1GQHZRJ6K5LON1TN4QB2STMVVR
                 uploadResult.shouldBeSuccess()
 
                 workspace.syncDirtyFiles(editFilesToSync)
@@ -320,7 +324,7 @@ class SyncUseCase(
                 } else ByteArray(0)
 
                 var extractedFiles = listOf<String>()
-
+                workspace.closeDatabase()
                 emitChannel("extract from zip", 6)
                 if (responseZipBytes.isNotEmpty()) {
                     filesRepo.deleteNode(exportArchiveNode)

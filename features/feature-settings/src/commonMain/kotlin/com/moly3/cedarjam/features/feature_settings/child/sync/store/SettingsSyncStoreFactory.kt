@@ -14,6 +14,7 @@ import com.moly3.cedarjam.features.feature_settings.child.sync.State
 import com.moly3.cedarjam.navigation.BaseExecutor
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -47,15 +48,15 @@ internal class SettingsSyncStoreFactory(
             scope.launch(io) {
                 try {
 
-                    syncUseCase.getStatus(workspace = workspaceSession.workspaceEnvStateFlow.value)
-//              todo      launch(Dispatchers.Main) {
-//                        dispatch(
-//                            SettingsSyncStore.Msg.SetPrepareStatus(
-//                                resultss.mapToUIState(
-//                                    onError = { "" })
-//                            )
-//                        )
-//                    }
+                    val resultss= syncUseCase.getStatus(workspace = workspaceSession.workspaceEnvStateFlow.value)
+                    launch(Dispatchers.Main) {
+                        dispatch(
+                            SettingsSyncStore.Msg.SetPrepareStatus(
+                                resultss.mapToUIState(
+                                    onError = { "" })
+                            )
+                        )
+                    }
                 } catch (exc: Exception) {
                     val msg = "" + exc.message
                 }

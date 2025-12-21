@@ -7,7 +7,10 @@ import androidx.compose.ui.Modifier
 import com.dshatz.pdfmp.compose.PdfView
 import com.dshatz.pdfmp.compose.state.rememberPdfState
 import com.dshatz.pdfmp.source.PdfSource
+import com.moly3.cedarjam.core.domain.model.AnnotationDTO
+import com.moly3.cedarjam.core.domain.model.request.CreateAnnotationRequest
 import com.moly3.cedarjam.features.feature_file_view.ObsPdfDocument
+import kotlinx.collections.immutable.ImmutableList
 import kotlinx.io.files.Path
 
 @Composable
@@ -15,7 +18,10 @@ actual fun CJPdf(
     modifier: Modifier,
     currentPage: Int,
     pdf: ObsPdfDocument,
-    filePath: String
+    annotations: ImmutableList<AnnotationDTO>,
+    filePath: String,
+    onAddAnnotation: (CreateAnnotationRequest) -> Unit,
+    onDeleteAnnotation: (AnnotationDTO) -> Unit
 ) {
     val state = rememberPdfState(PdfSource.PdfPath(Path(filePath)))
     PdfView(state, modifier.fillMaxSize())

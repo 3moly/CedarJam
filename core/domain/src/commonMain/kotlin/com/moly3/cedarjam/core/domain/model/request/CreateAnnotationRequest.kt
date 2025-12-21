@@ -1,10 +1,9 @@
-package com.moly3.cedarjam.core.domain.model
+package com.moly3.cedarjam.core.domain.model.request
 
-data class AnnotationDTO(
-    val id: Long,
+data class CreateAnnotationRequest(
     val dataPath: String,
-    val dataPoint: Double,
     val description: String,
+    val dataPoint: Double,
     val x: Float,
     val y: Float,
     val width: Float,

@@ -5,6 +5,7 @@ import co.touchlab.kermit.Logger
 import com.moly3.cedarjam.core.domain.func.hiddenDirectory
 import com.moly3.cedarjam.core.domain.func.nowInMs
 import com.moly3.cedarjam.core.domain.func.pathWrapper
+import com.moly3.cedarjam.core.domain.model.AnnotationDTO
 import com.moly3.cedarjam.core.domain.model.CollectionDTO
 import com.moly3.cedarjam.core.domain.model.CollectionRowDTO
 import com.moly3.cedarjam.core.domain.model.FileName
@@ -91,6 +92,12 @@ class WorkspaceSession(
         workspaceEnvStateFlow
             .flatMapLatest {
                 it.getCollectionsFlow()
+            }.shareScope()
+
+    val annotationsFlow: Flow<List<AnnotationDTO>> =
+        workspaceEnvStateFlow
+            .flatMapLatest {
+                it.getAnnotationsFlow()
             }.shareScope()
 
     val collectionRowsFlow: Flow<List<CollectionRowDTO>> =

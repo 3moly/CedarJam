@@ -53,8 +53,13 @@ internal class SettingsStorageStoreFactory(
                 }
             }
             scopeFromStartToStop.launch {
-                workspaceSession.collectionsFlow.collectLatest {
-                    dispatch(SettingsStorageStore.Msg.SetCollectionsCount(it.size))
+                workspaceSession.annotationsFlow.collectLatest {
+                    dispatch(SettingsStorageStore.Msg.SetAnnotationsCount(it.size))
+                }
+            }
+            scopeFromStartToStop.launch {
+                workspaceSession.collectionRowsFlow.collectLatest {
+                    dispatch(SettingsStorageStore.Msg.SetRowsCount(it.size))
                 }
             }
             scopeFromStartToStop.launch {

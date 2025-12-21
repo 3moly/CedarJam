@@ -28,6 +28,7 @@ import com.moly3.cedarjam.features.feature_file.FileEdit
 import com.moly3.cedarjam.features.feature_file_view.FileView
 import com.moly3.cedarjam.pages.page_file.Intent
 import com.moly3.cedarjam.pages.page_file.State
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.FlowPreview
 
 @OptIn(FlowPreview::class)
@@ -75,7 +76,14 @@ internal fun PageContent(
                         },
                         toPage = { pdf, page ->
                             onIntent(Intent.ToPage(pdf, page))
-                        }
+                        },
+                        onAddAnnotation = {
+                            onIntent(Intent.AddAnnotation(it))
+                        },
+                        onDeleteAnnotation = {
+                            onIntent(Intent.DeleteAnnotation(it))
+                        },
+                        annotations = state.annotations
                     )
                 }
             }

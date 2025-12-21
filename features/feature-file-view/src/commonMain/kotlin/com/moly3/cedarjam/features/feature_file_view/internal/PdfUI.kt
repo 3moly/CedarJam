@@ -1,6 +1,7 @@
 package com.moly3.cedarjam.features.feature_file_view.internal
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -22,10 +23,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.isSpecified
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PaintingStyle.Companion.Stroke
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.key.Key
@@ -34,16 +42,21 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import co.touchlab.kermit.Logger
 import com.moly3.cedarjam.core.domain.func.getPlatform
 import com.moly3.cedarjam.features.feature_file_view.ObsPdfDocument
 import com.moly3.cedarjam.features.feature_file_view.getObsPdfDocument
 import com.moly3.cedarjam.core.domain.io
+import com.moly3.cedarjam.core.domain.model.AnnotationDTO
 import com.moly3.cedarjam.core.domain.model.FileType
 import com.moly3.cedarjam.core.domain.model.Platform
+import com.moly3.cedarjam.core.domain.model.request.CreateAnnotationRequest
 import com.moly3.cedarjam.core.ui.service.MacTrackpadGestureService
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
@@ -61,22 +74,44 @@ import com.moly3.cedarjam.core.ui.volumedBorderStroke
 import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
-import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
 import io.github.fletchmckee.liquid.LiquidState
 import io.github.fletchmckee.liquid.liquefiable
 import io.github.fletchmckee.liquid.liquid
 import io.github.fletchmckee.liquid.rememberLiquidState
+import kotlinx.collections.immutable.ImmutableList
 import kotlinx.coroutines.launch
+import kotlin.math.min
+
+
+fun AnnotationDTO.toPx(
+    canvasSize: IntSize
+): Rect {
+    val drawnW = canvasSize.width.toFloat()
+    val drawnH = canvasSize.height.toFloat()
+
+    val left = drawnW * x
+    val top  = drawnH * (1f - y - height)
+
+    return Rect(
+        left,
+        top,
+        left + drawnW * width,
+        top + drawnH * height
+    )
+}
 
 @Composable
 internal fun PdfUI(
     fileType: FileType.PDF,
     macTrackpadGestureService: MacTrackpadGestureService,
+    annotations: ImmutableList<AnnotationDTO>,
     back: () -> Unit,
     forward: () -> Unit,
-    toPage: (Int) -> Unit
+    toPage: (Int) -> Unit,
+    onAddAnnotation: (CreateAnnotationRequest) -> Unit,
+    onDeleteAnnotation: (AnnotationDTO) -> Unit
 ) {
     var documentState by remember { mutableStateOf<ObsPdfDocument?>(null) }
     LaunchedEffect(Unit) {
@@ -147,7 +182,6 @@ internal fun PdfUI(
         val liquidState: LiquidState = rememberLiquidState()
         if (documentState != null) {
             var painter by remember { mutableStateOf<Painter?>(null) }
-            var text by remember { mutableStateOf<String?>(null) }
             Row(Modifier.fillMaxSize()) {
                 when (getPlatform()) {
                     Platform.Android,
@@ -164,10 +198,48 @@ internal fun PdfUI(
                                         Image(
                                             painter = it,
                                             contentDescription = null,
-                                            modifier = Modifier.fillMaxSize()
+                                            modifier = Modifier
+                                                .drawWithContent {
+                                                    this.drawContent()
+                                                    val size = this.size
+
+                                                    annotations.filter { d -> d.dataPoint.toInt() == currentPage - 1 }
+                                                        .forEach { annotation ->
+
+                                                            val rect = annotation.toPx(
+                                                                IntSize(
+                                                                    size.width.toInt(),
+                                                                    size.height.toInt()
+                                                                )
+                                                            )
+
+                                                            drawRect(
+                                                                color = Color.Yellow.copy(alpha = 0.35f),
+                                                                topLeft = Offset(
+                                                                    rect.left,
+                                                                    rect.top
+                                                                ),
+                                                                size = Size(rect.width, rect.height)
+                                                            )
+
+                                                            drawRect(
+                                                                color = Color.Yellow,
+                                                                topLeft = Offset(
+                                                                    rect.left,
+                                                                    rect.top
+                                                                ),
+                                                                size = Size(
+                                                                    rect.width,
+                                                                    rect.height
+                                                                ),
+                                                                style = Stroke(width = 2.dp.toPx())
+                                                            )
+                                                        }
+                                                }
                                         )
                                     }
                                 }
+
                             } else {
                                 CJCircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                             }
@@ -179,7 +251,10 @@ internal fun PdfUI(
                             Modifier.fillMaxSize().liquefiable(liquidState),
                             currentPage = currentPage,
                             pdf = documentState!!,
-                            filePath = fileType.fileNode.getFullPath()
+                            annotations = annotations,
+                            filePath = fileType.fileNode.getFullPath(),
+                            onAddAnnotation = onAddAnnotation,
+                            onDeleteAnnotation = onDeleteAnnotation
                         )
                     }
                 }
@@ -189,7 +264,10 @@ internal fun PdfUI(
                     .padding(bottom = 32.dp)
                     .align(Alignment.BottomCenter)
                     .clip(RoundedCornerShape(16.dp))
-                    //todo .background(LocalAppTheme.current.colors.backgroundPrimary)
+                    .background(
+                        LocalAppTheme.current.colors.backgroundPrimary,
+                        shape = RoundedCornerShape(16.dp)
+                    )
                     //.hazeEffect(state = hazeState, style = hazeStyle)
                     .border(volumedBorderStroke, shape = RoundedCornerShape(16.dp))
                     .liquid(liquidState) {
@@ -263,11 +341,11 @@ internal fun PdfUI(
             }
             LaunchedEffect(documentState, currentPage) {
                 launch(io) {
+                    painter = null
                     if (documentState != null) {
                         try {
                             painter = documentState?.getPagePainter(currentPage - 1)
 
-                            text = documentState?.getPageText(currentPage - 1)
                         } catch (exc: Exception) {
                         }
 

@@ -1,5 +1,6 @@
 package com.moly3.cedarjam.core.storage.func.commonGuy
 
+import co.touchlab.kermit.Logger
 import com.moly3.cedarjam.core.domain.func.pathWrapper
 import com.moly3.cedarjam.core.domain.model.FileItem
 import com.moly3.cedarjam.core.storage.func.setLastWriteTimeUtc
@@ -9,6 +10,7 @@ import com.oldguy.common.io.FileMode
 import com.oldguy.common.io.RawFile
 import com.oldguy.common.io.ZipFile
 import com.oldguy.common.io.use
+import kotlinx.coroutines.delay
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import kotlin.time.ExperimentalTime
@@ -35,8 +37,9 @@ suspend fun extractZip(
                     SystemFileSystem.createDirectories(Path(directoryPath))
                 }
                 try {
-                    SystemFileSystem.delete(Path(absolutePath), mustExist = false)
+                    SystemFileSystem.delete(Path(absolutePath), mustExist = true)
                 } catch (exc: Exception) {
+                    val erer = exc.message + ""
                 }
                 try {
                     RawFile(File(absolutePath), FileMode.Write).use { file ->
@@ -44,11 +47,13 @@ suspend fun extractZip(
                             file.write(ByteBuffer(bytes = content.copyOf(count.toInt())))
                         }
                     }
+                    delay(100L)
                     val modifiedTime = entry.comment.toLong()
                     setLastWriteTimeUtc(absolutePath, modifiedTime = modifiedTime)
-
+                    Logger.e { "1224 extractZip: success ${entry.name}" }
                     extractedFiles.add(entry.name)
                 } catch (exc: Exception) {
+                    Logger.e { "1224 extractZip: error ${exc.message}" }
                     val msg = "" + exc.message
                 }
             }

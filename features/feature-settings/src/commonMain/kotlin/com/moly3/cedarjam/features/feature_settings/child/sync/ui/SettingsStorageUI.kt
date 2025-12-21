@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.ui.JvmWindowScope
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
@@ -26,6 +27,7 @@ import com.moly3.cedarjam.core.ui.uikit.CJCircularProgressIndicator
 import com.moly3.cedarjam.core.ui.uikit.CJDraggableArea
 import com.moly3.cedarjam.core.ui.uikit.CJText
 import com.moly3.cedarjam.core.ui.uikit.CJToolbar
+import com.moly3.cedarjam.core.ui.uikit.UIStateContentNoBox
 import com.moly3.cedarjam.features.feature_settings.child.SettingsContent
 import com.moly3.cedarjam.features.feature_settings.child.sync.ISettingsSyncComponent
 import com.moly3.cedarjam.features.feature_settings.child.sync.Intent
@@ -78,6 +80,7 @@ fun JvmWindowScope.SettingsSyncUI(component: ISettingsSyncComponent) {
                                 )
                             }
                         }
+
                         else -> {}
                     }
 
@@ -100,11 +103,13 @@ fun JvmWindowScope.SettingsSyncUI(component: ISettingsSyncComponent) {
                                 progress = overallProgress
                             )
                         }
+
                         UIState.Loading -> {
                             CJCircularProgressIndicator(
                                 Modifier.size(140.dp)
                             )
                         }
+
                         else -> {}
                     }
 
@@ -121,6 +126,7 @@ fun JvmWindowScope.SettingsSyncUI(component: ISettingsSyncComponent) {
                                 val isClickable = when (val channel = state.uploadStateChannel) {
                                     is UIState.Error,
                                     UIState.Loading -> true
+
                                     is UIState.Success -> channel.data.all == channel.data.progress
                                 }
                                 if (isClickable) {
@@ -148,16 +154,34 @@ fun JvmWindowScope.SettingsSyncUI(component: ISettingsSyncComponent) {
                     is UIState.Error -> {
                         CJText(
                             text = channel.error,
-                            color =  Color.Red
+                            color = Color.Red
                         )
                     }
+
                     UIState.Loading -> {
                         CJText(text = "Preparing...")
                     }
+
                     is UIState.Success -> {
                         CJText(
                             text = "${channel.data.message} ${channel.data.progress}/${channel.data.all}"
                         )
+                    }
+                }
+                Column(Modifier.weight(1f).align(Alignment.CenterHorizontally)) {
+                    UIStateContentNoBox(state = state.fileVersionsState) {
+                        if(it.toDownload.isNotEmpty()){
+                            CJText(text = "to download...", fontSize = 11.sp)
+                            for (item in it.toDownload){
+                                CJText(text = item.key, fontSize = 11.sp)
+                            }
+                        }
+                        if(it.toUpload.isNotEmpty()){
+                            CJText(text = "to upload...", fontSize = 11.sp)
+                            for (item in it.toUpload){
+                                CJText(text = item.key, fontSize = 11.sp)
+                            }
+                        }
                     }
                 }
             }

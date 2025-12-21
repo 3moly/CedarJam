@@ -12,6 +12,7 @@ import com.moly3.cedarjam.features.feature_file_view.FileView
 import com.moly3.cedarjam.pages.page_file.FileComponent
 import com.moly3.cedarjam.pages.page_file.Intent
 import com.moly3.cedarjam.pages.page_file.ui.internal.PageContent
+import kotlinx.collections.immutable.persistentListOf
 
 @Composable
 fun FilePage(component: FileComponent) {
@@ -43,7 +44,10 @@ fun FilePage(component: FileComponent) {
                             },
                             toPage = { pdf, page ->
 //                                onIntent(Intent.ToPage(pdf, page))
-                            }
+                            },
+                            annotations = persistentListOf(),
+                            onAddAnnotation = {},
+                            onDeleteAnnotation = {}
                         )
                     }
                 )

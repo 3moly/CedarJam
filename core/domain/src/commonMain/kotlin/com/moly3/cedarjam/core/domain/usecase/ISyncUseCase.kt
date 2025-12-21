@@ -3,6 +3,7 @@ package com.moly3.cedarjam.core.domain.usecase
 import com.moly3.cedarjam.core.domain.model.ResultWrapper
 import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.domain.repository.IWorkspaceEnvironment
+import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.coroutines.flow.Flow
 
 interface ISyncUseCase {
@@ -12,8 +13,8 @@ interface ISyncUseCase {
 }
 
 data class GetSyncStatus(
-    val toUpload: Int,
-    val toDownload: Int,
+    val toUpload: ImmutableMap<String, String>,
+    val toDownload: ImmutableMap<String, String>,
 )
 
 data class SyncStatus2(

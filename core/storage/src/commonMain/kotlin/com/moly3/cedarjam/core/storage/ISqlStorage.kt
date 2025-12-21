@@ -16,6 +16,7 @@ import com.moly3.cedarjam.core.domain.model.request.RenameTagRequest
 import com.moly3.cedarjam.core.domain.model.request.UpdateDataCollectionRequest
 import com.moly3.cedarjam.core.domain.model.request.UpdateDataCollectionRowRequest
 import com.moly3.cedarjam.core.domain.model.request.UpdateTagRequest
+import com.moly3.cedarjam.db.Annotation
 import com.moly3.cedarjam.db.DataCollection
 import com.moly3.cedarjam.db.DataCollectionRow
 import com.moly3.cedarjam.db.Tag
@@ -32,12 +33,14 @@ interface ISqlStorage {
     fun getDatabaseStatus(): Flow<UIState<Unit, DatabaseError>>
     fun getIndexFilesFlow(): Flow<List<IndexFile>>
     fun getIndexFiles(): List<IndexFile>
+    fun close()
 
     fun getTagToTagsFlow(): Flow<List<TagToTag>>
     fun getTagsFlow(): Flow<List<Tag>>
     fun getTagFlow(id: Long): Flow<Tag?>
 
-    //    fun getAnnotationsFlow(): Flow<List<Annotation>>
+    fun getAnnotationsFlow(): Flow<List<Annotation>>
+    fun createAnnotation(annotation: Annotation): ResultWrapper<Long, String>
     fun getTagLinks(): Flow<List<TagFileNode>>
     fun getCollections(): Flow<List<DataCollection>>
     fun getCollection(id: Long): Flow<DataCollection?>
@@ -68,9 +71,9 @@ interface ISqlStorage {
     ): ResultWrapper<Unit, String>
 
 
-    fun syncDirtyFiles(list:List<IndexFileDto>): ResultWrapper<Unit, String>
+    fun syncDirtyFiles(list: List<IndexFileDto>): ResultWrapper<Unit, String>
 
-    fun deleteIndexFiles(list:List<String>): ResultWrapper<Unit, String>
+    fun deleteIndexFiles(list: List<String>): ResultWrapper<Unit, String>
     fun addIndexFiles(list: Map<String, Long>): ResultWrapper<Unit, String>
 
     fun setFilesAsSynced(

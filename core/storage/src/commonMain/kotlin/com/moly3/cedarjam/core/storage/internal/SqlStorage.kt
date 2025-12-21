@@ -45,6 +45,7 @@ import com.moly3.cedarjam.core.domain.model.request.UpdateTagRequest
 import com.moly3.cedarjam.core.domain.service.AppContextProvider
 import com.moly3.cedarjam.core.storage.func.updateIndex
 import com.moly3.cedarjam.core.storage.func.updateIndexLocal
+import com.moly3.cedarjam.db.Annotation
 import com.moly3.cedarjam.db.DataCollection
 import com.moly3.cedarjam.db.DataCollectionRow
 import com.moly3.cedarjam.db.Database
@@ -205,6 +206,9 @@ internal class SqlStorage(
             ))
     }
 
+    private var mainSqlDriver: SqlDriver? = null
+    private var indexSqlDriver2: SqlDriver? = null
+
     override fun init() {
         createIfNotCreated()
         val sqlDriver = getMainDbDriver()
@@ -213,6 +217,7 @@ internal class SqlStorage(
                 UIState.Error(error)
             },
             onSuccess = { driver ->
+                mainSqlDriver = driver
                 UIState.Success(Database(driver))
             }
         )
@@ -223,9 +228,14 @@ internal class SqlStorage(
                         UIState.Error(error)
                     },
                     onSuccess = { driver ->
+                        indexSqlDriver2 = driver
                         UIState.Success(IndexDatabase(driver))
                     }
                 ))
+    }
+
+    override fun close() {
+        mainSqlDriver?.close()
     }
 
     override fun getIndexFilesFlow(): Flow<List<IndexFile>> {
@@ -272,6 +282,20 @@ internal class SqlStorage(
             }
         }
     }
+
+    override fun getAnnotationsFlow(): Flow<List<Annotation>> {
+        return dbFlow.flatMapLatest { db ->
+            if (db != null) {
+                db.annotationQueries
+                    .selectAll()
+                    .asFlow()
+                    .mapToList(mapContext)
+            } else {
+                flowOf(listOf())
+            }
+        }
+    }
+
 
     override fun getTagFlow(id: Long): Flow<Tag?> {
         return dbFlow.flatMapLatest { db ->
@@ -460,6 +484,17 @@ internal class SqlStorage(
                         )
                     }
                 }
+            }
+        }
+    }
+
+    override fun createAnnotation(annotation: Annotation): ResultWrapper<Long, String> {
+        return runQueryOrThrow { db ->
+            resultBlock {
+                db.annotationQueries.insertNew(
+                    annotation
+                )
+                0L
             }
         }
     }

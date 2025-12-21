@@ -6,7 +6,6 @@ import com.arkivanov.mvikotlin.core.store.Reducer
 import com.arkivanov.mvikotlin.core.store.SimpleBootstrapper
 import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
-import com.moly3.cedarjam.core.domain.func.getRelativePath
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.FileTreeNode.Companion.getAllFilesByExtension
 import com.moly3.cedarjam.core.domain.model.FileType
@@ -28,8 +27,10 @@ import com.moly3.cedarjam.pages.page_file.Intent
 import com.moly3.cedarjam.pages.page_file.State
 import com.moly3.cedarjam.pages.page_file.State.Companion.fromSaveable
 import com.moly3.cedarjam.pages.page_file.State.Companion.toSaveable
+import com.moly3.cedarjam.pages.page_file.store.FileStore.Msg.*
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
@@ -121,6 +122,23 @@ internal class FileStoreFactory(
 
                 }
             }
+            val workspaceEnv = workspaceSession.workspaceEnvStateFlow.value
+            scopeFromStartToStop.launch {
+                combine(
+                    foundNodeFlow,
+                    workspaceEnv.getAnnotationsFlow()
+                ) { node, annotations ->
+                    if (node != null) {
+                        annotations
+                            .filter { d -> d.dataPath == node.getRelativePath() }
+                            .toPersistentList()
+                    } else {
+                        persistentListOf()
+                    }
+                }.collectLatest {
+                    dispatch(FileStore.Msg.SetAnnotations(it))
+                }
+            }
             scopeFromStartToStop.launch {
                 fileManagerService.closeDeletedFile.collectLatest {
                     if (data.timestamp == it) {
@@ -129,22 +147,21 @@ internal class FileStoreFactory(
                 }
             }
 
-            val workspaceEnv = workspaceSession.workspaceEnvStateFlow.value
+
             scopeFromStartToStop.launch {
                 workspaceEnv.getTagLinksFlow().collectLatest {
-                    dispatch(FileStore.Msg.SetTagLinks(it))
+                    dispatch(FileStore.Msg.SetTagLinks(it.toPersistentList()))
                 }
             }
             scopeFromStartToStop.launch {
                 workspaceEnv.getTagsFlow().collectLatest {
-                    dispatch(FileStore.Msg.SetTags(it))
+                    dispatch(FileStore.Msg.SetTags(it.toPersistentList()))
                 }
             }
             scopeFromStartToStop.launch {
                 foundNodeFlow.collectLatest { fileNode ->
                     if (fileNode != null) {
-                        val rl =
-                            fileNode.getRelativePath()
+                        val rl = fileNode.getRelativePath()
                         dispatch(FileStore.Msg.SetFileRelativePath(rl))
 
                         val fileType = fileNode.toGetFileType(
@@ -182,8 +199,6 @@ internal class FileStoreFactory(
                 }
             }
         }
-
-        private var canvasSaveJob: Job? = null
 
         override fun executeIntent(intent: Intent) {
             when (intent) {
@@ -300,15 +315,26 @@ internal class FileStoreFactory(
                 }
 
                 is Intent.PageBack -> {
-                    dispatch(FileStore.Msg.SetFile(intent.file.copy(currentPage = intent.file.currentPage - 1)))
+                    dispatch(SetFile(intent.file.copy(currentPage = intent.file.currentPage - 1)))
                 }
 
                 is Intent.PageNext -> {
-                    dispatch(FileStore.Msg.SetFile(intent.file.copy(currentPage = intent.file.currentPage + 1)))
+                    dispatch(SetFile(intent.file.copy(currentPage = intent.file.currentPage + 1)))
                 }
 
                 is Intent.ToPage -> {
-                    dispatch(FileStore.Msg.SetFile(intent.file.copy(currentPage = intent.page)))
+                    dispatch(SetFile(intent.file.copy(currentPage = intent.page)))
+                }
+
+                is Intent.AddAnnotation -> {
+                    val workspaceEnv = workspaceSession.workspaceEnvStateFlow.value
+
+                    workspaceEnv.createAnnotation(intent.value.copy(dataPath = state().relativePath))
+                }
+
+                is Intent.DeleteAnnotation -> {
+                    val workspaceEnv = workspaceSession.workspaceEnvStateFlow.value
+                    workspaceEnv.deleteAnnotation(id = intent.value.id)
                 }
             }
         }
@@ -317,11 +343,12 @@ internal class FileStoreFactory(
     private object ReducerImpl : Reducer<State, FileStore.Msg> {
         override fun State.reduce(msg: FileStore.Msg): State {
             return when (msg) {
-                is FileStore.Msg.SetFile -> copy(fileType = msg.value)
-                is FileStore.Msg.SetTags -> copy(tags = msg.value)
-                is FileStore.Msg.SetTagLinks -> copy(tagLinks = msg.value)
-                is FileStore.Msg.SetFileRelativePath -> copy(relativePath = msg.value)
-                is FileStore.Msg.SetConnectionsCount -> copy(connectionsCount = msg.value)
+                is SetFile -> copy(fileType = msg.value)
+                is SetTags -> copy(tags = msg.value)
+                is SetTagLinks -> copy(tagLinks = msg.value)
+                is SetFileRelativePath -> copy(relativePath = msg.value)
+                is SetConnectionsCount -> copy(connectionsCount = msg.value)
+                is SetAnnotations -> copy(annotations = msg.value)
             }
         }
     }

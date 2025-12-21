@@ -1,11 +1,17 @@
 CREATE TABLE Annotation (
   id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-  dataPath TEXT NOT NULL,
-  dataPoint REAL NOT NULL,
-  description TEXT NOT NULL,
+  dataPath TEXT NOT NULL, -- relativePath
+  dataPoint REAL NOT NULL, -- page of PDF
+  description TEXT NOT NULL, -- text of PDF
 
   createdTime INTEGER NOT NULL,
-  modifiedTime INTEGER NOT NULL
+  modifiedTime INTEGER NOT NULL,
+
+  posX REAL NOT NULL,
+  posY REAL NOT NULL,
+  width REAL NOT NULL,
+  height REAL NOT NULL
+
 );
 
 selectAll:
@@ -17,5 +23,5 @@ DELETE FROM Annotation
 WHERE id = :id;
 
 insertNew:
-INSERT INTO Annotation(dataPath, dataPoint, description, createdTime, modifiedTime)
+INSERT INTO Annotation(dataPath, dataPoint, description, createdTime, modifiedTime,posX,posY,width,height)
 VALUES ?;

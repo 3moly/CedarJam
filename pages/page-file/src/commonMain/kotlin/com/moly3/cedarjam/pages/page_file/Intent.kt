@@ -1,8 +1,10 @@
 package com.moly3.cedarjam.pages.page_file
 
+import com.moly3.cedarjam.core.domain.model.AnnotationDTO
 import com.moly3.cedarjam.core.domain.model.FileType
 import com.moly3.cedarjam.core.domain.model.TagDTO
 import com.moly3.cedarjam.core.domain.model.TagLinkDTO
+import com.moly3.cedarjam.core.domain.model.request.CreateAnnotationRequest
 
 sealed interface Intent {
     data class SetIsShowGraph(val value: Boolean) : Intent
@@ -14,4 +16,6 @@ sealed interface Intent {
 
     data class SetLinkTag(val value: TagDTO) : Intent
     data class RemoveLinkTag(val value: TagLinkDTO) : Intent
+    data class AddAnnotation(val value: CreateAnnotationRequest) : Intent
+    data class DeleteAnnotation(val value: AnnotationDTO) : Intent
 }

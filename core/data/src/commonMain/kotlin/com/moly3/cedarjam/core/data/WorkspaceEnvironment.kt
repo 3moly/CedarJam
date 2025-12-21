@@ -33,6 +33,7 @@ import com.moly3.cedarjam.core.domain.model.ensure
 import com.moly3.cedarjam.core.domain.model.error.DatabaseError
 import com.moly3.cedarjam.core.domain.model.fold
 import com.moly3.cedarjam.core.domain.model.getSettingsJsonFile
+import com.moly3.cedarjam.core.domain.model.request.CreateAnnotationRequest
 import com.moly3.cedarjam.core.domain.model.resultBlock
 import com.moly3.cedarjam.core.domain.model.toCollectionViewType
 import com.moly3.cedarjam.core.domain.repository.IFilesRepository
@@ -52,13 +53,13 @@ import com.moly3.cedarjam.core.domain.model.request.UpdateTagRequest
 import com.moly3.cedarjam.core.domain.model.settings.WorkspaceSettings
 import com.moly3.cedarjam.core.domain.service.FileManagerService
 import com.moly3.cedarjam.core.storage.ISqlStorage
+import com.moly3.cedarjam.db.Annotation
 import com.moly3.cedarjam.db.DataCollectionRow
 import com.moly3.cedarjam.db.Tag
 import com.moly3.cedarjam.indexdb.IndexFile
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
@@ -287,17 +288,21 @@ class WorkspaceEnvironment(
     }
 
     override fun getAnnotationsFlow(): Flow<List<AnnotationDTO>> {
-        return flowOf(listOf())
-//        return sqlStorage.getAnnotationsFlow().map {
-//            it.map {
-//                AnnotationDTO(
-//                    id = it.id,
-//                    dataPath = it.dataPath,
-//                    dataPoint = it.dataPoint,
-//                    description = it.description
-//                )
-//            }
-//        }.flowOn(core.domain.io)
+        return sqlStorage.getAnnotationsFlow().map {
+            it.map {
+                AnnotationDTO(
+                    id = it.id,
+                    dataPath = it.dataPath,
+                    dataPoint = it.dataPoint,
+                    description = it.description,
+
+                    x = it.posX.toFloat(),
+                    y = it.posY.toFloat(),
+                    width = it.width.toFloat(),
+                    height = it.height.toFloat()
+                )
+            }
+        }.flowOn(io)
     }
 
     override fun getTagLinksFlow(): Flow<List<TagLinkDTO>> {
@@ -765,6 +770,10 @@ class WorkspaceEnvironment(
         )
     }
 
+    override fun closeDatabase() {
+        sqlStorage.close()
+    }
+
     override fun updateIndexFilesLocal(localNodes: List<FileTreeNode>): ResultWrapper<Unit, String> {
         return sqlStorage.updateIndexFilesLocal(
             localNodes = localNodes
@@ -803,19 +812,21 @@ class WorkspaceEnvironment(
 
 
     @OptIn(ExperimentalTime::class)
-    override fun createAnnotation(data: AnnotationDTO) {
-//      todo  val createTime = Clock.System.now().toEpochMilliseconds()
-//
-//        sqlStorage.createAnnotation(
-//            data = Annotation(
-//                id = data.id,
-//                dataPath = data.dataPath,
-//                dataPoint = data.dataPoint,
-//                description = data.description,
-//                createdTime = createTime,
-//                modifiedTime = createTime
-//            )
-//        )
+    override fun createAnnotation(data: CreateAnnotationRequest) {
+        sqlStorage.createAnnotation(
+            annotation = Annotation(
+                id = 0L,
+                dataPath = data.dataPath,
+                dataPoint = data.dataPoint,
+                description = data.description,
+                createdTime = nowInMs(),
+                modifiedTime = nowInMs(),
+                posX = data.x.toDouble(),
+                posY = data.y.toDouble(),
+                width = data.width.toDouble(),
+                height = data.height.toDouble(),
+            )
+        )
     }
 
     override fun createTag(request: CreateTagRequest): ResultWrapper<Long, String> {

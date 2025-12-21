@@ -196,12 +196,12 @@ internal fun MenuContent(
                 val toDownload = when(val sync = state.syncStatus){
                     is UIState.Error<*> -> 0
                     UIState.Loading -> 0
-                    is UIState.Success -> sync.data.toDownload
+                    is UIState.Success -> sync.data.toDownload.size
                 }
                 val toUpload = when(val sync = state.syncStatus){
                     is UIState.Error<*> -> 0
                     UIState.Loading -> 0
-                    is UIState.Success -> sync.data.toUpload
+                    is UIState.Success -> sync.data.toUpload.size
                 }
                 WorkspaceSelect(
                     activeWorkspace = state.activeWorkspace,
