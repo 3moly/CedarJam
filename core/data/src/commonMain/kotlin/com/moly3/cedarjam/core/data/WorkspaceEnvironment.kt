@@ -3,7 +3,6 @@ package com.moly3.cedarjam.core.data
 import com.moly3.cedarjam.core.net.IRemoteSyncRepository
 import com.moly3.cedarjam.core.domain.DefaultJson
 import com.moly3.cedarjam.core.domain.func.doNothing
-import com.moly3.cedarjam.core.domain.func.getRelativePath
 import com.moly3.cedarjam.core.domain.func.nowInMs
 import com.moly3.cedarjam.core.domain.func.pathWrapper
 import com.moly3.cedarjam.core.domain.func.toColor
@@ -140,9 +139,9 @@ class WorkspaceEnvironment(
         }
     }
 
-    override fun getNodes(parentFolder: FileTreeNode.Directory?): List<FileTreeNode> {
-        val directoryNode = parentFolder ?: FileTreeNode.Directory.create(workspace.absolutePath)
-        return filesRepository.getNodes(directoryNode)
+    override fun getNodes(absolutePath: String?): List<FileTreeNode> {
+        val absolutePathGl = absolutePath ?: workspace.absolutePath
+        return filesRepository.getNodes(absolutePathGl)
     }
 
     private fun tryToGet(): UIState<List<FileTreeNode>, String> {
@@ -848,10 +847,7 @@ class WorkspaceEnvironment(
 
     override fun createTagLink(request: CreateTagLinkRequest) {
         sqlStorage.addTagLink(
-            relativePath = getRelativePath(
-                fullPath = request.fullPath,
-                workspacePath = workspace.fullpath
-            ),
+            relativePath = request.relativePath,
             tagId = request.tagId
         )
     }

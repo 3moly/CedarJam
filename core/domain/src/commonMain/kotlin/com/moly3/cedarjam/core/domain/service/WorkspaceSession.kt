@@ -12,6 +12,7 @@ import com.moly3.cedarjam.core.domain.model.FileName
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.FileTreeNode.Companion.hideHiddenDirectory
 import com.moly3.cedarjam.core.domain.model.IndexFileDto
+import com.moly3.cedarjam.core.domain.model.ResultWrapper
 import com.moly3.cedarjam.core.domain.model.TagCollectionRowDTO
 import com.moly3.cedarjam.core.domain.model.TagDTO
 import com.moly3.cedarjam.core.domain.model.TagLinkDTO
@@ -19,6 +20,8 @@ import com.moly3.cedarjam.core.domain.model.TagToTagDTO
 import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.domain.model.WorkspacePresentation
 import com.moly3.cedarjam.core.domain.model.error.DatabaseError
+import com.moly3.cedarjam.core.domain.model.isSuccess
+import com.moly3.cedarjam.core.domain.model.mapToUIState
 import com.moly3.cedarjam.core.domain.model.node.GraphSettingsConfig
 import com.moly3.cedarjam.core.domain.model.node.ObsidianGraphPresentation
 import com.moly3.cedarjam.core.domain.model.node.toPresentation
@@ -28,6 +31,8 @@ import com.moly3.cedarjam.core.domain.repository.IAppEnvironment
 import com.moly3.cedarjam.core.domain.repository.IFilesRepository
 import com.moly3.cedarjam.core.domain.repository.IWorkspaceEnvironment
 import com.moly3.cedarjam.core.domain.repository.IWorkspaceEnvironment.Companion.getHiddenDirectory
+import com.moly3.cedarjam.core.domain.usecase.ISyncUseCase
+import com.moly3.cedarjam.core.domain.usecase.SyncStatus2
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -224,8 +229,14 @@ class WorkspaceSession(
         val node = FileTreeNode.File(
             name = FileName(name = "default", extension = "otf"),
             //todo adapt relativePath
-            parentFullPath = pathWrapper(workspace.getWorkspace().absolutePath, hiddenDirectory).pathString,
-            parentRelativePath = pathWrapper(workspace.getWorkspace().absolutePath, hiddenDirectory).pathString
+            parentFullPath = pathWrapper(
+                workspace.getWorkspace().absolutePath,
+                hiddenDirectory
+            ).pathString,
+            parentRelativePath = pathWrapper(
+                workspace.getWorkspace().absolutePath,
+                hiddenDirectory
+            ).pathString
         )
         val newNode = newFile ?: node
         val font = try {
@@ -237,5 +248,18 @@ class WorkspaceSession(
             null
         }
         _workspaceFont.emit(font)
+    }
+
+    suspend fun sync(useCase: ISyncUseCase): ResultWrapper<SyncStatus2, String> {
+        val resultss = useCase.invoke(workspace = workspaceEnvStateFlow.value)
+        val env = workspaceEnvStateFlow.value
+
+        //dispatch(SettingsSyncStore.Msg.SetUploadState(resultss.mapToUIState(onError = { "" })))
+        if (resultss.isSuccess()) {
+            env.initConfigAndFiles()
+            loadLocalFont()
+        }
+        env.reinitDatabase()
+        return resultss
     }
 }

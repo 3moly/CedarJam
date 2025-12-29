@@ -21,7 +21,7 @@ class FileManagerService(
 
     @Serializable
     data class FileNodeSeconds(
-        val fileNodeFullPath: String = "",
+        val fileNodeRelativePath: String = "",
         val refreshToken: Long? = null
     )
 
@@ -41,19 +41,19 @@ class FileManagerService(
 
 
     suspend fun openFile(fileNode: FileTreeNode, isReadOnly: Boolean): Long {
-        return openFile(fileNode.getFullPath(), isReadOnly)
+        return openFile(fileNode.getRelativePath(), isReadOnly)
     }
 
-    suspend fun openFile(fullpath: String, isReadOnly: Boolean): Long {
+    suspend fun openFile(relativePath: String, isReadOnly: Boolean): Long {
         val alreadyAdded = _openedFilesState.value
             .states
             .asSequence()
-            .firstOrNull { d -> d.value.fileNodeFullPath == fullpath }
+            .firstOrNull { d -> d.value.fileNodeRelativePath == relativePath }
         val timestamp = if (alreadyAdded != null) {
             //_lastOpenedFile.emit(alreadyAdded.value)
             alreadyAdded.key
         } else {
-            val fileNodeSeconds = FileNodeSeconds(fullpath, null)
+            val fileNodeSeconds = FileNodeSeconds(relativePath, null)
             if (!isReadOnly) {
                 //_lastOpenedFile.emit(fileNodeSeconds)
             }
@@ -69,14 +69,14 @@ class FileManagerService(
 
     @OptIn(ExperimentalTime::class)
     fun getTimestampByFileNode(fileNode: FileTreeNode): Long? {
-        return getTimestampByFileNode(fileNode.getFullPath())
+        return getTimestampByFileNode(fileNode.getRelativePath())
     }
 
     @OptIn(ExperimentalTime::class)
-    fun getTimestampByFileNode(fullpath: String): Long? {
+    fun getTimestampByFileNode(relativePath: String): Long? {
         val map = _openedFilesState.value.states
         for (pair in map) {
-            if (pair.value.fileNodeFullPath == fullpath)
+            if (pair.value.fileNodeRelativePath == relativePath)
                 return pair.key
         }
         return null
@@ -85,12 +85,12 @@ class FileManagerService(
     @OptIn(ExperimentalTime::class)
     fun getFileNodeByTimestamp(timestamp: Long): String? {
         val map = _openedFilesState.value.states
-        return map[timestamp]?.fileNodeFullPath
+        return map[timestamp]?.fileNodeRelativePath
     }
 
     @OptIn(ExperimentalTime::class)
     suspend fun movedFile(oldFileNode: FileTreeNode, newFileNode: FileTreeNode) {
-        movedFile(oldFileNode.getFullPath(), newFileNode)
+        movedFile(oldFileNode.getRelativePath(), newFileNode)
     }
 
     @OptIn(ExperimentalTime::class)
@@ -102,7 +102,7 @@ class FileManagerService(
         val lastFile = map[timestamp]
         if (lastFile != null) {
             val last = FileNodeSeconds(
-                newFileNode.getFullPath(),
+                newFileNode.getRelativePath(),
                 refreshToken = Clock.System.now().toEpochMilliseconds()
             )
             map.put(
@@ -118,16 +118,11 @@ class FileManagerService(
                     val foundFiles = _openedFilesState.value.states
                         //.filter { d -> d.value.fileNode is FileTreeNode.File }
                         .filter { d ->
-                            d.value.fileNodeFullPath.contains(oldFileNode.getFullPath())
+                            d.value.fileNodeRelativePath.contains(oldFileNode.getRelativePath())
                         }
                     for (item in foundFiles) {
-                        val fileNode = item.value.fileNodeFullPath
-                        val newParentPath = fileNode.replaceFirst(
-                            oldFileNode.getFullPath(),
-                            newFileNode.getFullPath()
-                        )
                         openedFiles[item.key] =
-                            item.value.copy(fileNodeFullPath = newParentPath)
+                            item.value.copy(fileNodeRelativePath = newFileNode.getRelativePath())
                     }
                 }
 

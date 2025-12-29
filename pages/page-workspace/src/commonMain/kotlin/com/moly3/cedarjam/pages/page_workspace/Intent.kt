@@ -15,6 +15,7 @@ sealed interface Intent {
     data class SetMenuUnder(val tab: Int?) : Intent
     data object HideContextMenu : Intent
     data object SelectWorkspace : Intent
+    data object Sync : Intent
     data object CreateWorkspace : Intent
     data class MoveFile(
         val directory: FileTreeItemPresentation,

@@ -319,7 +319,7 @@ internal class CollectionStoreFactory(
                     scope.launch {
                         resultBlock {
                             val result =
-                                navigateToFileUseCase.invoke(NavigateToFile.AbsolutePath(intent.value))
+                                navigateToFileUseCase.invoke(NavigateToFile.RelativePath(intent.value))
                             val timestamp = bind(result)
                             navigator.navigate(Route.File(FilePageInput(timestamp)))
                         }

@@ -80,7 +80,7 @@ interface IWorkspaceEnvironment {
     fun isWorkspaceExists(): Boolean
     fun getWorkspace(): WorkspacePresentation
 
-    fun getNodes(parentFolder: FileTreeNode.Directory?): List<FileTreeNode>
+    fun getNodes(absolutePath: String?): List<FileTreeNode>
     suspend fun createFileNode(
         parentFolder: FileTreeNode.Directory?,
         fileName: FileName,

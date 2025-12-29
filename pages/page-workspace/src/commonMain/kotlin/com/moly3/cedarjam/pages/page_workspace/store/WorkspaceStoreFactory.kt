@@ -501,6 +501,13 @@ internal class WorkspaceStoreFactory(
 
         override fun executeIntent(intent: Intent) {
             when (intent) {
+                is Intent.Sync -> {
+                    scope.launch {
+                        workspaceSession.sync(syncUseCase)
+                        updateSyncStatus()
+                    }
+                }
+
                 is Intent.SelectWorkspace -> navigator.navigate(Route.Empty)
                 is Intent.OpenContextMenu -> {
                     val buttons = mutableListOf<ContextMenuButton>()
@@ -575,7 +582,7 @@ internal class WorkspaceStoreFactory(
 //                                                )
                                             if (fileNode is FileTreeNode.Directory) {
                                                 scope.launch {
-                                                    val nodes = workspaceEnv.getNodes(fileNode)
+                                                    val nodes = workspaceEnv.getNodes(fileNode.getFullPath())
                                                     val result = dialogDeleteService.open(Unit)
                                                     if (result) {
                                                         try {

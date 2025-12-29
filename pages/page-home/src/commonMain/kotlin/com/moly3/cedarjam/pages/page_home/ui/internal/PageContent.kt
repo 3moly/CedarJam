@@ -71,7 +71,7 @@ internal fun PageContent(
                                 searchText = state.searchTextFieldValue.text,
                                 matches = time.matches,
                                 onClick = {
-                                    onIntent(Intent.OpenFileNode(time.file.getFullPath()))
+                                    onIntent(Intent.OpenFileNode(time.file.getRelativePath()))
                                 }
                             )
                         }

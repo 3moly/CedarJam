@@ -69,6 +69,9 @@ internal class SettingsSyncStoreFactory(
             super.onStart(scopeFromStartToStop)
 
             scopeFromStartToStop.launch {
+                syncUseCase.clearSending()
+            }
+            scopeFromStartToStop.launch {
                 syncUseCase.sendingBranchFlow().collectLatest {
                     dispatch(SettingsSyncStore.Msg.SetUploadStateChannel(it))
                 }
@@ -89,15 +92,8 @@ internal class SettingsSyncStoreFactory(
                 Intent.Close -> close()
                 Intent.Sync -> {
                     scope.launch {
-                        val resultss =
-                            syncUseCase.invoke(workspace = workspaceSession.workspaceEnvStateFlow.value)
-                        val env = workspaceSession.workspaceEnvStateFlow.value
+                        workspaceSession.sync(syncUseCase)
 
-                        dispatch(SettingsSyncStore.Msg.SetUploadState(resultss.mapToUIState(onError = { "" })))
-
-                        env.initConfigAndFiles()
-                        workspaceSession.loadLocalFont()
-                        env.reinitDatabase()
                         refreshStatusFiles()
                     }
                 }

@@ -167,7 +167,7 @@ class dbTest : AppEnvironmentTest() {
     @Test
     fun w_env() = runTest {
         val env = createWorkspaceEnv()
-        val nodes = env.getNodes(parentFolder = null)
+        val nodes = env.getNodes(absolutePath = null)
         env.updateTimes()
         assertTrue { nodes.size == 1 }
         var files = env.getFileNodesFlow().first().getOrNull()
@@ -257,10 +257,10 @@ class dbTest : AppEnvironmentTest() {
         )
 
         filesRepository.createNode(node = file)
-        var nodes = filesRepository.getNodes(node = getWorkspaceDirectory())
+        var nodes = filesRepository.getNodes()
         assertTrue { nodes.count() == 1 }
         filesRepository.deleteNode(node = file)
-        nodes = filesRepository.getNodes(node = getWorkspaceDirectory())
+        nodes = filesRepository.getNodes()
         assertTrue("huh: ${nodes.count()}") { nodes.count() == 1 }
     }
 

@@ -22,6 +22,7 @@ import kotlinx.serialization.json.Json
 class RemoteSyncRepository(
     private val httpClient: HttpClient,
     private val baseUrl: String,
+    private val token: String,
     private val json: Json
 ) : IRemoteSyncRepository {
 
@@ -59,6 +60,7 @@ class RemoteSyncRepository(
                 onDownload { bytesDownloadTotal: Long, contentLength: Long? ->
                     onDownload(bytesDownloadTotal, contentLength)
                 }
+                headers.append("Token", token)
             }
             if (response.status.isSuccess()) {
                 val bytes = response.bodyAsBytes()
@@ -77,7 +79,9 @@ class RemoteSyncRepository(
     ): ResultWrapper<FileStructure, String> {
         return try {
             val response: HttpResponse =
-                httpClient.get("${baseUrl}api/workspaces/$userName/${workspaceName}/files")
+                httpClient.get("${baseUrl}api/workspaces/$userName/${workspaceName}/files") {
+                    headers.append("Token", token)
+                }
 
             if (response.status.isSuccess()) {
                 val fs: List<FileItem> = response.body()
@@ -99,10 +103,10 @@ class RemoteSyncRepository(
                     )
                 }))
             } else {
-                error("Upload failed with status: ${response.status.value}")
+                error("workspaceFiles failed with status: ${response.status.value}")
             }
         } catch (e: Exception) {
-            error("Upload error: ${e.message ?: "Unknown error"}")
+            error("workspaceFiles error: ${e.message ?: "Unknown error"}")
         }
     }
 
@@ -112,7 +116,9 @@ class RemoteSyncRepository(
     ): ResultWrapper<Unit, String> {
         return try {
             val response: HttpResponse =
-                httpClient.delete("${baseUrl}api/workspaces/$userName/${workspaceName}/delete")
+                httpClient.delete("${baseUrl}api/workspaces/$userName/${workspaceName}/delete") {
+                    headers.append("Token", token)
+                }
 
             if (response.status.isSuccess()) {
                 success(Unit)

@@ -43,6 +43,10 @@ class SyncUseCase(
     private val _sendingBranch =
         MutableStateFlow<UIState<SyncStatusChannel, String>>(UIState.Loading)
 
+    override suspend fun clearSending() {
+        _sendingBranch.emit(UIState.Loading)
+    }
+
     override fun sendingBranchFlow(): Flow<UIState<SyncStatusChannel, String>> {
         return _sendingBranch.asStateFlow()
     }
@@ -270,11 +274,17 @@ class SyncUseCase(
 
                     val meta = file.toMetadata()
                     filesToUploadMeta.add(meta)
+
                     if ((status == SyncStatus.NEW || status == SyncStatus.DIRTY) &&
                         !meta.isDeleted
                     ) {
+
                         editFilesToSync.add(file)
-                        filesToPackInZip.add(meta.relativePath)
+                        val serverFileFound =
+                            serverFilesAll.firstOrNull { d -> d.contentHash == file.contentHash }
+                        if (serverFileFound == null) {
+                            filesToPackInZip.add(meta.relativePath)
+                        }
                     }
                 }
 
@@ -295,8 +305,17 @@ class SyncUseCase(
                 val uploadResult = workspace.uploadSync(
                     archiveFullPath = importArchivePath,
                     metadata = filesToUploadMeta.map {
-                        val hash = filesRepo.getFileHash(fullPath = pathWrapper(workspaceAbsolutePath,it.relativePath).pathString)
-                        it.copy(contentHash = hash)
+                        if (it.isDeleted || it.isDirectory) {
+                            it
+                        } else {
+                            val hash = filesRepo.getFileHash(
+                                fullPath = pathWrapper(
+                                    workspaceAbsolutePath,
+                                    it.relativePath
+                                ).pathString
+                            )
+                            it.copy(contentHash = hash)
+                        }
                     },
                     filesToDownload = filesToDownloadEstimation,
                     onUpload = { one, two ->

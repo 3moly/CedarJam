@@ -44,15 +44,18 @@ class FilesRepository(
         )
     }
 
-    override fun getNodes(node: FileTreeNode.Directory): List<FileTreeNode> {
-        val absolutePath = node.getFullPath()
+    override fun getNodes(absolutePath: String): List<FileTreeNode> {
         val allFiles = filesStorage.getNodes(absolutePath)
         val mt = getOtherFileMeta(absolutePath)
         val main = listOf(
-            node.copy(
+            FileTreeNode.Directory(
                 children = allFiles,
+                name = "",
                 fileSize = allFiles.sumOf { x -> x.fileSize },
-                modifiedTime = mt.modifiedDateTime.toEpochMilliseconds()
+                modifiedTime = mt.modifiedDateTime.toEpochMilliseconds(),
+                parentRelativePath = "",
+                parentFullPath = absolutePath,
+                createdTime =  mt.createdDateTime.toEpochMilliseconds(),
             )
         )
         return main

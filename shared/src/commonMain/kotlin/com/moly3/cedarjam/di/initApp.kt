@@ -157,7 +157,7 @@ fun initApp(
     startKoin {
         modules(
             koinModule,
-            net(baseUrl = BuildConfig.SyncServerUrl),
+            net(baseUrl = BuildConfig.SyncServerUrl, token = BuildConfig.SyncServerToken),
             db(isTest = isTest),
             initDialogs()
         )

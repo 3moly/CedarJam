@@ -4,7 +4,7 @@ import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.androidLibrary)
+    alias(libs.plugins.android.kotlin.multiplatform.library)
     alias(libs.plugins.serialization)
     alias(libs.plugins.sqlDelight)
     alias(libs.plugins.compose)
@@ -14,7 +14,18 @@ plugins {
 
 kotlin {
 
-    androidTarget()
+    android {
+        namespace = "com.moly3.cedarjam.core.storage"
+        compileSdk = libs.versions.android.compileSdk.get().toInt()
+//        defaultConfig {
+//            minSdk = libs.versions.android.minSdk.get().toInt()
+//        }
+//        buildFeatures.compose = true
+//        compileOptions {
+//            sourceCompatibility = JavaVersion.VERSION_17
+//            targetCompatibility = JavaVersion.VERSION_17
+//        }
+    }
     jvm()
     listOf(
         iosArm64(),
@@ -68,18 +79,7 @@ kotlin {
         jvmMain.dependencies {}
     }
 }
-android {
-    namespace = "com.moly3.cedarjam.core.storage"
-    compileSdk = libs.versions.android.compileSdk.get().toInt()
-    defaultConfig {
-        minSdk = libs.versions.android.minSdk.get().toInt()
-    }
-    buildFeatures.compose = true
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-}
+
 sqldelight {
     linkSqlite.set(true)
     databases {

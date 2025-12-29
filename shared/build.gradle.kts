@@ -1,5 +1,6 @@
 @file:OptIn(ExperimentalComposeLibrary::class)
 
+import com.android.build.api.dsl.androidLibrary
 import org.jetbrains.compose.ExperimentalComposeLibrary
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
@@ -8,7 +9,7 @@ import java.util.Properties
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.androidLibrary)
+    alias(libs.plugins.android.kotlin.multiplatform.library)
     alias(libs.plugins.compose)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.serialization)
@@ -29,7 +30,28 @@ kotlin {
     }
     applyDefaultHierarchyTemplate()
 
-    androidTarget()
+    android {
+        namespace = "com.moly3.cedarjam"
+        compileSdk = libs.versions.android.compileSdk.get().toInt()
+        minSdk = libs.versions.android.minSdk.get().toInt()
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+        }
+
+//        defaultConfig {
+//            minSdk = 26
+//        }
+        //buildFeatures.compose = true
+//        compileOptions {
+//            sourceCompatibility = JavaVersion.VERSION_17
+//            targetCompatibility = JavaVersion.VERSION_17
+//        }
+//        testOptions {
+//            unitTests {
+//                isIncludeAndroidResources = true
+//            }
+//        }
+    }
     jvm()
     iosArm64()
     iosSimulatorArm64()
@@ -161,25 +183,9 @@ dependencies {
     commonMainApi(libs.decompose)
     commonMainApi(libs.essenty.keeper)
     commonMainApi(libs.essenty.lifecycle)
-    debugApi(libs.compose.ui.tooling)
+    //debugApi(libs.compose.ui.tooling)
 }
-android {
-    namespace = "com.moly3.cedarjam"
-    compileSdk = 36
-    defaultConfig {
-        minSdk = 26
-    }
-    buildFeatures.compose = true
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-    testOptions {
-        unitTests {
-            isIncludeAndroidResources = true
-        }
-    }
-}
+
 
 compose {
     resources {
@@ -238,11 +244,15 @@ if (localPropertiesFile.exists()) {
 }
 
 val mySyncServerUrl = localProperties.getProperty("cedarjam_server.url") ?: ""
+val mySyncServerToken = localProperties.getProperty("cedarjam_server.token") ?: ""
 
 // Register cache-safe task
 abstract class GenerateBuildConfigTask : DefaultTask() {
     @get:Input
     abstract val syncServerUrl: Property<String>
+
+    @get:Input
+    abstract val syncServerToken: Property<String>
 
     @get:OutputDirectory
     abstract val outputDir: DirectoryProperty
@@ -257,6 +267,7 @@ abstract class GenerateBuildConfigTask : DefaultTask() {
 
             object BuildConfig {
                 const val SyncServerUrl = "${syncServerUrl.get()}"
+                const val SyncServerToken = "${syncServerToken.get()}"
             }
             """.trimIndent()
         )
@@ -265,6 +276,7 @@ abstract class GenerateBuildConfigTask : DefaultTask() {
 
 val generateBuildConfig by tasks.registering(GenerateBuildConfigTask::class) {
     syncServerUrl.set(mySyncServerUrl)
+    syncServerToken.set(mySyncServerToken)
     outputDir.set(layout.buildDirectory.dir("generated/source/buildConfig/commonMain/kotlin"))
 }
 

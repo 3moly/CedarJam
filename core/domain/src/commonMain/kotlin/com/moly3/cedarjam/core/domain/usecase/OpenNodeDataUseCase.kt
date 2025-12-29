@@ -35,8 +35,8 @@ class OpenNodeDataUseCase(
                 is ObsidianGraphData.File -> {
                     val result =
                         navigateToFileUseCase.invoke(
-                            NavigateToFile.AbsolutePath(
-                                data.fullPath
+                            NavigateToFile.RelativePath(
+                                data.relativePath
                             )
                         )
                     val timestamp = bind(result = result)

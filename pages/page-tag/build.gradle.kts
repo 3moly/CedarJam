@@ -1,6 +1,6 @@
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.androidLibrary)
+    alias(libs.plugins.android.kotlin.multiplatform.library)
     alias(libs.plugins.serialization)
     alias(libs.plugins.compose)
     alias(libs.plugins.compose.compiler)
@@ -8,7 +8,18 @@ plugins {
 }
 
 kotlin {
-    androidTarget()
+    android {
+        namespace = "com.moly3.cedarjam.pages.page_tag"
+        compileSdk = libs.versions.android.compileSdk.get().toInt()
+//        defaultConfig {
+//            minSdk = libs.versions.android.minSdk.get().toInt()
+//        }
+//        buildFeatures.compose = true
+//        compileOptions {
+//            sourceCompatibility = JavaVersion.VERSION_17
+//            targetCompatibility = JavaVersion.VERSION_17
+//        }
+    }
     jvm()
     
     listOf(iosArm64(), iosSimulatorArm64())
@@ -25,17 +36,5 @@ kotlin {
             implementation(libs.decompose.compose)
             implementation(libs.compose.data.viz)
         }
-    }
-}
-android {
-    namespace = "com.moly3.cedarjam.pages.page_tag"
-    compileSdk = libs.versions.android.compileSdk.get().toInt()
-    defaultConfig {
-        minSdk = libs.versions.android.minSdk.get().toInt()
-    }
-    buildFeatures.compose = true
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
     }
 }

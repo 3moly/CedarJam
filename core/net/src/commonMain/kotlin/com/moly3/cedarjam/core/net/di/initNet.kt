@@ -1,6 +1,7 @@
 package com.moly3.cedarjam.core.net.di
 
 import co.touchlab.kermit.Logger
+import com.moly3.cedarjam.core.domain.func.getPlatform
 import com.moly3.cedarjam.core.net.IRemoteSyncRepository
 import com.moly3.cedarjam.core.net.RemoteSyncRepository
 import com.moly3.cedarjam.core.net.getHttpClientEngine
@@ -14,9 +15,10 @@ import io.ktor.client.request.header
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.serialization.kotlinx.json.json
+import io.ktor.util.Platform
 import org.koin.dsl.module
 
-fun net(baseUrl: String) = module {
+fun net(baseUrl: String, token: String) = module {
     single<IRemoteSyncRepository> {
         val httpClient = HttpClient(engine = getHttpClientEngine()) {
             install(HttpTimeout) {
@@ -24,21 +26,19 @@ fun net(baseUrl: String) = module {
                 //Issue: IOS - Darwin doesn't support a connection timeout.
                 connectTimeoutMillis = 30 * 1000
             }
-            if (true) {
-                install(Logging) {
-                    logger = object : io.ktor.client.plugins.logging.Logger {
-                        override fun log(message: String) {
-                            if (message.length < 1_000_000) {
-                                try {
-                                    Logger.w { "IAPIGenerator $message" }
-                                    //loggerService.w("IAPIGenerator $message")
-                                } catch (exc: Exception) {
-                                }
+            install(Logging) {
+                logger = object : io.ktor.client.plugins.logging.Logger {
+                    override fun log(message: String) {
+                        if (message.length < 1_000_000) {
+                            try {
+                                Logger.w { "IAPIGenerator $message" }
+                                //loggerService.w("IAPIGenerator $message")
+                            } catch (exc: Exception) {
                             }
                         }
                     }
-                    level = LogLevel.BODY
                 }
+                level = LogLevel.INFO
             }
 
             install(DefaultRequest) {
@@ -51,7 +51,8 @@ fun net(baseUrl: String) = module {
         RemoteSyncRepository(
             httpClient = httpClient,
             baseUrl = baseUrl,
-            json = get()
+            json = get(),
+            token = token
         )
     }
 }

@@ -18,7 +18,7 @@ sealed class ObsidianGraphData {
     data class CollectionRow(val id: Long, val collectionId: Long) : ObsidianGraphData()
 
     @Serializable
-    data class File(val fullPath: String) : ObsidianGraphData()
+    data class File(val relativePath: String) : ObsidianGraphData()
 }
 
 sealed class ObsidianGraphPresentation {
@@ -37,7 +37,7 @@ fun ObsidianGraphPresentation.toGraphData(): ObsidianGraphData {
             collectionId = this.value.collectionId
         )
 
-        is ObsidianGraphPresentation.File -> ObsidianGraphData.File(this.value.getFullPath())
+        is ObsidianGraphPresentation.File -> ObsidianGraphData.File(this.value.getRelativePath())
         is ObsidianGraphPresentation.Tag -> ObsidianGraphData.Tag(this.value.id)
         is ObsidianGraphPresentation.Unknown -> TODO()
     }
@@ -70,7 +70,7 @@ fun List<ObsidianGraphData>.toPresentation(
             }
 
             is ObsidianGraphData.File -> {
-                val file = files.firstOrNull { x -> x.getFullPath() == data.fullPath }
+                val file = files.firstOrNull { x -> x.getRelativePath() == data.relativePath }
                 if (file != null) {
                     ObsidianGraphPresentation.File(file)
                 } else {

@@ -62,9 +62,7 @@ internal class FileStoreFactory(
     ) { files, timestamp ->
         val keyVal = timestamp.states[data.timestamp]
         val nodes = files.getOrDefault(listOf()).getAllFilesByExtension(null)
-        val found =
-            nodes.firstOrNull { d -> d.getFullPath() == keyVal?.fileNodeFullPath }
-        println("list: ${timestamp.states.size} ts: ${data.timestamp} is found - ${found?.name?.name}. or ${keyVal?.fileNodeFullPath}")
+        val found = nodes.firstOrNull { d -> d.getRelativePath() == keyVal?.fileNodeRelativePath }
         found
     }
 
@@ -220,7 +218,7 @@ internal class FileStoreFactory(
                         val oldFullPath =
                             fileManagerService.getFileNodeByTimestamp(timestamp = data.timestamp)
                         val nodes = workspaceEnv.getNodes(null).getAllFilesByExtension(null)
-                        val found = nodes.firstOrNull { d -> d.getFullPath() == oldFullPath }
+                        val found = nodes.firstOrNull { d -> d.getRelativePath() == oldFullPath }
                         if (found != null) {
                             workspaceEnv.setNodeText(
                                 found,
@@ -303,7 +301,7 @@ internal class FileStoreFactory(
                         workspaceEnv.createTagLink(
                             request = CreateTagLinkRequest(
                                 tagId = intent.value.id,
-                                fullPath = fullPath
+                                relativePath = fullPath
                             )
                         )
                     }

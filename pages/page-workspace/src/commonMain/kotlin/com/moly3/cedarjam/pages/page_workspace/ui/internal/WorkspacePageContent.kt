@@ -62,6 +62,7 @@ import com.moly3.cedarjam.core.ui.uikit.CJIcon
 import com.moly3.cedarjam.core.ui.uikit.CJLinearProgressIndicator
 import com.moly3.cedarjam.core.ui.uikit.CJText
 import com.moly3.cedarjam.core.ui.vectors.BarLeft
+import com.moly3.cedarjam.core.ui.vectors.TrashEmpty
 import com.moly3.cedarjam.pages.page_tabs.ui.TabsPage
 import com.moly3.cedarjam.pages.page_tabs.ui.TabsPageContent
 import com.moly3.cedarjam.pages.page_workspace.Intent
@@ -343,14 +344,29 @@ internal fun WorkspacePageContent(
                                                 }
                                             }
                                         ) {
-                                            CJIcon(
+                                            Row(
                                                 modifier = Modifier.padding(end = 12.dp)
                                                     .align(Alignment.CenterEnd),
-                                                painter = rememberVectorPainter(BarLeft),
-                                                onClick = {
-                                                    onIntent(Intent.SetIsFullMenu(!state.isMenuOpened))
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                            ) {
+                                                if (windowSize != WindowSize.Compact) {
+                                                    CJIcon(
+                                                        painter = rememberVectorPainter(TrashEmpty),
+                                                        onClick = {
+                                                            onIntent(Intent.Sync)
+                                                        }
+                                                    )
+                                                    Box(Modifier.weight(1f))
                                                 }
-                                            )
+                                                CJIcon(
+                                                    painter = rememberVectorPainter(BarLeft),
+                                                    onClick = {
+                                                        onIntent(Intent.SetIsFullMenu(!state.isMenuOpened))
+                                                    }
+                                                )
+                                            }
+
                                         }
 
                                         if (windowSize != WindowSize.Compact) {

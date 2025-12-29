@@ -1,6 +1,5 @@
 package com.moly3.cedarjam.core.domain.repository
 
-import com.moly3.cedarjam.core.domain.model.FileItem
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.ResultWrapper
 import com.moly3.cedarjam.core.domain.model.canvas.CanvasDataWithErrors
@@ -20,7 +19,7 @@ interface IFilesRepository {
     )
 
     fun getFileNodeFromFullPath(fullPath: String, isDirectory: Boolean): FileTreeNode
-    fun getNodes(node: FileTreeNode.Directory): List<FileTreeNode>
+    fun getNodes(absolutePath: String): List<FileTreeNode>
     fun isNodeExists(node: FileTreeNode): Boolean
     fun deleteNode(node: FileTreeNode)
     fun deleteNodeHeavy(node: FileTreeNode)

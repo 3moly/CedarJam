@@ -4,7 +4,9 @@ plugins {
     alias(libs.plugins.compose)
     alias(libs.plugins.compose.compiler)
 }
-
+kotlin {
+    jvmToolchain(17)
+}
 android {
     namespace = "com.moly3.cedarjam.android"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
@@ -34,9 +36,9 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = "17"
-    }
+//    kotlinOptions {
+//        jvmTarget = "17"
+//    }
 }
 
 dependencies {

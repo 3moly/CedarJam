@@ -279,7 +279,7 @@ class ObsGraphEco(
                         Color.Companion.Blue
                     else
                         Color.Companion.Cyan)?.value,
-                    data = ObsidianGraphData.File(item.getFullPath())
+                    data = ObsidianGraphData.File(item.getRelativePath())
                 )
             )
             times[graphId] = item.modifiedTime

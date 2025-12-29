@@ -259,7 +259,7 @@ internal class HomeStoreFactory(
                 is Intent.OpenFileNode -> {
                     scope.launch {
                         resultBlock {
-                            val route = navigateToFileUseCase.invoke(NavigateToFile.AbsolutePath(intent.fullPath))
+                            val route = navigateToFileUseCase.invoke(NavigateToFile.RelativePath(intent.fullPath))
                             val timestamp = bind(route)
                             navigator.navigate(Route.File(FilePageInput(timestamp)))
                         }

@@ -47,13 +47,10 @@ suspend fun extractZip(
                             file.write(ByteBuffer(bytes = content.copyOf(count.toInt())))
                         }
                     }
-                    delay(100L)
                     val modifiedTime = entry.comment.toLong()
                     setLastWriteTimeUtc(absolutePath, modifiedTime = modifiedTime)
-                    Logger.e { "1224 extractZip: success ${entry.name}" }
                     extractedFiles.add(entry.name)
                 } catch (exc: Exception) {
-                    Logger.e { "1224 extractZip: error ${exc.message}" }
                     val msg = "" + exc.message
                 }
             }
