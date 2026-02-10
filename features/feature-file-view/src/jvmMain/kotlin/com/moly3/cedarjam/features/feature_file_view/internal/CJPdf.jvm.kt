@@ -27,9 +27,11 @@ actual fun CJPdf(
     PdfView(state, modifier.fillMaxSize())
     LaunchedEffect(currentPage) {
         try {
-            if (state.isInitialized.value) {
-                state.listState.scrollToItem(currentPage)
-            }
+//           val staa= state.displayState.value
+//
+//            if (state.isInitialized.value) {
+//                state.listState.scrollToItem(currentPage)
+//            }
 
         } catch (exc: Exception) {
         }

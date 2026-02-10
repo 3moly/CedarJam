@@ -5,6 +5,7 @@ import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -15,8 +16,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Icon
-import androidx.compose.material.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -24,6 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.unit.dp
@@ -51,7 +51,7 @@ fun NestedSharedBoundsSample() {
             exit = ExitTransition.None
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
-                Surface(
+                Box(
                     Modifier
                         .align(Alignment.BottomCenter)
                         .padding(20.dp)
@@ -59,8 +59,8 @@ fun NestedSharedBoundsSample() {
                             rememberSharedContentState(key = "container"),
                             this@AnimatedVisibility
                         )
-                        .requiredHeightIn(max = 60.dp),
-                    shape = RoundedCornerShape(50),
+                        .requiredHeightIn(max = 60.dp)
+                        .clip(RoundedCornerShape(50)),
                 ) {
                     Row(
                         Modifier
@@ -73,7 +73,7 @@ fun NestedSharedBoundsSample() {
                             //.skipToLookaheadSize(),
                         horizontalArrangement = Arrangement.spacedBy(20.dp)
                     ) {
-                        Icon(
+                        Image(
                             rememberVectorPainter(FolderAdd),
                             contentDescription = "Share",
 //                            modifier = Modifier.padding(
@@ -83,7 +83,7 @@ fun NestedSharedBoundsSample() {
 //                                end = 20.dp
 //                            )
                         )
-                        Icon(
+                        Image(
                             rememberVectorPainter(BarLeft),
                             contentDescription = "Favorite",
 //                            modifier = Modifier.padding(
@@ -93,10 +93,10 @@ fun NestedSharedBoundsSample() {
 //                                end = 20.dp
 //                            )
                         )
-                        Icon(
+                        Image(
                             rememberVectorPainter(TrashEmpty),
                             contentDescription = "Create",
-                            tint = Color.White,
+//                            tint = Color.White,
                             modifier = Modifier
                                 .sharedBounds(
                                     rememberSharedContentState(key = "icon_background"),
@@ -112,7 +112,8 @@ fun NestedSharedBoundsSample() {
                                 .sharedElement(
                                     rememberSharedContentState(key = "icon"),
                                     this@AnimatedVisibility
-                                )
+                                ),
+
                         )
                     }
                 }
@@ -124,7 +125,7 @@ fun NestedSharedBoundsSample() {
             exit = ExitTransition.None
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
-                Surface(
+                Box(
                     Modifier
                         .align(Alignment.BottomEnd)
                         .padding(30.dp)
@@ -139,14 +140,12 @@ fun NestedSharedBoundsSample() {
                             enter = EnterTransition.None,
                             exit = ExitTransition.None,
                             clipInOverlayDuringTransition = OverlayClip(RoundedCornerShape(30.dp))
-                        ),
-                    shape = RoundedCornerShape(30.dp),
-                    color = selectionColor
+                        ).clip(RoundedCornerShape(30.dp)).background(selectionColor, shape = RoundedCornerShape(30.dp)),
                 ) {
-                    Icon(
+                    Image(
                         painter = rememberVectorPainter(TrashEmpty),
                         contentDescription = "Create",
-                        tint = Color.White,
+//                        tint = Color.White,
                         modifier = Modifier
                             .padding(30.dp)
                             .size(40.dp)

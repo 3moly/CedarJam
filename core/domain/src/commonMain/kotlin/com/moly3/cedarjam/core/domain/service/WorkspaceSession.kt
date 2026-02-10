@@ -21,7 +21,6 @@ import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.domain.model.WorkspacePresentation
 import com.moly3.cedarjam.core.domain.model.error.DatabaseError
 import com.moly3.cedarjam.core.domain.model.isSuccess
-import com.moly3.cedarjam.core.domain.model.mapToUIState
 import com.moly3.cedarjam.core.domain.model.node.GraphSettingsConfig
 import com.moly3.cedarjam.core.domain.model.node.ObsidianGraphPresentation
 import com.moly3.cedarjam.core.domain.model.node.toPresentation
@@ -251,7 +250,7 @@ class WorkspaceSession(
     }
 
     suspend fun sync(useCase: ISyncUseCase): ResultWrapper<SyncStatus2, String> {
-        val resultss = useCase.invoke(workspace = workspaceEnvStateFlow.value)
+        val resultss = useCase.syncronize(workspace = workspaceEnvStateFlow.value)
         val env = workspaceEnvStateFlow.value
 
         //dispatch(SettingsSyncStore.Msg.SetUploadState(resultss.mapToUIState(onError = { "" })))

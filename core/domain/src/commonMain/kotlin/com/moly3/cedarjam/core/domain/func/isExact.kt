@@ -7,7 +7,7 @@ fun Long?.isExact(timeInMs: Long?): Boolean {
         return true
     if (this == null || timeInMs == null)
         return false
-    return abs(this - timeInMs) <= 5
+    return abs(this - timeInMs) <= 3
 }
 
 fun Long?.isNotExact(timeInMs: Long?): Boolean {

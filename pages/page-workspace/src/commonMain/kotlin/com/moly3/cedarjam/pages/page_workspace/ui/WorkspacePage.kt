@@ -54,13 +54,6 @@ fun JvmWindowScope.WorkspacePage(
     val state by component.state.collectAsState()
     val context = LocalPlatformContext.current
     val imageLoader = remember {
-//        val absolutePath =
-//            component.workspaceSession.workspaceEnvStateFlow.value.getWorkspace().absolutePath
-//        val imgCache = pathWrapper(absolutePath, hiddenDirectory, imgCache).pathString
-//        val result =
-//            component.filesRepository.createDirectory(fullPath = imgCache, isMustCreate = true)
-//        result.shouldBeSuccess()
-
         ImageLoader.Builder(context)
             .memoryCache {
                 MemoryCache.Builder()

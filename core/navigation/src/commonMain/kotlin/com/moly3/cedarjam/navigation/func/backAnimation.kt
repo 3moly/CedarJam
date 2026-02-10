@@ -8,7 +8,6 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.layout
-import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.extensions.compose.experimental.stack.animation.PredictiveBackParams
 import com.arkivanov.decompose.extensions.compose.experimental.stack.animation.StackAnimation
@@ -19,12 +18,6 @@ import com.arkivanov.decompose.extensions.compose.stack.animation.isFront
 import com.arkivanov.decompose.extensions.compose.stack.animation.predictiveback.PredictiveBackAnimatable
 import com.arkivanov.essenty.backhandler.BackEvent
 import com.arkivanov.essenty.backhandler.BackHandler
-
-//@OptIn(ExperimentalDecomposeApi::class)
-//expect fun <C : Any, T : Any> backAnimation(
-//    backHandler: BackHandler,
-//    onBack: () -> Unit,
-//): StackAnimation<C, T>
 
 @OptIn(ExperimentalDecomposeApi::class)
 fun <C : Any, T : Any> backAnimation2(

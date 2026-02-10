@@ -138,10 +138,11 @@ fun JvmWindowScope.MainApp(
                     )
                 }
                 AppComposableWidgetHideKeyboard()
+                TopAlertServiceUI(root.alertService)
             }
-            Box(Modifier.fillMaxSize()) {
-                //ChibiCharacter()
-            }
+//            Box(Modifier.fillMaxSize()) {
+//                //ChibiCharacter()
+//            }
         }
     }
 }

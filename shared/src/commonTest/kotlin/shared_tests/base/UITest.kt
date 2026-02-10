@@ -140,9 +140,12 @@ abstract class UITest : BaseTest() {
                     MainApp(component!!)
                 }
             }
-            io.kotest.engine.runBlocking {
+            kotlinx.coroutines.runBlocking {
                 run(component!!)
             }
+//            io.kotest.engine.runBlocking {
+//
+//            }
             lifecycle?.stop()
             lifecycle?.destroy()
             while (lifecycle?.state != Lifecycle.State.DESTROYED) {

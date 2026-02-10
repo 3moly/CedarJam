@@ -22,6 +22,7 @@ import com.moly3.cedarjam.core.domain.model.WorkspaceInput
 import com.moly3.cedarjam.core.domain.repository.IAppEnvironment
 import com.moly3.cedarjam.core.domain.repository.IFilesRepository
 import com.moly3.cedarjam.core.domain.repository.IWorkspaceEnvironment
+import com.moly3.cedarjam.core.domain.service.AlertService
 import com.moly3.cedarjam.core.domain.service.AppContextProvider
 import com.moly3.cedarjam.core.domain.service.FileManagerService
 import com.moly3.cedarjam.core.ui.service.IJvmBrowserService
@@ -52,6 +53,7 @@ fun initApp(
     val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     val navigator = NavigatorImpl(scope)
     val koinModule = module {
+        single<AlertService> { AlertService() }
         factory<INavigateToFileUseCase> { params ->
             val filesManager: FileManagerService = params.get()
             NavigateToFileUseCase(
@@ -60,7 +62,7 @@ fun initApp(
             )
         }
         single<ISyncUseCase> {
-            SyncUseCase(filesRepo = get())
+            SyncUseCase(alertService = get(), filesRepo = get())
         }
         factory<IOpenNodeDataUseCase> { params ->
             val filesManager: FileManagerService = params.get()

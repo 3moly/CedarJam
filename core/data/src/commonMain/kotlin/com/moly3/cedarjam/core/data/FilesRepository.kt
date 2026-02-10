@@ -55,7 +55,7 @@ class FilesRepository(
                 modifiedTime = mt.modifiedDateTime.toEpochMilliseconds(),
                 parentRelativePath = "",
                 parentFullPath = absolutePath,
-                createdTime =  mt.createdDateTime.toEpochMilliseconds(),
+                createdTime = mt.createdDateTime.toEpochMilliseconds(),
             )
         )
         return main
@@ -75,10 +75,12 @@ class FilesRepository(
 
 
     override fun createNode(
+        workspacePath: String,
         node: FileTreeNode,
         byteArray: ByteArray?
     ): ResultWrapper<FileTreeNode, String> {
         return filesStorage.createNode(
+            workspacePath = workspacePath,
             isDirectory = node is FileTreeNode.Directory,
             nodePath = node.getFullPath(),
             byteArray = byteArray,
@@ -87,11 +89,13 @@ class FilesRepository(
     }
 
     override fun createDirectory(
+        workspacePath: String,
         fullPath: String,
         isMustCreate: Boolean
     ): ResultWrapper<Unit, String> {
         return resultBlock {
             filesStorage.createNode(
+                workspacePath = workspacePath,
                 isDirectory = true,
                 nodePath = fullPath,
                 byteArray = null,
@@ -100,9 +104,14 @@ class FilesRepository(
         }
     }
 
-    override fun getFileNodeFromFullPath(fullPath: String, isDirectory: Boolean): FileTreeNode {
+    override fun getFileNodeFromFullPath(
+        workspacePath: String,
+        fullPath: String,
+        isDirectory: Boolean
+    ): FileTreeNode {
         return if (isDirectory)
             filesStorage.getDirectoryNodeFromFullPath(
+                workspacePath = workspacePath,
                 fullPath = fullPath,
             )
         else
@@ -112,12 +121,14 @@ class FilesRepository(
     }
 
     override fun moveNode(
+        workspacePath: String,
         node: FileTreeNode,
         newNode: FileTreeNode
     ): ResultWrapper<FileTreeNode, String> {
         return resultBlock {
             bind(
                 filesStorage.moveNode(
+                    workspacePath = workspacePath,
                     nodePath = node.getFullPath(),
                     moveNodePath = newNode.getFullPath(),
                     isDirectory = newNode is FileTreeNode.Directory

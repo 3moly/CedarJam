@@ -18,6 +18,17 @@ selectAll:
 SELECT *
 FROM Annotation;
 
+
+-- selectByDataPath:
+-- SELECT *
+-- FROM Annotation
+-- WHERE dataPath = :searchPath;
+
+selectByDataPath:
+SELECT *
+FROM Annotation
+WHERE dataPath LIKE :searchPath;
+
 delete:
 DELETE FROM Annotation
 WHERE id = :id;
@@ -25,3 +36,13 @@ WHERE id = :id;
 insertNew:
 INSERT INTO Annotation(dataPath, dataPoint, description, createdTime, modifiedTime,posX,posY,width,height)
 VALUES ?;
+
+updateDataPath:
+UPDATE Annotation
+SET dataPath = :newFileRelativePath
+WHERE dataPath = :oldFileRelativePath;
+
+updateDataPathById:
+UPDATE Annotation
+SET dataPath = :newFileRelativePath
+WHERE id = :id;

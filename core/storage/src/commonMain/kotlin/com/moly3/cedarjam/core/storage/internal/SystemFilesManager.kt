@@ -109,10 +109,13 @@ internal class SystemFilesManager : ISystemFilesManager {
         ) as FileTreeNode.File
     }
 
-    override fun getDirectoryNodeFromFullPath(fullPath: String): FileTreeNode.Directory {
+    override fun getDirectoryNodeFromFullPath(
+        workspacePath: String,
+        fullPath: String
+    ): FileTreeNode.Directory {
         val abs = toAbsoluteAppPath(pathWrapper(fullPath))
         if (!isNodeExists(abs.pathString)) {
-            createNode(true, abs.pathString, byteArray = null, isMustCreate = true)
+            createNode(workspacePath, true, abs.pathString, byteArray = null, isMustCreate = true)
         }
         return getFileNodeFromPath(
             workspacePathToRemove = fullPath,
@@ -125,8 +128,7 @@ internal class SystemFilesManager : ISystemFilesManager {
     override fun deleteNode(nodePath: String) {
         try {
             fs.delete(Path(nodePath), true)
-        } catch (exc: Exception) {
-        }
+        }catch (exc: Exception){}
     }
 
     override fun deleteNodeHeavy(nodePath: String) {
@@ -144,6 +146,7 @@ internal class SystemFilesManager : ISystemFilesManager {
     }
 
     override fun moveNode(
+        workspacePath: String,
         nodePath: String,
         moveNodePath: String,
         isDirectory: Boolean
@@ -161,8 +164,8 @@ internal class SystemFilesManager : ISystemFilesManager {
             fs.atomicMove(path, newFilePath)
             setLastWriteTimeUtc(newFilePath.toString(), nowInMs())
             getFileNodeFromPath(
-                workspacePathToRemove = newFilePath.toString(),
-                newFilePath,
+                workspacePathToRemove = workspacePath,
+                filePath = newFilePath,
                 isDirectory = isDirectory,
                 fileSize = 0L
             )
@@ -190,6 +193,7 @@ internal class SystemFilesManager : ISystemFilesManager {
     }
 
     override fun createNode(
+        workspacePath: String,
         isDirectory: Boolean,
         nodePath: String,
         byteArray: ByteArray?,
@@ -222,7 +226,7 @@ internal class SystemFilesManager : ISystemFilesManager {
                 bind(writeTextResult)
             }
             val se = getFileNodeFromPath(
-                workspacePathToRemove = path.toString(),
+                workspacePathToRemove = workspacePath,
                 filePath = path,
                 isDirectory = isDirectory,
                 fileSize = 0L

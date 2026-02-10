@@ -54,6 +54,7 @@ class DemoFilesManagerImpl : ISystemFilesManager {
     }
 
     override fun moveNode(
+        workspacePath: String,
         nodePath: String,
         moveNodePath: String,
         isDirectory: Boolean
@@ -82,7 +83,7 @@ class DemoFilesManagerImpl : ISystemFilesManager {
         return fileNode(norm, fs[norm] ?: ByteArray(0))
     }
 
-    override fun getDirectoryNodeFromFullPath(fullPath: String): FileTreeNode.Directory {
+    override fun getDirectoryNodeFromFullPath(workspacePath: String, fullPath: String): FileTreeNode.Directory {
         val norm = normalize(fullPath)
         return dirNode(norm, listOf())
     }

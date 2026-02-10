@@ -66,7 +66,8 @@ class RemoteSyncRepository(
                 val bytes = response.bodyAsBytes()
                 success(bytes)
             } else {
-                error("Upload failed with status: ${response.status.value}")
+                val errorMessage = response.bodyAsText()
+                error("Upload failed with status: ${response.status.value} ${errorMessage}")
             }
         } catch (e: Exception) {
             error("Upload error: ${e.message ?: "Unknown error"}")

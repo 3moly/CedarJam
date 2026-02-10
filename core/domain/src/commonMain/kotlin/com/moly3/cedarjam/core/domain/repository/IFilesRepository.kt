@@ -18,22 +18,24 @@ interface IFilesRepository {
         archivePath: String,
     )
 
-    fun getFileNodeFromFullPath(fullPath: String, isDirectory: Boolean): FileTreeNode
+    fun getFileNodeFromFullPath(workspacePath: String,fullPath: String, isDirectory: Boolean): FileTreeNode
     fun getNodes(absolutePath: String): List<FileTreeNode>
     fun isNodeExists(node: FileTreeNode): Boolean
     fun deleteNode(node: FileTreeNode)
     fun deleteNodeHeavy(node: FileTreeNode)
     fun createNode(
+        workspacePath: String,
         node: FileTreeNode,
         byteArray: ByteArray? = null
     ): ResultWrapper<FileTreeNode, String>
 
     fun createDirectory(
+        workspacePath: String,
         fullPath: String,
         isMustCreate: Boolean
     ): ResultWrapper<Unit, String>
 
-    fun moveNode(node: FileTreeNode, newNode: FileTreeNode): ResultWrapper<FileTreeNode, String>
+    fun moveNode(workspacePath: String,node: FileTreeNode, newNode: FileTreeNode): ResultWrapper<FileTreeNode, String>
     fun setNodeText(node: FileTreeNode.File, text: String): ResultWrapper<Unit, String>
     fun getNodeText(node: FileTreeNode.File): ResultWrapper<String, String>
     fun setNodeBytes(node: FileTreeNode.File, byteArray: ByteArray)

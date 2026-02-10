@@ -24,6 +24,7 @@ import com.moly3.cedarjam.core.domain.dialog.DialogSelectWorkspaceService
 import com.moly3.cedarjam.core.domain.model.settings.AppSettings
 import com.moly3.cedarjam.core.domain.model.WorkspaceInput
 import com.moly3.cedarjam.core.domain.repository.IAppEnvironment
+import com.moly3.cedarjam.core.domain.service.AlertService
 import com.moly3.cedarjam.core.ui.service.MacTrackpadGestureService
 import com.moly3.cedarjam.core.domain.service.IMessageService
 import kotlinx.coroutines.CoroutineScope
@@ -59,6 +60,7 @@ class RootComponent(
     override val messageService: IMessageService by inject()
     override val appEnvironment: IAppEnvironment by inject()
     override val appSettingsFlow: StateFlow<AppSettings> = appEnvironment.getAppSettingsFlow()
+    override val alertService: AlertService by inject()
 
     private val _stack = childStack(
         source = navigation,

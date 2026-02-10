@@ -56,7 +56,7 @@ interface IWorkspaceEnvironment {
     fun getDatabaseStatus(): Flow<UIState<Unit, DatabaseError>>
     fun getFileNodesFlow(): Flow<UIState<List<FileTreeNode>, String>>
     suspend fun getServerFiles(): ResultWrapper<FileStructure, String>
-    suspend fun deleteWorkspace(): ResultWrapper<Unit, String>
+    suspend fun deleteWorkspaceInServer(): ResultWrapper<Unit, String>
     fun getTagsFlow(): Flow<List<TagDTO>>
     fun getTagFlow(id: Long): Flow<TagDTO?>
     fun getTagLinksFlow(): Flow<List<TagLinkDTO>>

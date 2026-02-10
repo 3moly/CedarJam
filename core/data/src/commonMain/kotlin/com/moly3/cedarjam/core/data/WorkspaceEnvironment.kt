@@ -3,6 +3,7 @@ package com.moly3.cedarjam.core.data
 import com.moly3.cedarjam.core.net.IRemoteSyncRepository
 import com.moly3.cedarjam.core.domain.DefaultJson
 import com.moly3.cedarjam.core.domain.func.doNothing
+import com.moly3.cedarjam.core.domain.func.normalizeText
 import com.moly3.cedarjam.core.domain.func.nowInMs
 import com.moly3.cedarjam.core.domain.func.pathWrapper
 import com.moly3.cedarjam.core.domain.func.toColor
@@ -164,6 +165,7 @@ class WorkspaceEnvironment(
             var byteArray: ByteArray? = null
             try {
                 val fileNode = filesRepository.getFileNodeFromFullPath(
+                    workspacePath = workspace.absolutePath,
                     archiveFullPath,
                     isDirectory = false
                 ) as FileTreeNode.File
@@ -208,7 +210,7 @@ class WorkspaceEnvironment(
         )
     }
 
-    override suspend fun deleteWorkspace(): ResultWrapper<Unit, String> {
+    override suspend fun deleteWorkspaceInServer(): ResultWrapper<Unit, String> {
         return syncNetRepository.deleteWorkspace(
             userName = "bulat",
             workspaceName = workspace.serverName
@@ -475,7 +477,7 @@ class WorkspaceEnvironment(
             while (true) {
                 newNameFileNode = FileTreeNode.File(
                     name = fileName.copy(name = fileName.name + index.toString()),
-                    parentRelativePath = parentFolder?.getFullPath() ?: workspace.fullpath,
+                    parentRelativePath = parentFolder?.getRelativePath() ?: "",
                     //todo adapt relativePath
                     fileSize = 0L,
                     parentFullPath = parentFolder?.getFullPath() ?: workspace.fullpath,
@@ -486,14 +488,17 @@ class WorkspaceEnvironment(
                 index++
             }
             filesRepository.createNode(
+                workspacePath = workspace.absolutePath,
                 newNameFileNode,
                 byteArray = byteArray
             )
         } else {
+            val parentFolderPath = parentFolder?.getRelativePath()
             filesRepository.createNode(
+                workspacePath = workspace.absolutePath,
                 FileTreeNode.File(
                     name = fileName,
-                    parentRelativePath = parentFolder?.getFullPath() ?: workspace.fullpath,
+                    parentRelativePath = parentFolderPath ?: "",
                     //todo adapt relativePath
                     fileSize = 0L,
                     parentFullPath = parentFolder?.getFullPath() ?: workspace.fullpath,
@@ -533,9 +538,10 @@ class WorkspaceEnvironment(
                 }
                 index++
             }
-            filesRepository.createNode(ff, byteArray = null)
+            filesRepository.createNode(workspacePath = workspace.absolutePath, ff)
         } else {
             filesRepository.createNode(
+                workspacePath = workspace.absolutePath,
                 FileTreeNode.Directory(
                     name = name,
                     parentRelativePath = parentFolder?.getFullPath() ?: workspace.fullpath,
@@ -543,8 +549,7 @@ class WorkspaceEnvironment(
                     fileSize = 0L,
                     //todo adapt relativePath
                     parentFullPath = parentFolder?.getFullPath() ?: workspace.fullpath,
-                ),
-                byteArray = null
+                )
             )
         }
 
@@ -625,6 +630,7 @@ class WorkspaceEnvironment(
             val oldRelativePath = oldNode.getRelativePath()
             val updatedNode = bind(
                 filesRepository.moveNode(
+                    workspacePath = workspace.absolutePath,
                     oldNode,
                     newNode
                 )
@@ -639,6 +645,11 @@ class WorkspaceEnvironment(
                 for (snap in listOfRenamedSnaps) {
                     val oldNodePath = snap.oldNode.getRelativePath()
                     val newNodePath = snap.renamed.getRelativePath()
+                    sqlStorage.renameFileNode(
+                        oldRelativePath = oldNodePath,
+                        newRelativePath = newNodePath
+                    )
+
                     deletedFiles[oldNodePath] = nowInMs() // snap.oldNode.modifiedTime
                     if (deletedFiles.contains(newNodePath)) {
                         deletedFiles.remove(newNodePath)
@@ -688,6 +699,7 @@ class WorkspaceEnvironment(
             return
         }
         filesRepository.createNode(
+            workspacePath = workspace.absolutePath,
             node = newFile,
             byteArray = byteArray
         )
@@ -815,7 +827,7 @@ class WorkspaceEnvironment(
         sqlStorage.createAnnotation(
             annotation = Annotation(
                 id = 0L,
-                dataPath = data.dataPath,
+                dataPath = data.dataPath.normalizeText(),
                 dataPoint = data.dataPoint,
                 description = data.description,
                 createdTime = nowInMs(),

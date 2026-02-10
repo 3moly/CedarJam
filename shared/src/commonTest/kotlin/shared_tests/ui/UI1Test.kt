@@ -9,17 +9,22 @@ import shared_tests.base.UITest
 import co.touchlab.kermit.Logger
 import com.arkivanov.decompose.router.stack.active
 import com.moly3.cedarjam.core.domain.dialog.DialogCreateWorkspaceService
+import com.moly3.cedarjam.core.domain.model.FileName
+import com.moly3.cedarjam.core.domain.model.SyncStatus
 import com.moly3.cedarjam.core.domain.model.Workspace
 import com.moly3.cedarjam.navigation.Root
 import com.moly3.cedarjam.navigation.Route
 import com.moly3.cedarjam.core.domain.model.WorkspaceInput
 import com.moly3.cedarjam.core.domain.model.shouldBeSuccess
+import com.moly3.cedarjam.core.domain.repository.IWorkspaceEnvironment
 import com.moly3.cedarjam.core.domain.usecase.ISyncUseCase
 import com.moly3.cedarjam.core.storage.ISystemFilesManager
 import com.moly3.cedarjam.pages.page_tab.TabComponent
 import com.moly3.cedarjam.pages.page_workspace.Intent
+import io.kotest.matchers.collections.shouldHaveSize
 import kotlinx.coroutines.delay
 import org.koin.mp.KoinPlatform.getKoin
+import shared_tests.func.checkFlowListSize
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -73,6 +78,51 @@ class UI1Test : UITest() {
         Logger.d("step 3")
     }
 
+    private suspend fun IWorkspaceEnvironment.isFullSynced() {
+        val koin = getKoin()
+        val syncUseCase = koin.get<ISyncUseCase>()
+        val workspaceEnv = this
+        val syncStatusResult = syncUseCase.getStatus(workspaceEnv)
+        syncStatusResult.shouldBeSuccess()
+        syncStatusResult.value.toUpload.map { d -> d.key }.shouldHaveSize(0)
+        syncStatusResult.value.toDownload.map { d -> d.key }.shouldHaveSize(0)
+    }
+
+    private suspend fun IWorkspaceEnvironment.checkDbIsEmpty() {
+        getAnnotationsFlow().checkFlowListSize(expectedSize = 0)
+        getCollectionsFlow().checkFlowListSize(expectedSize = 0)
+        getCollectionRowsFlow(null).checkFlowListSize(expectedSize = 0)
+        getTagsFlow().checkFlowListSize(expectedSize = 0)
+        getTagCollectionRowsFlow().checkFlowListSize(expectedSize = 0)
+        getTagLinksFlow().checkFlowListSize(expectedSize = 0)
+        getTagToTagsFlow().checkFlowListSize(expectedSize = 0)
+    }
+
+    private suspend fun IWorkspaceEnvironment.checkServerFilesSize(expectedSize: Int) {
+        val serverFilesResult2 = getServerFiles()
+        serverFilesResult2.shouldBeSuccess()
+        val serverFilesList = serverFilesResult2.value.files
+        serverFilesList.shouldHaveSize(expectedSize)
+    }
+
+    private fun IWorkspaceEnvironment.checkDbIndexes(
+        expectedSyncSize: Int,
+        expectedDirtySize: Int,
+        expectedNewSize: Int,
+        expectedDeletedSize: Int,
+    ) {
+        val indexes = getIndexFiles()
+        indexes.filter { d -> d.serverSyncStatus == SyncStatus.SYNCED }
+            .shouldHaveSize(expectedSyncSize)
+        indexes.filter { d -> d.serverSyncStatus == SyncStatus.DIRTY }
+            .shouldHaveSize(expectedDirtySize)
+        indexes.filter { d -> d.serverSyncStatus == SyncStatus.NEW }
+            .shouldHaveSize(expectedNewSize)
+        indexes.filter { d -> d.serverSyncStatus == SyncStatus.DELETED }
+            .shouldHaveSize(expectedDeletedSize)
+    }
+
+
     @Test
     fun testUITestAdvance() = runUITest(beforeSetContent = {}) { root ->
         val workspace = Workspace(
@@ -96,7 +146,7 @@ class UI1Test : UITest() {
         instance.component.onIntent(Intent.CreateWorkspace)
         val workspaceSession = instance.component.workspaceSession
         val workspaceEnv = workspaceSession.workspaceEnvStateFlow.value
-        workspaceEnv.deleteWorkspace().shouldBeSuccess()
+        workspaceEnv.deleteWorkspaceInServer().shouldBeSuccess()
         val serverFilesResult = workspaceEnv.getServerFiles()
         serverFilesResult.shouldBeSuccess()
         val emptyWorkspaceFiles = serverFilesResult.value.files
@@ -104,22 +154,56 @@ class UI1Test : UITest() {
 
         val tabs = instance.component.children.value.items.first().instance
         val sre = tabs.childStack.value.active.instance.component as TabComponent
+        val syncUseCase = koin.get<ISyncUseCase>()
 
         val home = waitAndTabGetComponent<TabComponent.Child.Home>(sre, 5000L)
         delay(1000L)
         root.onNavigate(Route.MainGraph)
         val graph = waitAndTabGetComponent<TabComponent.Child.Graph>(sre, 5000L)
-        val syncUseCase = koin.get<ISyncUseCase>()
+
         syncUseCase.getStatus(workspaceEnv).shouldBeSuccess()
 
         val dbIndexes = workspaceEnv.getIndexFiles()
-        assertEquals(3, dbIndexes.size)
-        syncUseCase.invoke(workspaceEnv).shouldBeSuccess()
+        assertEquals(2, dbIndexes.size)
+        syncUseCase.syncronize(workspaceEnv).shouldBeSuccess()
 
-        val serverFilesResult2 = workspaceEnv.getServerFiles()
-        serverFilesResult2.shouldBeSuccess()
-        val files = serverFilesResult2.value.files
+        workspaceEnv.checkServerFilesSize(expectedSize = 2)
 
-        val msg = "" + files
+        workspaceEnv.isFullSynced()
+        workspaceEnv.checkDbIsEmpty()
+
+        val dR = workspaceEnv.createDirectory(null, name = "pdf", isAbsoluteNew = false)
+        dR.shouldBeSuccess()
+
+        syncUseCase.syncronize(workspaceEnv).shouldBeSuccess()
+        workspaceEnv.isFullSynced()
+
+        workspaceEnv.checkServerFilesSize(expectedSize = 3)
+
+        val fBroNode = workspaceEnv.createFileNode(
+            dR.value,
+            fileName = FileName("bro", extension = "txt"),
+            isAbsoluteNew = false
+        )
+        fBroNode.shouldBeSuccess()
+
+        syncUseCase.syncronize(workspaceEnv).shouldBeSuccess()
+        workspaceEnv.isFullSynced()
+
+        workspaceEnv.checkServerFilesSize(expectedSize = 4)
+
+        workspaceEnv.checkDbIndexes(
+            expectedSyncSize = 4,
+            expectedNewSize = 0,
+            expectedDirtySize = 0,
+            expectedDeletedSize = 0
+        )
+        workspaceEnv.deleteNode(fBroNode.value)
+        workspaceEnv.checkDbIndexes(
+            expectedSyncSize = 3,
+            expectedNewSize = 0,
+            expectedDirtySize = 0,
+            expectedDeletedSize = 1
+        )
     }
 }

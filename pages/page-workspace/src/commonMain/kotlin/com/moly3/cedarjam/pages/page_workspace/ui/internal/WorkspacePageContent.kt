@@ -350,7 +350,7 @@ internal fun WorkspacePageContent(
                                                 verticalAlignment = Alignment.CenterVertically,
                                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                                             ) {
-                                                if (windowSize != WindowSize.Compact) {
+                                                if (state.isMenuOpened) {
                                                     CJIcon(
                                                         painter = rememberVectorPainter(TrashEmpty),
                                                         onClick = {

@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.Flow
 interface ISyncUseCase {
     suspend fun clearSending()
     fun sendingBranchFlow(): Flow<UIState<SyncStatusChannel, String>>
-    suspend fun invoke(workspace: IWorkspaceEnvironment): ResultWrapper<SyncStatus2, String>
+    suspend fun syncronize(workspace: IWorkspaceEnvironment): ResultWrapper<SyncStatus2, String>
     suspend fun getStatus(workspace: IWorkspaceEnvironment): ResultWrapper<GetSyncStatus, String>
 }
 

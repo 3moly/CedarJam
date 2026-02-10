@@ -1,11 +1,13 @@
 package com.moly3.cedarjam.features.feature_file_view.internal
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -13,7 +15,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -62,6 +66,8 @@ import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
 import com.moly3.cedarjam.core.ui.func.blendMode
 import com.moly3.cedarjam.core.ui.func.darker
+import com.moly3.cedarjam.core.ui.func.flatClickable
+import com.moly3.cedarjam.core.ui.model.CJText
 import com.moly3.cedarjam.core.ui.onPointerEvent
 import com.moly3.cedarjam.core.ui.uikit.CJCircularProgressIndicator
 import com.moly3.cedarjam.core.ui.uikit.CJText
@@ -92,7 +98,7 @@ fun AnnotationDTO.toPx(
     val drawnH = canvasSize.height.toFloat()
 
     val left = drawnW * x
-    val top  = drawnH * (1f - y - height)
+    val top = drawnH * (1f - y - height)
 
     return Rect(
         left,
@@ -113,6 +119,7 @@ internal fun PdfUI(
     onAddAnnotation: (CreateAnnotationRequest) -> Unit,
     onDeleteAnnotation: (AnnotationDTO) -> Unit
 ) {
+    val isShowAnnotations = remember { mutableStateOf(false) }
     var documentState by remember { mutableStateOf<ObsPdfDocument?>(null) }
     LaunchedEffect(Unit) {
         launch(io) {
@@ -154,214 +161,272 @@ internal fun PdfUI(
             focusRequester.freeFocus()
         }
     }
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .onPointerEvent(PointerEventType.Enter) {
-                isMouseCaptured = true
-            }
-            .onPointerEvent(PointerEventType.Move) {
-                isMouseCaptured = true
-            }
-            .onPointerEvent(PointerEventType.Exit) {
-                isMouseCaptured = false
-            }
-            .onKeyEvent(onKeyEvent = { event ->
-                if (event.type == KeyEventType.KeyUp) {
-                    if (Key.DirectionLeft == event.key && canGoBack) {
-                        back()
-                    }
-                    if (Key.DirectionRight == event.key && canGoForward) {
-                        forward()
-                    }
+    Row(modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier = Modifier
+                .fillMaxHeight()
+                .weight(1f)
+                .onPointerEvent(PointerEventType.Enter) {
+                    isMouseCaptured = true
                 }
-                true
-            })
-            .focusRequester(focusRequester)
-    ) {
-        val liquidState: LiquidState = rememberLiquidState()
-        if (documentState != null) {
-            var painter by remember { mutableStateOf<Painter?>(null) }
-            Row(Modifier.fillMaxSize()) {
-                when (getPlatform()) {
-                    Platform.Android,
-                    Platform.Jvm,
-                    Platform.Wasm -> {
-                        Box(Modifier.weight(1f).fillMaxHeight()) {
-                            if (painter != null) {
-                                CJZoomableViewLayout(
-                                    modifier = Modifier.fillMaxSize().hazeSource(hazeState)
-                                        .liquefiable(liquidState),
-                                    macTrackpadGestureService = macTrackpadGestureService
-                                ) {
-                                    painter?.let {
-                                        Image(
-                                            painter = it,
-                                            contentDescription = null,
-                                            modifier = Modifier
-                                                .drawWithContent {
-                                                    this.drawContent()
-                                                    val size = this.size
+                .onPointerEvent(PointerEventType.Move) {
+                    isMouseCaptured = true
+                }
+                .onPointerEvent(PointerEventType.Exit) {
+                    isMouseCaptured = false
+                }
+                .onKeyEvent(onKeyEvent = { event ->
+                    if (event.type == KeyEventType.KeyUp) {
+                        if (Key.DirectionLeft == event.key && canGoBack) {
+                            back()
+                        }
+                        if (Key.DirectionRight == event.key && canGoForward) {
+                            forward()
+                        }
+                    }
+                    true
+                })
+                .focusRequester(focusRequester)
+        ) {
+            val liquidState: LiquidState = rememberLiquidState()
+            if (documentState != null) {
+                var painter by remember { mutableStateOf<Painter?>(null) }
+                Row(Modifier.fillMaxSize()) {
+                    when (getPlatform()) {
+                        Platform.Android,
+                        Platform.Jvm,
+                        Platform.Wasm -> {
+                            Box(Modifier.weight(1f).fillMaxHeight()) {
+                                if (painter != null) {
+                                    CJZoomableViewLayout(
+                                        modifier = Modifier.fillMaxSize().hazeSource(hazeState)
+                                            .liquefiable(liquidState),
+                                        macTrackpadGestureService = macTrackpadGestureService
+                                    ) {
+                                        painter?.let {
+                                            Image(
+                                                painter = it,
+                                                contentDescription = null,
+                                                modifier = Modifier
+                                                    .drawWithContent {
+                                                        this.drawContent()
+                                                        val size = this.size
 
-                                                    annotations.filter { d -> d.dataPoint.toInt() == currentPage - 1 }
-                                                        .forEach { annotation ->
+                                                        annotations.filter { d -> d.dataPoint.toInt() == currentPage - 1 }
+                                                            .forEach { annotation ->
 
-                                                            val rect = annotation.toPx(
-                                                                IntSize(
-                                                                    size.width.toInt(),
-                                                                    size.height.toInt()
+                                                                val rect = annotation.toPx(
+                                                                    IntSize(
+                                                                        size.width.toInt(),
+                                                                        size.height.toInt()
+                                                                    )
                                                                 )
-                                                            )
 
-                                                            drawRect(
-                                                                color = Color.Yellow.copy(alpha = 0.35f),
-                                                                topLeft = Offset(
-                                                                    rect.left,
-                                                                    rect.top
-                                                                ),
-                                                                size = Size(rect.width, rect.height)
-                                                            )
+                                                                drawRect(
+                                                                    color = Color.Yellow.copy(alpha = 0.35f),
+                                                                    topLeft = Offset(
+                                                                        rect.left,
+                                                                        rect.top
+                                                                    ),
+                                                                    size = Size(
+                                                                        rect.width,
+                                                                        rect.height
+                                                                    )
+                                                                )
 
-                                                            drawRect(
-                                                                color = Color.Yellow,
-                                                                topLeft = Offset(
-                                                                    rect.left,
-                                                                    rect.top
-                                                                ),
-                                                                size = Size(
-                                                                    rect.width,
-                                                                    rect.height
-                                                                ),
-                                                                style = Stroke(width = 2.dp.toPx())
-                                                            )
-                                                        }
-                                                }
-                                        )
+                                                                drawRect(
+                                                                    color = Color.Yellow,
+                                                                    topLeft = Offset(
+                                                                        rect.left,
+                                                                        rect.top
+                                                                    ),
+                                                                    size = Size(
+                                                                        rect.width,
+                                                                        rect.height
+                                                                    ),
+                                                                    style = Stroke(width = 2.dp.toPx())
+                                                                )
+                                                            }
+                                                    }
+                                            )
+                                        }
                                     }
-                                }
 
-                            } else {
-                                CJCircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                                } else {
+                                    CJCircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                                }
                             }
                         }
-                    }
 
-                    Platform.Ios -> {
-                        CJPdf(
-                            Modifier.fillMaxSize().liquefiable(liquidState),
-                            currentPage = currentPage,
-                            pdf = documentState!!,
-                            annotations = annotations,
-                            filePath = fileType.fileNode.getFullPath(),
-                            onAddAnnotation = onAddAnnotation,
-                            onDeleteAnnotation = onDeleteAnnotation
-                        )
+                        Platform.Ios -> {
+                            CJPdf(
+                                Modifier.fillMaxSize().liquefiable(liquidState),
+                                currentPage = currentPage,
+                                pdf = documentState!!,
+                                annotations = annotations,
+                                filePath = fileType.fileNode.getFullPath(),
+                                onAddAnnotation = onAddAnnotation,
+                                onDeleteAnnotation = onDeleteAnnotation
+                            )
+                        }
                     }
                 }
-            }
-            Row(
-                modifier = Modifier
-                    .padding(bottom = 32.dp)
-                    .align(Alignment.BottomCenter)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(
-                        LocalAppTheme.current.colors.backgroundPrimary,
-                        shape = RoundedCornerShape(16.dp)
-                    )
-                    //.hazeEffect(state = hazeState, style = hazeStyle)
-                    .border(volumedBorderStroke, shape = RoundedCornerShape(16.dp))
-                    .liquid(liquidState) {
-                        this.frost = 1.dp
-                        refraction = 0.15f
-                        edge = 0.05f
-                        curve = 0.4f
-                        saturation = 0.5f
-                        dispersion = 1f
-                    }
-                    .padding(8.dp),
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                CJIcon(
-                    modifier = Modifier.blendMode(BlendMode.Difference),
-                    painter = rememberVectorPainter(ArrowLeft),
-                    isEnabled = canGoBack,
-                    tintColor = Color.White,
-                    onClick = {
-                        back()
-                    })
-                var textState by remember { mutableStateOf(TextFieldValue("")) }
-                LaunchedEffect(currentPage) {
-                    if (textState.text != currentPage.toString()) {
-                        textState = TextFieldValue((currentPage.toString()))
-                    }
-                }
-                CJTextField(
+                Row(
                     modifier = Modifier
-                        .widthIn(min = 30.dp)
-                        .width(IntrinsicSize.Min)
-                        .clickable {}
-                        .blendMode(BlendMode.Difference),
-                    value = textState,
-                    onValueChange = {
-                        textState = it
-                    },
-                    textStyle = LocalTextStyle.current.merge(
-                        textAlign = TextAlign.End
-                    ),
-                    keyboardType = KeyboardType.Number,
-                    onDone = {
-                        val number = textState.text.trim().toIntOrNull()
-                        if (number != null) {
-                            toPage(number)
-                        } else {
+                        .padding(bottom = 32.dp)
+                        .align(Alignment.BottomCenter)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(
+                            LocalAppTheme.current.colors.backgroundPrimary,
+                            shape = RoundedCornerShape(16.dp)
+                        )
+                        //.hazeEffect(state = hazeState, style = hazeStyle)
+                        .border(volumedBorderStroke, shape = RoundedCornerShape(16.dp))
+                        .liquid(liquidState) {
+                            this.frost = 1.dp
+                            refraction = 0.15f
+                            edge = 0.05f
+                            curve = 0.4f
+                            saturation = 0.5f
+                            dispersion = 1f
+                        }
+                        .padding(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    CJIcon(
+                        modifier = Modifier.blendMode(BlendMode.Difference),
+                        painter = rememberVectorPainter(ArrowLeft),
+                        isEnabled = canGoBack,
+                        tintColor = Color.White,
+                        onClick = {
+                            back()
+                        })
+                    var textState by remember { mutableStateOf(TextFieldValue("")) }
+                    LaunchedEffect(currentPage) {
+                        if (textState.text != currentPage.toString()) {
                             textState = TextFieldValue((currentPage.toString()))
-                            //state.setTextAndPlaceCursorAtEnd(currentPage.toString())
                         }
-                    },
-                    color = Color.White
-                )
-                CJText(
-                    text = "of", Modifier.blendMode(BlendMode.Difference),
-                    color = Color.White
-                )
-                CJText(
-                    text = documentState?.getNumberOfPages().toString(),
-                    Modifier.blendMode(BlendMode.Difference),
-                    color = Color.White
-                )
-                CJIcon(
-                    modifier = Modifier.blendMode(BlendMode.Difference),
-                    painter = rememberVectorPainter(ArrowRight),
-                    isEnabled = canGoForward,
-                    tintColor = Color.White,
-                    onClick = {
-                        forward()
-                    })
-            }
-            LaunchedEffect(documentState, currentPage) {
-                launch(io) {
-                    painter = null
-                    if (documentState != null) {
-                        try {
-                            painter = documentState?.getPagePainter(currentPage - 1)
+                    }
+                    CJTextField(
+                        modifier = Modifier
+                            .widthIn(min = 30.dp)
+                            .width(IntrinsicSize.Min)
+                            .clickable {}
+                            .blendMode(BlendMode.Difference),
+                        value = textState,
+                        onValueChange = {
+                            textState = it
+                        },
+                        textStyle = LocalTextStyle.current.merge(
+                            textAlign = TextAlign.End
+                        ),
+                        keyboardType = KeyboardType.Number,
+                        onDone = {
+                            val number = textState.text.trim().toIntOrNull()
+                            if (number != null) {
+                                toPage(number)
+                            } else {
+                                textState = TextFieldValue((currentPage.toString()))
+                                //state.setTextAndPlaceCursorAtEnd(currentPage.toString())
+                            }
+                        },
+                        color = Color.White
+                    )
+                    CJText(
+                        text = "of", Modifier.blendMode(BlendMode.Difference),
+                        color = Color.White
+                    )
+                    CJText(
+                        text = documentState?.getNumberOfPages().toString(),
+                        Modifier.blendMode(BlendMode.Difference),
+                        color = Color.White
+                    )
+                    CJIcon(
+                        modifier = Modifier.blendMode(BlendMode.Difference),
+                        painter = rememberVectorPainter(ArrowRight),
+                        isEnabled = canGoForward,
+                        tintColor = Color.White,
+                        onClick = {
+                            forward()
+                        })
+                }
 
-                        } catch (exc: Exception) {
-                        }
+                LaunchedEffect(documentState, currentPage) {
+                    launch(io) {
+                        painter = null
+                        if (documentState != null) {
+                            try {
+                                painter = documentState?.getPagePainter(currentPage - 1)
 
-                        //                                            imgBitmap = getPdfImage(
+                            } catch (exc: Exception) {
+                            }
+
+                            //                                            imgBitmap = getPdfImage(
 //                                                Path(
 //                                                    fileNode.fileNode.getFullPath()
 //                                                ).toString(),
 //                                                page = currentPage,
 //                                                dpi = 100f
 //                                            )
+                        }
+                    }
+                }
+            } else {
+                CJCircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+            }
+            Row(
+                modifier = Modifier.align(Alignment.BottomEnd).background(Color.Black)
+                    .padding(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Box(
+                    modifier = Modifier.background(Color.Black)
+                        .flatClickable {
+                            //      currentPage = currentPage,
+                            //                                pdf = documentState!!,
+                            //                                annotations = annotations,
+                            //                                filePath = fileType.fileNode.getFullPath(),
+                            onAddAnnotation(
+                                CreateAnnotationRequest(
+                                    dataPath = fileType.fileNode.getFullPath(),
+                                    dataPoint = (currentPage-1).toDouble(),
+                                    description = "-",
+                                    x = 0.5f,
+                                    y = 0.5f,
+                                    width = 0.1f,
+                                    height = 0.1f,
+                                )
+                            )
+                        }
+                ) {
+                    CJText(text = "annotate")
+                }
+                Box(
+                    modifier = Modifier.background(Color.Black)
+                        .flatClickable {
+                            isShowAnnotations.value = !isShowAnnotations.value
+                        }
+                ) {
+                    CJText(text = "annotations: ${annotations.size}")
+                }
+            }
+
+        }
+
+        Row(modifier = Modifier.fillMaxHeight()) {
+            AnimatedVisibility(isShowAnnotations.value) {
+                Column(
+                    modifier = Modifier.width(200.dp).fillMaxHeight().verticalScroll(
+                        rememberScrollState()
+                    )
+                ) {
+                    for (item in annotations) {
+                        CJText(text = item.dataPath)
                     }
                 }
             }
-        } else {
-            CJCircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
         }
-
     }
+
 }

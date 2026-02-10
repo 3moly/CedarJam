@@ -484,6 +484,7 @@ internal class WorkspaceStoreFactory(
 
         private fun createFile(parentFullPath: String, newFileName: FileName) {
             val parentFolder = systemFilesManager.getFileNodeFromFullPath(
+                workspacePath = workspaceSession.workspaceEnvStateFlow.value.getWorkspace().absolutePath,
                 fullPath = parentFullPath,
                 isDirectory = true
             )
@@ -1054,19 +1055,19 @@ internal class WorkspaceStoreFactory(
 
                         is FileTreeItemPresentation.FileTreeItemPresentationData.File -> {
                             scope.launch {
-                                val fileNode = systemFilesManager.getFileNodeFromFullPath(
-                                    fullPath = data.fileNode.getFullPath(),
-                                    isDirectory = false
+//                                val fileNode = systemFilesManager.getFileNodeFromFullPath(
+//                                    workspacePath = workspaceSession.workspaceEnvStateFlow.value.getWorkspace().absolutePath,
+//                                    fullPath = data.fileNode.getFullPath(),
+//                                    isDirectory = false
+//                                )
+                                val fileNode = data.fileNode
+                                val newNode = fileNode.copy(
+                                    name = fileNode.name.copy(name = intent.newName)
                                 )
-                                if (fileNode is FileTreeNode.File) {
-                                    val newNode = fileNode.copy(
-                                        name = fileNode.name.copy(name = intent.newName)
-                                    )
-                                    workspaceEnv.renameNode(
-                                        fileNode,
-                                        newNode
-                                    )
-                                }
+                                workspaceEnv.renameNode(
+                                    fileNode,
+                                    newNode
+                                )
                             }
                         }
 

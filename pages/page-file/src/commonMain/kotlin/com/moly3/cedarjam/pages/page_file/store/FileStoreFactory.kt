@@ -6,6 +6,7 @@ import com.arkivanov.mvikotlin.core.store.Reducer
 import com.arkivanov.mvikotlin.core.store.SimpleBootstrapper
 import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
+import com.moly3.cedarjam.core.domain.func.normalizeText
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.FileTreeNode.Companion.getAllFilesByExtension
 import com.moly3.cedarjam.core.domain.model.FileType
@@ -127,8 +128,9 @@ internal class FileStoreFactory(
                     workspaceEnv.getAnnotationsFlow()
                 ) { node, annotations ->
                     if (node != null) {
+                        val nodePath = node.getRelativePath()
                         annotations
-                            .filter { d -> d.dataPath == node.getRelativePath() }
+                            .filter { d -> d.dataPath.normalizeText() == nodePath.normalizeText() }
                             .toPersistentList()
                     } else {
                         persistentListOf()

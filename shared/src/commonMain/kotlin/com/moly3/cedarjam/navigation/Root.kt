@@ -12,6 +12,7 @@ import com.moly3.cedarjam.core.domain.dialog.DialogDeleteService
 import com.moly3.cedarjam.core.domain.dialog.DialogSelectWorkspaceService
 import com.moly3.cedarjam.core.domain.model.settings.AppSettings
 import com.moly3.cedarjam.core.domain.repository.IAppEnvironment
+import com.moly3.cedarjam.core.domain.service.AlertService
 import com.moly3.cedarjam.core.domain.service.IMessageService
 import kotlinx.coroutines.flow.StateFlow
 
@@ -26,6 +27,7 @@ interface Root : NavigationComponent<Root.Child>, WebNavigationOwner {
     val dialogCreateWorkspaceService: DialogCreateWorkspaceService
     val dialogAddCollectionRowService: DialogAddCollectionRowService
     val dialogDeleteService: DialogDeleteService
+    val alertService: AlertService
     val appSettingsFlow: StateFlow<AppSettings>
     fun shareMagnifyValue(value: Double)
 

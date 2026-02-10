@@ -10,18 +10,20 @@ interface ISystemFilesManager {
     fun toRelativeAppPath(relativePath: IPathWrapper): IPathWrapper
     fun getFileHash(fullPath: String): String
     fun getFileNodeFromFullPath(fullPath: String): FileTreeNode.File
-    fun getDirectoryNodeFromFullPath(fullPath: String,): FileTreeNode.Directory
+    fun getDirectoryNodeFromFullPath(workspacePath: String,fullPath: String): FileTreeNode.Directory
     fun getNodes(directoryAbsolutePath: String): List<FileTreeNode>
     fun isNodeExists(path: String): Boolean
     fun deleteNode(nodePath: String)
     fun deleteNodeHeavy(nodePath: String)
     fun moveNode(
+        workspacePath: String,
         nodePath: String,
         moveNodePath: String,
         isDirectory: Boolean
     ): ResultWrapper<FileTreeNode, String>
 
     fun createNode(
+        workspacePath: String,
         isDirectory: Boolean,
         nodePath: String,
         byteArray: ByteArray?,

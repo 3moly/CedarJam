@@ -81,7 +81,25 @@ fun FileButton(
     onRename: (String) -> Unit = {},
     onClick: () -> Unit
 ) {
-
+    val syncBorderColor = remember(syncStatus){
+        when(syncStatus){
+            SyncStatus.SYNCED -> Color.Transparent
+            SyncStatus.DIRTY -> Color.Magenta
+            SyncStatus.NEW -> Color.Green
+            SyncStatus.DELETED -> Color.Red
+            null -> Color.Transparent
+        }
+    }
+//    if (syncStatus != null) {
+//        CJText(
+//            modifier = Modifier.padding(end = 8.dp),
+//            text = syncStatus.toString(),
+//            fontSize = 14.sp,
+//            color = LocalAppTheme.current.colors.primaryFont,
+//            maxLines = 1,
+//            overflow = TextOverflow.Ellipsis
+//        )
+//    }
     val primaryColor = LocalAppTheme.current.primaryColor
     var isHovered by remember { mutableStateOf(false) }
 
@@ -163,9 +181,11 @@ fun FileButton(
         FileButtonIcon(
             modifier = Modifier,
             backColor = backColor,
+            borderColor = syncBorderColor,
             iconModifier = Modifier.rotate(animatedRotation),
             imageVector = if (isOpen != null) ChevronDownDuo else null
         )
+
         if (isRename) {
             val renameTextField = remember(title) {
                 mutableStateOf(TextFieldValue(title, selection = TextRange(title.length)))
@@ -192,16 +212,7 @@ fun FileButton(
                 focusRequester.requestFocus()
             }
         } else {
-            if (syncStatus != null) {
-                CJText(
-                    modifier = Modifier.padding(end = 8.dp),
-                    text = syncStatus.toString(),
-                    fontSize = 14.sp,
-                    color = LocalAppTheme.current.colors.primaryFont,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
+
             CJText(
                 modifier = Modifier.weight(1f),
                 text = title,
@@ -262,16 +273,19 @@ fun FileButton(
 private fun FileButtonIcon(
     modifier: Modifier = Modifier,
     iconModifier: Modifier = Modifier,
+    borderColor: Color = Color.Transparent,
     backColor: Color? = null,
     imageVector: ImageVector?
 ) {
+    val shape = RoundedCornerShape(4.dp)
     Box(
         modifier = modifier
             .size(20.dp)
             .background(
                 backColor ?: Color(0xFF696969),
-                shape = RoundedCornerShape(4.dp)
-            ),
+                shape = shape
+            )
+            .border(1.dp, borderColor, shape),
         contentAlignment = Alignment.Center
     ) {
         if (imageVector != null) {

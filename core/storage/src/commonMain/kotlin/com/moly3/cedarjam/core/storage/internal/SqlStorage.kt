@@ -14,6 +14,7 @@ import com.moly3.cedarjam.core.storage.func.createSqlDriver
 import com.moly3.cedarjam.core.domain.func.doNothing
 import com.moly3.cedarjam.core.domain.func.hiddenDirectory
 import com.moly3.cedarjam.core.domain.func.indexSqlDatabaseName
+import com.moly3.cedarjam.core.domain.func.normalizeText
 import com.moly3.cedarjam.core.domain.func.nowInMs
 import com.moly3.cedarjam.core.domain.func.pathWrapper
 import com.moly3.cedarjam.core.domain.func.sqlDatabaseName
@@ -165,6 +166,7 @@ internal class SqlStorage(
         //todo if directory created with db name, need to double check
         if (!systemFilesManager.isNodeExists(dbPath)) {
             systemFilesManager.createNode(
+                workspacePath = "",
                 isDirectory = false,
                 nodePath = dbPath,
                 byteArray = null,
@@ -174,6 +176,7 @@ internal class SqlStorage(
         val indexDb = getIndexDatabasePath()
         if (!systemFilesManager.isNodeExists(indexDb)) {
             systemFilesManager.createNode(
+                workspacePath = "",
                 isDirectory = false,
                 nodePath = indexDb,
                 byteArray = null,
@@ -690,6 +693,16 @@ internal class SqlStorage(
                     oldFileRelativePath = oldRelativePath,
                     newFileRelativePath = newRelativePath
                 )
+                val all = db.annotationQueries.selectAll().executeAsList()
+                val physicalFounds =
+                    all.filter { d -> d.dataPath.normalizeText() == oldRelativePath.normalizeText() }
+
+                for (item in physicalFounds) {
+                    db.annotationQueries.updateDataPathById(
+                        newFileRelativePath = newRelativePath.normalizeText(),
+                        id = item.id
+                    )
+                }
             }
         }
     }
