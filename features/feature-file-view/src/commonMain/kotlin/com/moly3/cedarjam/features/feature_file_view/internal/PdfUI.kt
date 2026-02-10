@@ -12,6 +12,9 @@ import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
@@ -69,6 +72,7 @@ import com.moly3.cedarjam.core.ui.func.darker
 import com.moly3.cedarjam.core.ui.func.flatClickable
 import com.moly3.cedarjam.core.ui.model.CJText
 import com.moly3.cedarjam.core.ui.onPointerEvent
+import com.moly3.cedarjam.core.ui.uikit.CJButton
 import com.moly3.cedarjam.core.ui.uikit.CJCircularProgressIndicator
 import com.moly3.cedarjam.core.ui.uikit.CJText
 import com.moly3.cedarjam.core.ui.uikit.CJTextField
@@ -390,7 +394,7 @@ internal fun PdfUI(
                             onAddAnnotation(
                                 CreateAnnotationRequest(
                                     dataPath = fileType.fileNode.getFullPath(),
-                                    dataPoint = (currentPage-1).toDouble(),
+                                    dataPoint = (currentPage - 1).toDouble(),
                                     description = "-",
                                     x = 0.5f,
                                     y = 0.5f,
@@ -414,7 +418,10 @@ internal fun PdfUI(
 
         }
 
-        Row(modifier = Modifier.fillMaxHeight()) {
+        Row(
+            modifier = Modifier.fillMaxHeight()
+                .background(LocalAppTheme.current.colors.backgroundPrimary)
+        ) {
             AnimatedVisibility(isShowAnnotations.value) {
                 Column(
                     modifier = Modifier.width(200.dp).fillMaxHeight().verticalScroll(
@@ -422,7 +429,30 @@ internal fun PdfUI(
                     )
                 ) {
                     for (item in annotations) {
-                        CJText(text = item.dataPath)
+                        Box(
+                            modifier = Modifier
+                                .padding(4.dp)
+                                .fillMaxWidth()
+                                .heightIn(max = 150.dp)
+                                .border(1.dp, Color.White)
+                                .padding(8.dp)
+                        ) {
+                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                if (!item.description.isEmpty()) {
+                                    CJText("Примеч: ${item.description}", maxLines = 3)
+                                }
+                                Row {
+                                    CJButton(text = "go to ${item.dataPoint}") {
+                                        toPage(item.dataPoint.toInt() + 1)
+                                    }
+                                    Box(Modifier.weight(1f))
+                                    CJButton(text = "remove") {
+                                        onDeleteAnnotation(item)
+                                    }
+                                }
+
+                            }
+                        }
                     }
                 }
             }

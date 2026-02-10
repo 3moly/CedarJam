@@ -311,7 +311,7 @@ class dbTest : AppEnvironmentTest() {
         filesRepository.setNodeText(file, text)
         var isExistsFile = filesRepository.isNodeExists(file)
         assertTrue { isExistsFile }
-        filesRepository.moveNode(, file, file2)
+        filesRepository.moveNode("", file, file2)
         isExistsFile = filesRepository.isNodeExists(file)
         assertTrue { !isExistsFile }
         val isExistsFile2 = filesRepository.isNodeExists(file2)
