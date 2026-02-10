@@ -78,7 +78,7 @@ class DemoFilesManagerImpl : ISystemFilesManager {
         return relativePath
     }
 
-    override fun getFileNodeFromFullPath(fullPath: String): FileTreeNode.File {
+    override fun getFileNodeFromFullPath(workspacePath: String, fullPath: String): FileTreeNode.File {
         val norm = normalize(fullPath)
         return fileNode(norm, fs[norm] ?: ByteArray(0))
     }

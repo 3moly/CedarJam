@@ -99,11 +99,10 @@ internal class SystemFilesManager : ISystemFilesManager {
         return calculateFileHash(fullPath)
     }
 
-    override fun getFileNodeFromFullPath(fullPath: String): FileTreeNode.File {
-        val abs = toAbsoluteAppPath(pathWrapper(fullPath))
+    override fun getFileNodeFromFullPath(workspacePath: String, fullPath: String): FileTreeNode.File {
         return getFileNodeFromPath(
-            workspacePathToRemove = fullPath,
-            Path(abs.pathString),
+            workspaceFullPath = workspacePath,
+            Path(fullPath),
             false,
             fileSize = 0L
         ) as FileTreeNode.File
@@ -118,7 +117,7 @@ internal class SystemFilesManager : ISystemFilesManager {
             createNode(workspacePath, true, abs.pathString, byteArray = null, isMustCreate = true)
         }
         return getFileNodeFromPath(
-            workspacePathToRemove = fullPath,
+            workspaceFullPath = workspacePath,
             abs.pathString.toPath(),
             true,
             fileSize = 0L
@@ -164,7 +163,7 @@ internal class SystemFilesManager : ISystemFilesManager {
             fs.atomicMove(path, newFilePath)
             setLastWriteTimeUtc(newFilePath.toString(), nowInMs())
             getFileNodeFromPath(
-                workspacePathToRemove = workspacePath,
+                workspaceFullPath = workspacePath,
                 filePath = newFilePath,
                 isDirectory = isDirectory,
                 fileSize = 0L
@@ -174,7 +173,7 @@ internal class SystemFilesManager : ISystemFilesManager {
 
     override fun getNodes(directoryAbsolutePath: String): List<FileTreeNode> {
         return getFiles(
-            workspacePathToRemove = directoryAbsolutePath,
+            workspaceFullPath = directoryAbsolutePath,
             parentPath = Path(directoryAbsolutePath)
         ).first
     }
@@ -226,7 +225,7 @@ internal class SystemFilesManager : ISystemFilesManager {
                 bind(writeTextResult)
             }
             val se = getFileNodeFromPath(
-                workspacePathToRemove = workspacePath,
+                workspaceFullPath = workspacePath,
                 filePath = path,
                 isDirectory = isDirectory,
                 fileSize = 0L

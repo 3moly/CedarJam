@@ -5,9 +5,9 @@ import androidx.compose.ui.graphics.painter.Painter
 
 @Stable
 interface ObsPdfDocument {
+    fun isActive(): Boolean
     fun getNumberOfPages(): Int
     fun getPagePainter(index: Int): Painter?
-    fun getPageText(index: Int): String?
     fun getPdfData(): PdfData?
 }
 

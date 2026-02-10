@@ -142,7 +142,10 @@ class WorkspaceEnvironment(
 
     override fun getNodes(absolutePath: String?): List<FileTreeNode> {
         val absolutePathGl = absolutePath ?: workspace.absolutePath
-        return filesRepository.getNodes(absolutePathGl)
+        return filesRepository.getNodes(
+            workspacePath = workspace.absolutePath,
+            absolutePath = absolutePathGl
+        )
     }
 
     private fun tryToGet(): UIState<List<FileTreeNode>, String> {
@@ -155,7 +158,7 @@ class WorkspaceEnvironment(
     }
 
     override suspend fun uploadSync(
-        archiveFullPath: String,
+        archiveNode: FileTreeNode.File,
         metadata: List<FileMetadata>,
         filesToDownload: List<String>,
         onDownload: suspend (Long, Long?) -> Unit,
@@ -164,15 +167,10 @@ class WorkspaceEnvironment(
         return resultBlock {
             var byteArray: ByteArray? = null
             try {
-                val fileNode = filesRepository.getFileNodeFromFullPath(
-                    workspacePath = workspace.absolutePath,
-                    archiveFullPath,
-                    isDirectory = false
-                ) as FileTreeNode.File
-                byteArray = filesRepository.getNodeBytes(fileNode)
+                byteArray = filesRepository.getNodeBytes(archiveNode)
             } catch (exc: Exception) {
-
             }
+
             val uploadResult = syncNetRepository.upload(
                 userName = "bulat",
                 workspaceName = workspace.serverName,
@@ -459,14 +457,19 @@ class WorkspaceEnvironment(
 
     override fun isWorkspaceExists(): Boolean {
         val result =
-            filesRepository.isNodeExists(FileTreeNode.Directory.create(getWorkspace().fullpath))
+            filesRepository.isNodeExists(
+                FileTreeNode.Directory.create(
+                    getWorkspace().absolutePath,
+                    getWorkspace().fullpath
+                )
+            )
         println("workspace env - isWorkspaceExists(): $result")
         return result
     }
 
 
     override suspend fun createFileNode(
-        parentFolder: FileTreeNode.Directory?,
+        parentRelativePath: String,
         fileName: FileName,
         isAbsoluteNew: Boolean,
         byteArray: ByteArray?,
@@ -477,10 +480,9 @@ class WorkspaceEnvironment(
             while (true) {
                 newNameFileNode = FileTreeNode.File(
                     name = fileName.copy(name = fileName.name + index.toString()),
-                    parentRelativePath = parentFolder?.getRelativePath() ?: "",
-                    //todo adapt relativePath
+                    parentRelativePath = parentRelativePath,
+                    workspaceFullPath = getWorkspace().absolutePath,
                     fileSize = 0L,
-                    parentFullPath = parentFolder?.getFullPath() ?: workspace.fullpath,
                 )
                 if (!filesRepository.isNodeExists(newNameFileNode)) {
                     break
@@ -493,15 +495,13 @@ class WorkspaceEnvironment(
                 byteArray = byteArray
             )
         } else {
-            val parentFolderPath = parentFolder?.getRelativePath()
             filesRepository.createNode(
                 workspacePath = workspace.absolutePath,
                 FileTreeNode.File(
                     name = fileName,
-                    parentRelativePath = parentFolderPath ?: "",
-                    //todo adapt relativePath
+                    parentRelativePath = parentRelativePath,
+                    workspaceFullPath = getWorkspace().absolutePath,
                     fileSize = 0L,
-                    parentFullPath = parentFolder?.getFullPath() ?: workspace.fullpath,
                 ),
                 byteArray = byteArray
             )
@@ -522,33 +522,31 @@ class WorkspaceEnvironment(
     ): ResultWrapper<FileTreeNode.Directory, String> {
         val newNode = if (isAbsoluteNew) {
             var index = 0
-            var ff: FileTreeNode.Directory?
+            var selectedDir: FileTreeNode.Directory?
             while (true) {
-                val ss = FileTreeNode.Directory(
+                val directory = FileTreeNode.Directory(
                     name = name + index.toString(),
-                    parentRelativePath = parentFolder?.getFullPath() ?: workspace.fullpath,
+                    parentRelativePath = parentFolder?.getRelativePath() ?: "",
                     children = listOf(),
                     fileSize = 0L,
-                    //todo adapt relativePath
-                    parentFullPath = parentFolder?.getFullPath() ?: workspace.fullpath,
+                    workspaceFullPath = getWorkspace().absolutePath
                 )
-                if (!filesRepository.isNodeExists(ss)) {
-                    ff = ss
+                if (!filesRepository.isNodeExists(directory)) {
+                    selectedDir = directory
                     break
                 }
                 index++
             }
-            filesRepository.createNode(workspacePath = workspace.absolutePath, ff)
+            filesRepository.createNode(workspacePath = workspace.absolutePath, selectedDir)
         } else {
             filesRepository.createNode(
                 workspacePath = workspace.absolutePath,
                 FileTreeNode.Directory(
                     name = name,
-                    parentRelativePath = parentFolder?.getFullPath() ?: workspace.fullpath,
+                    parentRelativePath = parentFolder?.getRelativePath() ?: "",
                     children = listOf(),
                     fileSize = 0L,
-                    //todo adapt relativePath
-                    parentFullPath = parentFolder?.getFullPath() ?: workspace.fullpath,
+                    workspaceFullPath = getWorkspace().absolutePath,
                 )
             )
         }

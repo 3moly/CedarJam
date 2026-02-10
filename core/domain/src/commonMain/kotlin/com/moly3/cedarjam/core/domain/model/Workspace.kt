@@ -2,7 +2,6 @@ package com.moly3.cedarjam.core.domain.model
 
 import androidx.compose.runtime.Stable
 import com.moly3.cedarjam.core.domain.func.hiddenDirectory
-import com.moly3.cedarjam.core.domain.func.pathWrapper
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -27,8 +26,7 @@ data class WorkspacePresentation(
 fun WorkspacePresentation.getSettingsJsonFile(): FileTreeNode.File {
     return FileTreeNode.File(
         name = FileName("workspace_settings", extension = "json"),
-        //todo adapt relativePath
-        parentRelativePath = pathWrapper(this.absolutePath, hiddenDirectory).pathString,
-        parentFullPath = pathWrapper(this.absolutePath, hiddenDirectory).pathString
+        workspaceFullPath = absolutePath,
+        parentRelativePath = hiddenDirectory,
     )
 }

@@ -1,5 +1,7 @@
 package com.moly3.cedarjam.features.feature_file_view
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.toComposeImageBitmap
@@ -9,12 +11,19 @@ import org.icepdf.core.pobjects.Page
 import org.icepdf.core.util.GraphicsRenderingHints
 import java.awt.image.BufferedImage
 
+@Composable
 actual fun getObsPdfDocument(absolutePath: String): ObsPdfDocument? {
-    try {
-        val document: Document = Document().apply {
+    val document: Document = remember(absolutePath) {
+        Document().apply {
             setFile(absolutePath)
         }
-        return object : ObsPdfDocument {
+    }
+    return remember {
+        object : ObsPdfDocument {
+            override fun isActive(): Boolean {
+                return true
+            }
+
             override fun getNumberOfPages(): Int {
                 return document.numberOfPages
             }
@@ -42,15 +51,13 @@ actual fun getObsPdfDocument(absolutePath: String): ObsPdfDocument? {
                 }
             }
 
-            override fun getPageText(index: Int): String? {
-                return document.getPageText(index).toString()
-            }
+//            override fun getPageText(index: Int): String? {
+//                return document.getPageText(index).toString()
+//            }
 
             override fun getPdfData(): PdfData? {
                 return null
             }
         }
-    } catch (exc: Exception) {
-        return null
     }
 }

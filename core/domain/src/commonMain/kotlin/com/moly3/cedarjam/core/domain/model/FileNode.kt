@@ -2,7 +2,6 @@ package com.moly3.cedarjam.core.domain.model
 
 import com.moly3.cedarjam.core.domain.func.hiddenDirectory
 import com.moly3.cedarjam.core.domain.func.pathWrapper
-import com.moly3.cedarjam.core.domain.func.relativeTo
 import kotlinx.io.files.Path
 import kotlinx.serialization.Serializable
 
@@ -29,8 +28,8 @@ sealed class FileTreeNode {
     abstract val fileSize: Long
     abstract val modifiedTime: Long
     abstract val createdTime: Long
+    abstract val workspaceFullPath: String
     abstract val parentRelativePath: String
-    abstract val parentFullPath: String
     abstract fun getShortName(): String
     abstract fun getFullName(): String
     abstract fun getFullPath(): String
@@ -39,8 +38,8 @@ sealed class FileTreeNode {
     @Serializable
     data class File(
         val name: FileName,
+        override val workspaceFullPath: String,
         override val parentRelativePath: String,
-        override val parentFullPath: String,
         override val createdTime: Long = 0L,
         override val modifiedTime: Long = 0L,
         override val fileSize: Long = 0L,
@@ -65,14 +64,15 @@ sealed class FileTreeNode {
         }
 
         override fun getFullPath(): String {
-            val fullName = getFullName()
-            if (fullName.isEmpty())
-                return parentFullPath
-
-            return pathWrapper(
-                parentFullPath,
-                getFullName()
-            ).toString()
+            return pathWrapper(workspaceFullPath, parentRelativePath, getFullName()).pathString
+//            val fullName = getFullName()
+//            if (fullName.isEmpty())
+//                return parentFullPath
+//
+//            return pathWrapper(
+//                parentFullPath,
+//                getFullName()
+//            ).toString()
         }
     }
 
@@ -80,31 +80,40 @@ sealed class FileTreeNode {
     data class Directory(
         val name: String,
         override val parentRelativePath: String,
-        override val parentFullPath: String,
+        override val workspaceFullPath: String,
         val children: List<FileTreeNode>,
         override val createdTime: Long = 0L,
         override val modifiedTime: Long = 0L,
         override val fileSize: Long,
     ) : FileTreeNode() {
         companion object {
-            fun create(fullPath: Path, children: List<FileTreeNode> = listOf()): Directory {
-                return create(fullPath.toString(), children = children)
+            fun create(
+                workspacePath: String,
+                fullPath: Path,
+                children: List<FileTreeNode> = listOf()
+            ): Directory {
+                return create(workspacePath, fullPath.toString(), children = children)
             }
-            fun create(fullPath: String, children: List<FileTreeNode> = listOf()): Directory {
-                val name = if (fullPath.contains("/")) {
-                    fullPath.substringAfterLast("/")
+
+            fun create(
+                workspacePath: String,
+                relativePath: String,
+                children: List<FileTreeNode> = listOf()
+            ): Directory {
+                val name = if (relativePath.contains("/")) {
+                    relativePath.substringAfterLast("/")
                 } else {
                     ""
                 }
-                val parentPath = if (fullPath.contains("/")) {
-                    fullPath.substringBeforeLast("/")
+                val parentPath = if (relativePath.contains("/")) {
+                    relativePath.substringBeforeLast("/")
                 } else {
-                    fullPath.substringBeforeLast("/")
+                    relativePath.substringBeforeLast("/")
                 }
                 return Directory(
                     name = name,
-                    parentRelativePath = "",
-                    parentFullPath = parentPath,
+                    workspaceFullPath = workspacePath,
+                    parentRelativePath = parentPath,
                     children = children,
                     fileSize = children.sumOf { x -> x.fileSize }
                 )
@@ -126,8 +135,8 @@ sealed class FileTreeNode {
 
         override fun getFullPath(): String {
             return pathWrapper(
-                parentFullPath,
-                getFullName()
+                workspaceFullPath,
+                getRelativePath(),
             ).toString()
         }
     }

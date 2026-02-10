@@ -7,7 +7,7 @@ import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 
 fun getFiles(
-    workspacePathToRemove: String,
+    workspaceFullPath: String,
     parentPath: Path
 ): Pair<List<FileTreeNode>, Long> {
     var parentFileSize = 0L
@@ -24,13 +24,13 @@ fun getFiles(
         var childFileSize = meta.size
 
         if (meta.isDirectory) {
-            val filesResult = getFiles(workspacePathToRemove, childPath)
+            val filesResult = getFiles(workspaceFullPath = workspaceFullPath, childPath)
             childFileSize = filesResult.second
             parentFileSize += filesResult.second
             nodes = filesResult.first
         }
         val node = getFileNodeFromPath(
-            workspacePathToRemove = workspacePathToRemove,
+            workspaceFullPath = workspaceFullPath,
             filePath = filePath,
             meta.isDirectory,
             nodes = nodes,

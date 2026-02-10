@@ -482,21 +482,22 @@ internal class WorkspaceStoreFactory(
             dispatch(WorkspaceStore.Msg.SetContextMenu(null))
         }
 
-        private fun createFile(parentFullPath: String, newFileName: FileName) {
-            val parentFolder = systemFilesManager.getFileNodeFromFullPath(
-                workspacePath = workspaceSession.workspaceEnvStateFlow.value.getWorkspace().absolutePath,
-                fullPath = parentFullPath,
-                isDirectory = true
-            )
-            if (parentFolder is FileTreeNode.Directory) {
-                scope.launch {
-                    workspaceSession.workspaceEnvStateFlow.value.createFileNode(
-                        parentFolder = parentFolder,
-                        fileName = newFileName,
-                        isAbsoluteNew = true,
-                        byteArray = null
-                    )
-                }
+        private fun createFile(parentNode: FileTreeNode.Directory, newFileName: FileName) {
+//            val parentFolder = systemFilesManager.getFileNodeFromFullPath(
+//                workspacePath = workspaceSession.workspaceEnvStateFlow.value.getWorkspace().absolutePath,
+//                fullPath = parentRelativePath,
+//                isDirectory = true
+//            )
+//            if (parentFolder is FileTreeNode.Directory) {
+//
+//            }
+            scope.launch {
+                workspaceSession.workspaceEnvStateFlow.value.createFileNode(
+                    parentRelativePath = parentNode.getRelativePath(),
+                    fileName = newFileName,
+                    isAbsoluteNew = true,
+                    byteArray = null
+                )
             }
         }
 
@@ -519,7 +520,7 @@ internal class WorkspaceStoreFactory(
                                     title = CJText.Raw("Create markdown file"),
                                     onClick = {
                                         createFile(
-                                            parentFullPath = data.fileNode.getFullPath(),
+                                            parentNode = data.fileNode,
                                             newFileName = FileName("Untitled", "md")
                                         )
                                         updateSyncStatus()
@@ -541,7 +542,7 @@ internal class WorkspaceStoreFactory(
                                     title = CJText.Raw("Create canvas file"),
                                     onClick = {
                                         createFile(
-                                            parentFullPath = data.fileNode.getFullPath(),
+                                            parentNode = data.fileNode,
                                             newFileName = FileName("Untitled", "canvas")
                                         )
                                         updateSyncStatus()
@@ -782,16 +783,17 @@ internal class WorkspaceStoreFactory(
                             val workspaceEnv = workspaceSession.workspaceEnvStateFlow.value
 
                             val resourcesDirectory = pathWrapper(
-                                workspaceEnv.getWorkspace().fullpath,
                                 hiddenDirectory,
                                 "resources",
                                 file.extension
                             )
+                            //FileTreeNode.Directory.create(
+                            //                                    workspacePath = workspaceSession.workspaceEnvStateFlow.value.getWorkspace().absolutePath,
+                            //                                    resourcesDirectory.pathString,
+                            //                                    listOf()
+                            //                                )
                             workspaceEnv.createFileNode(
-                                parentFolder = FileTreeNode.Directory.create(
-                                    resourcesDirectory.pathString,
-                                    listOf()
-                                ),
+                                parentRelativePath = resourcesDirectory.pathString,
                                 fileName = FileName(
                                     name = file.nameWithoutExtension,
                                     extension = file.extension
@@ -855,13 +857,15 @@ internal class WorkspaceStoreFactory(
                                 directory.getFullPath().relativeTo(workspaceAbsolute)
                             val newNode = when (draggingItemPath) {
                                 is FileTreeNode.Directory -> draggingItemPath.copy(
+                                    workspaceFullPath = workspaceAbsolute,
                                     parentRelativePath = directoryRelativePath,
-                                    parentFullPath = directory.getFullPath()
+//                                    parentFullPath = directory.getFullPath()
                                 )
 
                                 is FileTreeNode.File -> draggingItemPath.copy(
+                                    workspaceFullPath = workspaceAbsolute,
                                     parentRelativePath = directoryRelativePath,
-                                    parentFullPath = directory.getFullPath()
+//                                    parentFullPath = directory.getFullPath()
                                 )
                             }
 
@@ -949,13 +953,8 @@ internal class WorkspaceStoreFactory(
 
                         is FileTreeItemPresentation.FileTreeItemPresentationData.Directory -> {
                             scope.launch {
-                                val parentFolder = data.fileNode
-//                                    systemFilesManager.getFileNodeFromFullPath(
-//                                    fullPath = data.fileNode.getFullPath(),
-//                                    isDirectory = true
-//                                )
                                 workspaceSession.workspaceEnvStateFlow.value.createFileNode(
-                                    parentFolder = parentFolder,
+                                    parentRelativePath = data.fileNode.getRelativePath(),
                                     fileName = FileName(
                                         name = "Untitled",
                                         extension = "md"

@@ -151,35 +151,52 @@ class SyncUseCase(
         }
     }
 
-    override suspend fun syncronize(workspace: IWorkspaceEnvironment): ResultWrapper<SyncStatus2, String> {
+    override suspend fun syncronize(workspaceEnv: IWorkspaceEnvironment): ResultWrapper<SyncStatus2, String> {
         emitChannel("init", 1)
-        val workspaceAbsolutePath = workspace.getWorkspace().absolutePath
+        val workspaceAbsolutePath = workspaceEnv.getWorkspace().absolutePath
         val hiddenDirPath = pathWrapper(workspaceAbsolutePath, hiddenDirectory).pathString
         val importArchivePath = Path(hiddenDirPath, "import.zip").toString()
+        val importNode =
+            FileTreeNode.File(
+                FileName(
+                    "import",
+                    "zip"
+                ),
+                "",
+                hiddenDirPath
+            )
         val exportArchiveNode =
-            FileTreeNode.File(FileName("export", "zip"), hiddenDirPath, hiddenDirPath)
+            FileTreeNode.File(
+                FileName(
+                    "export",
+                    "zip"
+                ),
+                "",
+                hiddenDirPath
+            )
 
         return resultBlock {
             try {
+                filesRepo.deleteNode(importNode)
                 // 1. Refresh Metadata
-                val serverFiles = bind(workspace.getServerFiles()).files
+                val serverFiles = bind(workspaceEnv.getServerFiles()).files
                 val diskNodesInitial =
-                    workspace.getNodes(null).firstOrNull()?.getChildrenOrNull()?.getAll()
+                    workspaceEnv.getNodes(null).firstOrNull()?.getChildrenOrNull()?.getAll()
                         ?: listOf()
 
-                workspace.updateIndexFilesLocal(diskNodesInitial)
-                workspace.updateIndexFiles(diskNodesInitial, serverFiles)
+                workspaceEnv.updateIndexFilesLocal(diskNodesInitial)
+                workspaceEnv.updateIndexFiles(diskNodesInitial, serverFiles)
                 emitChannel("checked local db", 2)
 
                 // 2. Handle Explicit Server Deletions
                 processServerDeletions(
-                    workspace,
+                    workspaceEnv,
                     diskNodesInitial.associateBy { it.getRelativePath() },
                     serverFiles
                 )
 
                 // 3. Evaluation against Database
-                val indexMap = workspace.getIndexFilesFlow().first()
+                val indexMap = workspaceEnv.getIndexFilesFlow().first()
                     .associateBy { it.relativePath.normalizeText() }
                 val serverMap = serverFiles.filter { !it.isDeleted }
                     .associateBy { it.relativePath.normalizeText() }
@@ -197,10 +214,12 @@ class SyncUseCase(
                     when (determineAction(local, server)) {
                         SyncAction.UPLOAD -> {
                             local?.let {
+//                                filesToUploadMeta.add(finalMeta)
+//                                filesToPackInZip.add(path)
                                 val meta = it.toMetadata()
                                 val isDeletion = it.serverSyncStatus == SyncStatus.DELETED
-
-                                // Refresh hash for existing local files
+//
+//                                // Refresh hash for existing local files
                                 val finalMeta = if (it.isDirectory || isDeletion) meta
                                 else meta.copy(
                                     contentHash = filesRepo.getFileHash(
@@ -210,14 +229,17 @@ class SyncUseCase(
                                         ).pathString
                                     )
                                 )
-
+//
                                 filesToUploadMeta.add(finalMeta)
                                 editFilesToSync.add(it)
-
-                                // Only pack into zip if it's a file, not deleted, and server doesn't have it
-                                if (!it.isDirectory && !isDeletion && (server == null || server.contentHash != finalMeta.contentHash)) {
+                                if (!isDeletion) {
                                     filesToPackInZip.add(path)
                                 }
+
+//                                // Only pack into zip if it's a file, not deleted, and server doesn't have it
+//                                if (!it.isDirectory && !isDeletion && (server == null || server.contentHash != finalMeta.contentHash)) {
+//                                    filesToPackInZip.add(path)
+//                                }
                             }
                         }
 
@@ -240,8 +262,8 @@ class SyncUseCase(
                 }
 
                 emitChannel("upload to server", 4)
-                val uploadResult = workspace.uploadSync(
-                    archiveFullPath = importArchivePath,
+                val uploadResult = workspaceEnv.uploadSync(
+                    archiveNode = importNode,
                     metadata = filesToUploadMeta,
                     filesToDownload = filesToDownloadPaths,
                     onUpload = { curr, total ->
@@ -261,13 +283,13 @@ class SyncUseCase(
                 val responseZipBytes = bind(uploadResult)
 
                 // Update database for local changes
-                workspace.syncDirtyFiles(editFilesToSync)
+                workspaceEnv.syncDirtyFiles(editFilesToSync)
 
                 // Clean up entries for locally deleted files that were confirmed by server
                 val myDeletedPaths =
                     filesToUploadMeta.filter { it.isDeleted }.map { it.relativePath }
                 if (myDeletedPaths.isNotEmpty()) {
-                    workspace.deleteIndexFiles(myDeletedPaths)
+                    workspaceEnv.deleteIndexFiles(myDeletedPaths)
                 }
 
                 // 5. Execution: Unpacking Downloads
@@ -275,14 +297,18 @@ class SyncUseCase(
                     emitChannel("extract from zip", 6)
                     filesRepo.deleteNode(exportArchiveNode)
                     filesRepo.createNode(
-                        workspacePath = workspace.getWorkspace().absolutePath,
+                        workspacePath = workspaceEnv.getWorkspace().absolutePath,
                         exportArchiveNode,
                         byteArray = responseZipBytes
                     )
 
                     val extractedFiles =
-                        filesRepo.unpackZip(exportArchiveNode.getFullPath(), workspaceAbsolutePath)
-                    workspace.setFilesAsSynced(
+                        filesRepo.unpackZip(
+                            serverFiles,
+                            exportArchiveNode.getFullPath(),
+                            workspaceAbsolutePath
+                        )
+                    workspaceEnv.setFilesAsSynced(
                         extractedFiles,
                         serverNodes = serverMap.values.toList()
                     ).shouldBeSuccess()
@@ -316,13 +342,16 @@ class SyncUseCase(
         val deletedPaths = mutableListOf<String>()
         if (explicitlyDeletedByServer.isNotEmpty()) {
             val pathsToDelete = explicitlyDeletedByServer.map { it.relativePath }
-            val absolutes = pathsToDelete.map { pathWrapper(abso, it).pathString }
+            val relativePaths = pathsToDelete.map { it }
 
-            for (item in absolutes) {
-                val meta = SystemFileSystem.metadataOrNull(Path(item)) ?: continue
+            for (relativePathToDelete in relativePaths) {
+                val absoluteToDelete = pathWrapper(abso, relativePathToDelete).pathString
+                val meta =
+                    SystemFileSystem.metadataOrNull(Path(absoluteToDelete))
+                        ?: continue
                 val node = filesRepo.getFileNodeFromFullPath(
                     workspacePath = workspace.getWorkspace().absolutePath,
-                    item,
+                    fullPath = absoluteToDelete,
                     isDirectory = meta.isDirectory
                 )
                 filesRepo.deleteNodeHeavy(node)

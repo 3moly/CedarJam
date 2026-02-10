@@ -46,7 +46,7 @@ interface IWorkspaceEnvironment {
     suspend fun updateTimes()
     suspend fun reinitDatabase()
     suspend fun uploadSync(
-        archiveFullPath: String,
+        archiveNode: FileTreeNode.File,
         metadata: List<FileMetadata>,
         filesToDownload: List<String>,
         onDownload: suspend (Long, Long?) -> Unit,
@@ -80,9 +80,9 @@ interface IWorkspaceEnvironment {
     fun isWorkspaceExists(): Boolean
     fun getWorkspace(): WorkspacePresentation
 
-    fun getNodes(absolutePath: String?): List<FileTreeNode>
+    fun getNodes( absolutePath: String?): List<FileTreeNode>
     suspend fun createFileNode(
-        parentFolder: FileTreeNode.Directory?,
+        parentRelativePath: String,
         fileName: FileName,
         isAbsoluteNew: Boolean,
         byteArray: ByteArray? = null
@@ -163,16 +163,15 @@ interface IWorkspaceEnvironment {
             directoryName: String,
             files: List<FileTreeNode>
         ): List<FileTreeNode> {
-            val path = pathWrapper(workspace.fullpath, hiddenDirectory, directoryName)
+            val path = pathWrapper(hiddenDirectory, directoryName)
             val child =
                 files.first().getChildrenOrNull()?.getHiddenNodes(directoryName = directoryName)
                     ?: listOf()
             return listOf(
                 FileTreeNode.Directory(
                     name = name,
-                    //todo adapt relativePath
+                    workspaceFullPath = workspace.absolutePath,
                     parentRelativePath = path.toString(),
-                    parentFullPath = path.toString(),
                     children = child,
                     fileSize = child.sumOf { d -> d.fileSize }
                 )

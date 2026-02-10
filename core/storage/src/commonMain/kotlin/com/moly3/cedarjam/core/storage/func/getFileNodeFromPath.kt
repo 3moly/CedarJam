@@ -7,10 +7,9 @@ import kotlinx.io.files.Path
 import kotlin.time.ExperimentalTime
 
 
-
 @OptIn(ExperimentalTime::class)
 fun getFileNodeFromPath(
-    workspacePathToRemove: String,
+    workspaceFullPath: String,
     filePath: Path,
     isDirectory: Boolean,
     nodes: List<FileTreeNode>? = null,
@@ -19,10 +18,10 @@ fun getFileNodeFromPath(
     val fullName = filePath.name
     val relativePath = filePath
         .toString()
-        .relativeTo(workspacePathToRemove)
+        .relativeTo(workspaceFullPath)
         .removePrefix("/")
         .removeSuffix(filePath.name)
-    val parentFullPath = filePath.parent?.toString() ?: ""
+//    val parentFullPath = filePath.parent?.toString() ?: ""
     val isLastDotExists = fullName.last() == '.'
 
     val splited = fullName.split(".")
@@ -38,7 +37,7 @@ fun getFileNodeFromPath(
         FileTreeNode.Directory(
             name = fullName,
             parentRelativePath = relativePath,
-            parentFullPath = parentFullPath,
+            workspaceFullPath = workspaceFullPath,
             children = nodes ?: listOf(),
             createdTime = getOtherFileMeta.createdDateTime.toEpochMilliseconds(),
             modifiedTime = getOtherFileMeta.modifiedDateTime.toEpochMilliseconds(),
@@ -46,8 +45,8 @@ fun getFileNodeFromPath(
         )
     } else
         FileTreeNode.File(
+            workspaceFullPath = workspaceFullPath,
             parentRelativePath = relativePath,
-            parentFullPath = parentFullPath,
             name = FileName(
                 name = shortName + if (isLastDotExists) "." else "",
                 extension = fileExtension

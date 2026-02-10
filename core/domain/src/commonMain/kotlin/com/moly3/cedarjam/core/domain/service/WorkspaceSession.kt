@@ -228,10 +228,11 @@ class WorkspaceSession(
         val node = FileTreeNode.File(
             name = FileName(name = "default", extension = "otf"),
             //todo adapt relativePath
-            parentFullPath = pathWrapper(
-                workspace.getWorkspace().absolutePath,
-                hiddenDirectory
-            ).pathString,
+            workspaceFullPath = workspace.getWorkspace().absolutePath,
+//            parentFullPath = pathWrapper(
+//                workspace.getWorkspace().absolutePath,
+//                hiddenDirectory
+//            ).pathString,
             parentRelativePath = pathWrapper(
                 workspace.getWorkspace().absolutePath,
                 hiddenDirectory
@@ -250,15 +251,15 @@ class WorkspaceSession(
     }
 
     suspend fun sync(useCase: ISyncUseCase): ResultWrapper<SyncStatus2, String> {
-        val resultss = useCase.syncronize(workspace = workspaceEnvStateFlow.value)
+        val syncResult = useCase.syncronize(workspace = workspaceEnvStateFlow.value)
         val env = workspaceEnvStateFlow.value
 
         //dispatch(SettingsSyncStore.Msg.SetUploadState(resultss.mapToUIState(onError = { "" })))
-        if (resultss.isSuccess()) {
+        if (syncResult.isSuccess()) {
             env.initConfigAndFiles()
             loadLocalFont()
         }
         env.reinitDatabase()
-        return resultss
+        return syncResult
     }
 }

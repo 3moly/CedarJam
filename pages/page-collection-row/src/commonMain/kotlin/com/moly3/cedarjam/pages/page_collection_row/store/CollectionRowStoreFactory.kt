@@ -162,15 +162,16 @@ internal class CollectionRowStoreFactory(
                                     name = file.nameWithoutExtension,
                                     extension = file.extension
                                 ),
+                                workspaceFullPath =  workspace.fullpath,
                                 //todo adapt relativePath
                                 parentRelativePath = pathWrapper(
                                     workspace.fullpath,
                                     relativePath.toString()
                                 ).toString(),
-                                parentFullPath = pathWrapper(
-                                    workspace.fullpath,
-                                    relativePath.toString()
-                                ).toString(),
+//                                parentFullPath = pathWrapper(
+//                                    workspace.fullpath,
+//                                    relativePath.toString()
+//                                ).toString(),
                             )
 //                            val sed = file.absolutePath()
                             val sed = ""

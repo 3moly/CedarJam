@@ -1,5 +1,6 @@
 package com.moly3.cedarjam.core.data
 
+import com.moly3.cedarjam.core.domain.model.FileItem
 import com.moly3.cedarjam.core.storage.ISystemFilesManager
 import com.moly3.cedarjam.core.storage.func.getOtherFileMeta
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
@@ -23,10 +24,12 @@ class FilesRepository(
     }
 
     override suspend fun unpackZip(
+        serverIndexes: List<FileItem>,
         archivePath: String,
         workspaceFullPath: String,
     ): List<String> {
         return extractZip(
+            serverIndexes,
             archivePath,
             workspaceFullPath,
         )
@@ -44,17 +47,17 @@ class FilesRepository(
         )
     }
 
-    override fun getNodes(absolutePath: String): List<FileTreeNode> {
+    override fun getNodes(workspacePath: String, absolutePath: String): List<FileTreeNode> {
         val allFiles = filesStorage.getNodes(absolutePath)
         val mt = getOtherFileMeta(absolutePath)
         val main = listOf(
             FileTreeNode.Directory(
+                workspaceFullPath = workspacePath,
                 children = allFiles,
                 name = "",
                 fileSize = allFiles.sumOf { x -> x.fileSize },
                 modifiedTime = mt.modifiedDateTime.toEpochMilliseconds(),
-                parentRelativePath = "",
-                parentFullPath = absolutePath,
+                parentRelativePath = absolutePath.replace(workspacePath, ""),
                 createdTime = mt.createdDateTime.toEpochMilliseconds(),
             )
         )
@@ -116,6 +119,7 @@ class FilesRepository(
             )
         else
             filesStorage.getFileNodeFromFullPath(
+                workspacePath = workspacePath,
                 fullPath = fullPath,
             )
     }

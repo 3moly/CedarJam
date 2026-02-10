@@ -6,13 +6,11 @@ import com.moly3.cedarjam.core.domain.func.pathWrapper
 import com.moly3.cedarjam.core.domain.io
 import com.moly3.cedarjam.core.domain.model.FileName
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
-import com.moly3.cedarjam.core.domain.model.FileTreeNode.*
 import com.moly3.cedarjam.core.domain.model.settings.WorkspaceSettings
 import com.moly3.cedarjam.core.domain.repository.IFilesRepository
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.dialogs.FileKitType
-import io.github.vinceglb.filekit.dialogs.FileKitType.*
 import io.github.vinceglb.filekit.dialogs.openFilePicker
 import io.github.vinceglb.filekit.readBytes
 import kotlinx.coroutines.CoroutineScope
@@ -64,7 +62,8 @@ class SettingsGeneralComponent(
                         name = FileName(name = "default", extension = "otf"),
                         parentRelativePath = pathWrapper(workspace.absolutePath, hiddenDirectory).pathString,
                         //todo adapt relativePath
-                        parentFullPath = pathWrapper(workspace.absolutePath, hiddenDirectory).pathString,
+                        workspaceFullPath = workspace.absolutePath,
+//                        parentFullPath = pathWrapper(workspace.absolutePath, hiddenDirectory).pathString,
                     )
                     val bb = file.readBytes()
                     systemFilesManager.setNodeBytes(fileNode, byteArray = bb)

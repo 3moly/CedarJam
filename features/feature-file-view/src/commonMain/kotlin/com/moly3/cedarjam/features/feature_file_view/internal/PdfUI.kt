@@ -124,14 +124,15 @@ internal fun PdfUI(
     onDeleteAnnotation: (AnnotationDTO) -> Unit
 ) {
     val isShowAnnotations = remember { mutableStateOf(false) }
-    var documentState by remember { mutableStateOf<ObsPdfDocument?>(null) }
-    LaunchedEffect(Unit) {
-        launch(io) {
-            if (documentState == null) {
-                documentState = getObsPdfDocument(fileType.fileNode.getFullPath())
-            }
-        }
-    }
+//    var documentState by remember { mutableStateOf<ObsPdfDocument?>(null) }
+    val documentState = getObsPdfDocument(fileType.fileNode.getFullPath())
+//    LaunchedEffect(Unit) {
+//        launch(io) {
+//            if (documentState == null) {
+//                documentState =
+//            }
+//        }
+//    }
     val currentPage = fileType.currentPage
     val canGoBack = remember(documentState, currentPage) {
         if (documentState != null) {
@@ -197,7 +198,7 @@ internal fun PdfUI(
                 var painter by remember { mutableStateOf<Painter?>(null) }
                 Row(Modifier.fillMaxSize()) {
                     when (getPlatform()) {
-                        Platform.Android,
+
                         Platform.Jvm,
                         Platform.Wasm -> {
                             Box(Modifier.weight(1f).fillMaxHeight()) {
@@ -261,7 +262,7 @@ internal fun PdfUI(
                                 }
                             }
                         }
-
+                        Platform.Android,
                         Platform.Ios -> {
                             CJPdf(
                                 Modifier.fillMaxSize().liquefiable(liquidState),
@@ -364,6 +365,7 @@ internal fun PdfUI(
                                 painter = documentState?.getPagePainter(currentPage - 1)
 
                             } catch (exc: Exception) {
+                                val msg = ""+exc.message
                             }
 
                             //                                            imgBitmap = getPdfImage(
