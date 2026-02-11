@@ -18,15 +18,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import coil3.ImageLoader
-import coil3.SingletonImageLoader
 import coil3.compose.LocalPlatformContext
 import coil3.disk.DiskCache
 import coil3.memory.MemoryCache
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
-import com.moly3.cedarjam.core.domain.func.hiddenDirectory
-import com.moly3.cedarjam.core.domain.func.imgCache
-import com.moly3.cedarjam.core.domain.func.pathWrapper
-import com.moly3.cedarjam.core.domain.model.shouldBeSuccess
 import com.moly3.cedarjam.core.ui.JvmWindowScope
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalImageLoader
@@ -34,7 +29,6 @@ import com.moly3.cedarjam.core.ui.uikit.CJWorkspaceTheme
 import com.moly3.cedarjam.features.feature_settings.ui.DialogSettingsUI
 import com.moly3.cedarjam.pages.page_workspace.WorkspaceComponent
 import com.moly3.cedarjam.pages.page_workspace.ui.internal.WorkspacePageContent
-import okio.Path.Companion.toPath
 import kotlin.time.ExperimentalTime
 
 

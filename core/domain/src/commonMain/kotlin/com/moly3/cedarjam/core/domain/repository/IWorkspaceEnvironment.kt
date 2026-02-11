@@ -124,7 +124,6 @@ interface IWorkspaceEnvironment {
     fun createTagLink(request: CreateTagLinkRequest)
     fun createTagCollectionRow(request: CreateTagCollectionRowRequest)
     suspend fun copyFile(
-        originalFullPath: String,
         newFile: FileTreeNode.File,
         byteArray: ByteArray?
     )

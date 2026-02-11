@@ -35,11 +35,13 @@ internal class SystemFilesManager : ISystemFilesManager {
 
     private val fs: FileSystem = SystemFileSystem
     private fun copyFile(sourcePath: ByteArray, destinationPath: String) {
+
         val destination = Path(destinationPath)
         val parentDir = destination.parent
         if (parentDir != null && !fs.exists(parentDir)) {
             fs.createDirectories(parentDir)
         }
+        fs.delete(destination)
         fs.sink(destination).buffered().use { destinationBuffer ->
             destinationBuffer.write(sourcePath)
         }

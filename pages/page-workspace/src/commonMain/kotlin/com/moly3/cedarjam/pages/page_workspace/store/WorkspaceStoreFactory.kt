@@ -104,7 +104,6 @@ internal class WorkspaceStoreFactory(
 ) : KoinComponent {
 
     private val syncUseCase: ISyncUseCase by inject()
-    private val systemFilesManager: IFilesRepository by inject()
     private val messagerService: IMessageService by inject()
     private val dialogColorPickerService: DialogColorPickerService by inject()
     private val dialogDeleteService: DialogDeleteService by inject()
@@ -787,11 +786,6 @@ internal class WorkspaceStoreFactory(
                                 "resources",
                                 file.extension
                             )
-                            //FileTreeNode.Directory.create(
-                            //                                    workspacePath = workspaceSession.workspaceEnvStateFlow.value.getWorkspace().absolutePath,
-                            //                                    resourcesDirectory.pathString,
-                            //                                    listOf()
-                            //                                )
                             workspaceEnv.createFileNode(
                                 parentRelativePath = resourcesDirectory.pathString,
                                 fileName = FileName(

@@ -1,5 +1,6 @@
 package com.moly3.cedarjam.pages.page_collection_row.store
 
+import co.touchlab.kermit.Logger
 import com.arkivanov.essenty.lifecycle.Lifecycle
 import com.arkivanov.mvikotlin.core.store.Reducer
 import com.arkivanov.mvikotlin.core.store.SimpleBootstrapper
@@ -37,6 +38,7 @@ import io.github.vinceglb.filekit.nameWithoutExtension
 import io.github.vinceglb.filekit.readBytes
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -142,7 +144,7 @@ internal class CollectionRowStoreFactory(
                         val file =
                             FileKit.openFilePicker(type = File(extension = "pdf"))
                         val row = state().collectionRow
-                        val pdfResult = getPdfResult(file.toString())
+
                         val workspaceEnv = workspaceSession.workspaceEnvStateFlow.value
                         if (file != null && row != null) {
                             val workspace = workspaceEnv.getWorkspace()
@@ -162,31 +164,34 @@ internal class CollectionRowStoreFactory(
                                     name = file.nameWithoutExtension,
                                     extension = file.extension
                                 ),
-                                workspaceFullPath =  workspace.fullpath,
-                                //todo adapt relativePath
-                                parentRelativePath = pathWrapper(
-                                    workspace.fullpath,
-                                    relativePath.toString()
-                                ).toString(),
-//                                parentFullPath = pathWrapper(
-//                                    workspace.fullpath,
-//                                    relativePath.toString()
-//                                ).toString(),
+                                workspaceFullPath = workspace.fullpath,
+                                parentRelativePath = relativePath.pathString
                             )
-//                            val sed = file.absolutePath()
-                            val sed = ""
                             workspaceEnv.copyFile(
-                                originalFullPath = sed,
                                 newFile = newFile,
                                 byteArray = file.readBytes()
                             )
+                            delay(1500L)
                             val relativePath2 = relativePathFile.toString()
+
+                            Logger.e { "row book: ${newFile.getFullPath()} " }
+                            val pdfResult = try {
+                                getPdfResult(newFile.getFullPath())
+                            } catch (exc: Exception) {
+                                null
+                            }
+                            var copiedRow = row.copy(
+                                fileRelativePath = relativePath2,
+//                                    progressMax = pdfResult.numberOfPages.toDouble(),
+                                modifiedTime = nowInMs()
+                            )
+                            if (pdfResult != null) {
+                                Logger.w { "row book: success: ${pdfResult.numberOfPages}" }
+                                copiedRow =
+                                    copiedRow.copy(progressMax = pdfResult.numberOfPages.toDouble())
+                            }
                             workspaceEnv.updateCollectionRow(
-                                row.copy(
-                                    fileRelativePath = relativePath2,
-                                    progressMax = pdfResult.numberOfPages.toDouble(),
-                                    modifiedTime = nowInMs()
-                                ).mapToUpdateRequest()
+                                copiedRow.mapToUpdateRequest()
                             )
                         }
                     }

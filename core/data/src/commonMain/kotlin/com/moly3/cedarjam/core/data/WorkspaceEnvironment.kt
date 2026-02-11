@@ -688,7 +688,6 @@ class WorkspaceEnvironment(
     }
 
     override suspend fun copyFile(
-        originalFullPath: String,
         newFile: FileTreeNode.File,
         byteArray: ByteArray?
     ) {
