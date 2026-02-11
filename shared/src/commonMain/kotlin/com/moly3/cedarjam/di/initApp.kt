@@ -40,10 +40,14 @@ import io.github.vinceglb.filekit.FileKit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import org.koin.core.context.startKoin
 import org.koin.core.parameter.parametersOf
 import org.koin.dsl.module
+import org.koin.mp.KoinPlatform
 
 fun initApp(
     context: AndroidApplicationContext,
@@ -90,7 +94,19 @@ fun initApp(
             AppEnvironment(
                 scope = get(),
                 appStorage = get(),
-                systemFilesManager = get()
+                systemFilesManager = get(),
+                syncService = get(),
+                getWorkspaceEnv = {
+                    val filesManager =
+                        FileManagerService(it, FileManagerService.OpenedFiles())
+                    val workspaceInput: WorkspaceInput = WorkspaceInput(
+                        name = it.name,
+                        serverName = it.serverName
+                    )
+                    val workspaceEnv: IWorkspaceEnvironment =
+                        get { parametersOf(workspaceInput, filesManager) }
+                    workspaceEnv
+                }
             )
         }
         single<IUtilsService> {

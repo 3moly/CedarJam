@@ -44,12 +44,13 @@ fun DialogCreateWorkspaceService(dialog: DialogCreateWorkspaceService) {
                 onValueChange = {
                     nameState = it
                 })
-            CJSearchTextField(
-                value = serverNameState,
-                placeholderText = "workspace server name",
-                onValueChange = {
-                    serverNameState = it
-                })
+
+//            CJSearchTextField(
+//                value = serverNameState,
+//                placeholderText = "workspace server name",
+//                onValueChange = {
+//                    serverNameState = it
+//                })
             if (getPlatform() is Platform.Jvm) {
                 Row(Modifier.fillMaxWidth()) {
                     CJSearchTextField(
@@ -78,7 +79,7 @@ fun DialogCreateWorkspaceService(dialog: DialogCreateWorkspaceService) {
                     dialog.setResult(
                         Workspace(
                             name = nameState.text,
-                            serverName = serverNameState.text,
+                            serverName = nameState.text,
                             fullpath = if (getPlatform() is Platform.Jvm) fullpathState.text else nameState.text
                         )
                     )

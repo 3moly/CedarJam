@@ -361,13 +361,8 @@ internal class CollectionStoreFactory(
 
                         when (val data = intent.fileTreeNode.data) {
                             is FileTreeItemPresentation.FileTreeItemPresentationData.File -> {
-                                val relativePath = getRelativePath(
-                                    fullPath = data.fileNode.getFullPath(),
-                                    workspacePath = workspaceEnv.getWorkspace().fullpath
-                                )
-
                                 var updateRequest = intent.row.copy(
-                                    fileRelativePath = relativePath,
+                                    fileRelativePath = data.fileNode.getRelativePath(),
                                     modifiedTime = nowInMs()
                                 ).mapToUpdateRequest()
                                 if (data.fileNode.name.extension == "pdf") {

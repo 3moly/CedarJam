@@ -27,66 +27,66 @@ fun DialogSelectWorkspaceUI(
     dialogCreate: DialogCreateWorkspaceService,
     dialog: DialogSelectWorkspaceService
 ) {
-    val scope = rememberCoroutineScope()
-    CJDialogGeneric(dialog = dialog) {
-        val workspacesState by appEnvironment.getWorkspacesFlow().collectAsState()
-        Column(
-            modifier = Modifier,
-            verticalArrangement = Arrangement.spacedBy(24.dp)
-        ) {
-            Column(
-                modifier = Modifier,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                UIStateContentNoBox(state = workspacesState) { workspaces ->
-                    for (workspace in workspaces) {
-                        Row(
-                            modifier = Modifier,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            CJText(text = workspace.name, modifier = Modifier.weight(1f))
-
-                            if (workspace.fullpath != it.activeWorkspace?.fullpath) {
-                                CJButton(
-                                    modifier = Modifier,
-                                    text = "select",
-                                    onClick = {
-                                        scope.launch {
-                                            dialog.setResult(workspace)
-                                        }
-                                    })
-                            }
-                            CJButton(
-                                modifier = Modifier,
-                                text = "delete",
-                                backColor = Color(0xFFFE4345),
-                                onClick = {
-                                    scope.launch {
-                                        appEnvironment.deleteWorkspace(workspace)
-                                    }
-                                })
-                        }
-                    }
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        CJButton(
-                            modifier = Modifier,
-                            text = "Add new",
-                            backColor = Color(0xFFFE4345),
-                            onClick = {
-                                scope.launch {
-                                    val result = dialogCreate.open(Unit)
-                                    if (result != null) {
-                                        appEnvironment.createWorkspace(workspace = result)
-                                    }
-                                }
-                            })
-                    }
-                }
-
-            }
-        }
-    }
+//    val scope = rememberCoroutineScope()
+//    CJDialogGeneric(dialog = dialog) {
+//        val workspacesState by appEnvironment.getWorkspacesFlow().collectAsState()
+//        Column(
+//            modifier = Modifier,
+//            verticalArrangement = Arrangement.spacedBy(24.dp)
+//        ) {
+//            Column(
+//                modifier = Modifier,
+//                verticalArrangement = Arrangement.spacedBy(8.dp)
+//            ) {
+//                UIStateContentNoBox(state = workspacesState) { workspaces ->
+//                    for (workspace in workspaces) {
+//                        Row(
+//                            modifier = Modifier,
+//                            verticalAlignment = Alignment.CenterVertically
+//                        ) {
+//                            CJText(text = workspace.name, modifier = Modifier.weight(1f))
+//
+//                            if (workspace.fullpath != it.activeWorkspace?.fullpath) {
+//                                CJButton(
+//                                    modifier = Modifier,
+//                                    text = "select",
+//                                    onClick = {
+//                                        scope.launch {
+//                                            dialog.setResult(workspace)
+//                                        }
+//                                    })
+//                            }
+//                            CJButton(
+//                                modifier = Modifier,
+//                                text = "delete",
+//                                backColor = Color(0xFFFE4345),
+//                                onClick = {
+//                                    scope.launch {
+//                                        appEnvironment.deleteWorkspace(workspace)
+//                                    }
+//                                })
+//                        }
+//                    }
+//                    Row(
+//                        modifier = Modifier.fillMaxWidth(),
+//                        horizontalArrangement = Arrangement.SpaceBetween
+//                    ) {
+//                        CJButton(
+//                            modifier = Modifier,
+//                            text = "Add new",
+//                            backColor = Color(0xFFFE4345),
+//                            onClick = {
+//                                scope.launch {
+//                                    val result = dialogCreate.open(Unit)
+//                                    if (result != null) {
+//                                        appEnvironment.createWorkspace(workspace = result)
+//                                    }
+//                                }
+//                            })
+//                    }
+//                }
+//
+//            }
+//        }
+//    }
 }

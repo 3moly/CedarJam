@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil3.compose.rememberAsyncImagePainter
+import coil3.util.Logger
 import com.mohamedrejeb.compose.dnd.drop.dropTarget
 import com.moly3.cedarjam.core.domain.io
 import com.moly3.cedarjam.core.domain.model.CollectionRowDTO
@@ -102,6 +103,7 @@ internal fun CollectionDataGrid(
                                         it.row.fileRelativePath!!
                                     ).toString()
                                     try {
+                                        co.touchlab.kermit.Logger.w{"getPdfImage: ${it.row.fileRelativePath}"}
                                         imgBitmap = if (it.row.fileRelativePath != null) {
                                             getPdfImage(
                                                 path,
@@ -112,6 +114,7 @@ internal fun CollectionDataGrid(
                                             null
                                         }
                                     } catch (exc: Exception) {
+                                        co.touchlab.kermit.Logger.w{"getPdfImage result: ${exc.message}"}
                                     }
                                 }
                             }
@@ -132,7 +135,9 @@ internal fun CollectionDataGrid(
                                         })
                                 }
                             } else {
-                                Box(Modifier.height(200.dp))
+                                Box(Modifier.height(200.dp)) {
+                                    CJText(text = it.row.fileRelativePath ?: "-file")
+                                }
                             }
                         }
                         if (it.row.webLink != null) {

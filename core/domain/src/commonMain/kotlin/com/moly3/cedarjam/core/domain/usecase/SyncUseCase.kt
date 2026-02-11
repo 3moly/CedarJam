@@ -125,8 +125,7 @@ class SyncUseCase(
 
                 val indexMap = workspace.getIndexFilesFlow().first()
                     .associateBy { it.relativePath.normalizeText() }
-                val serverMap = serverFiles.filter { !it.isDeleted }
-                    .associateBy { it.relativePath.normalizeText() }
+                val serverMap = serverFiles.associateBy { it.relativePath.normalizeText() }
                 val allPaths = (indexMap.keys + serverMap.keys).distinct()
 
                 val toDownload = mutableMapOf<String, String>()

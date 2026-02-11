@@ -84,9 +84,6 @@ interface ISqlStorage {
     fun createCollection(request: CreateCollectionRequest): ResultWrapper<Long, String>
     fun createCollectionRow(request: CreateCollectionRowRequest): ResultWrapper<Long, String>
 
-    fun insertOrUpdateFileNodes(workspaceFullPath: String, data: List<FileTreeNode>)
-
-
     fun renameCollection(request: RenameDataCollectionRequest)
     fun renameTag(request: RenameTagRequest)
     fun renameFileNode(oldRelativePath: String, newRelativePath: String)

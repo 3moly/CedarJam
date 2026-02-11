@@ -60,10 +60,8 @@ class SettingsGeneralComponent(
 
                     val fileNode = FileTreeNode.File(
                         name = FileName(name = "default", extension = "otf"),
-                        parentRelativePath = pathWrapper(workspace.absolutePath, hiddenDirectory).pathString,
-                        //todo adapt relativePath
-                        workspaceFullPath = workspace.absolutePath,
-//                        parentFullPath = pathWrapper(workspace.absolutePath, hiddenDirectory).pathString,
+                        parentRelativePath = hiddenDirectory,
+                        workspaceFullPath = workspace.absolutePath
                     )
                     val bb = file.readBytes()
                     systemFilesManager.setNodeBytes(fileNode, byteArray = bb)

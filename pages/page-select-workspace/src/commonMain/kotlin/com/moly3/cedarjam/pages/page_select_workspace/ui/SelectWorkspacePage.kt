@@ -40,9 +40,11 @@ import com.moly3.cedarjam.pages.page_select_workspace.ISelectWorkspaceComponent
 import com.moly3.cedarjam.pages.page_select_workspace.Intent
 import com.moly3.cedarjam.pages.page_select_workspace.State
 import com.moly3.cedarjam.core.ui.func.rememberWindowSize
+import com.moly3.cedarjam.core.ui.model.CJText
 import com.moly3.cedarjam.core.ui.model.WindowSize
 import com.moly3.cedarjam.core.ui.uikit.CJText
 import com.moly3.cedarjam.core.ui.uikit.UIStateContentLazy
+import com.moly3.cedarjam.core.ui.uikit.UIStateContentNoBox
 import com.moly3.cedarjam.core.ui.vectors.SettingsFuture
 
 @Composable
@@ -91,6 +93,11 @@ fun JvmWindowScope.SelectWorkspacePage(component: ISelectWorkspaceComponent) {
                             fontWeight = FontWeight.ExtraBold,
                             color = Color(0xFFA5D6A7)
                         )
+                    }
+                }
+                item {
+                    UIStateContentNoBox(state = state.localWorkspacesState) {
+                        CJText("locals: ${it.map { d->d.getRelativePath() }}")
                     }
                 }
                 UIStateContentLazy(state = state.workspacesState) { workspaces ->

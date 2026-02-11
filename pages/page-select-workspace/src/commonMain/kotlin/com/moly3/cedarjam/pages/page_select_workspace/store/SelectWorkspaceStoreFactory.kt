@@ -9,16 +9,18 @@ import com.moly3.cedarjam.core.domain.dialog.DialogCreateWorkspaceService
 import com.moly3.cedarjam.core.domain.io
 import com.moly3.cedarjam.core.domain.model.ResultWrapper
 import com.moly3.cedarjam.core.domain.model.WorkspaceInput
+import com.moly3.cedarjam.core.domain.model.mapToUIState
 import com.moly3.cedarjam.core.domain.repository.IAppEnvironment
 import com.moly3.cedarjam.core.domain.service.IMessageService
 import com.moly3.cedarjam.navigation.BaseExecutor
 import com.moly3.cedarjam.pages.page_select_workspace.Intent
 import com.moly3.cedarjam.pages.page_select_workspace.State
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
@@ -49,7 +51,16 @@ internal class SelectWorkspaceStoreFactory(
         override fun onStart(scopeFromStartToStop: CoroutineScope) {
             super.onStart(scopeFromStartToStop)
 
-
+            scopeFromStartToStop.launch {
+                dispatch(
+                    SelectWorkspaceStore.Msg.SetLocalWorkspaces(
+                        appEnvironment.getLocalWorkspaces().mapToUIState(
+                            mapError = { "" },
+                            mapSuccess = { d -> d },
+                            onError = { "" })
+                    )
+                )
+            }
             scopeFromStartToStop.launch {
                 appEnvironment.getWorkspacesFlow().collectLatest {
                     dispatch(SelectWorkspaceStore.Msg.SetWorkspaces(it))
@@ -79,7 +90,11 @@ internal class SelectWorkspaceStoreFactory(
                                 }
 
                                 is ResultWrapper.Success -> {
-
+                                    withContext(Dispatchers.Main) {
+                                        onSelectWorkspace(
+                                            result.value
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -99,6 +114,7 @@ internal class SelectWorkspaceStoreFactory(
         override fun State.reduce(msg: SelectWorkspaceStore.Msg): State {
             return when (msg) {
                 is SelectWorkspaceStore.Msg.SetWorkspaces -> copy(workspacesState = msg.value)
+                is SelectWorkspaceStore.Msg.SetLocalWorkspaces -> copy(localWorkspacesState = msg.value)
             }
         }
     }

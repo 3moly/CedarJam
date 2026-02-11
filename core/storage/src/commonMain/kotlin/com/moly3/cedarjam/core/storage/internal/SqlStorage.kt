@@ -1,9 +1,7 @@
 package com.moly3.cedarjam.core.storage.internal
 
+import app.cash.sqldelight.Query
 import app.cash.sqldelight.coroutines.asFlow
-import app.cash.sqldelight.coroutines.mapToList
-import app.cash.sqldelight.coroutines.mapToOne
-import app.cash.sqldelight.coroutines.mapToOneOrNull
 import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.db.SqlSchema
@@ -21,7 +19,6 @@ import com.moly3.cedarjam.core.domain.func.sqlDatabaseName
 import com.moly3.cedarjam.core.domain.func.toHexString
 import com.moly3.cedarjam.core.domain.io
 import com.moly3.cedarjam.core.domain.model.FileItem
-import com.moly3.cedarjam.core.domain.model.FileMetadata
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.IndexFileDto
 import com.moly3.cedarjam.core.domain.model.ResultWrapper
@@ -61,9 +58,11 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
+import kotlin.collections.listOf
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class, ExperimentalCoroutinesApi::class)
@@ -72,7 +71,7 @@ internal class SqlStorage(
     private val applicationProvider: AppContextProvider,
     private val workspaceDirectoryPath: String
 ) : ISqlStorage {
-    private val mapContext = io
+    private val mapContext = io.limitedParallelism(50)
 
     private val _dbStateFlow =
         MutableStateFlow<UIState<Database, DatabaseError>>(UIState.Loading)
@@ -86,7 +85,7 @@ internal class SqlStorage(
             is UIState.Loading -> null
             is UIState.Success -> uiState.data
         }
-    }
+    }.flowOn(mapContext)
 
     private val indexDbFlow: Flow<IndexDatabase?> = _indexDbStateFlow.map { uiState ->
         when (uiState) {
@@ -241,13 +240,44 @@ internal class SqlStorage(
         mainSqlDriver?.close()
     }
 
+    private fun <T : Any> Query<T>.mapFlowList(): Flow<List<T>> {
+        return this
+            .asFlow()
+            .map {
+                try {
+                    it.executeAsList()
+                } catch (exc: Exception) {
+                    listOf()
+                }
+            }
+    }
+
+    private fun  Query<Long>.mapFlowAsOneLong(): Flow<Long> {
+        return this
+            .asFlow()
+            .map {
+                it.executeAsOneOrNull() ?: 0L
+            }
+    }
+
+    private fun <T : Any> Query<T>.mapFlowAsOneOrNull(): Flow<T?> {
+        return this
+            .asFlow()
+            .map {
+                try {
+                    it.executeAsOneOrNull()
+                } catch (exc: Exception) {
+                    null
+                }
+            }
+    }
+
     override fun getIndexFilesFlow(): Flow<List<IndexFile>> {
         return indexDbFlow.flatMapLatest { db ->
             if (db != null) {
                 db.indexFileQueries
                     .selectAll()
-                    .asFlow()
-                    .mapToList(mapContext)
+                    .mapFlowList()
             } else {
                 flowOf(listOf())
             }
@@ -261,12 +291,13 @@ internal class SqlStorage(
     }
 
     override fun getTagToTagsFlow(): Flow<List<TagToTag>> {
-        return dbFlow.flatMapLatest { db ->
+        return dbFlow.flowOn(mapContext).flatMapLatest { db ->
             if (db != null) {
                 db.tagToTagQueries
                     .selectAll()
-                    .asFlow()
-                    .mapToList(mapContext)
+                    .mapFlowList()
+//                    .asFlow()
+//                    .mapToList(mapContext)
             } else {
                 flowOf(listOf())
             }
@@ -278,8 +309,9 @@ internal class SqlStorage(
             if (db != null) {
                 db.tagQueries
                     .selectAll()
-                    .asFlow()
-                    .mapToList(mapContext)
+                    .mapFlowList()
+//                    .asFlow()
+//                    .mapToList(mapContext)
             } else {
                 flowOf(listOf())
             }
@@ -291,8 +323,9 @@ internal class SqlStorage(
             if (db != null) {
                 db.annotationQueries
                     .selectAll()
-                    .asFlow()
-                    .mapToList(mapContext)
+                    .mapFlowList()
+//                    .asFlow()
+//                    .mapToList(mapContext)
             } else {
                 flowOf(listOf())
             }
@@ -305,8 +338,9 @@ internal class SqlStorage(
             if (db != null) {
                 db.tagQueries
                     .findOne(id = id)
-                    .asFlow()
-                    .mapToOneOrNull(mapContext)
+                    .mapFlowAsOneOrNull()
+//                    .asFlow()
+//                    .mapToOneOrNull(mapContext)
             } else {
                 flowOf(null)
             }
@@ -315,10 +349,15 @@ internal class SqlStorage(
 
     override fun getTagLinks(): Flow<List<TagFileNode>> {
         return dbFlow.flatMapLatest {
-            it?.tagFileNodeQueries
-                ?.selectAll()
-                ?.asFlow()
-                ?.mapToList(mapContext) ?: flowOf(listOf())
+            if (it != null) {
+                it.tagFileNodeQueries
+                    .selectAll()
+                    .mapFlowList()
+//                    .asFlow()
+//                    .mapToList(mapContext)
+            } else {
+                flowOf(listOf())
+            }
         }
     }
 
@@ -326,8 +365,9 @@ internal class SqlStorage(
         return dbFlow.flatMapLatest {
             it?.dataCollectionQueries
                 ?.selectAll()
-                ?.asFlow()
-                ?.mapToList(mapContext) ?: flowOf(listOf())
+                ?.mapFlowList() ?: flowOf(listOf())
+//                ?.asFlow()
+//                ?.mapToList(mapContext) ?: flowOf(listOf())
         }
     }
 
@@ -335,8 +375,9 @@ internal class SqlStorage(
         return dbFlow.flatMapLatest {
             it?.dataCollectionQueries
                 ?.selectById(id = id)
-                ?.asFlow()
-                ?.mapToOneOrNull(mapContext) ?: flowOf(null)
+                ?.mapFlowAsOneOrNull() ?: flowOf(null)
+//                ?.asFlow()
+//                ?.mapToOneOrNull(mapContext) ?: flowOf(null)
         }
     }
 
@@ -344,8 +385,9 @@ internal class SqlStorage(
         return dbFlow.flatMapLatest {
             it?.tagCollectionRowQueries
                 ?.selectAll()
-                ?.asFlow()
-                ?.mapToList(mapContext) ?: flowOf(listOf())
+                ?.mapFlowList() ?: flowOf(listOf())
+//                ?.asFlow()
+//                ?.mapToList(mapContext) ?: flowOf(listOf())
         }
     }
 
@@ -358,8 +400,9 @@ internal class SqlStorage(
                 else
                     db.dataCollectionRowQueries.selectAll()
 
-                prepare.asFlow()
-                    .mapToList(mapContext)
+                prepare.mapFlowList()
+//                prepare.asFlow()
+//                    .mapToList(mapContext)
             } else {
                 flowOf(listOf())
             }
@@ -376,8 +419,9 @@ internal class SqlStorage(
                         it.getCount()
                     }
                 }
-                ?.asFlow()
-                ?.mapToOne(mapContext) ?: flowOf(0)
+                ?.mapFlowAsOneLong() ?: flowOf(0L)
+//                ?.asFlow()
+//                ?.mapToOne(mapContext) ?: flowOf(0)
         }
     }
 
@@ -394,8 +438,9 @@ internal class SqlStorage(
                         pageSize = pageSize,
                         offset = offset
                     )
-                    .asFlow()
-                    .mapToList(mapContext)
+                    .mapFlowList()
+//                    .asFlow()
+//                    .mapToList(mapContext)
             } else {
                 flowOf(listOf())
             }
@@ -404,10 +449,15 @@ internal class SqlStorage(
 
     override fun getCollectionRow(rowId: Long): Flow<DataCollectionRow?> {
         return dbFlow.flatMapLatest {
-            it?.dataCollectionRowQueries
-                ?.selectById(id = rowId)
-                ?.asFlow()
-                ?.mapToOneOrNull(mapContext) ?: flowOf(null)
+            if (it != null) {
+                it.dataCollectionRowQueries
+                    .selectById(id = rowId)
+                    .mapFlowAsOneOrNull()
+//                    .asFlow()
+//                    .mapToOneOrNull(mapContext)
+            } else {
+                flowOf(null)
+            }
         }
     }
 
@@ -440,7 +490,6 @@ internal class SqlStorage(
     override fun syncDirtyFiles(list: List<IndexFileDto>): ResultWrapper<Unit, String> {
         return runQueryOrThrowIndex { db ->
             resultBlock {
-
                 db.indexFileQueries.selectAll().executeAsList().map {
                     val found = list.firstOrNull { b -> b.relativePath == it.relativePath }
                     if (found != null) {
@@ -472,7 +521,6 @@ internal class SqlStorage(
         return runQueryOrThrowIndex { db ->
             resultBlock {
                 db.indexFileQueries.transaction {
-
                     for (item in list) {
                         val absolute = pathWrapper(workspaceDirectoryPath, item.key).pathString
                         val meta = SystemFileSystem.metadataOrNull(Path(absolute))
@@ -638,13 +686,6 @@ internal class SqlStorage(
         }
     }
 
-
-    fun update(localNodes: List<FileTreeNode>, serverNodes: List<FileMetadata>) {
-        runQueryOrThrowIndex { db ->
-            db.indexFileQueries.selectAll()
-        }
-    }
-
     override fun createTagCollectionRow(request: CreateTagCollectionRowRequest) {
         runQueryOrThrow { db ->
             db.tagCollectionRowQueries.insertObject(
@@ -656,10 +697,6 @@ internal class SqlStorage(
                 )
             )
         }
-    }
-
-    override fun insertOrUpdateFileNodes(workspaceFullPath: String, data: List<FileTreeNode>) {
-
     }
 
     override fun renameTag(request: RenameTagRequest) {
