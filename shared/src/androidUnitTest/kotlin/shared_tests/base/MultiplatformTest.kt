@@ -11,8 +11,11 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows
+import org.robolectric.annotation.Config
+import org.robolectric.shadows.ShadowPausedLooper
 
 @RunWith(RobolectricTestRunner::class)
+@Config(shadows = [ShadowPausedLooper::class])
 actual abstract class MultiplatformTest actual constructor() {
 
     @get:Rule(order = 1)

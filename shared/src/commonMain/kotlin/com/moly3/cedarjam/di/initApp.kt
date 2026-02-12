@@ -1,5 +1,7 @@
 package com.moly3.cedarjam.di
 
+import co.touchlab.kermit.CommonWriter
+import co.touchlab.kermit.LogWriter
 import co.touchlab.kermit.Logger
 import com.arkivanov.essenty.statekeeper.StateKeeper
 import com.moly3.cedarjam.core.data.WorkspaceEnvironment
@@ -53,6 +55,7 @@ fun initApp(
     context: AndroidApplicationContext,
     isTest: Boolean = false
 ) {
+    Logger.addLogWriter(CommonWriter())
     FileKit.init(context)
     val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     val navigator = NavigatorImpl(scope)

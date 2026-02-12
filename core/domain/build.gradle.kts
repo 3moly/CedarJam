@@ -4,6 +4,7 @@ import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
+//    alias(libs.plugins.androidApplication)
     alias(libs.plugins.android.kotlin.multiplatform.library)
     alias(libs.plugins.serialization)
     alias(libs.plugins.compose)
@@ -14,13 +15,6 @@ kotlin {
     android {
         namespace = "com.moly3.cedarjam.domain"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
-//        defaultConfig {
-//            minSdk = libs.versions.android.minSdk.get().toInt()
-//        }
-//        compileOptions {
-//            sourceCompatibility = JavaVersion.VERSION_17
-//            targetCompatibility = JavaVersion.VERSION_17
-//        }
     }
     jvm()
     listOf(iosArm64(), iosSimulatorArm64())
@@ -49,6 +43,9 @@ kotlin {
         }
         commonTest.dependencies{
             implementation(libs.kotlin.test)
+        }
+        androidInstrumentedTest.dependencies{
+            implementation(libs.robolectric)
         }
         androidUnitTest.dependencies {
             implementation(libs.robolectric)

@@ -138,6 +138,6 @@ inline fun <S, E> resultBlock(block: ResultRaise<E>.() -> S): ResultWrapper<S, E
         // Handle unexpected exceptions if necessary, e.g., mapping them to a default E
         // For simplicity, we are assuming the original code only throws on 'raise' or 'try/catch'
         // If your original 'raise' was used for Exception->E mapping, you'd do that here.
-        ResultWrapper.Error("Unexpected exception: ${e.message}" as E) // Cast might be risky if E is not String
+        ResultWrapper.Error("Unexpected exception: ${e.message} ${e.stackTraceToString()}" as E) // Cast might be risky if E is not String
     }
 }

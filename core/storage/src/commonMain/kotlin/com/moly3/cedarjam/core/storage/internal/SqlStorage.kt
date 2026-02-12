@@ -517,21 +517,19 @@ internal class SqlStorage(
         }
     }
 
-    override fun addIndexFiles(list: Map<String, Long>): ResultWrapper<Unit, String> {
+    override fun syncIndexDeletedFiles(list: Map<String, IndexFileDto>): ResultWrapper<Unit, String> {
         return runQueryOrThrowIndex { db ->
             resultBlock {
                 db.indexFileQueries.transaction {
                     for (item in list) {
-                        val absolute = pathWrapper(workspaceDirectoryPath, item.key).pathString
-                        val meta = SystemFileSystem.metadataOrNull(Path(absolute))
                         db.indexFileQueries.insertItem(
                             relativePath = item.key,
-                            contentHash = null,
-                            modifiedTime = nowInMs(),
-                            size = 0L,
-                            lastSyncedHash = null,
+                            contentHash = item.value.contentHash,
+                            modifiedTime = item.value.modifiedTime,
+                            size = item.value.size,
+                            lastSyncedHash = item.value.lastSyncedHash,
                             serverSyncStatus = SyncStatus.DELETED.code,
-                            isDirectory = if (meta?.isDirectory ?: false) 1L else 0L
+                            isDirectory = if (item.value.isDirectory) 1L else 0L
                         )
                     }
                 }

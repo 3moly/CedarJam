@@ -72,9 +72,19 @@ class SyncUseCase(
             else
                 SyncAction.DOWNLOAD
         }
-
+        val isLocalDeleted = local?.serverSyncStatus == SyncStatus.DELETED
         // Case 3: File exists in both places
         if (server != null && local != null) {
+            if (isLocalDeleted) {
+                // Only download if the server has a NEWER version than our deletion record
+                // otherwise, tell the server to delete its copy too.
+                return if (server.modifiedTime.isMoreThan(local.modifiedTime) && !server.isDeleted) {
+                    SyncAction.DOWNLOAD
+                } else {
+                    SyncAction.UPLOAD
+                }
+            }
+
             val serverNewer = server.modifiedTime.isMoreThan(local.modifiedTime)
             val localNewer = local.modifiedTime.isMoreThan(server.modifiedTime)
             val hashMismatch = local.contentHash != server.contentHash
@@ -197,8 +207,7 @@ class SyncUseCase(
                 // 3. Evaluation against Database
                 val indexMap = workspaceEnv.getIndexFilesFlow().first()
                     .associateBy { it.relativePath.normalizeText() }
-                val serverMap = serverFiles.filter { !it.isDeleted }
-                    .associateBy { it.relativePath.normalizeText() }
+                val serverMap = serverFiles.associateBy { it.relativePath.normalizeText() }
                 val allPaths = (indexMap.keys + serverMap.keys).distinct()
 
                 val filesToUploadMeta = mutableListOf<FileMetadata>()

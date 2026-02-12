@@ -26,7 +26,7 @@ class netTest : AppEnvironmentTest() {
 
         val textBytes = "hehehehe".encodeToByteArray()
         workspaceEnv.createFileNode(
-            null,
+            "",
             fileName = FileName(name = "ase", extension = "md"),
             isAbsoluteNew = true,
             textBytes

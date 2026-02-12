@@ -13,9 +13,13 @@ import java.awt.image.BufferedImage
 
 @Composable
 actual fun getObsPdfDocument(absolutePath: String): ObsPdfDocument? {
-    val document: Document = remember(absolutePath) {
-        Document().apply {
-            setFile(absolutePath)
+    val document: Document? = remember(absolutePath) {
+        try {
+            Document().apply {
+                setFile(absolutePath)
+            }
+        } catch (exc: Exception) {
+            null
         }
     }
     return remember {
@@ -25,12 +29,12 @@ actual fun getObsPdfDocument(absolutePath: String): ObsPdfDocument? {
             }
 
             override fun getNumberOfPages(): Int {
-                return document.numberOfPages
+                return document?.numberOfPages ?: 0
             }
 
             override fun getPagePainter(index: Int): Painter? {
                 return try {
-                    val image = document.getPageImage(
+                    val image = document?.getPageImage(
                         // pageNumber =
                         index,
                         // renderHintType =

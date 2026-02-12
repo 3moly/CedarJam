@@ -16,7 +16,7 @@ const val ignoredDbJournal: String = "${hiddenDirectory}/$sqlDatabaseName.db-jou
 //const val ignoredImgCacheJournal: String = "${hiddenDirectory}/$imgCache/journal"
 
 val ignoreByRelativePath = listOf(
-    ignoredFont,
+//    ignoredFont,
     ignoredImportArchive,
     ignoredExportArchive,
     ignoredDbShm,

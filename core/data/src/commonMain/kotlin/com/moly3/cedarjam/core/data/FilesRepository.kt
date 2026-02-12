@@ -50,6 +50,11 @@ class FilesRepository(
     override fun getNodes(workspacePath: String, absolutePath: String): List<FileTreeNode> {
         val allFiles = filesStorage.getNodes(absolutePath)
         val mt = getOtherFileMeta(absolutePath)
+        val parentRelativePath = if (absolutePath.contains("$workspacePath/")) {
+            absolutePath.replace("$workspacePath/", "")
+        } else {
+            absolutePath.replace(workspacePath, "")
+        }
         val main = listOf(
             FileTreeNode.Directory(
                 workspaceFullPath = workspacePath,
@@ -57,7 +62,7 @@ class FilesRepository(
                 name = "",
                 fileSize = allFiles.sumOf { x -> x.fileSize },
                 modifiedTime = mt.modifiedDateTime.toEpochMilliseconds(),
-                parentRelativePath = absolutePath.replace(workspacePath, ""),
+                parentRelativePath = parentRelativePath,
                 createdTime = mt.createdDateTime.toEpochMilliseconds(),
             )
         )

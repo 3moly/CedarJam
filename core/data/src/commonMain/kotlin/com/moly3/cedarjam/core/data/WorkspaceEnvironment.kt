@@ -5,7 +5,6 @@ import com.moly3.cedarjam.core.domain.DefaultJson
 import com.moly3.cedarjam.core.domain.func.doNothing
 import com.moly3.cedarjam.core.domain.func.normalizeText
 import com.moly3.cedarjam.core.domain.func.nowInMs
-import com.moly3.cedarjam.core.domain.func.pathWrapper
 import com.moly3.cedarjam.core.domain.func.toColor
 import com.moly3.cedarjam.core.domain.func.toHexString
 import com.moly3.cedarjam.core.domain.io
@@ -647,8 +646,13 @@ class WorkspaceEnvironment(
                         oldRelativePath = oldNodePath,
                         newRelativePath = newNodePath
                     )
+                    fileManagerService.movedFile(
+                        oldNodePath,
+                        newNodePath
+                    )
 
-                    deletedFiles[oldNodePath] = nowInMs() // snap.oldNode.modifiedTime
+                    val oldDeleteFile = deletedFiles[oldNodePath]
+                    deletedFiles[oldNodePath] = oldDeleteFile.createIndexForDeletion(snap.oldNode)
                     if (deletedFiles.contains(newNodePath)) {
                         deletedFiles.remove(newNodePath)
                     }
@@ -661,11 +665,12 @@ class WorkspaceEnvironment(
             )
 
             fileManagerService.movedFile(
-                oldNode,
-                newNode
+                oldNode.getRelativePath(),
+                newNode.getRelativePath()
             )
 
-            deletedFiles[oldRelativePath] = nowInMs() // oldNode.modifiedTime
+            val oldIndex = deletedFiles[oldRelativePath]
+            deletedFiles[oldRelativePath] = oldIndex.createIndexForDeletion(oldNode)
             if (deletedFiles.contains(newRelativePath)) {
                 deletedFiles.remove(newRelativePath)
             }
@@ -674,6 +679,28 @@ class WorkspaceEnvironment(
             updateTimes()
 
             updatedNode
+        }
+    }
+
+    private fun IndexFileDto?.createIndexForDeletion(
+        node: FileTreeNode,
+        modifiedTime: Long = nowInMs()
+    ): IndexFileDto {
+        return if (this != null) {
+            this.copy(
+                modifiedTime = modifiedTime,
+                serverSyncStatus = SyncStatus.DELETED
+            )
+        } else {
+            IndexFileDto(
+                relativePath = node.getRelativePath(),
+                contentHash = null,
+                modifiedTime = modifiedTime,
+                size = null,
+                isDirectory = node is FileTreeNode.Directory,
+                lastSyncedHash = null,
+                serverSyncStatus = SyncStatus.DELETED
+            )
         }
     }
 
@@ -735,14 +762,14 @@ class WorkspaceEnvironment(
     }
 
     @OptIn(ExperimentalTime::class)
-    override suspend fun deleteNodes(nodes: List<FileTreeNode>) {
+    private suspend fun deleteNodes(nodesToDelete: List<FileTreeNode>) {
         val metadataList = getDeletedFilesMetadata().toMutableMap()
-        for (node in nodes) {
+        for (node in nodesToDelete) {
             val files = internalDeleteNodes(node)
-            for (item in files) {
-                val relativePath = item.getRelativePath()
-                val addedTime = Clock.System.now().toEpochMilliseconds()
-                metadataList[relativePath] = addedTime
+            for (node in files) {
+                val relativePath = node.getRelativePath()
+                val metadataOld = metadataList[relativePath]
+                metadataList[relativePath] = metadataOld.createIndexForDeletion(node)
             }
         }
         saveDeletedMetadata(metadataList)
@@ -889,21 +916,24 @@ class WorkspaceEnvironment(
         sqlStorage.createDatabase()
     }
 
-    override suspend fun saveDeletedMetadata(list: Map<String, Long>): ResultWrapper<Unit, String> {
-        val fullpath = workspace.absolutePath
+    override suspend fun saveDeletedMetadata(list: Map<String, IndexFileDto>): ResultWrapper<Unit, String> {
+//        val fullpath = workspace.absolutePath
 
         return resultBlock {
-            sqlStorage.addIndexFiles(list.toList().associate { d ->
-                pathWrapper(d.first.replace(fullpath, "")).pathString to d.second
-            })
+            sqlStorage.syncIndexDeletedFiles(
+                list
+//                .toList().associate { d ->
+//                pathWrapper(d.first.replace(fullpath, "")).pathString to d.second
+//            }
+            )
         }
     }
 
-    override fun getDeletedFilesMetadata(): Map<String, Long> {
+    override fun getDeletedFilesMetadata(): Map<String, IndexFileDto> {
         return sqlStorage.getIndexFiles()
             .filter { d -> d.serverSyncStatus == SyncStatus.DELETED.code }
             .associate { d ->
-                d.relativePath to d.modifiedTime
+                d.relativePath to d.dto()
             }
     }
 }

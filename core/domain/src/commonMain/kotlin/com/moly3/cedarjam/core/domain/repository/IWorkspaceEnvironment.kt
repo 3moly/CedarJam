@@ -80,7 +80,7 @@ interface IWorkspaceEnvironment {
     fun isWorkspaceExists(): Boolean
     fun getWorkspace(): WorkspacePresentation
 
-    fun getNodes( absolutePath: String?): List<FileTreeNode>
+    fun getNodes(absolutePath: String?): List<FileTreeNode>
     suspend fun createFileNode(
         parentRelativePath: String,
         fileName: FileName,
@@ -143,15 +143,14 @@ interface IWorkspaceEnvironment {
     fun deleteCollectionRow(id: Long)
     fun deleteCollection(id: Long)
     suspend fun deleteNode(node: FileTreeNode)
-    suspend fun deleteNodes(nodes: List<FileTreeNode>)
     fun deleteTag(id: Long)
     fun deleteTagLink(id: Long)
     fun deleteAnnotation(id: Long)
     fun deleteTagToTag(id: Long)
     fun deleteTagCollectionRow(id: Long)
     suspend fun createDatabase()
-    suspend fun saveDeletedMetadata(list: Map<String, Long>): ResultWrapper<Unit, String>
-    fun getDeletedFilesMetadata(): Map<String, Long>
+    suspend fun saveDeletedMetadata(list: Map<String, IndexFileDto>): ResultWrapper<Unit, String>
+    fun getDeletedFilesMetadata(): Map<String, IndexFileDto>
 
     companion object Companion {
         const val hiddenResources = "resources"

@@ -22,9 +22,9 @@ fun net(baseUrl: String, token: String) = module {
     single<IRemoteSyncRepository> {
         val httpClient = HttpClient(engine = getHttpClientEngine()) {
             install(HttpTimeout) {
-                requestTimeoutMillis = 30 * 1000
+                requestTimeoutMillis = 120 * 1000
                 //Issue: IOS - Darwin doesn't support a connection timeout.
-                connectTimeoutMillis = 30 * 1000
+                connectTimeoutMillis = 120 * 1000
             }
             install(Logging) {
                 logger = object : io.ktor.client.plugins.logging.Logger {

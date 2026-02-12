@@ -23,8 +23,11 @@ import com.moly3.cedarjam.pages.page_tabs.TabsComponent
 import com.moly3.cedarjam.pages.page_workspace.WorkspaceComponent
 import io.github.vinceglb.filekit.FileKit
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
 import kotlinx.coroutines.yield
 import org.koin.core.context.stopKoin
 import org.koin.mp.KoinPlatformTools
@@ -36,9 +39,11 @@ abstract class UITest : BaseTest() {
     var component: Root? = null
     var lifecycle: LifecycleRegistry? = null
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @BeforeTest
     fun before() = runTest {
         cleanupState()
+//        Dispatchers.setMain(dispatcher)
 //        Logger.setLogWriters(CommonWriter())
         FileKit.init(getTestApplicationContext())
         initApp(getTestApplicationContext(), isTest = true)

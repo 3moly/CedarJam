@@ -49,6 +49,7 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.json.encodeToStream
 import org.jetbrains.jewel.foundation.ExperimentalJewelApi
+import org.jetbrains.jewel.intui.standalone.theme.IntUiTheme
 import org.jetbrains.jewel.intui.window.styling.dark
 import org.jetbrains.jewel.intui.window.styling.defaults
 import org.jetbrains.jewel.intui.window.styling.light
@@ -205,80 +206,81 @@ fun main() {
         CompositionLocalProvider(
             LocalTitleBarStyle provides titleBarStyle
         ) {
-            DecoratedWindow(
-                state = windowState,
-                style = DecoratedWindowStyle.dark(),
-                onCloseRequest = { exitApplication() }
-            ) {
-                val windowInfo = LocalWindowInfo.current
-                LifecycleController(
-                    lifecycle,
-                    windowState,
-                    windowInfo = windowInfo
-                )
-
-                val toolbarState = remember(state.isFullscreen) {
-                    val padding = if (state.isFullscreen) 0.dp else 40.dp
-
-                    val modifierPadding = when (DesktopPlatform.Current) {
-                        DesktopPlatform.Linux -> Modifier
-                        DesktopPlatform.Windows -> Modifier
-                            .padding(start = 70.dp)
-                            .padding(end = 70.dp)
-
-                        DesktopPlatform.MacOS -> Modifier.padding(horizontal = padding)
-                        DesktopPlatform.Unknown -> Modifier
-                    }
-                    val isStartCut = when (DesktopPlatform.Current) {
-                        DesktopPlatform.Linux -> true
-                        DesktopPlatform.Windows -> false
-                        DesktopPlatform.MacOS -> true
-                        DesktopPlatform.Unknown -> true
-                    }
-                    val endControlsWidth = when (DesktopPlatform.Current) {
-                        DesktopPlatform.Linux -> 0.dp
-                        DesktopPlatform.Windows -> 140.dp
-                        DesktopPlatform.MacOS -> 80.dp
-                        DesktopPlatform.Unknown -> 0.dp
-                    }
-                    JvmToolbarState(
-                        isFullscreen = state.isFullscreen,
-                        modifier = modifierPadding,
-                        isFirstCut = isStartCut,
-                        endControlsWidth = endControlsWidth,
-                        controlsWidthToCut = padding * 2f
+            IntUiTheme {
+                DecoratedWindow(
+                    state = windowState,
+                    style = DecoratedWindowStyle.dark(),
+                    onCloseRequest = { exitApplication() }
+                ) {
+                    val windowInfo = LocalWindowInfo.current
+                    LifecycleController(
+                        lifecycle,
+                        windowState,
+                        windowInfo = windowInfo
                     )
-                }
-                LaunchedEffect(Unit) {
-                    addMagnifyListener(window.contentPane) { magnifyValue ->
-                        root.shareMagnifyValue(magnifyValue)
-                    }
-                }
 
-                CompositionLocalProvider(LocalJvmToolbarState provides toolbarState) {
-                    ActualPredictiveBackGestureOverlay(
-                        backDispatcher = backDispatcher,
-                        modifier = Modifier
-                    ) {
-                        MainApp(root = root) { titleBarContent ->
-                            TitleBar(Modifier) { state ->
-                                Box(Modifier.then(toolbarState.modifier).fillMaxSize()) {
-                                    titleBarContent(
+                    val toolbarState = remember(state.isFullscreen) {
+                        val padding = if (state.isFullscreen) 0.dp else 40.dp
+
+                        val modifierPadding = when (DesktopPlatform.Current) {
+                            DesktopPlatform.Linux -> Modifier
+                            DesktopPlatform.Windows -> Modifier
+                                .padding(start = 70.dp)
+                                .padding(end = 70.dp)
+
+                            DesktopPlatform.MacOS -> Modifier.padding(horizontal = padding)
+                            DesktopPlatform.Unknown -> Modifier
+                        }
+                        val isStartCut = when (DesktopPlatform.Current) {
+                            DesktopPlatform.Linux -> true
+                            DesktopPlatform.Windows -> false
+                            DesktopPlatform.MacOS -> true
+                            DesktopPlatform.Unknown -> true
+                        }
+                        val endControlsWidth = when (DesktopPlatform.Current) {
+                            DesktopPlatform.Linux -> 0.dp
+                            DesktopPlatform.Windows -> 140.dp
+                            DesktopPlatform.MacOS -> 80.dp
+                            DesktopPlatform.Unknown -> 0.dp
+                        }
+                        JvmToolbarState(
+                            isFullscreen = state.isFullscreen,
+                            modifier = modifierPadding,
+                            isFirstCut = isStartCut,
+                            endControlsWidth = endControlsWidth,
+                            controlsWidthToCut = padding * 2f
+                        )
+                    }
+                    LaunchedEffect(Unit) {
+                        addMagnifyListener(window.contentPane) { magnifyValue ->
+                            root.shareMagnifyValue(magnifyValue)
+                        }
+                    }
+
+                    CompositionLocalProvider(LocalJvmToolbarState provides toolbarState) {
+                        ActualPredictiveBackGestureOverlay(
+                            backDispatcher = backDispatcher,
+                            modifier = Modifier
+                        ) {
+                            MainApp(root = root) { titleBarContent ->
+                                TitleBar(Modifier) { state ->
+                                    Box(Modifier.then(toolbarState.modifier).fillMaxSize()) {
+                                        titleBarContent(
 //                                        ToolbarState(
 //                                            isFullscreen = state.isFullscreen,
 //                                            menuButtonsWidth = toolbarState.controlsWidthToCut,
 //                                            isFirstCut = toolbarState.isFirstCut,
 //                                            controlsWidthToCut = toolbarState.endControlsWidth
 //                                        )
-                                    )
+                                        )
+                                    }
                                 }
                             }
+                            //NestedSharedBoundsSample()
                         }
-                        //NestedSharedBoundsSample()
                     }
                 }
             }
-
         }
 
         DisposableEffect(Unit) {

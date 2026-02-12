@@ -74,7 +74,7 @@ interface ISqlStorage {
     fun syncDirtyFiles(list: List<IndexFileDto>): ResultWrapper<Unit, String>
 
     fun deleteIndexFiles(list: List<String>): ResultWrapper<Unit, String>
-    fun addIndexFiles(list: Map<String, Long>): ResultWrapper<Unit, String>
+    fun syncIndexDeletedFiles(list: Map<String, IndexFileDto>): ResultWrapper<Unit, String>
 
     fun setFilesAsSynced(
         paths: List<String>,

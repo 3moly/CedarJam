@@ -18,6 +18,7 @@ import com.moly3.cedarjam.core.domain.model.WorkspaceInput
 import com.moly3.cedarjam.core.domain.model.shouldBeSuccess
 import com.moly3.cedarjam.core.domain.repository.IWorkspaceEnvironment
 import com.moly3.cedarjam.core.domain.usecase.ISyncUseCase
+import com.moly3.cedarjam.core.net.IRemoteSyncRepository
 import com.moly3.cedarjam.core.storage.ISystemFilesManager
 import com.moly3.cedarjam.pages.page_tab.TabComponent
 import com.moly3.cedarjam.pages.page_workspace.Intent
@@ -25,6 +26,7 @@ import io.kotest.matchers.collections.shouldHaveSize
 import kotlinx.coroutines.delay
 import org.koin.mp.KoinPlatform.getKoin
 import shared_tests.func.checkFlowListSize
+import shared_tests.func.runUiThreadTasksIncludingDelayedTasks
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -122,6 +124,12 @@ class UI1Test : UITest() {
             .shouldHaveSize(expectedDeletedSize)
     }
 
+    @Test
+    fun testUITestLogging() = runUITest(beforeSetContent = {}) { root ->
+        Logger.e { "testUITestLogging -- start" }
+        Logger.e { "testUITestLogging -- =" }
+        Logger.e { "testUITestLogging -- finish" }
+    }
 
     @Test
     fun testUITestAdvance() = runUITest(beforeSetContent = {}) { root ->
@@ -131,8 +139,11 @@ class UI1Test : UITest() {
             serverName = "hehe"
         )
         val koin = getKoin()
+        val remoteSync = koin.get<IRemoteSyncRepository>()
         val fs = koin.get<ISystemFilesManager>()
         fs.deleteNodeHeavy(workspace.fullpath)
+
+        remoteSync.deleteWorkspace(userName = "bulat", workspace.serverName)
 
         val dialog = koin.get<DialogCreateWorkspaceService>()
 
@@ -140,9 +151,8 @@ class UI1Test : UITest() {
         instance1.component.onIntent(com.moly3.cedarjam.pages.page_select_workspace.Intent.CreateWorkspace)
         waitUntilAtLeastOneExists(hasText("create workspace"))
         dialog.setResult(workspace)
-        waitUntilAtLeastOneExists(hasText(workspace.name))
-        onNodeWithText(workspace.name).performClick()
-        val instance = waitAndGetComponent<Root.Child.Workspace>()
+
+        val instance = waitAndGetComponent<Root.Child.Workspace>(30_000L)
         instance.component.onIntent(Intent.CreateWorkspace)
         val workspaceSession = instance.component.workspaceSession
         val workspaceEnv = workspaceSession.workspaceEnvStateFlow.value
@@ -181,7 +191,7 @@ class UI1Test : UITest() {
         workspaceEnv.checkServerFilesSize(expectedSize = 3)
 
         val fBroNode = workspaceEnv.createFileNode(
-            dR.value,
+            dR.value.getRelativePath(),
             fileName = FileName("bro", extension = "txt"),
             isAbsoluteNew = false
         )

@@ -583,7 +583,8 @@ internal class WorkspaceStoreFactory(
 //                                                )
                                             if (fileNode is FileTreeNode.Directory) {
                                                 scope.launch {
-                                                    val nodes = workspaceEnv.getNodes(fileNode.getFullPath())
+                                                    val fullPath = fileNode.getFullPath()
+                                                    val nodes = workspaceEnv.getNodes(fullPath)
                                                     val result = dialogDeleteService.open(Unit)
                                                     if (result) {
                                                         try {
@@ -847,19 +848,15 @@ internal class WorkspaceStoreFactory(
 //                            }
                             val workspaceAbsolute =
                                 workspaceSession.workspaceEnvStateFlow.value.getWorkspace().absolutePath
-                            val directoryRelativePath =
-                                directory.getFullPath().relativeTo(workspaceAbsolute)
                             val newNode = when (draggingItemPath) {
                                 is FileTreeNode.Directory -> draggingItemPath.copy(
                                     workspaceFullPath = workspaceAbsolute,
-                                    parentRelativePath = directoryRelativePath,
-//                                    parentFullPath = directory.getFullPath()
+                                    parentRelativePath = directory.getRelativePath(),
                                 )
 
                                 is FileTreeNode.File -> draggingItemPath.copy(
                                     workspaceFullPath = workspaceAbsolute,
-                                    parentRelativePath = directoryRelativePath,
-//                                    parentFullPath = directory.getFullPath()
+                                    parentRelativePath = directory.getRelativePath(),
                                 )
                             }
 

@@ -56,6 +56,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import co.touchlab.kermit.Logger
+import com.github.panpf.zoomimage.CoilZoomAsyncImage
+import com.github.panpf.zoomimage.ZoomImage
+import com.github.panpf.zoomimage.compose.ZoomState
+import com.github.panpf.zoomimage.compose.rememberZoomState
 import com.moly3.cedarjam.core.domain.func.getPlatform
 import com.moly3.cedarjam.features.feature_file_view.ObsPdfDocument
 import com.moly3.cedarjam.features.feature_file_view.getObsPdfDocument
@@ -81,6 +85,7 @@ import com.moly3.cedarjam.core.ui.uikit.CJIcon
 import com.moly3.cedarjam.core.ui.vectors.ArrowLeft
 import com.moly3.cedarjam.core.ui.vectors.ArrowRight
 import com.moly3.cedarjam.core.ui.volumedBorderStroke
+import com.moly3.cedarjam.features.feature_file_view.func.drawAnnotationsBehind
 import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
@@ -125,7 +130,11 @@ internal fun PdfUI(
 ) {
     val isShowAnnotations = remember { mutableStateOf(false) }
 //    var documentState by remember { mutableStateOf<ObsPdfDocument?>(null) }
-    val documentState = getObsPdfDocument(fileType.fileNode.getFullPath())
+    val pdfFullPath = remember(fileType.fileNode) {
+        val abs = fileType.fileNode.getFullPath()
+        abs
+    }
+    val documentState = getObsPdfDocument(pdfFullPath)
 //    LaunchedEffect(Unit) {
 //        launch(io) {
 //            if (documentState == null) {
@@ -193,76 +202,95 @@ internal fun PdfUI(
                 })
                 .focusRequester(focusRequester)
         ) {
+            val zoomState: ZoomState = rememberZoomState()
             val liquidState: LiquidState = rememberLiquidState()
             if (documentState != null) {
                 var painter by remember { mutableStateOf<Painter?>(null) }
                 Row(Modifier.fillMaxSize()) {
                     when (getPlatform()) {
-
+                        Platform.Android,
                         Platform.Jvm,
                         Platform.Wasm -> {
                             Box(Modifier.weight(1f).fillMaxHeight()) {
                                 if (painter != null) {
-                                    CJZoomableViewLayout(
-                                        modifier = Modifier.fillMaxSize().hazeSource(hazeState)
-                                            .liquefiable(liquidState),
-                                        macTrackpadGestureService = macTrackpadGestureService
-                                    ) {
-                                        painter?.let {
-                                            Image(
-                                                painter = it,
-                                                contentDescription = null,
-                                                modifier = Modifier
-                                                    .drawWithContent {
-                                                        this.drawContent()
-                                                        val size = this.size
-
-                                                        annotations.filter { d -> d.dataPoint.toInt() == currentPage - 1 }
-                                                            .forEach { annotation ->
-
-                                                                val rect = annotation.toPx(
-                                                                    IntSize(
-                                                                        size.width.toInt(),
-                                                                        size.height.toInt()
-                                                                    )
-                                                                )
-
-                                                                drawRect(
-                                                                    color = Color.Yellow.copy(alpha = 0.35f),
-                                                                    topLeft = Offset(
-                                                                        rect.left,
-                                                                        rect.top
-                                                                    ),
-                                                                    size = Size(
-                                                                        rect.width,
-                                                                        rect.height
-                                                                    )
-                                                                )
-
-                                                                drawRect(
-                                                                    color = Color.Yellow,
-                                                                    topLeft = Offset(
-                                                                        rect.left,
-                                                                        rect.top
-                                                                    ),
-                                                                    size = Size(
-                                                                        rect.width,
-                                                                        rect.height
-                                                                    ),
-                                                                    style = Stroke(width = 2.dp.toPx())
-                                                                )
-                                                            }
-                                                    }
+                                    ZoomImage(
+                                        zoomState = zoomState,
+                                        painter = painter!!,
+                                        contentDescription = "view image",
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .liquefiable(liquidState)
+                                            .drawAnnotationsBehind(
+                                                currentPage = currentPage,
+                                                annotations = annotations
                                             )
-                                        }
-                                    }
+                                    )
+//                                    CJZoomableViewLayout(
+//                                        modifier = Modifier
+//                                            .fillMaxSize()
+//                                            .hazeSource(hazeState)
+//                                            .liquefiable(liquidState),
+//                                        macTrackpadGestureService = macTrackpadGestureService
+//                                    ) {
+//                                        painter?.let {
+//                                            Image(
+//                                                painter = it,
+//                                                contentDescription = null,
+//                                                modifier = Modifier
+//                                                    .drawAnnotationsBehind(
+//                                                        currentPage = currentPage,
+//                                                        annotations = annotations
+//                                                    )
+////                                                    .drawWithContent {
+////                                                        this.drawContent()
+////                                                        val size = this.size
+////
+////                                                        annotations.filter { d -> d.dataPoint.toInt() == currentPage - 1 }
+////                                                            .forEach { annotation ->
+////
+////                                                                val rect = annotation.toPx(
+////                                                                    IntSize(
+////                                                                        size.width.toInt(),
+////                                                                        size.height.toInt()
+////                                                                    )
+////                                                                )
+////
+////                                                                drawRect(
+////                                                                    color = Color.Yellow.copy(alpha = 0.35f),
+////                                                                    topLeft = Offset(
+////                                                                        rect.left,
+////                                                                        rect.top
+////                                                                    ),
+////                                                                    size = Size(
+////                                                                        rect.width,
+////                                                                        rect.height
+////                                                                    )
+////                                                                )
+////
+////                                                                drawRect(
+////                                                                    color = Color.Yellow,
+////                                                                    topLeft = Offset(
+////                                                                        rect.left,
+////                                                                        rect.top
+////                                                                    ),
+////                                                                    size = Size(
+////                                                                        rect.width,
+////                                                                        rect.height
+////                                                                    ),
+////                                                                    style = Stroke(width = 2.dp.toPx())
+////                                                                )
+////                                                            }
+////                                                    }
+//                                            )
+//                                        }
+//                                    }
 
                                 } else {
                                     CJCircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                                 }
                             }
                         }
-                        Platform.Android,
+
                         Platform.Ios -> {
                             CJPdf(
                                 Modifier.fillMaxSize().liquefiable(liquidState),
@@ -365,7 +393,7 @@ internal fun PdfUI(
                                 painter = documentState?.getPagePainter(currentPage - 1)
 
                             } catch (exc: Exception) {
-                                val msg = ""+exc.message
+                                val msg = "" + exc.message
                             }
 
                             //                                            imgBitmap = getPdfImage(

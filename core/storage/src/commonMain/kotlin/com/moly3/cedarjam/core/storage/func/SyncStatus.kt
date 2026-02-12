@@ -15,7 +15,6 @@ fun updateIndexLocal(
         val dbRecords = dbQueries.selectAll().executeAsList().associateBy { it.relativePath }
         onDiskFiles.forEach { (path, localNode) ->
             val dbRecord = dbRecords[path]
-            val isDirectory = if (localNode.isDirectory()) 1L else 0L
             if (dbRecord == null) {
                 val currentHash = calculateHash(localNode)
                 val status = SyncStatus.NEW
@@ -24,10 +23,24 @@ fun updateIndexLocal(
                     contentHash = currentHash,
                     modifiedTime = localNode.modifiedTime,
                     size = localNode.fileSize,
-                    isDirectory = isDirectory,
+                    isDirectory = if (localNode.isDirectory()) 1L else 0L,
                     lastSyncedHash = null,
                     serverSyncStatus = status.code
                 )
+            } else {
+                if (dbRecord.modifiedTime != localNode.modifiedTime) {
+                    val currentHash = calculateHash(localNode)
+                    val status = SyncStatus.DIRTY
+                    dbQueries.insertItem(
+                        relativePath = path,
+                        contentHash = currentHash,
+                        modifiedTime = localNode.modifiedTime,
+                        size = localNode.fileSize,
+                        isDirectory = if (localNode.isDirectory()) 1L else 0L,
+                        lastSyncedHash = null,
+                        serverSyncStatus = status.code
+                    )
+                }
             }
         }
     }

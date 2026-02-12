@@ -268,22 +268,31 @@ internal fun DialogCanvasUIContent(
                                 }
 
                                 is ShapeData.FileNode -> {
-                                    val fullpath = state.workspaceFullpath
-                                    val relativePath = data.relativeToFilePath
+
                                     var fileType by remember { mutableStateOf<FileType?>(null) }
                                     fileType?.let { onFileTypeView(it) }
 
-                                    LaunchedEffect(relativePath, fullpath) {
-                                        if (fullpath != null) {
-                                            val sf = pathWrapper(fullpath, relativePath)
-                                            val fileNode =
-                                                filesRepository.getFileNodeFromFullPath(
-                                                    workspacePath = "",//todo
-                                                    sf.pathString,
+                                    LaunchedEffect(
+                                        data.relativeToFilePath,
+                                        state.workspaceFullpath
+                                    ) {
+                                        val workspaceFullPath = state.workspaceFullpath
+                                        val fileRelativePath = data.relativeToFilePath
+                                        if (workspaceFullPath != null) {
+                                            try {
+                                                val fileNode = filesRepository.getFileNodeFromFullPath(
+                                                    workspacePath = workspaceFullPath,
+                                                    pathWrapper(
+                                                        workspaceFullPath,
+                                                        fileRelativePath
+                                                    ).pathString,
                                                     false
                                                 )
-                                            fileType =
-                                                fileNode.toGetFileType(filesRepository = filesRepository)
+                                                fileType =
+                                                    fileNode.toGetFileType(filesRepository = filesRepository)
+                                            }catch (exc: Exception){
+                                                fileType = null
+                                            }
                                         }
                                     }
                                 }

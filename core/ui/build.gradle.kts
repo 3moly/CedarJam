@@ -53,6 +53,7 @@ kotlin {
             api(libs.lazytable)
             api(libs.localina)
             api(libs.liquid)
+            api(libs.zoomimage.compose.coil3)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

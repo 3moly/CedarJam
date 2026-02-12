@@ -1,5 +1,6 @@
 package com.moly3.cedarjam.core.domain.service
 
+import com.moly3.cedarjam.core.domain.func.nowInMs
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.WorkspacePresentation
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -88,22 +89,22 @@ class FileManagerService(
         return map[timestamp]?.fileNodeRelativePath
     }
 
-    @OptIn(ExperimentalTime::class)
-    suspend fun movedFile(oldFileNode: FileTreeNode, newFileNode: FileTreeNode) {
-        movedFile(oldFileNode.getRelativePath(), newFileNode)
-    }
+//    @OptIn(ExperimentalTime::class)
+//    suspend fun movedFile(oldFileNode: FileTreeNode, newFileNode: FileTreeNode) {
+//        movedFile(oldFileNode.getRelativePath(), newFileNode)
+//    }
 
     @OptIn(ExperimentalTime::class)
-    suspend fun movedFile(oldFileNode: String, newFileNode: FileTreeNode) {
-        val timestamp = getTimestampByFileNode(oldFileNode)
+    suspend fun movedFile(oldRelativePath: String, newRelativePath: String) {
+        val timestamp = getTimestampByFileNode(oldRelativePath)
 
         val map = _openedFilesState.value.states.toMutableMap()
 
         val lastFile = map[timestamp]
         if (lastFile != null) {
             val last = FileNodeSeconds(
-                newFileNode.getRelativePath(),
-                refreshToken = Clock.System.now().toEpochMilliseconds()
+                newRelativePath,
+                refreshToken = nowInMs()
             )
             map.put(
                 timestamp!!,
@@ -111,26 +112,27 @@ class FileManagerService(
             )
             //_lastOpenedFile.emit(last)
             _openedFilesState.emit(OpenedFiles(map))
-        } else {
-            val openedFiles = _openedFilesState.value.states.toMutableMap()
-            when (oldFileNode) {
-                is FileTreeNode.Directory -> {
-                    val foundFiles = _openedFilesState.value.states
-                        //.filter { d -> d.value.fileNode is FileTreeNode.File }
-                        .filter { d ->
-                            d.value.fileNodeRelativePath.contains(oldFileNode.getRelativePath())
-                        }
-                    for (item in foundFiles) {
-                        openedFiles[item.key] =
-                            item.value.copy(fileNodeRelativePath = newFileNode.getRelativePath())
-                    }
-                }
-
-                is FileTreeNode.File -> {
-                    //todo openFile(fileNode, isReadOnly = false)
-                }
-            }
-            _openedFilesState.emit(OpenedFiles(openedFiles))
         }
+//        else {
+//            val openedFiles = _openedFilesState.value.states.toMutableMap()
+//            when (oldFileNode) {
+//                is FileTreeNode.Directory -> {
+//                    val foundFiles = _openedFilesState.value.states
+//                        //.filter { d -> d.value.fileNode is FileTreeNode.File }
+//                        .filter { d ->
+//                            d.value.fileNodeRelativePath.contains(oldFileNode.getRelativePath())
+//                        }
+//                    for (item in foundFiles) {
+//                        openedFiles[item.key] =
+//                            item.value.copy(fileNodeRelativePath = newFileNode.getRelativePath())
+//                    }
+//                }
+//
+//                is FileTreeNode.File -> {
+//                    //todo openFile(fileNode, isReadOnly = false)
+//                }
+//            }
+//            _openedFilesState.emit(OpenedFiles(openedFiles))
+//        }
     }
 }

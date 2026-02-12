@@ -1,8 +1,6 @@
 package core.domain
 
 import kotlin.test.Test
-import kotlin.test.assertIs
-import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class DomainTest {

@@ -8,6 +8,7 @@ import java.util.Properties
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
+//    alias(libs.plugins.androidLibrary)
     alias(libs.plugins.android.kotlin.multiplatform.library)
     alias(libs.plugins.compose)
     alias(libs.plugins.compose.compiler)
@@ -16,6 +17,7 @@ plugins {
 //    alias(libs.plugins.stability.analyzer)
     kotlin("native.cocoapods")
 }
+
 
 kotlin {
     // It works for unit testing ios
@@ -28,19 +30,21 @@ kotlin {
         languageSettings.optIn("androidx.compose.animation.ExperimentalSharedTransitionApi")
     }
     applyDefaultHierarchyTemplate()
-
     android {
         namespace = "com.moly3.cedarjam"
-        compileSdk = libs.versions.android.compileSdk.get().toInt()
-        minSdk = libs.versions.android.minSdk.get().toInt()
-        compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-        }
-
+        compileSdk = 36
 //        defaultConfig {
 //            minSdk = 26
 //        }
-        //buildFeatures.compose = true
+//        buildFeatures.compose = true
+//        compileOptions {
+//            sourceCompatibility = JavaVersion.VERSION_17
+//            targetCompatibility = JavaVersion.VERSION_17
+//        }
+//        defaultConfig {
+//            minSdk = 26
+//        }
+//        buildFeatures.compose = true
 //        compileOptions {
 //            sourceCompatibility = JavaVersion.VERSION_17
 //            targetCompatibility = JavaVersion.VERSION_17
@@ -51,6 +55,57 @@ kotlin {
 //            }
 //        }
     }
+//    androidTarget()
+//    androidTarget {
+//
+//    }
+//    android{
+//
+//    }
+//    androidLibrary {
+////        withHostTest {
+////            isIncludeAndroidResources = true
+////        }
+////        withJava()
+////        withHostTest {
+////            isIncludeAndroidResources = true
+////        }
+//
+//        // Opt-in to enable and configure device-side (instrumented) tests
+////        withDeviceTest {
+////            instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+////            execution = "HOST"
+////        }
+//
+////        sourceSets["androidTest"].java.srcDirs("src/androidUnitTest/kotlin")
+//
+//        namespace = "com.moly3.cedarjam"
+//        compileSdk = libs.versions.android.compileSdk.get().toInt()
+//        minSdk = libs.versions.android.minSdk.get().toInt()
+//        compilerOptions {
+//            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
+//        }
+//        androidResources {
+//            enable = true
+//        }
+//        withDeviceTest {
+//            instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+//            execution = "HOST"
+//        }
+//        defaultConfig {
+//            minSdk = 26
+//        }
+//        buildFeatures.compose = true
+//        compileOptions {
+//            sourceCompatibility = JavaVersion.VERSION_17
+//            targetCompatibility = JavaVersion.VERSION_17
+//        }
+//        testOptions {
+//            unitTests {
+//                isIncludeAndroidResources = true
+//            }
+//        }
+//    }
     jvm()
     iosArm64()
     iosSimulatorArm64()
@@ -168,6 +223,7 @@ kotlin {
         iosMain.dependencies {
 //            implementation(libs.compose.remote.layout.iosarm64)
         }
+
         androidUnitTest.dependencies {
             implementation(libs.robolectric)
             implementation(libs.android.videoplayer.contextprovider)

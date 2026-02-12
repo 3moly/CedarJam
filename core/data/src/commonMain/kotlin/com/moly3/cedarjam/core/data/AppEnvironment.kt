@@ -130,13 +130,12 @@ class AppEnvironment(
                     )
 
                 appStorage.createWorkspace(workspace.copy(fullpath = absolutePath.pathString))
-                val workspacePresentation = workspace.toPresentation()
 
+                val workspacePresentation = workspace.toPresentation()
                 val dir = systemFilesManager.getDirectoryNodeFromFullPath(
                     workspacePath = workspacePresentation.absolutePath,
                     fullPath = workspacePresentation.absolutePath
                 )
-
                 val workspaceEnv = getWorkspaceEnv(workspacePresentation)
                 syncService.syncronize(workspaceEnv)
 

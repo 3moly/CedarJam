@@ -145,7 +145,7 @@ class dbTest : AppEnvironmentTest() {
         env.createDatabase()
         env.createDatabase()
         val createResult = env.createFileNode(
-            parentRelativePath = null,
+            parentRelativePath = "",
             fileName = FileName(name = "text", "md"),
             isAbsoluteNew = true,
             byteArray = null
@@ -173,7 +173,7 @@ class dbTest : AppEnvironmentTest() {
         var files = env.getFileNodesFlow().first().getOrNull()
         assertTrue("actual size: ${files!!.size}") { files.size == 1 }
         env.createFileNode(
-            null,
+            "",
             fileName = FileName(name = "unknown", extension = "md"),
             isAbsoluteNew = false
         )
@@ -184,7 +184,7 @@ class dbTest : AppEnvironmentTest() {
 
         val file =
             env.createFileNode(
-                directory.getValueOrNull()!!,
+                directory.getValueOrNull()!!.getRelativePath(),
                 fileName = FileName(name = "unknown", extension = "md"),
                 isAbsoluteNew = false
             )
@@ -199,7 +199,7 @@ class dbTest : AppEnvironmentTest() {
         val env = createWorkspaceEnv()
 
         val file = env.createFileNode(
-            null,
+            "",
             fileName = FileName(name = "unknown", extension = "md"), isAbsoluteNew = false,
         ).getValueOrNull()!!
         val files = env.getFileNodesFlow().first().getOrNull()!!
@@ -217,7 +217,7 @@ class dbTest : AppEnvironmentTest() {
         try {
             val file =
                 env.createFileNode(
-                    null,
+                    "",
                     fileName = FileName(name = sameName, extension = ""),
                     isAbsoluteNew = false,
                 )
@@ -233,7 +233,7 @@ class dbTest : AppEnvironmentTest() {
         val expectedName = "unknown."
         val result =
             env.createFileNode(
-                null,
+                "",
                 fileName = FileName(name = expectedName, extension = ""),
                 isAbsoluteNew = false,
             )
