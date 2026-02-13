@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
@@ -213,77 +214,42 @@ internal fun PdfUI(
                         Platform.Wasm -> {
                             Box(Modifier.weight(1f).fillMaxHeight()) {
                                 if (painter != null) {
-                                    ZoomImage(
-                                        zoomState = zoomState,
-                                        painter = painter!!,
-                                        contentDescription = "view image",
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .liquefiable(liquidState)
-                                            .drawAnnotationsBehind(
-                                                currentPage = currentPage,
-                                                annotations = annotations
-                                            )
-                                    )
-//                                    CJZoomableViewLayout(
+//                                    ZoomImage(
+//                                        zoomState = zoomState,
+//                                        painter = painter!!,
+//                                        contentDescription = "view image",
 //                                        modifier = Modifier
 //                                            .fillMaxSize()
-//                                            .hazeSource(hazeState)
-//                                            .liquefiable(liquidState),
-//                                        macTrackpadGestureService = macTrackpadGestureService
-//                                    ) {
-//                                        painter?.let {
-//                                            Image(
-//                                                painter = it,
-//                                                contentDescription = null,
-//                                                modifier = Modifier
-//                                                    .drawAnnotationsBehind(
-//                                                        currentPage = currentPage,
-//                                                        annotations = annotations
-//                                                    )
-////                                                    .drawWithContent {
-////                                                        this.drawContent()
-////                                                        val size = this.size
-////
-////                                                        annotations.filter { d -> d.dataPoint.toInt() == currentPage - 1 }
-////                                                            .forEach { annotation ->
-////
-////                                                                val rect = annotation.toPx(
-////                                                                    IntSize(
-////                                                                        size.width.toInt(),
-////                                                                        size.height.toInt()
-////                                                                    )
-////                                                                )
-////
-////                                                                drawRect(
-////                                                                    color = Color.Yellow.copy(alpha = 0.35f),
-////                                                                    topLeft = Offset(
-////                                                                        rect.left,
-////                                                                        rect.top
-////                                                                    ),
-////                                                                    size = Size(
-////                                                                        rect.width,
-////                                                                        rect.height
-////                                                                    )
-////                                                                )
-////
-////                                                                drawRect(
-////                                                                    color = Color.Yellow,
-////                                                                    topLeft = Offset(
-////                                                                        rect.left,
-////                                                                        rect.top
-////                                                                    ),
-////                                                                    size = Size(
-////                                                                        rect.width,
-////                                                                        rect.height
-////                                                                    ),
-////                                                                    style = Stroke(width = 2.dp.toPx())
-////                                                                )
-////                                                            }
-////                                                    }
+//                                            .liquefiable(liquidState)
+//                                            .drawAnnotationsBehind(
+//                                                zoomState = zoomState,
+//                                                currentPage = currentPage,
+//                                                annotations = annotations
 //                                            )
-//                                        }
-//                                    }
+//                                    )
+//                                    CJText(
+//                                        text = "container: ${zoomState.zoomable.transform}\n\nbaseTrans ${zoomState.zoomable.baseTransform}",
+//                                        modifier = Modifier.padding(16.dp).background(Color.Black).align(Alignment.Center)
+//                                    )
+                                    CJZoomableViewLayout(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .hazeSource(hazeState)
+                                            .liquefiable(liquidState),
+                                        macTrackpadGestureService = macTrackpadGestureService
+                                    ) {
+                                        painter?.let {
+                                            Image(
+                                                painter = it,
+                                                contentDescription = null,
+                                                modifier = Modifier
+                                                    .drawAnnotationsBehind(
+                                                        currentPage = currentPage,
+                                                        annotations = annotations
+                                                    )
+                                            )
+                                        }
+                                    }
 
                                 } else {
                                     CJCircularProgressIndicator(modifier = Modifier.align(Alignment.Center))

@@ -133,6 +133,7 @@ internal class SystemFilesManager : ISystemFilesManager {
     }
 
     override fun deleteNodeHeavy(nodePath: String) {
+
         try {
             val path = Path(nodePath)
             if (fs.metadataOrNull(path)!!.isDirectory) {
@@ -191,6 +192,12 @@ internal class SystemFilesManager : ISystemFilesManager {
             toAbsoluteAppPath(pathWrapper(path.toString())).pathString
         }
         return fs.exists(absolutePath.toPath())
+    }
+
+    override fun createDirectory(fullPath: String): ResultWrapper<Unit, String> {
+        return resultBlock {
+            fs.createDirectories(Path(fullPath),mustCreate = true)
+        }
     }
 
     override fun createNode(

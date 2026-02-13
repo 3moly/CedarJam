@@ -11,6 +11,7 @@ internal interface SettingsStorageStore : Store<Intent, State, Unit> {
 
     sealed interface Msg {
         data class SetFilesState(val value: UIState<ImmutableList<FileTreeNode>, String>) : Msg
+        data class SetAllFilesState(val value: UIState<ImmutableList<FileTreeNode>, String>) : Msg
         data class SetTagsCount(val value: Int) : Msg
         data class SetCollectionsCount(val value: Int) : Msg
         data class SetRowsCount(val value: Int) : Msg

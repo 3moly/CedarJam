@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.moly3.cedarjam.core.domain.func.formatFileSize
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
+import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.ui.JvmWindowScope
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.model.CJText
@@ -57,9 +58,15 @@ fun JvmWindowScope.SettingsStorageUI(component: ISettingsStorageComponent) {
             Modifier.weight(1f).fillMaxWidth().padding(12.dp).verticalScroll(rememberScrollState())
         ) {
             UIStateContentNoBox(boxModifier = Modifier, state = state.filesState) {
+                val allFilesCount = remember(state.allFilesState) {
+                    when (val all = state.allFilesState) {
+                        is UIState.Error -> 0
+                        UIState.Loading -> 0
+                        is UIState.Success -> all.data.size
+                    }
+                }
                 val filesSize = remember(it) {
                     formatFileSize(it.sumOf { x -> x.fileSize })
-
                 }
                 val groupedFiles = remember(it) {
                     it.groupBy { b ->
@@ -71,9 +78,9 @@ fun JvmWindowScope.SettingsStorageUI(component: ISettingsStorageComponent) {
                 }
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     CJText(text = "files size: $filesSize")
-                    CJText(text = "all files: ${it.size}")
+                    CJText(text = "all files: ${allFilesCount}")
 
-                    ContainerBlock(title = "Database:"){
+                    ContainerBlock(title = "Database:") {
                         FlowRow(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -87,13 +94,13 @@ fun JvmWindowScope.SettingsStorageUI(component: ISettingsStorageComponent) {
                             DbItem("Tag-Row", state.tagToRowsCount)
                         }
                     }
-                    ContainerBlock(title = "File types:"){
+                    ContainerBlock(title = "File types:") {
                         FlowRow(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             for (group in groupedFiles) {
-                                DbItem(group.key?:"", group.value.size)
+                                DbItem(group.key ?: "", group.value.size)
                             }
                         }
                     }

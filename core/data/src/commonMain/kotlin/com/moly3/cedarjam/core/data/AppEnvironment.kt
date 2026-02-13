@@ -16,6 +16,7 @@ import com.moly3.cedarjam.core.domain.model.resultBlock
 import com.moly3.cedarjam.core.domain.repository.IAppEnvironment
 import com.moly3.cedarjam.core.domain.repository.IWorkspaceEnvironment
 import com.moly3.cedarjam.core.domain.repository.getTags
+import com.moly3.cedarjam.core.domain.service.AlertService
 import com.moly3.cedarjam.core.domain.usecase.ISyncUseCase
 import com.moly3.cedarjam.core.storage.IAppStorage
 import com.moly3.cedarjam.core.storage.ISystemFilesManager
@@ -31,6 +32,7 @@ import kotlinx.coroutines.withContext
 class AppEnvironment(
     scope: CoroutineScope,
     private val appStorage: IAppStorage,
+    private val alertService: AlertService,
     private val systemFilesManager: ISystemFilesManager,
     private val syncService: ISyncUseCase,
     private val getWorkspaceEnv: (WorkspacePresentation) -> IWorkspaceEnvironment
@@ -121,6 +123,7 @@ class AppEnvironment(
         return withContext(io) {
             resultBlock {
                 ensure(workspace.name.isNotEmpty()) { "workspace name is empty" }
+                ensure(workspace.serverName.isNotEmpty()) { "workspace server name is empty" }
                 ensure(workspace.fullpath.isNotEmpty()) { "workspace fullpath is empty" }
                 val absolutePath =
                     systemFilesManager.toAbsoluteAppPath(
@@ -132,10 +135,17 @@ class AppEnvironment(
                 appStorage.createWorkspace(workspace.copy(fullpath = absolutePath.pathString))
 
                 val workspacePresentation = workspace.toPresentation()
+
                 val dir = systemFilesManager.getDirectoryNodeFromFullPath(
                     workspacePath = workspacePresentation.absolutePath,
                     fullPath = workspacePresentation.absolutePath
                 )
+                systemFilesManager.createDirectory(dir.getFullPath())
+                val isExists = systemFilesManager.isNodeExists(dir.getFullPath())
+                if(!isExists){
+                    alertService.sendMessage("Не существует dir: ${workspacePresentation.absolutePath}")
+                    throw NullPointerException("not exists")
+                }
                 val workspaceEnv = getWorkspaceEnv(workspacePresentation)
                 syncService.syncronize(workspaceEnv)
 

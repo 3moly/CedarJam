@@ -26,6 +26,10 @@ interface ISystemFilesManager {
         isDirectory: Boolean
     ): ResultWrapper<FileTreeNode, String>
 
+    fun createDirectory(
+        fullPath:String
+    ): ResultWrapper<Unit, String>
+
     fun createNode(
         workspacePath: String,
         isDirectory: Boolean,

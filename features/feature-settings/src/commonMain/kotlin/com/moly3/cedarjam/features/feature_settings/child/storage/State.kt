@@ -6,6 +6,7 @@ import kotlinx.collections.immutable.ImmutableList
 
 data class State(
     val filesState: UIState<ImmutableList<FileTreeNode>, String> = UIState.Loading,
+    val allFilesState: UIState<ImmutableList<FileTreeNode>, String> = UIState.Loading,
     val tagsCount: Int = 0,
     val collectionsCount: Int = 0,
     val rowsCount: Int = 0,

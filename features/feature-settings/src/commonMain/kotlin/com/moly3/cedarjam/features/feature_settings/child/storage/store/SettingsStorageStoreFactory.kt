@@ -5,6 +5,7 @@ import com.arkivanov.mvikotlin.core.store.Reducer
 import com.arkivanov.mvikotlin.core.store.SimpleBootstrapper
 import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
+import com.moly3.cedarjam.core.domain.model.FileTreeNode.Companion.getAll
 import com.moly3.cedarjam.core.domain.model.FileTreeNode.Companion.getAllFilesByExtension
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
 import com.moly3.cedarjam.navigation.BaseExecutor
@@ -74,12 +75,16 @@ internal class SettingsStorageStoreFactory(
             }
             scopeFromStartToStop.launch {
                 workspaceSession.filesFlow.collectLatest {
+                    val stAll = it.map {
+                        val allFiles = it.getAll(isSkipOwnNode = true)
+                        allFiles.toPersistentList()
+                    }
                     val st = it.map {
                         val allFiles = it.getAllFilesByExtension(extension = null)
-
                         allFiles.toPersistentList()
                     }
                     dispatch(SettingsStorageStore.Msg.SetFilesState(st))
+                    dispatch(SettingsStorageStore.Msg.SetAllFilesState(stAll))
                 }
             }
         }
@@ -95,6 +100,7 @@ internal class SettingsStorageStoreFactory(
     private object ReducerImpl : Reducer<State, SettingsStorageStore.Msg> {
         override fun State.reduce(msg: SettingsStorageStore.Msg): State {
             return when (msg) {
+                is SettingsStorageStore.Msg.SetAllFilesState -> copy(allFilesState = msg.value)
                 is SettingsStorageStore.Msg.SetFilesState -> copy(filesState = msg.value)
                 is SettingsStorageStore.Msg.SetTagsCount -> copy(tagsCount = msg.value)
                 is SettingsStorageStore.Msg.SetAnnotationsCount -> copy(annotationsCount = msg.value)

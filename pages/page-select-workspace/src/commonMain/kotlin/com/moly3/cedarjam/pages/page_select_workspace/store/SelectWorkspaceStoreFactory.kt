@@ -47,11 +47,8 @@ internal class SelectWorkspaceStoreFactory(
     private inner class ExecutorImpl :
         BaseExecutor<Intent, Unit, State, SelectWorkspaceStore.Msg, Unit>(lifecycle) {
 
-        @OptIn(ExperimentalCoroutinesApi::class)
-        override fun onStart(scopeFromStartToStop: CoroutineScope) {
-            super.onStart(scopeFromStartToStop)
-
-            scopeFromStartToStop.launch {
+        private fun refreshLocalWorkspaces(){
+            scope.launch {
                 dispatch(
                     SelectWorkspaceStore.Msg.SetLocalWorkspaces(
                         appEnvironment.getLocalWorkspaces().mapToUIState(
@@ -60,6 +57,15 @@ internal class SelectWorkspaceStoreFactory(
                             onError = { "" })
                     )
                 )
+            }
+        }
+
+        @OptIn(ExperimentalCoroutinesApi::class)
+        override fun onStart(scopeFromStartToStop: CoroutineScope) {
+            super.onStart(scopeFromStartToStop)
+
+            scopeFromStartToStop.launch {
+                refreshLocalWorkspaces()
             }
             scopeFromStartToStop.launch {
                 appEnvironment.getWorkspacesFlow().collectLatest {
@@ -104,6 +110,7 @@ internal class SelectWorkspaceStoreFactory(
                 is Intent.DeleteWorkspace -> {
                     coroutineScope.launch(io) {
                         appEnvironment.deleteWorkspace(intent.workspace)
+                        refreshLocalWorkspaces()
                     }
                 }
             }

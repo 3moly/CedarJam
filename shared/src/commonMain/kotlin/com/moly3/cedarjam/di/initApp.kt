@@ -99,6 +99,7 @@ fun initApp(
                 appStorage = get(),
                 systemFilesManager = get(),
                 syncService = get(),
+                alertService = get(),
                 getWorkspaceEnv = {
                     val filesManager =
                         FileManagerService(it, FileManagerService.OpenedFiles())
