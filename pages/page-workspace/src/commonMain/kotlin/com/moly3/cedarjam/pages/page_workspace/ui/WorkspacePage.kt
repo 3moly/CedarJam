@@ -68,8 +68,8 @@ fun JvmWindowScope.WorkspacePage(
             Box(
                 Modifier
                     .background(LocalAppTheme.current.colors.backgroundPrimary)
-                    .statusBarsPadding()
-                    .navigationBarsPadding()
+//                    .statusBarsPadding()
+//                    .navigationBarsPadding()
                     .imePadding()
             ) {
                 WorkspacePageContent(

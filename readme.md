@@ -154,4 +154,9 @@ We've checked many popular apps, for example graph nodes are always give random 
 [badge-ios]: http://img.shields.io/badge/-ios-CDCDCD.svg?style=flat
 [badge-mac]: http://img.shields.io/badge/-macos-111111.svg?style=flat
 
+
 `./gradlew :shared:hotRunJvm --autoReload`
+`./gradlew :jvmRun`
+`./gradlew :shared:hotRunJvm --auto`
+`./gradlew assembleRelease -PcomposeCompilerReports=true --rerun-tasks`
+`./gradlew createModuleGraph --rerun-tasks`

@@ -15,13 +15,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
+import com.moly3.cedarjam.core.ui.func.flatClickable
 import com.moly3.cedarjam.core.ui.vectors.NetworkNode
 import com.moly3.cedarjam.core.ui.uikit.CJText
+import com.moly3.cedarjam.core.ui.uikit.NeumorphicButton
 import com.moly3.cedarjam.core.ui.vectors.Tag
 import com.moly3.cedarjam.core.ui.volumedBorderStroke
 
@@ -32,35 +36,45 @@ fun SelectOption(
     count: Int?,
     onSetIsShowGraph: (Boolean) -> Unit
 ) {
-    Box(
-        modifier = modifier
-
-            .height(60.dp)
-            .border(volumedBorderStroke, RoundedCornerShape(8.dp))
-            .padding(horizontal = 8.dp, vertical = 2.dp)
-    ) {
-        Row(
-            modifier = Modifier,
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            SelectButton(
-                isActive = !isOpened,
-                imageVector = Tag,
-                onClick = {
-                    onSetIsShowGraph(false)
-                }
-            )
-            SelectButton(
-                isActive = isOpened,
-                imageVector = NetworkNode,
-                count = count,
-                onClick = {
-                    onSetIsShowGraph(true)
-                }
-            )
-        }
-    }
+    NeumorphicButton(
+        modifier = modifier.padding(16.dp).size(48.dp).flatClickable({
+            onSetIsShowGraph(!isOpened)
+        }),
+        unpressedColor = LocalAppTheme.current.primaryColor,
+        isPressed = isOpened,
+        buttonShape = RoundedCornerShape(100.dp),
+        painter = rememberVectorPainter(Tag),
+        accentColor = Color.White// Color(0xFFFF916D)
+    )
+//    Box(
+//        modifier = modifier
+//
+//            .height(60.dp)
+//            .border(volumedBorderStroke, RoundedCornerShape(8.dp))
+//            .padding(horizontal = 8.dp, vertical = 2.dp)
+//    ) {
+//        Row(
+//            modifier = Modifier,
+//            verticalAlignment = Alignment.CenterVertically,
+//            horizontalArrangement = Arrangement.spacedBy(8.dp)
+//        ) {
+//            SelectButton(
+//                isActive = !isOpened,
+//                imageVector = Tag,
+//                onClick = {
+//                    onSetIsShowGraph(false)
+//                }
+//            )
+//            SelectButton(
+//                isActive = isOpened,
+//                imageVector = NetworkNode,
+//                count = count,
+//                onClick = {
+//                    onSetIsShowGraph(true)
+//                }
+//            )
+//        }
+//    }
 }
 
 @Composable

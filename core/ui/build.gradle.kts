@@ -62,6 +62,7 @@ kotlin {
         }
         androidMain.dependencies {
             api(libs.pdfmp.compose)
+            implementation(libs.compose.ui.tooling)
         }
         iosMain.dependencies {
 
@@ -69,7 +70,7 @@ kotlin {
     }
 }
 dependencies {
-    //api(libs.compose.ui.tooling)
+//    api(libs.compose.ui.tooling)
 }
 compose.resources {
     publicResClass = true

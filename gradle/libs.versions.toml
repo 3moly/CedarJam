@@ -22,7 +22,7 @@ android-lint = { id = "com.android.lint", version.ref = "agp" }
 [versions]
 
 # primary
-agp = "9.0.0"
+agp = "9.0.1"
 
 kmpIoVersion = "0.3.0"
 kotlin = "2.3.10"

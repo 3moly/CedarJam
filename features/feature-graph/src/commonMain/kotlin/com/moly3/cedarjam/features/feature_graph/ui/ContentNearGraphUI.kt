@@ -63,13 +63,11 @@ fun ContentNearGraphUI(
         } else
             false
         val windowSize by rememberWindowSize()
-        if (windowSize != WindowSize.Compact) {
-            SelectOption(
-                modifier = Modifier.align(optionsAlignment).padding(32.dp)
-                    .hazeEffect(state = hazeState, style = hazeStyle),
-                isOpened = isGraphDialogOpened,
-                count = connectionsCount,
-                onSetIsShowGraph = { setIsShowGraph(it) })
-        }
+        //.hazeEffect(state = hazeState, style = hazeStyle)
+        SelectOption(
+            modifier = Modifier.align(optionsAlignment),
+            isOpened = isGraphDialogOpened,
+            count = connectionsCount,
+            onSetIsShowGraph = { setIsShowGraph(it) })
     }
 }

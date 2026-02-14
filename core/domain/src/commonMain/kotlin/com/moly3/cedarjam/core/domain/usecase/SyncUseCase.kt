@@ -180,7 +180,7 @@ class SyncUseCase(
             val typeMismatch = local.isDirectory != server.isDirectory
 
             return when {
-                serverNewer && !local.isDirectory -> SyncResult(
+                !server.isDeleted && serverNewer && !local.isDirectory -> SyncResult(
                     SyncAction.DOWNLOAD,
                     "Server is newer ($diffMs)"
                 )
@@ -213,8 +213,7 @@ class SyncUseCase(
                 workspace.updateIndexFilesLocal(diskNodes)
 //                workspace.updateIndexFiles(diskNodes, serverFiles)
 
-                val indexMap = workspace.getIndexFilesFlow().first()
-                    .associateBy { it.relativePath.normalizeText() }
+                val indexMap = workspace.getIndexFilesFlow().first().associateBy { it.relativePath.normalizeText() }
                 val serverMap = serverFiles.associateBy { it.relativePath.normalizeText() }
                 val allPaths = (indexMap.keys + serverMap.keys).distinct()
 

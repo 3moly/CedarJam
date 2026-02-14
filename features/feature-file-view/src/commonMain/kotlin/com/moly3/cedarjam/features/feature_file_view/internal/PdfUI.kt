@@ -375,42 +375,42 @@ internal fun PdfUI(
             } else {
                 CJCircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             }
-            Row(
-                modifier = Modifier.align(Alignment.BottomEnd).background(Color.Black)
-                    .padding(8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Box(
-                    modifier = Modifier.background(Color.Black)
-                        .flatClickable {
-                            //      currentPage = currentPage,
-                            //                                pdf = documentState!!,
-                            //                                annotations = annotations,
-                            //                                filePath = fileType.fileNode.getFullPath(),
-                            onAddAnnotation(
-                                CreateAnnotationRequest(
-                                    dataPath = fileType.fileNode.getFullPath(),
-                                    dataPoint = (currentPage - 1).toDouble(),
-                                    description = "-",
-                                    x = 0.5f,
-                                    y = 0.5f,
-                                    width = 0.1f,
-                                    height = 0.1f,
-                                )
-                            )
-                        }
-                ) {
-                    CJText(text = "annotate")
-                }
-                Box(
-                    modifier = Modifier.background(Color.Black)
-                        .flatClickable {
-                            isShowAnnotations.value = !isShowAnnotations.value
-                        }
-                ) {
-                    CJText(text = "annotations: ${annotations.size}")
-                }
-            }
+//            Row(
+//                modifier = Modifier.align(Alignment.BottomEnd).background(Color.Black)
+//                    .padding(8.dp),
+//                horizontalArrangement = Arrangement.spacedBy(8.dp)
+//            ) {
+//                Box(
+//                    modifier = Modifier.background(Color.Black)
+//                        .flatClickable {
+//                            //      currentPage = currentPage,
+//                            //                                pdf = documentState!!,
+//                            //                                annotations = annotations,
+//                            //                                filePath = fileType.fileNode.getFullPath(),
+//                            onAddAnnotation(
+//                                CreateAnnotationRequest(
+//                                    dataPath = fileType.fileNode.getFullPath(),
+//                                    dataPoint = (currentPage - 1).toDouble(),
+//                                    description = "-",
+//                                    x = 0.5f,
+//                                    y = 0.5f,
+//                                    width = 0.1f,
+//                                    height = 0.1f,
+//                                )
+//                            )
+//                        }
+//                ) {
+//                    CJText(text = "annotate")
+//                }
+//                Box(
+//                    modifier = Modifier.background(Color.Black)
+//                        .flatClickable {
+//                            isShowAnnotations.value = !isShowAnnotations.value
+//                        }
+//                ) {
+//                    CJText(text = "annotations: ${annotations.size}")
+//                }
+//            }
 
         }
 

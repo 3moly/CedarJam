@@ -97,7 +97,7 @@ class UI1Test : UITest() {
         getTagToTagsFlow().checkFlowListSize(expectedSize = 0)
     }
 
-    private suspend fun IWorkspaceEnvironment.checkServerFilesSize(expectedSize: Int) {
+    private suspend inline fun IWorkspaceEnvironment.checkServerFilesSize(expectedSize: Int) {
         val serverFilesResult2 = getServerFiles()
         serverFilesResult2.shouldBeSuccess()
         val serverFilesList = serverFilesResult2.value.files
@@ -172,7 +172,7 @@ class UI1Test : UITest() {
 
         val dbIndexes = workspaceEnv.getIndexFiles()
         assertEquals(2, dbIndexes.size)
-        syncUseCase.syncronize(workspaceEnv,).shouldBeSuccess()
+        syncUseCase.syncronize(workspaceEnv, isAbsoluteNewLocal = false).shouldBeSuccess()
 
         workspaceEnv.checkServerFilesSize(expectedSize = 2)
 
@@ -182,7 +182,7 @@ class UI1Test : UITest() {
         val dR = workspaceEnv.createDirectory(null, name = "pdf", isAbsoluteNew = false)
         dR.shouldBeSuccess()
 
-        syncUseCase.syncronize(workspaceEnv,).shouldBeSuccess()
+        syncUseCase.syncronize(workspaceEnv, isAbsoluteNewLocal = false).shouldBeSuccess()
         workspaceEnv.isFullSynced()
 
         workspaceEnv.checkServerFilesSize(expectedSize = 3)
@@ -194,7 +194,7 @@ class UI1Test : UITest() {
         )
         fBroNode.shouldBeSuccess()
 
-        syncUseCase.syncronize(workspaceEnv,).shouldBeSuccess()
+        syncUseCase.syncronize(workspaceEnv, isAbsoluteNewLocal = false).shouldBeSuccess()
         workspaceEnv.isFullSynced()
 
         workspaceEnv.checkServerFilesSize(expectedSize = 4)

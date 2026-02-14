@@ -13,6 +13,6 @@ struct ContentView: View {
     var body: some View {
           RootComposeView(root:root,backDispatcher: backDispatcher)
             .ignoresSafeArea(.all, edges: .bottom)
-            .edgesIgnoringSafeArea([.top,.bottom])
+            .edgesIgnoringSafeArea([.all])
     }
 }

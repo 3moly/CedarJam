@@ -41,7 +41,9 @@ internal class SystemFilesManager : ISystemFilesManager {
         if (parentDir != null && !fs.exists(parentDir)) {
             fs.createDirectories(parentDir)
         }
-        fs.delete(destination)
+        if(fs.exists(destination)){
+            fs.delete(destination)
+        }
         fs.sink(destination).buffered().use { destinationBuffer ->
             destinationBuffer.write(sourcePath)
         }
