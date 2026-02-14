@@ -105,7 +105,7 @@ abstract class AppEnvironmentTest : BaseTest() {
         sd.createWorkspace(
             Workspace(
                 name = workspace.name,
-                fullpath = workspace.fullpath,
+                platformPath = workspace.fullpath,
                 serverName = workspace.name
             )
         )

@@ -8,7 +8,7 @@ import kotlinx.serialization.Serializable
 data class Workspace(
     val name: String,
     val serverName: String,
-    val fullpath: String
+    val platformPath: String
 )
 
 @Serializable

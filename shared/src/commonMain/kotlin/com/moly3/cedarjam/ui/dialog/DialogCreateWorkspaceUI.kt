@@ -80,7 +80,7 @@ fun DialogCreateWorkspaceService(dialog: DialogCreateWorkspaceService) {
                         Workspace(
                             name = nameState.text,
                             serverName = nameState.text,
-                            fullpath = if (getPlatform() is Platform.Jvm) fullpathState.text else nameState.text
+                            platformPath = if (getPlatform() is Platform.Jvm) fullpathState.text else nameState.text
                         )
                     )
                 }

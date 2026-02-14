@@ -5,6 +5,22 @@ import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.SyncStatus
 import com.moly3.cedarjam.indexdb.IndexDatabase
 
+fun syncAllFiles(
+    dbHelper: IndexDatabase
+) {
+    dbHelper.indexFileQueries.transaction {
+        val dbQueries = dbHelper.indexFileQueries.selectAll().executeAsList()
+        dbHelper.indexFileQueries.transaction {
+            for (item in dbQueries) {
+                dbHelper.indexFileQueries.updateStatus(
+                    relativePath = item.relativePath,
+                    serverSyncStatus = SyncStatus.SYNCED.code
+                )
+            }
+        }
+    }
+}
+
 fun updateIndexLocal(
     localNodes: List<FileTreeNode>,
     dbHelper: IndexDatabase
@@ -28,9 +44,14 @@ fun updateIndexLocal(
                     serverSyncStatus = status.code
                 )
             } else {
+
                 if (dbRecord.modifiedTime != localNode.modifiedTime) {
                     val currentHash = calculateHash(localNode)
-                    val status = SyncStatus.DIRTY
+                    val status = if (localNode.isDirectory() && dbRecord.isDirectory == 1L) {
+                        SyncStatus.SYNCED
+                    } else {
+                        SyncStatus.DIRTY
+                    }
                     dbQueries.insertItem(
                         relativePath = path,
                         contentHash = currentHash,
@@ -98,11 +119,13 @@ fun updateIndex(
                         serverSyncStatus = SyncStatus.DIRTY.code,
                         relativePath = path
                     )
-                }
-                // 2.2 Стандартная проверка
-                else {
+                } else {  // 2.2 Стандартная проверка
                     val isModified = localNode.modifiedTime != dbRecord.modifiedTime ||
                             localNode.fileSize != dbRecord.size
+
+                    if (dbRecord.isDirectory == 1L) {
+
+                    }
 
                     if (isModified) {
                         // Файл изменился локально
@@ -116,7 +139,14 @@ fun updateIndex(
                             else
                                 SyncStatus.SYNCED
                         } else {
-                            SyncStatus.DIRTY
+                            if (dbRecord.isDirectory == 1L &&
+                                localNode.isDirectory() &&
+                                serverRecord?.isDirectory == true
+                            ) {
+                                SyncStatus.SYNCED
+                            } else {
+                                SyncStatus.DIRTY
+                            }
                         }
 
                         dbQueries.updateItem(

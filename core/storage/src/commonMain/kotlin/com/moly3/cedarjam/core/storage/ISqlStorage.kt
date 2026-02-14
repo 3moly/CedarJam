@@ -29,6 +29,8 @@ import kotlinx.coroutines.flow.Flow
 
 interface ISqlStorage {
     fun init()
+    suspend fun createDbFiles()
+    suspend fun createIndexDbFiles()
     suspend fun createDatabase()
     fun getDatabaseStatus(): Flow<UIState<Unit, DatabaseError>>
     fun getIndexFilesFlow(): Flow<List<IndexFile>>
@@ -69,6 +71,8 @@ interface ISqlStorage {
     fun updateIndexFilesLocal(
         localNodes: List<FileTreeNode>
     ): ResultWrapper<Unit, String>
+
+    fun syncAllFiles(): ResultWrapper<Unit, String>
 
 
     fun syncDirtyFiles(list: List<IndexFileDto>): ResultWrapper<Unit, String>

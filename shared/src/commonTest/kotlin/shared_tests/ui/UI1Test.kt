@@ -2,8 +2,6 @@ package shared_tests.ui
 
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.waitUntilAtLeastOneExists
 import shared_tests.base.UITest
 import co.touchlab.kermit.Logger
@@ -26,7 +24,6 @@ import io.kotest.matchers.collections.shouldHaveSize
 import kotlinx.coroutines.delay
 import org.koin.mp.KoinPlatform.getKoin
 import shared_tests.func.checkFlowListSize
-import shared_tests.func.runUiThreadTasksIncludingDelayedTasks
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -135,13 +132,13 @@ class UI1Test : UITest() {
     fun testUITestAdvance() = runUITest(beforeSetContent = {}) { root ->
         val workspace = Workspace(
             name = "hehe",
-            fullpath = "build/.test_workspace_hehe",
+            platformPath = "build/.test_workspace_hehe",
             serverName = "hehe"
         )
         val koin = getKoin()
         val remoteSync = koin.get<IRemoteSyncRepository>()
         val fs = koin.get<ISystemFilesManager>()
-        fs.deleteNodeHeavy(workspace.fullpath)
+        fs.deleteNodeHeavy(workspace.platformPath)
 
         remoteSync.deleteWorkspace(userName = "bulat", workspace.serverName)
 
@@ -175,7 +172,7 @@ class UI1Test : UITest() {
 
         val dbIndexes = workspaceEnv.getIndexFiles()
         assertEquals(2, dbIndexes.size)
-        syncUseCase.syncronize(workspaceEnv).shouldBeSuccess()
+        syncUseCase.syncronize(workspaceEnv,).shouldBeSuccess()
 
         workspaceEnv.checkServerFilesSize(expectedSize = 2)
 
@@ -185,7 +182,7 @@ class UI1Test : UITest() {
         val dR = workspaceEnv.createDirectory(null, name = "pdf", isAbsoluteNew = false)
         dR.shouldBeSuccess()
 
-        syncUseCase.syncronize(workspaceEnv).shouldBeSuccess()
+        syncUseCase.syncronize(workspaceEnv,).shouldBeSuccess()
         workspaceEnv.isFullSynced()
 
         workspaceEnv.checkServerFilesSize(expectedSize = 3)
@@ -197,7 +194,7 @@ class UI1Test : UITest() {
         )
         fBroNode.shouldBeSuccess()
 
-        syncUseCase.syncronize(workspaceEnv).shouldBeSuccess()
+        syncUseCase.syncronize(workspaceEnv,).shouldBeSuccess()
         workspaceEnv.isFullSynced()
 
         workspaceEnv.checkServerFilesSize(expectedSize = 4)

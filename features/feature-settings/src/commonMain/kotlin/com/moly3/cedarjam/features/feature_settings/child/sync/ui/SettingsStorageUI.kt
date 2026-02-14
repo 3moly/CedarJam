@@ -168,18 +168,28 @@ fun JvmWindowScope.SettingsSyncUI(component: ISettingsSyncComponent) {
                         )
                     }
                 }
-                Column(Modifier.weight(1f).align(Alignment.CenterHorizontally)) {
+                Column(
+                    Modifier.weight(1f).align(Alignment.CenterHorizontally),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
                     UIStateContentNoBox(state = state.fileVersionsState) {
-                        if(it.toDownload.isNotEmpty()){
+                        if (it.toDownload.isNotEmpty()) {
                             CJText(text = "to download...", fontSize = 11.sp)
-                            for (item in it.toDownload){
-                                CJText(text = item.key, fontSize = 11.sp)
+                            for (item in it.toDownload) {
+                                Column {
+                                    CJText(text = item.key, fontSize = 11.sp)
+                                    CJText(text = item.value, fontSize = 11.sp)
+                                }
+
                             }
                         }
-                        if(it.toUpload.isNotEmpty()){
+                        if (it.toUpload.isNotEmpty()) {
                             CJText(text = "to upload...", fontSize = 11.sp)
-                            for (item in it.toUpload){
-                                CJText(text = item.key, fontSize = 11.sp)
+                            for (item in it.toUpload) {
+                                Column {
+                                    CJText(text = item.key, fontSize = 11.sp)
+                                    CJText(text = item.value, fontSize = 11.sp)
+                                }
                             }
                         }
                     }

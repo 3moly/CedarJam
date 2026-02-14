@@ -25,6 +25,23 @@ class RemoteSyncRepository(
     private val token: String,
     private val json: Json
 ) : IRemoteSyncRepository {
+    override suspend fun getServerWorkspaces(userName: String): ResultWrapper<List<String>, String> {
+        return try {
+            val response: HttpResponse =
+                httpClient.get("${baseUrl}api/workspaces/$userName/workspaces") {
+                    headers.append("Token", token)
+                }
+
+            if (response.status.isSuccess()) {
+                val fs: List<String> = response.body()
+                success(fs)
+            } else {
+                error("workspaceFiles failed with status: ${response.status.value}")
+            }
+        } catch (e: Exception) {
+            error("workspaceFiles error: ${e.message ?: "Unknown error"}")
+        }
+    }
 
     override suspend fun upload(
         userName: String,

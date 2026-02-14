@@ -116,14 +116,14 @@ class dbTest : AppEnvironmentTest() {
     fun creation() = runTest {
         val workspace = Workspace(
             name = "test",
-            fullpath = getWorkspaceDirectory().getFullPath(),
+            platformPath = getWorkspaceDirectory().getFullPath(),
             serverName = "test"
         )
         val filesStorage = createSystemFilesManager()
         val sql = createSqlStorage(
             systemFilesManager = filesStorage,
             applicationProvider = AppContextProvider(getTestApplicationContext()),
-            workspaceDirectoryPath = workspace.fullpath
+            workspaceDirectoryPath = workspace.platformPath
         )
         sql.init()
     }

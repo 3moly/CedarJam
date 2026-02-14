@@ -5,8 +5,6 @@ import com.moly3.cedarjam.core.domain.model.settings.AppSettings
 import com.moly3.cedarjam.core.domain.model.Workspace
 import com.moly3.cedarjam.core.storage.IAppStorage
 import com.russhwolf.settings.Settings
-import com.russhwolf.settings.contains
-import kotlinx.serialization.json.Json
 
 internal class AppStorage(
     private val keyValueSettings: Settings
@@ -57,7 +55,7 @@ internal class AppStorage(
         val list = getWorkspacesInternal()
 
         // если нужно избегать дублей по fullpath
-        if (list.none { it.fullpath == workspace.fullpath }) {
+        if (list.none { it.platformPath == workspace.platformPath }) {
             list.add(workspace)
             saveWorkspaces(list)
         }
@@ -65,7 +63,7 @@ internal class AppStorage(
 
     override fun deleteWorkspace(workspace: Workspace) {
         val list = getWorkspacesInternal()
-        val updated = list.filterNot { it.fullpath == workspace.fullpath }
+        val updated = list.filterNot { it.platformPath == workspace.platformPath }
         saveWorkspaces(updated)
     }
 }

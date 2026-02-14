@@ -6,4 +6,5 @@ sealed class Intent {
     data class SelectWorkspace(val workspace: WorkspacePresentation) : Intent()
     data class DeleteWorkspace(val workspace: WorkspacePresentation) : Intent()
     data object CreateWorkspace : Intent()
+    data class FastCreate(val name: String) : Intent()
 }

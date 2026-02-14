@@ -23,9 +23,6 @@ kotlin {
     jvm()
 
     listOf(iosArm64(), iosSimulatorArm64())
-    wasmJs {
-        browser()
-    }
     sourceSets {
         commonMain.dependencies {
             implementation(projects.core.domain)

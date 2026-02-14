@@ -16,6 +16,7 @@ import com.moly3.cedarjam.core.domain.model.ResultWrapper
 import com.moly3.cedarjam.core.domain.model.SyncStatus
 import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.domain.model.bind
+import com.moly3.cedarjam.core.domain.model.ensure
 import com.moly3.cedarjam.core.domain.model.resultBlock
 import com.moly3.cedarjam.core.domain.model.shouldBeSuccess
 import com.moly3.cedarjam.core.domain.repository.IFilesRepository
@@ -29,6 +30,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
+import kotlin.math.abs
 
 data class SyncStatusChannel(
     val message: String,
@@ -53,35 +55,122 @@ class SyncUseCase(
         return _sendingBranch.asStateFlow()
     }
 
-    private enum class SyncAction { UPLOAD, DOWNLOAD, NONE }
+    enum class SyncAction { UPLOAD, DOWNLOAD, NONE }
 
     /**
      * Unified logic for deciding what to do with a file.
      * This is used by both getStatus() and invoke().
      */
-    private fun determineAction(local: IndexFileDto?, server: FileItem?): SyncAction {
-        // Case 1: File exists only locally (or marked as local delete)
+    data class SyncResult(
+        val action: SyncAction,
+        val reason: String
+    )
+
+    //    private fun determineAction(local: IndexFileDto?, server: FileItem?): SyncResult {
+//        fun getTimeDiff(t1: Long, t2: Long) = "${abs(t1 - t2)}ms"
+//
+//        // Case 1: Only Local exists
+//        if (server == null && local != null) {
+//            return if (local.serverSyncStatus != SyncStatus.SYNCED) {
+//                SyncResult(SyncAction.UPLOAD, "New local file/folder")
+//            } else {
+//                SyncResult(SyncAction.NONE, "Locally synced but missing on server (External deletion)")
+//            }
+//        }
+//
+//        // Case 2: Only Server exists
+//        if (server != null && local == null) {
+//            return if (server.isDeleted) {
+//                SyncResult(SyncAction.NONE, "Deleted on server and local")
+//            } else {
+//                SyncResult(SyncAction.DOWNLOAD, "New file on server")
+//            }
+//        }
+//
+//        // Case 3: Both exist
+//        if (server != null && local != null) {
+//            val isLocalDeleted = local.serverSyncStatus == SyncStatus.DELETED
+//            val diffMs = getTimeDiff(server.modifiedTime, local.modifiedTime)
+//
+//            val serverNewer = server.modifiedTime > local.modifiedTime
+//            val localNewer = local.modifiedTime > server.modifiedTime
+//            val hashMismatch = local.contentHash != server.contentHash
+//            val localModified = local.serverSyncStatus != SyncStatus.SYNCED
+//
+//            // Handle Local Deletion Logic
+//            if (isLocalDeleted) {
+//                return if (serverNewer && !server.isDeleted) {
+//                    SyncResult(SyncAction.DOWNLOAD, "Server has newer version; reviving local")
+//                } else {
+//                    SyncResult(SyncAction.UPLOAD, "Syncing deletion to server")
+//                }
+//            }
+//
+//            return when {
+//                // Case: Server is newer and local hasn't changed (Clean Download)
+//                serverNewer && !localModified -> {
+//                    SyncResult(SyncAction.DOWNLOAD, "Server version is newer (diff: $diffMs)")
+//                }
+//
+//                // Case: Local is newer OR local is modified/new folder (Upload)
+//                localModified || localNewer || hashMismatch -> {
+//                    val reason = when {
+//                        localModified -> "Local changes detected (Status: ${local.serverSyncStatus})"
+//                        localNewer -> "Local version is newer"
+//                        else -> "Hash mismatch"
+//                    }
+//
+//                    // FIXED: Allow directory uploads if they are modified or new
+//                    SyncResult(SyncAction.UPLOAD, reason)
+//                }
+//
+//                else -> SyncResult(SyncAction.NONE, "Files are synchronized")
+//            }
+//        }
+//
+//        return SyncResult(SyncAction.NONE, "No files to sync")
+//    }
+    private fun determineAction(local: IndexFileDto?, server: FileItem?): SyncResult {
+        fun getTimeDiff(t1: Long, t2: Long) = "${abs(t1 - t2)}ms"
+
+        // Case 1: Only Local exists (Recreated folder hits this first)
         if (server == null && local != null) {
-            return if (local.serverSyncStatus != SyncStatus.SYNCED) SyncAction.UPLOAD else SyncAction.NONE
+            return if (local.serverSyncStatus != SyncStatus.SYNCED) {
+                SyncResult(SyncAction.UPLOAD, "New local entry (Status: ${local.serverSyncStatus})")
+            } else {
+                SyncResult(SyncAction.NONE, "Synced locally but missing on server")
+            }
         }
 
-        // Case 2: File exists only on server
+        // Case 2: Only Server exists
         if (server != null && local == null) {
-            return if (server.isDeleted)
-                SyncAction.NONE
-            else
-                SyncAction.DOWNLOAD
+            return if (server.isDeleted) {
+                SyncResult(SyncAction.NONE, "Deleted on both ends")
+            } else {
+                SyncResult(SyncAction.DOWNLOAD, "New entry on server")
+            }
         }
-        val isLocalDeleted = local?.serverSyncStatus == SyncStatus.DELETED
-        // Case 3: File exists in both places
+
+        // Case 3: Both exist
         if (server != null && local != null) {
+            // FIX: The "Untouchable" Rule
+            // If it's a directory and exists on both, we exit immediately.
+//            if (local.isDirectory ){
+//                return SyncResult(
+//                    SyncAction.NONE,
+//                    "Directory exists on both ends; metadata ignored"
+//                )
+//            }
+
+            val isLocalDeleted = local.serverSyncStatus == SyncStatus.DELETED
+            val diffMs = getTimeDiff(server.modifiedTime, local.modifiedTime)
+
+            // Deletion logic for FILES only
             if (isLocalDeleted) {
-                // Only download if the server has a NEWER version than our deletion record
-                // otherwise, tell the server to delete its copy too.
                 return if (server.modifiedTime.isMoreThan(local.modifiedTime) && !server.isDeleted) {
-                    SyncAction.DOWNLOAD
+                    SyncResult(SyncAction.DOWNLOAD, "Server file is newer; restoring local")
                 } else {
-                    SyncAction.UPLOAD
+                    SyncResult(SyncAction.UPLOAD, "Propagating file deletion")
                 }
             }
 
@@ -91,34 +180,25 @@ class SyncUseCase(
             val typeMismatch = local.isDirectory != server.isDirectory
 
             return when {
-                // Server wins: Type mismatch or server is strictly newer
-//                typeMismatch || (serverNewer && !local.isDirectory) -> {
-                serverNewer -> {
-                    SyncAction.DOWNLOAD
-                }
+                serverNewer && !local.isDirectory -> SyncResult(
+                    SyncAction.DOWNLOAD,
+                    "Server is newer ($diffMs)"
+                )
 
-                // Local wins: Local has pending changes or is strictly newer
-
-                local.serverSyncStatus != SyncStatus.SYNCED || localNewer || hashMismatch -> {
-                    // Если это папка и она помечена как удаленная,
-                    // и при этом она новее сервера (localNewer уже вычислен выше),
-                    // разрешаем SyncAction.UPLOAD
-                    if (local.isDirectory) {
-                        if (local.serverSyncStatus == SyncStatus.DELETED && localNewer) {
-                            SyncAction.UPLOAD
-                        } else {
-                            SyncAction.NONE
-                        }
-                    } else {
-                        SyncAction.UPLOAD
+                local.serverSyncStatus != SyncStatus.SYNCED || !local.isDirectory && localNewer || hashMismatch -> {
+                    val reason = when {
+                        local.serverSyncStatus != SyncStatus.SYNCED -> "Local status: ${local.serverSyncStatus}"
+                        localNewer -> "Local is newer ($diffMs)"
+                        else -> "Hash mismatch"
                     }
+                    SyncResult(SyncAction.UPLOAD, reason)
                 }
 
-                else -> SyncAction.NONE
+                else -> SyncResult(SyncAction.NONE, "Files are identical")
             }
         }
 
-        return SyncAction.NONE
+        return SyncResult(SyncAction.NONE, "Both local and server are null")
     }
 
     override suspend fun getStatus(workspace: IWorkspaceEnvironment): ResultWrapper<GetSyncStatus, String> {
@@ -131,7 +211,7 @@ class SyncUseCase(
 
                 // Sync DB state with physical disk and server meta
                 workspace.updateIndexFilesLocal(diskNodes)
-                workspace.updateIndexFiles(diskNodes, serverFiles)
+//                workspace.updateIndexFiles(diskNodes, serverFiles)
 
                 val indexMap = workspace.getIndexFilesFlow().first()
                     .associateBy { it.relativePath.normalizeText() }
@@ -144,10 +224,10 @@ class SyncUseCase(
                 allPaths.forEach { path ->
                     val local = indexMap[path]
                     val server = serverMap[path]
-
-                    when (determineAction(local, server)) {
-                        SyncAction.DOWNLOAD -> toDownload[path] = path
-                        SyncAction.UPLOAD -> toUpload[path] = path
+                    val determAction = determineAction(local, server)
+                    when (determAction.action) {
+                        SyncAction.DOWNLOAD -> toDownload[path] = determAction.reason
+                        SyncAction.UPLOAD -> toUpload[path] = determAction.reason
                         SyncAction.NONE -> Unit
                     }
                 }
@@ -160,18 +240,20 @@ class SyncUseCase(
         }
     }
 
-    override suspend fun syncronize(workspaceEnv: IWorkspaceEnvironment): ResultWrapper<SyncStatus2, String> {
+    override suspend fun syncronize(
+        workspaceEnv: IWorkspaceEnvironment,
+        isAbsoluteNewLocal: Boolean
+    ): ResultWrapper<SyncStatus2, String> {
         emitChannel("init", 1)
         val workspaceAbsolutePath = workspaceEnv.getWorkspace().absolutePath
-        val hiddenDirPath = pathWrapper(workspaceAbsolutePath, hiddenDirectory).pathString
-        val importArchivePath = Path(hiddenDirPath, "import.zip").toString()
+        val hiddenDirPath = pathWrapper(hiddenDirectory).pathString
         val importNode =
             FileTreeNode.File(
                 FileName(
                     "import",
                     "zip"
                 ),
-                "",
+                workspaceAbsolutePath,
                 hiddenDirPath
             )
         val exportArchiveNode =
@@ -180,7 +262,7 @@ class SyncUseCase(
                     "export",
                     "zip"
                 ),
-                "",
+                workspaceAbsolutePath,
                 hiddenDirPath
             )
 
@@ -215,48 +297,64 @@ class SyncUseCase(
                 val filesToDownloadPaths = mutableListOf<String>()
                 val editFilesToSync = mutableListOf<IndexFileDto>()
 
-                for (path in allPaths) {
-                    val local = indexMap[path]
-                    val server = serverMap[path]
+                if (isAbsoluteNewLocal) {
+                    for (item in serverMap) {
+                        filesToDownloadPaths.add(item.value.relativePath.normalizeText())
+                    }
+                } else {
+                    for (path in allPaths) {
+                        val local = indexMap[path]
+                        val server = serverMap[path]
 
-                    when (determineAction(local, server)) {
-                        SyncAction.UPLOAD -> {
-                            local?.let {
+                        val determAction = determineAction(local, server)
+                        when (determAction.action) {
+                            SyncAction.UPLOAD -> {
+                                local?.let {
 //                                filesToUploadMeta.add(finalMeta)
 //                                filesToPackInZip.add(path)
-                                val meta = it.toMetadata()
-                                val isDeletion = it.serverSyncStatus == SyncStatus.DELETED
+                                    val meta = it.toMetadata()
+                                    val isDeletion = it.serverSyncStatus == SyncStatus.DELETED
 //
 //                                // Refresh hash for existing local files
-                                val finalMeta = if (it.isDirectory || isDeletion) meta
-                                else meta.copy(
-                                    contentHash = filesRepo.getFileHash(
-                                        pathWrapper(
-                                            workspaceAbsolutePath,
-                                            path
-                                        ).pathString
+                                    val finalMeta = if (it.isDirectory || isDeletion) meta
+                                    else meta.copy(
+                                        contentHash = filesRepo.getFileHash(
+                                            pathWrapper(
+                                                workspaceAbsolutePath,
+                                                path
+                                            ).pathString
+                                        )
                                     )
-                                )
 //
-                                filesToUploadMeta.add(finalMeta)
-                                editFilesToSync.add(it)
-                                if (!isDeletion) {
-                                    filesToPackInZip.add(path)
-                                }
+                                    filesToUploadMeta.add(finalMeta)
+                                    editFilesToSync.add(it)
+                                    if (!isDeletion) {
+                                        filesToPackInZip.add(path)
+                                    }
 
 //                                // Only pack into zip if it's a file, not deleted, and server doesn't have it
 //                                if (!it.isDirectory && !isDeletion && (server == null || server.contentHash != finalMeta.contentHash)) {
 //                                    filesToPackInZip.add(path)
 //                                }
+                                }
                             }
-                        }
 
-                        SyncAction.DOWNLOAD -> {
-                            filesToDownloadPaths.add(path.normalizeText())
-                        }
+                            SyncAction.DOWNLOAD -> {
+                                filesToDownloadPaths.add(path.normalizeText())
+                            }
 
-                        SyncAction.NONE -> Unit
+                            SyncAction.NONE -> Unit
+                        }
                     }
+                }
+
+
+                if (isAbsoluteNewLocal) {
+                    filesToPackInZip.clear()
+                    filesToUploadMeta.clear()
+//                    ensure(filesToPackInZip.isEmpty()) { "no files need to upload when workspace is new: ${filesToPackInZip}" }
+                    val isDeleteToUpload = filesToUploadMeta.filter { d -> d.isDeleted }
+                    ensure(isDeleteToUpload.isEmpty()) { "no files need to delete in server when workspace is new: ${isDeleteToUpload}" }
                 }
 
                 // 4. Execution: Zipping and Uploading
@@ -265,7 +363,7 @@ class SyncUseCase(
                     filesRepo.packFilesToZip(
                         workspaceAbsolutePath,
                         filesToPackInZip,
-                        importArchivePath
+                        importNode.getFullPath()
                     )
                 }
 
@@ -308,7 +406,7 @@ class SyncUseCase(
                         workspacePath = workspaceEnv.getWorkspace().absolutePath,
                         exportArchiveNode,
                         byteArray = responseZipBytes
-                    )
+                    ).shouldBeSuccess()
 
                     val extractedFiles =
                         filesRepo.unpackZip(
@@ -322,10 +420,21 @@ class SyncUseCase(
                     ).shouldBeSuccess()
                 }
 
-                cleanupTempFiles(importArchivePath, exportArchiveNode)
+                cleanupTempFiles(importNode.getFullPath(), exportArchiveNode)
                 emitChannel("success", 7)
-                SyncStatus2(isLoading = false)
 
+                val diskNodesInitial2 =
+                    workspaceEnv.getNodes(null).firstOrNull()?.getChildrenOrNull()?.getAll()
+                        ?: listOf()
+
+                workspaceEnv.updateIndexFilesLocal(diskNodesInitial2)
+
+                if (isAbsoluteNewLocal) {
+                    workspaceEnv.syncAllIndexes()
+                }
+
+
+                SyncStatus2(isLoading = false)
             } catch (exc: Exception) {
                 alertService.sendMessage(exc.message ?: "Sync failed")
                 Logger.e(exc) { "Sync failed: ${exc.message}" }

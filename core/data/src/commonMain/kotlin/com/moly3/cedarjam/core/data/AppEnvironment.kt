@@ -1,6 +1,7 @@
 package com.moly3.cedarjam.core.data
 
 import com.moly3.cedarjam.core.domain.func.getPlatform
+import com.moly3.cedarjam.core.domain.func.getWorkspacesFolder
 import com.moly3.cedarjam.core.domain.func.pathWrapper
 import com.moly3.cedarjam.core.domain.io
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
@@ -13,24 +14,23 @@ import com.moly3.cedarjam.core.domain.model.WorkspaceInput
 import com.moly3.cedarjam.core.domain.model.WorkspacePresentation
 import com.moly3.cedarjam.core.domain.model.ensure
 import com.moly3.cedarjam.core.domain.model.resultBlock
+import com.moly3.cedarjam.core.domain.model.shouldBeSuccess
 import com.moly3.cedarjam.core.domain.repository.IAppEnvironment
 import com.moly3.cedarjam.core.domain.repository.IWorkspaceEnvironment
-import com.moly3.cedarjam.core.domain.repository.getTags
 import com.moly3.cedarjam.core.domain.service.AlertService
 import com.moly3.cedarjam.core.domain.usecase.ISyncUseCase
+import com.moly3.cedarjam.core.net.IRemoteSyncRepository
 import com.moly3.cedarjam.core.storage.IAppStorage
 import com.moly3.cedarjam.core.storage.ISystemFilesManager
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class AppEnvironment(
     scope: CoroutineScope,
+    private val syncNetRepository: IRemoteSyncRepository,
     private val appStorage: IAppStorage,
     private val alertService: AlertService,
     private val systemFilesManager: ISystemFilesManager,
@@ -52,15 +52,20 @@ class AppEnvironment(
         val absolutePath =
             systemFilesManager.toAbsoluteAppPath(
                 pathWrapper(
-                    fullpath
+                    getWorkspacesFolder(),
+                    platformPath
                 )
             ).pathString
         return WorkspacePresentation(
             name = name,
-            fullpath = fullpath,
+            fullpath = platformPath,
             absolutePath = absolutePath,
             serverName = serverName
         )
+    }
+
+    override suspend fun getServerWorkspaces(): ResultWrapper<List<String>, String> {
+        return syncNetRepository.getServerWorkspaces(userName = "bulat")
     }
 
     override fun getWorkspaces(): List<WorkspacePresentation> {
@@ -104,9 +109,10 @@ class AppEnvironment(
                     Platform.Android,
                     Platform.Ios -> {
                         val absolutePath =
-                            systemFilesManager.toAbsoluteAppPath(pathWrapper(""))
+                            systemFilesManager.toAbsoluteAppPath(pathWrapper("workspaces")).pathString
+                        systemFilesManager.createDirectory(absolutePath)
                         val nodes =
-                            systemFilesManager.getNodes(directoryAbsolutePath = absolutePath.pathString)
+                            systemFilesManager.getNodes(directoryAbsolutePath = absolutePath)
                         nodes
                     }
 
@@ -124,30 +130,34 @@ class AppEnvironment(
             resultBlock {
                 ensure(workspace.name.isNotEmpty()) { "workspace name is empty" }
                 ensure(workspace.serverName.isNotEmpty()) { "workspace server name is empty" }
-                ensure(workspace.fullpath.isNotEmpty()) { "workspace fullpath is empty" }
+                ensure(workspace.platformPath.isNotEmpty()) { "workspace fullpath is empty" }
+
                 val absolutePath =
                     systemFilesManager.toAbsoluteAppPath(
                         pathWrapper(
-                            workspace.fullpath
+                            getWorkspacesFolder(),
+                            workspace.platformPath
                         )
-                    )
+                    ).pathString
 
-                appStorage.createWorkspace(workspace.copy(fullpath = absolutePath.pathString))
+                appStorage.createWorkspace(workspace)
 
                 val workspacePresentation = workspace.toPresentation()
 
-                val dir = systemFilesManager.getDirectoryNodeFromFullPath(
-                    workspacePath = workspacePresentation.absolutePath,
-                    fullPath = workspacePresentation.absolutePath
-                )
-                systemFilesManager.createDirectory(dir.getFullPath())
-                val isExists = systemFilesManager.isNodeExists(dir.getFullPath())
-                if(!isExists){
+                systemFilesManager.createDirectory(absolutePath)
+                val isExists = systemFilesManager.isNodeExists(absolutePath)
+                if (!isExists) {
                     alertService.sendMessage("Не существует dir: ${workspacePresentation.absolutePath}")
                     throw NullPointerException("not exists")
                 }
                 val workspaceEnv = getWorkspaceEnv(workspacePresentation)
-                syncService.syncronize(workspaceEnv)
+
+                workspaceEnv.createIndexDatabaseFiles()
+
+                syncService.syncronize(workspaceEnv,isAbsoluteNewLocal = true).shouldBeSuccess()
+
+                workspaceEnv.createDatabaseFiles()
+                workspaceEnv.createDatabase()
 
                 refreshWorkspaces()
 
@@ -164,7 +174,7 @@ class AppEnvironment(
             appStorage.deleteWorkspace(
                 Workspace(
                     name = workspace.name,
-                    fullpath = workspace.fullpath,
+                    platformPath = workspace.fullpath,
                     serverName = workspace.serverName
                 )
             )

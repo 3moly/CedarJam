@@ -8,6 +8,7 @@ import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.childStack
 import com.arkivanov.decompose.router.stack.childStackWebNavigation
 import com.arkivanov.decompose.router.stack.pushToFront
+import com.arkivanov.decompose.router.stack.replaceAll
 import com.arkivanov.decompose.router.webhistory.WebNavigation
 import com.arkivanov.decompose.value.Value
 import com.arkivanov.mvikotlin.core.store.StoreFactory
@@ -90,7 +91,8 @@ class RootComponent(
                     onSelectWorkspace = {
                         Logger.d("onSelectWorkspace: ${it.name}")
                         try {
-                            navigation.pushToFront(Config.Workspace(it))
+                            navigation.replaceAll(Config.Workspace(it))
+//                            navigation.pushToFront(Config.Workspace(it))
                         } catch (exc: Exception) {
                             Logger.d("onSelectWorkspace: ${exc.message}")
                         }

@@ -1,6 +1,7 @@
 package com.moly3.cedarjam.pages.page_home.ui.internal
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -28,7 +29,7 @@ internal fun PageContent(
         modifier = Modifier.padding(horizontal = 16.dp).fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        item("top"){
+        item("top") {
 
             CJSearchTextField(
                 modifier = Modifier.fillMaxWidth(),
@@ -39,6 +40,16 @@ internal fun PageContent(
                     onIntent(Intent.SetSearchText(it))
                 }
             )
+            UIStateContentNoBox(state = state.allNodes) {
+                val associated = it
+                    .sortedBy { d -> d.getRelativePath() }
+                    .associateBy { d -> d.getRelativePath() }
+                Column {
+                    for (item in associated) {
+                        CJText(text = "node: ${item.key}")
+                    }
+                }
+            }
             UIStateContentNoBox(state = state.timeMachinesState) { timeMachines ->
                 Row(Modifier) {
                     CJText(text = "Results: ${timeMachines.size}")

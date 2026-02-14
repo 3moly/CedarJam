@@ -10,6 +10,7 @@ import com.moly3.cedarjam.core.domain.model.WorkspacePresentation
 import kotlinx.coroutines.flow.StateFlow
 
 interface IAppEnvironment {
+    suspend fun getServerWorkspaces(): ResultWrapper<List<String>, String>
     fun getWorkspaces(): List<WorkspacePresentation>
     fun getWorkspace(name: String): WorkspacePresentation
     fun getWorkspacesFlow(): StateFlow<UIState<List<WorkspacePresentation>, Nothing>>

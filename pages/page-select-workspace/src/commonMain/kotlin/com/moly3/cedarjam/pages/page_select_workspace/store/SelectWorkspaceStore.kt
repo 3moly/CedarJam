@@ -12,5 +12,6 @@ internal interface SelectWorkspaceStore : Store<Intent, State, Unit> {
     sealed interface Msg {
         data class SetWorkspaces(val value: UIState<List<WorkspacePresentation>, Nothing>) : Msg
         data class SetLocalWorkspaces(val value: UIState<List<FileTreeNode>, String>) : Msg
+        data class SetServerWorkspaces(val value: UIState<List<String>, String>) : Msg
     }
 }

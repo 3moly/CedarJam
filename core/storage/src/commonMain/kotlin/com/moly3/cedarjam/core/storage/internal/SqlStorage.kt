@@ -5,6 +5,7 @@ import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.db.SqlSchema
+import co.touchlab.kermit.Logger
 import com.moly3.cedarjam.core.storage.ISqlStorage
 import com.moly3.cedarjam.core.storage.ISystemFilesManager
 import com.moly3.cedarjam.core.storage.exception.DbNotCreatedException
@@ -41,6 +42,7 @@ import com.moly3.cedarjam.core.domain.model.request.UpdateDataCollectionRequest
 import com.moly3.cedarjam.core.domain.model.request.UpdateDataCollectionRowRequest
 import com.moly3.cedarjam.core.domain.model.request.UpdateTagRequest
 import com.moly3.cedarjam.core.domain.service.AppContextProvider
+import com.moly3.cedarjam.core.storage.func.syncAllFiles
 import com.moly3.cedarjam.core.storage.func.updateIndex
 import com.moly3.cedarjam.core.storage.func.updateIndexLocal
 import com.moly3.cedarjam.db.Annotation
@@ -114,6 +116,9 @@ internal class SqlStorage(
     }
 
     private fun getDatabasePath(): String {
+        if (workspaceDirectoryPath.isEmpty()) {
+            throw NullPointerException("workspace for db is empty")
+        }
         return pathWrapper(
             workspaceDirectoryPath,
             hiddenDirectory,
@@ -122,6 +127,9 @@ internal class SqlStorage(
     }
 
     private fun getIndexDatabasePath(): String {
+        if (workspaceDirectoryPath.isEmpty()) {
+            throw NullPointerException("workspace for db is empty")
+        }
         return pathWrapper(
             workspaceDirectoryPath,
             hiddenDirectory,
@@ -136,6 +144,13 @@ internal class SqlStorage(
         return resultBlock {
             val dbPath = systemFilesManager.toAbsoluteAppPath(pathWrapper(dbPath)).pathString
             ensure(systemFilesManager.isNodeExists(dbPath)) { DatabaseError.NotExist }
+            Logger.w { " ALERT" }
+            Logger.w { " ALERT" }
+            Logger.w { " ALERT" }
+            Logger.w { "sqlite.db ${dbPath}" }
+            Logger.w { " ALERT" }
+            Logger.w { " ALERT" }
+            Logger.w { " ALERT" }
             val sqlResult = createSqlDriver(
                 applicationProvider.getApplicationContext(), dbPath,
                 schema
@@ -160,7 +175,30 @@ internal class SqlStorage(
         }
     }
 
-    private fun createIfNotCreated() {
+    override suspend fun createIndexDbFiles() {
+        val indexDb = getIndexDatabasePath()
+        if (!systemFilesManager.isNodeExists(indexDb)) {
+            systemFilesManager.createNode(
+                workspacePath = "",
+                isDirectory = false,
+                nodePath = indexDb,
+                byteArray = null,
+                isMustCreate = true
+            )
+        }
+        val indexSqlDriver = getIndexDbDriver()
+        _indexDbStateFlow.emit(
+            indexSqlDriver.fold(
+                onFailure = { error ->
+                    UIState.Error(error)
+                },
+                onSuccess = { driver ->
+                    UIState.Success(IndexDatabase(driver))
+                }
+            ))
+    }
+
+    override suspend fun createDbFiles() {
         val dbPath = getDatabasePath()
         //todo if directory created with db name, need to double check
         if (!systemFilesManager.isNodeExists(dbPath)) {
@@ -172,20 +210,10 @@ internal class SqlStorage(
                 isMustCreate = true
             )
         }
-        val indexDb = getIndexDatabasePath()
-        if (!systemFilesManager.isNodeExists(indexDb)) {
-            systemFilesManager.createNode(
-                workspacePath = "",
-                isDirectory = false,
-                nodePath = indexDb,
-                byteArray = null,
-                isMustCreate = true
-            )
-        }
     }
 
+
     override suspend fun createDatabase() {
-        createIfNotCreated()
         val sqlDriver = getMainDbDriver()
         _dbStateFlow.emit(
             sqlDriver.fold(
@@ -212,7 +240,6 @@ internal class SqlStorage(
     private var indexSqlDriver2: SqlDriver? = null
 
     override fun init() {
-        createIfNotCreated()
         val sqlDriver = getMainDbDriver()
         _dbStateFlow.value = sqlDriver.fold(
             onFailure = { error ->
@@ -252,7 +279,7 @@ internal class SqlStorage(
             }
     }
 
-    private fun  Query<Long>.mapFlowAsOneLong(): Flow<Long> {
+    private fun Query<Long>.mapFlowAsOneLong(): Flow<Long> {
         return this
             .asFlow()
             .map {
@@ -468,6 +495,14 @@ internal class SqlStorage(
                     localNodes,
                     db
                 )
+            }
+        }
+    }
+
+    override fun syncAllFiles(): ResultWrapper<Unit, String> {
+        return runQueryOrThrowIndex { db ->
+            resultBlock {
+                syncAllFiles(dbHelper = db)
             }
         }
     }

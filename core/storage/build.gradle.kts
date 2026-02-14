@@ -37,10 +37,6 @@ kotlin {
             linkerOpts("-lsqlite3")
         }
     }
-
-    wasmJs {
-        browser()
-    }
     sourceSets {
         val commonMain by getting {
             dependencies {
@@ -61,6 +57,8 @@ kotlin {
                 implementation(libs.compose.foundation)
                 implementation(libs.sqldelight.extensions)
                 implementation(libs.compose.data.viz)
+
+                implementation(libs.kmp.io)
             }
         }
         commonTest.dependencies {

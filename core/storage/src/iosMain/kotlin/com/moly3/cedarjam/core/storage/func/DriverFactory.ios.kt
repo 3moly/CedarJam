@@ -6,6 +6,7 @@ import app.cash.sqldelight.db.SqlSchema
 import app.cash.sqldelight.driver.native.NativeSqliteDriver
 import co.touchlab.sqliter.DatabaseConfiguration
 import co.touchlab.sqliter.JournalMode
+import co.touchlab.sqliter.SynchronousFlag
 import com.moly3.cedarjam.core.domain.model.AndroidApplicationContext
 import com.moly3.cedarjam.core.domain.model.ResultWrapper
 import com.moly3.cedarjam.core.domain.model.ensureNotNull
@@ -25,13 +26,15 @@ actual fun createSqlDriver(
         ensureNotNull(parentPath) { DatabaseError.WrongFile("db parent path is null") }
         val extendedConfig = DatabaseConfiguration.Extended(
             foreignKeyConstraints = true,
-            basePath = parentPath.toString()
+            basePath = parentPath.toString(),
+//            synchronousFlag = SynchronousFlag.FULL,  // Ensures data is written to disk
+//            busyTimeout = 1000  // Optional: 5 second timeout for locked database
         )
         NativeSqliteDriver(
             schema,
             path.name,
             onConfiguration = {
-                it.copy(extendedConfig = extendedConfig, journalMode = JournalMode.DELETE)
+                it.copy(extendedConfig = extendedConfig, journalMode = JournalMode.DELETE, inMemory = false)
             }
         )
     }

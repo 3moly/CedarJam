@@ -5,6 +5,7 @@ import com.moly3.cedarjam.core.domain.model.FileStructure
 import com.moly3.cedarjam.core.domain.model.ResultWrapper
 
 interface IRemoteSyncRepository {
+    suspend fun getServerWorkspaces(userName: String): ResultWrapper<List<String>, String>
     suspend fun upload(
         userName: String,
         workspaceName: String,

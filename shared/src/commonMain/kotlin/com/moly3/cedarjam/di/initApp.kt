@@ -96,6 +96,7 @@ fun initApp(
         single<IAppEnvironment> {
             AppEnvironment(
                 scope = get(),
+                syncNetRepository = get(),
                 appStorage = get(),
                 systemFilesManager = get(),
                 syncService = get(),
@@ -129,7 +130,7 @@ fun initApp(
                 filesRepository = filesRepository,
                 fileManagerService = filesManager,
                 sqlStorageFactory = {
-                    get<ISqlStorage> { parametersOf(workspace.fullpath) }
+                    get<ISqlStorage> { parametersOf(workspace.absolutePath) }
                 },
                 syncNetRepository = get(),
             )
@@ -139,6 +140,9 @@ fun initApp(
                 try {
                     val appEnvironment: IAppEnvironment = get()
                     val workspaceInput: WorkspaceInput = params.get()
+                    if (workspaceInput.name.isEmpty() || workspaceInput.serverName.isEmpty()) {
+                        throw NullPointerException("koin WorkspaceSession name is empty")
+                    }
                     val stateKeeper: StateKeeper = params.get()
                     val workspace = appEnvironment.getWorkspace(name = workspaceInput.name)
 

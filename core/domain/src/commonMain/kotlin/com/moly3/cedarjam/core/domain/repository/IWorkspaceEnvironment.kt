@@ -105,6 +105,8 @@ interface IWorkspaceEnvironment {
         localNodes: List<FileTreeNode>
     ): ResultWrapper<Unit, String>
 
+    fun syncAllIndexes(): ResultWrapper<Unit, String>
+
     fun syncDirtyFiles(list: List<IndexFileDto>): ResultWrapper<Unit, String>
     fun deleteIndexFiles(list: List<String>): ResultWrapper<Unit, String>
 
@@ -149,6 +151,8 @@ interface IWorkspaceEnvironment {
     fun deleteTagToTag(id: Long)
     fun deleteTagCollectionRow(id: Long)
     suspend fun createDatabase()
+    suspend fun createDatabaseFiles()
+    suspend fun createIndexDatabaseFiles()
     suspend fun saveDeletedMetadata(list: Map<String, IndexFileDto>): ResultWrapper<Unit, String>
     fun getDeletedFilesMetadata(): Map<String, IndexFileDto>
 

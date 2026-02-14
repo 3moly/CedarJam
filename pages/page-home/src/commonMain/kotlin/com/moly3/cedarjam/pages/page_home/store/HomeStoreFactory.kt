@@ -47,6 +47,7 @@ import com.moly3.cedarjam.core.domain.service.WorkspaceSession
 import com.moly3.cedarjam.core.domain.usecase.INavigateToFileUseCase
 import com.moly3.cedarjam.core.domain.usecase.ISyncUseCase
 import com.moly3.cedarjam.navigation.Route
+import com.moly3.cedarjam.pages.page_home.store.HomeStore.Msg
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -110,7 +111,6 @@ internal class HomeStoreFactory(
         private val _searchTextState = MutableStateFlow("")
 
 
-
         override fun executeAction(action: Unit) {
             super.executeAction(action)
 
@@ -121,6 +121,12 @@ internal class HomeStoreFactory(
         override fun onStart(scopeFromStartToStop: CoroutineScope) {
             super.onStart(scopeFromStartToStop)
             _searchTextState.value = state().searchTextFieldValue.text
+
+            lifecycle.doOnResume {
+                val allNodes =
+                    workspaceSession.workspaceEnvStateFlow.value.getNodes(null).getAll(true)
+                dispatch(Msg.SetAllNodesState(UIState.Success(allNodes.toPersistentList())))
+            }
             scopeFromStartToStop.launch {
                 combine(
                     workspaceSession.collectionsFlow,
@@ -259,7 +265,8 @@ internal class HomeStoreFactory(
                 is Intent.OpenFileNode -> {
                     scope.launch {
                         resultBlock {
-                            val route = navigateToFileUseCase.invoke(NavigateToFile.RelativePath(intent.fullPath))
+                            val route =
+                                navigateToFileUseCase.invoke(NavigateToFile.RelativePath(intent.fullPath))
                             val timestamp = bind(route)
                             navigator.navigate(Route.File(FilePageInput(timestamp)))
                         }
@@ -305,6 +312,7 @@ internal class HomeStoreFactory(
                 is HomeStore.Msg.SetCount -> copy(count = msg.value)
                 is HomeStore.Msg.SetTimes -> copy(timeMachinesState = msg.value)
                 is HomeStore.Msg.SetSearchTextFieldValue -> copy(searchTextFieldValue = msg.value)
+                is HomeStore.Msg.SetAllNodesState -> copy(allNodes = msg.value)
             }
         }
     }

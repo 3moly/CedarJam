@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,6 +36,8 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.moly3.cedarjam.core.domain.func.getPlatform
+import com.moly3.cedarjam.core.domain.model.Platform
 import com.moly3.cedarjam.core.ui.JvmWindowScope
 import com.moly3.cedarjam.pages.page_select_workspace.ISelectWorkspaceComponent
 import com.moly3.cedarjam.pages.page_select_workspace.Intent
@@ -42,6 +45,7 @@ import com.moly3.cedarjam.pages.page_select_workspace.State
 import com.moly3.cedarjam.core.ui.func.rememberWindowSize
 import com.moly3.cedarjam.core.ui.model.CJText
 import com.moly3.cedarjam.core.ui.model.WindowSize
+import com.moly3.cedarjam.core.ui.uikit.CJButton
 import com.moly3.cedarjam.core.ui.uikit.CJText
 import com.moly3.cedarjam.core.ui.uikit.UIStateContentLazy
 import com.moly3.cedarjam.core.ui.uikit.UIStateContentNoBox
@@ -97,8 +101,36 @@ fun JvmWindowScope.SelectWorkspacePage(component: ISelectWorkspaceComponent) {
                 }
                 item {
                     UIStateContentNoBox(state = state.localWorkspacesState) {
-                        CJText("locals: ${it.map { d->d.getRelativePath() }}")
+                        CJText("locals: ${it.map { d -> d.getRelativePath() }}")
                     }
+                }
+                item {
+                    UIStateContentNoBox(state = state.localWorkspacesState) { locals ->
+                        val mapped = remember(locals) {
+                            locals.associateBy { d -> d.getRelativePath() }
+                        }
+                        UIStateContentNoBox(state = state.serverWorkspacesState) {
+                            CJText("server: ${it}")
+                            when (getPlatform()) {
+                                Platform.Android,
+                                Platform.Ios -> {
+                                    for (item in it) {
+                                        if (mapped[item] == null) {
+                                            CJButton(text = "create ${item}") {
+                                                component.onIntent(Intent.FastCreate(item))
+                                            }
+                                        }
+                                    }
+                                }
+
+                                Platform.Jvm,
+                                Platform.Wasm -> {
+
+                                }
+                            }
+                        }
+                    }
+
                 }
                 UIStateContentLazy(state = state.workspacesState) { workspaces ->
                     items(workspaces) { item ->
@@ -147,7 +179,7 @@ fun JvmWindowScope.SelectWorkspacePage(component: ISelectWorkspaceComponent) {
                                     text = item.fullpath,
                                     fontSize = 16.sp,
                                     color = Color(0xFFB0C9B5),
-                                    softWrap = false
+                                    softWrap = true
                                 )
                             }
                             Box(

@@ -6,5 +6,6 @@ import com.moly3.cedarjam.core.domain.model.WorkspacePresentation
 
 data class State(
     val workspacesState: UIState<List<WorkspacePresentation>, String> = UIState.Loading,
-    val localWorkspacesState: UIState<List<FileTreeNode>, String> = UIState.Loading
+    val localWorkspacesState: UIState<List<FileTreeNode>, String> = UIState.Loading,
+    val serverWorkspacesState: UIState<List<String>, String> = UIState.Loading
 )

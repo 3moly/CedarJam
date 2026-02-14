@@ -815,6 +815,10 @@ class WorkspaceEnvironment(
         )
     }
 
+    override fun syncAllIndexes(): ResultWrapper<Unit, String> {
+        return sqlStorage.syncAllFiles()
+    }
+
     override fun setFilesAsSynced(
         paths: List<String>,
         serverNodes: List<FileItem>
@@ -914,6 +918,14 @@ class WorkspaceEnvironment(
 
     override suspend fun createDatabase() {
         sqlStorage.createDatabase()
+    }
+
+    override suspend fun createDatabaseFiles() {
+        sqlStorage.createDbFiles()
+    }
+
+    override suspend fun createIndexDatabaseFiles() {
+        sqlStorage.createIndexDbFiles()
     }
 
     override suspend fun saveDeletedMetadata(list: Map<String, IndexFileDto>): ResultWrapper<Unit, String> {

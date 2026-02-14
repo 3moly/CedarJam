@@ -4,7 +4,6 @@ import androidx.compose.runtime.Stable
 import co.touchlab.kermit.Logger
 import com.moly3.cedarjam.core.domain.func.hiddenDirectory
 import com.moly3.cedarjam.core.domain.func.nowInMs
-import com.moly3.cedarjam.core.domain.func.pathWrapper
 import com.moly3.cedarjam.core.domain.model.AnnotationDTO
 import com.moly3.cedarjam.core.domain.model.CollectionDTO
 import com.moly3.cedarjam.core.domain.model.CollectionRowDTO
@@ -243,7 +242,8 @@ class WorkspaceSession(
     }
 
     suspend fun sync(useCase: ISyncUseCase): ResultWrapper<SyncStatus2, String> {
-        val syncResult = useCase.syncronize(workspace = workspaceEnvStateFlow.value)
+        val syncResult =
+            useCase.syncronize(workspace = workspaceEnvStateFlow.value, isAbsoluteNewLocal = false)
         val env = workspaceEnvStateFlow.value
 
         //dispatch(SettingsSyncStore.Msg.SetUploadState(resultss.mapToUIState(onError = { "" })))

@@ -1,6 +1,7 @@
 package com.moly3.cedarjam.pages.page_select_workspace.store
 
 import com.arkivanov.essenty.lifecycle.Lifecycle
+import com.arkivanov.essenty.lifecycle.doOnResume
 import com.arkivanov.mvikotlin.core.store.Reducer
 import com.arkivanov.mvikotlin.core.store.SimpleBootstrapper
 import com.arkivanov.mvikotlin.core.store.Store
@@ -8,10 +9,12 @@ import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.moly3.cedarjam.core.domain.dialog.DialogCreateWorkspaceService
 import com.moly3.cedarjam.core.domain.io
 import com.moly3.cedarjam.core.domain.model.ResultWrapper
+import com.moly3.cedarjam.core.domain.model.Workspace
 import com.moly3.cedarjam.core.domain.model.WorkspaceInput
 import com.moly3.cedarjam.core.domain.model.mapToUIState
 import com.moly3.cedarjam.core.domain.repository.IAppEnvironment
 import com.moly3.cedarjam.core.domain.service.IMessageService
+import com.moly3.cedarjam.core.domain.usecase.ISyncUseCase
 import com.moly3.cedarjam.navigation.BaseExecutor
 import com.moly3.cedarjam.pages.page_select_workspace.Intent
 import com.moly3.cedarjam.pages.page_select_workspace.State
@@ -47,7 +50,7 @@ internal class SelectWorkspaceStoreFactory(
     private inner class ExecutorImpl :
         BaseExecutor<Intent, Unit, State, SelectWorkspaceStore.Msg, Unit>(lifecycle) {
 
-        private fun refreshLocalWorkspaces(){
+        private fun refreshLocalWorkspaces() {
             scope.launch {
                 dispatch(
                     SelectWorkspaceStore.Msg.SetLocalWorkspaces(
@@ -64,12 +67,37 @@ internal class SelectWorkspaceStoreFactory(
         override fun onStart(scopeFromStartToStop: CoroutineScope) {
             super.onStart(scopeFromStartToStop)
 
-            scopeFromStartToStop.launch {
+            lifecycle.doOnResume {
+                scope.launch {
+                    val serverWorkspacesResult = appEnvironment.getServerWorkspaces().mapToUIState { "" }
+                    dispatch(SelectWorkspaceStore.Msg.SetServerWorkspaces(serverWorkspacesResult))
+                    //en
+                }
                 refreshLocalWorkspaces()
+                scope.launch {
+                    appEnvironment.getWorkspacesFlow().collectLatest {
+                        dispatch(SelectWorkspaceStore.Msg.SetWorkspaces(it))
+                    }
+                }
             }
-            scopeFromStartToStop.launch {
-                appEnvironment.getWorkspacesFlow().collectLatest {
-                    dispatch(SelectWorkspaceStore.Msg.SetWorkspaces(it))
+        }
+
+        private suspend fun createWork(workspace: Workspace){
+            val result = appEnvironment.createWorkspace(workspace)
+            when (result) {
+                is ResultWrapper.Error -> {
+                    isd.sendMessage(result.error)
+                }
+
+                is ResultWrapper.Success -> {
+                    if(result.value.name.isEmpty()){
+                        throw NullPointerException("workspace is result.value.name empty")
+                    }
+                    withContext(Dispatchers.Main) {
+                        onSelectWorkspace(
+                            result.value
+                        )
+                    }
                 }
             }
         }
@@ -89,20 +117,7 @@ internal class SelectWorkspaceStoreFactory(
                     coroutineScope.launch(io) {
                         val result = dialogCreateWorkspaceService.open(Unit)
                         if (result != null) {
-                            val result = appEnvironment.createWorkspace(result)
-                            when (result) {
-                                is ResultWrapper.Error -> {
-                                    isd.sendMessage(result.error)
-                                }
-
-                                is ResultWrapper.Success -> {
-                                    withContext(Dispatchers.Main) {
-                                        onSelectWorkspace(
-                                            result.value
-                                        )
-                                    }
-                                }
-                            }
+                            createWork(result)
                         }
                     }
                 }
@@ -111,6 +126,12 @@ internal class SelectWorkspaceStoreFactory(
                     coroutineScope.launch(io) {
                         appEnvironment.deleteWorkspace(intent.workspace)
                         refreshLocalWorkspaces()
+                    }
+                }
+
+                is Intent.FastCreate -> {
+                    scope.launch {
+                        createWork(Workspace(name = intent.name, serverName = intent.name, platformPath = intent.name))
                     }
                 }
             }
@@ -122,6 +143,7 @@ internal class SelectWorkspaceStoreFactory(
             return when (msg) {
                 is SelectWorkspaceStore.Msg.SetWorkspaces -> copy(workspacesState = msg.value)
                 is SelectWorkspaceStore.Msg.SetLocalWorkspaces -> copy(localWorkspacesState = msg.value)
+                is SelectWorkspaceStore.Msg.SetServerWorkspaces -> copy(serverWorkspacesState = msg.value)
             }
         }
     }
