@@ -28,6 +28,7 @@ import com.moly3.cedarjam.pages.page_workspace.Label
 import com.moly3.cedarjam.pages.page_workspace.State
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalDragAndDrop
+import com.moly3.cedarjam.core.ui.func.isCompactUI
 import com.moly3.cedarjam.core.ui.func.rememberWindowSize
 import com.moly3.cedarjam.core.ui.model.WindowSize
 import com.moly3.cedarjam.core.ui.uikit.CJText
@@ -72,8 +73,7 @@ fun PageContent(
             }
         }
     }
-    val windowSize by rememberWindowSize()
-    if (windowSize == WindowSize.Compact) {
+    if (isCompactUI()) {
         Box(Modifier.fillMaxSize()) {
             if (state.isMenuOpened) {
                 MenuContent(
@@ -93,20 +93,6 @@ fun PageContent(
                         .background(Color(0xFF3F3F3F))
                 ) {
                     content()
-//                    todo    Column(modifier=Modifier.padding(8.dp).background(Color.DarkGray),verticalArrangement = Arrangement.spacedBy(4.dp)) {
-//                            CJText(text = "filesToArchive", fontSize = 16.sp)
-//                            for (item in it.filesToArchive) {
-//                                CJText(text = item.relativePath, fontSize = 12.sp)
-//                            }
-//                            CJText(text = "filesToDownload", fontSize = 16.sp)
-//                            for (item in it.filesToDownload) {
-//                                CJText(text = item, fontSize = 12.sp)
-//                            }
-//                            CJText(text = "delete local", fontSize = 16.sp)
-//                            for (item in it.localDeletedFilesByServer) {
-//                                CJText(text = item.getRelativePath(), fontSize = 12.sp)
-//                            }
-//                        }
                 }
             }
         }
@@ -153,23 +139,6 @@ fun PageContent(
                     .background(Color(0xFF3F3F3F))
             ) {
                 content()
-//             todo   UIStateContentNoBox(state = state.fileVersionsState) {
-//                    Column(modifier=Modifier.padding(8.dp).background(Color.DarkGray),verticalArrangement = Arrangement.spacedBy(4.dp)) {
-//                        CJText(text = "filesToArchive", fontSize = 16.sp)
-//                        for (item in it.filesToArchive) {
-//                            CJText(text = item.relativePath, fontSize = 12.sp)
-//                        }
-//                        CJText(text = "filesToDownload", fontSize = 16.sp)
-//                        for (item in it.filesToDownload) {
-//                            CJText(text = item, fontSize = 12.sp)
-//                        }
-//                        CJText(text = "delete local", fontSize = 16.sp)
-//                        for (item in it.localDeletedFilesByServer) {
-//                            CJText(text = item.getRelativePath(), fontSize = 12.sp)
-//                        }
-//                    }
-//                }
-
             }
         }
     }

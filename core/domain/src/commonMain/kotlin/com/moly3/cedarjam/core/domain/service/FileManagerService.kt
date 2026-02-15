@@ -89,11 +89,6 @@ class FileManagerService(
         return map[timestamp]?.fileNodeRelativePath
     }
 
-//    @OptIn(ExperimentalTime::class)
-//    suspend fun movedFile(oldFileNode: FileTreeNode, newFileNode: FileTreeNode) {
-//        movedFile(oldFileNode.getRelativePath(), newFileNode)
-//    }
-
     @OptIn(ExperimentalTime::class)
     suspend fun movedFile(oldRelativePath: String, newRelativePath: String) {
         val timestamp = getTimestampByFileNode(oldRelativePath)
@@ -113,26 +108,6 @@ class FileManagerService(
             //_lastOpenedFile.emit(last)
             _openedFilesState.emit(OpenedFiles(map))
         }
-//        else {
-//            val openedFiles = _openedFilesState.value.states.toMutableMap()
-//            when (oldFileNode) {
-//                is FileTreeNode.Directory -> {
-//                    val foundFiles = _openedFilesState.value.states
-//                        //.filter { d -> d.value.fileNode is FileTreeNode.File }
-//                        .filter { d ->
-//                            d.value.fileNodeRelativePath.contains(oldFileNode.getRelativePath())
-//                        }
-//                    for (item in foundFiles) {
-//                        openedFiles[item.key] =
-//                            item.value.copy(fileNodeRelativePath = newFileNode.getRelativePath())
-//                    }
-//                }
-//
-//                is FileTreeNode.File -> {
-//                    //todo openFile(fileNode, isReadOnly = false)
-//                }
-//            }
-//            _openedFilesState.emit(OpenedFiles(openedFiles))
 //        }
     }
 }

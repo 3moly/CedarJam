@@ -77,7 +77,7 @@ class UI1Test : UITest() {
         Logger.d("step 3")
     }
 
-    private suspend fun IWorkspaceEnvironment.isFullSynced() {
+    private suspend inline fun IWorkspaceEnvironment.isFullSynced() {
         val koin = getKoin()
         val syncUseCase = koin.get<ISyncUseCase>()
         val workspaceEnv = this

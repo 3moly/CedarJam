@@ -21,6 +21,7 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
+                api(libs.koin)
                 api(libs.datetime)
                 api(libs.kotlinx.io.core)
                 api(libs.kotlinx.immutable.list)

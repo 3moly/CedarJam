@@ -38,7 +38,6 @@ import com.moly3.cedarjam.di.initApp
 import com.moly3.cedarjam.navigation.Root
 import com.moly3.cedarjam.navigation.createRootComponentSafe
 import com.moly3.cedarjam.navigation.ui.ActualPredictiveBackGestureOverlay
-import com.moly3.cedarjam.pages.page_workspace.ui.ToolbarState
 import com.moly3.cedarjam.ui.MainApp
 import com.moly3.cedarjam.ui.NestedSharedBoundsSample
 import dev.datlag.kcef.KCEF

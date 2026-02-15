@@ -36,7 +36,7 @@ versionCatalogPaths = [ "gradle/libs.versions.toml" ]
 #    { id = "excluded.plugin.id" }
 #]
 # Policy name to use. See the documentation section about policies for more information
-policy = "always"
+policy = "latest"
 # Policy plugin directory. This is the directory where the custom policies are located.
 # Only applies to JVM, see the documentation section about policies for more information
 #policyPluginDir = "path/to/policy/plugin/dir"
@@ -65,7 +65,7 @@ gradleWrapperPropertiesPath = "/path/to/properties/file"
 onlyCheckStaticVersions = false
 # The stability level to use for Gradle version checks. Default is stable. Possible values are: stable,
 # rc, milestone, releaseNightly, nightly.
-gradleStabilityLevel = "stable"
+gradleStabilityLevel = "nightly"
 # Whether or not to show a section in the report about the ignored available updates. Default is false.
 checkIgnored = true
 # Github token, used to search for release notes on GitHub.

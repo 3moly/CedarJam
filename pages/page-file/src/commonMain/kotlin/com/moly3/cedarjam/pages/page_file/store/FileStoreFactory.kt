@@ -45,6 +45,7 @@ internal class FileStoreFactory(
     private val storeFactory: StoreFactory,
     private val lifecycle: Lifecycle,
     private val data: FilePageInput,
+    private val openMenu: (Boolean) -> Unit,
     private val workspaceSession: WorkspaceSession,
     private val setIsShowGraph: (String, Boolean) -> Unit,
     private val showCanvasDialog: (FileTreeNode.File) -> Unit
@@ -233,68 +234,6 @@ internal class FileStoreFactory(
                     }
                 }
 
-//                is Intent.SaveCanvas -> {
-//                    Logger.e {
-//                        "start saving canvas"
-//                    }
-//                    canvasSaveJob?.cancel()
-//                    canvasSaveJob = scope.launch {
-//                        val workspaceEnv = workspaceSession.workspaceEnvStateFlow.value
-//                        val fileNodeFullPath =
-//                            fileManagerService.getFileNodeByTimestamp(timestamp = data.timestamp)
-//                        delay(500L)
-//                        val nodes = workspaceEnv.getNodes(null).getAllFilesByExtension(null)
-//                        val fileNode =
-//                            nodes.firstOrNull { d -> d.getFullPath() == fileNodeFullPath }
-//
-//                        try {
-//                            if (fileNode != null) {
-//                                val workspace = workspaceEnv.getWorkspace()
-//                                val shapes = intent.shapes.map { d ->
-//                                    MapCardJson(
-//                                        id = d.id,
-//                                        position = WorldPosition(0f, 0f),
-////                                        position = d.position,
-//                                        size = OffsetData(
-//                                            d.size.x, d.size.y
-//                                        ),
-////                                        fileData = d.data?.toFileNodeJson(workspace),
-//                                        fileData = null,
-////                                        color = d.color?.toHexString()
-//                                        color = null
-//                                    )
-//                                }
-//                                val connections = intent.connections.map { d ->
-//                                    ArcConnectionJson(
-//                                        id = d.id,
-//                                        fromBox = d.fromBox,
-//                                        toBox = d.toBox,
-//                                        fromSide = BoxSide.BOTTOM,
-//                                        toSide = BoxSide.LEFT,
-////                                        fromSide = d.fromSide,
-////                                        toSide = d.toSide,
-//                                        arcHeight = d.arcHeight,
-//                                        color = d.color?.toHexString(),
-//                                    )
-//                                }
-//
-//                                val json =
-//                                    DefaultJson.encodeToString(
-//                                        CanvasData(
-//                                            shapes = shapes,
-//                                            connections = connections
-//                                        )
-//                                    )
-//                                filesRepository.setNodeText(fileNode, json)
-//                            }
-//                        } catch (exc: Exception) {
-//                            Logger.e {
-//                                "error saving canvas: ${exc.message}"
-//                            }
-//                        }
-//                    }
-//                }
-
                 is Intent.SetLinkTag -> {
                     val fullPath =
                         fileManagerService.getFileNodeByTimestamp(timestamp = data.timestamp)
@@ -335,6 +274,10 @@ internal class FileStoreFactory(
                 is Intent.DeleteAnnotation -> {
                     val workspaceEnv = workspaceSession.workspaceEnvStateFlow.value
                     workspaceEnv.deleteAnnotation(id = intent.value.id)
+                }
+
+                is Intent.OpenWorkspaceSettings -> {
+                    openMenu(true)
                 }
             }
         }

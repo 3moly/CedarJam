@@ -6,7 +6,11 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -18,7 +22,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,35 +38,43 @@ import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.func.flatClickable
+import com.moly3.cedarjam.core.ui.service.KVibrator
 import com.moly3.cedarjam.core.ui.vectors.Tag
-
 
 @Composable
 fun NeumorphicButton(
     modifier: Modifier = Modifier,
-    accentColor: Color = Color.Blue,
+    accentColor: Color = LocalAppTheme.current.colors.backgroundPrimary,
     isPressed: Boolean = false,
     buttonShape: Shape = CircleShape, // Dynamic shape
     strength: Float = 1f,
     painter: Painter? = null,
     pressedColor: Color = Color.Gray,
-    unpressedColor: Color = Color.Blue
+    unpressedColor: Color = LocalAppTheme.current.colors.icon,
+    content: (@Composable BoxScope.() -> Unit)? = null,
+    onClick: () -> Unit = {}
 ) {
-    val buttonShapeUpdated by rememberUpdatedState(buttonShape)
+
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressedState by interactionSource.collectIsPressedAsState()
+    val isPressed = isPressed || isPressedState
+    val buttonShapeUpdated = buttonShape
     val progress by animateFloatAsState(
         targetValue = if (isPressed) 1f else 0f,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow
+            stiffness = Spring.StiffnessMedium
         ), label = "press"
     )
     val imageColor by animateColorAsState(if (isPressed) pressedColor else unpressedColor)
 
     val raised = 1f - progress
-
+    val isInspect = LocalInspectionMode.current
     Box(
         modifier = modifier
             .size(100.dp)
@@ -74,17 +85,11 @@ fun NeumorphicButton(
             }
             .drawBehind {
                 val centerOffset = Offset(size.width * 0.358f, size.height * 0.293f)
-
-                // Convert the Generic Shape into a usable Outline for this specific size
                 val outline = buttonShapeUpdated.createOutline(size, layoutDirection, this)
-
-                // 1. DRAW YOUR ACCENT COLOR FIRST (Using the dynamic shape)
                 drawOutline(
                     outline = outline,
                     color = accentColor
                 )
-
-                // 2. OVERLAY THE ORIGINAL GRAY GRADIENT (Preserving shadows)
                 drawOutline(
                     outline = outline,
                     brush = Brush.radialGradient(
@@ -112,16 +117,30 @@ fun NeumorphicButton(
                 this.radius = 40f * progress
                 this.offset = Offset(15f * progress, 15f * progress)
             }
-            .clip(buttonShape),
+            .clip(buttonShape)
+            .flatClickable(interactionSource) {
+                if (!isInspect) {
+                    if (isPressed) {
+                        KVibrator.vibrateShort()
+                    } else {
+                        KVibrator.vibrateShort()
+                    }
+                }
+                onClick()
+            },
         contentAlignment = Alignment.Center
     ) {
-        if (painter != null) {
-            Image(
-                painter = painter,
-                contentDescription = null,
-                modifier = Modifier.size(24.dp),
-                colorFilter = ColorFilter.tint(imageColor)
-            )
+        if (content != null) {
+            content()
+        } else {
+            if (painter != null) {
+                Image(
+                    painter = painter,
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp),
+                    colorFilter = ColorFilter.tint(imageColor)
+                )
+            }
         }
     }
 }
@@ -129,27 +148,47 @@ fun NeumorphicButton(
 @Preview
 @Composable
 fun FidgetPoppinPreview() {
-    Box(Modifier.fillMaxSize().background(Color.White), contentAlignment = Alignment.Center) {
+    Box(Modifier.fillMaxSize().background(Color(0xFF191A1C)), contentAlignment = Alignment.Center) {
 
-        var shapeSize by remember { mutableStateOf(12f) }
+        var shapeSize by remember { mutableStateOf(100f) }
         var isPressed by remember { mutableStateOf(false) }
         val modifier = Modifier
             .padding(24.dp)
             .align(Alignment.BottomEnd)
-            .width(128.dp)
+            .width(65.dp)
             .height(65.dp)
-            .flatClickable({
+            .flatClickable {
                 isPressed = !isPressed
-            })
+            }
         CJSlider(modifier = Modifier, value = shapeSize, onValueChange = {
             shapeSize = it
         }, valueRange = 0f..100f)
-        NeumorphicButton(
-            modifier = modifier,
-            isPressed = isPressed,
-            buttonShape = RoundedCornerShape(shapeSize.dp),
-            accentColor = Color(0xFFFF916D),
-            painter = rememberVectorPainter(Tag)
-        )
+
+        Column(modifier = Modifier) {
+            NeumorphicButton(
+                modifier = modifier,
+                isPressed = isPressed,
+                buttonShape = RoundedCornerShape(shapeSize.dp),
+                accentColor = Color(0xFFFF4200),
+                painter = rememberVectorPainter(Tag),
+                unpressedColor = Color.White
+            )
+            NeumorphicButton(
+                modifier = modifier,
+                isPressed = isPressed,
+                buttonShape = RoundedCornerShape(shapeSize.dp),
+                accentColor = Color(0xFF222325),
+                painter = rememberVectorPainter(Tag),
+                unpressedColor = Color.White
+            )
+            NeumorphicButton(
+                modifier = modifier,
+                isPressed = true,
+                buttonShape = RoundedCornerShape(shapeSize.dp),
+                accentColor = Color(0xFF222325),
+                painter = rememberVectorPainter(Tag),
+                unpressedColor = Color.White
+            )
+        }
     }
 }

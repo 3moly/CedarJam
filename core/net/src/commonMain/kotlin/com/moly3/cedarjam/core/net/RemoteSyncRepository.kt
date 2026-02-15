@@ -1,6 +1,7 @@
 package com.moly3.cedarjam.core.net
 
 import com.moly3.cedarjam.core.domain.func.getPlatform
+import com.moly3.cedarjam.core.domain.func.normalizeText
 import com.moly3.cedarjam.core.domain.model.FileItem
 import com.moly3.cedarjam.core.domain.model.FileMetadata
 import com.moly3.cedarjam.core.domain.model.FileStructure
@@ -117,7 +118,7 @@ class RemoteSyncRepository(
                 }
                 success(fileStructurePrepared.copy(files = fileStructurePrepared.files.map { d ->
                     d.copy(
-                        relativePath = d.relativePath
+                        relativePath = d.relativePath.normalizeText()
                     )
                 }))
             } else {

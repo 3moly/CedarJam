@@ -1,6 +1,7 @@
 package com.moly3.cedarjam.features.feature_graph.ui
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
@@ -28,32 +29,34 @@ import dev.chrisbanes.haze.rememberHazeState
 
 @Composable
 fun ContentNearGraphUI(
-    mainContent: @Composable () -> Unit,
+    mainContent: @Composable BoxScope.() -> Unit,
     connectionsCount: Int,
     dialogSlot: Value<ChildSlot<*, IDialogGraphComponent>>,
     setIsShowGraph: (Boolean) -> Unit,
     optionsAlignment: Alignment = Alignment.BottomCenter
 ) {
     val backgroundSecondary = LocalAppTheme.current.colors.backgroundSecondary
-    val hazeState = rememberHazeState(blurEnabled = false)
-    val hazeStyle = remember(backgroundSecondary) {
-        HazeStyle(
-            backgroundColor = backgroundSecondary,
-            tints = listOf(HazeTint(backgroundSecondary.copy(0.2f))),
-            blurRadius = 16.dp,
-            noiseFactor = HazeDefaults.noiseFactor
-        )
-    }
+//    val hazeState = rememberHazeState(blurEnabled = false)
+//    val hazeStyle = remember(backgroundSecondary) {
+//        HazeStyle(
+//            backgroundColor = backgroundSecondary,
+//            tints = listOf(HazeTint(backgroundSecondary.copy(0.2f))),
+//            blurRadius = 16.dp,
+//            noiseFactor = HazeDefaults.noiseFactor
+//        )
+//    }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        Box(Modifier.fillMaxSize().hazeSource(hazeState)) {
+        Box(Modifier.fillMaxSize()) {
             mainContent()
         }
         val dialogSlot by dialogSlot.subscribeAsState()
         dialogSlot.child?.instance?.also {
             DialogGraphUI(
-                modifier = Modifier.hazeEffect(state = hazeState, style = hazeStyle)
-                    .hazeSource(hazeState, zIndex = 2f),
+                modifier = Modifier
+//                    .hazeEffect(state = hazeState, style = hazeStyle)
+//                    .hazeSource(hazeState, zIndex = 2f)
+                ,
                 component = it
             )
         }
@@ -64,10 +67,10 @@ fun ContentNearGraphUI(
             false
         val windowSize by rememberWindowSize()
         //.hazeEffect(state = hazeState, style = hazeStyle)
-        SelectOption(
-            modifier = Modifier.align(optionsAlignment),
-            isOpened = isGraphDialogOpened,
-            count = connectionsCount,
-            onSetIsShowGraph = { setIsShowGraph(it) })
+//        SelectOption(
+//            modifier = Modifier.align(optionsAlignment),
+//            isOpened = isGraphDialogOpened,
+//            count = connectionsCount,
+//            onSetIsShowGraph = { setIsShowGraph(it) })
     }
 }

@@ -27,6 +27,7 @@ import org.koin.core.component.inject
 class FileComponentImpl(
     componentContext: ComponentContext,
     storeFactory: StoreFactory,
+    private val openMenu: (Boolean) -> Unit,
     private val data: FilePageInput,
     override val workspaceSession: WorkspaceSession
 ) : FileComponent,
@@ -54,6 +55,7 @@ class FileComponentImpl(
             storeFactory = storeFactory,
             lifecycle = lifecycle,
             data = data,
+            openMenu = openMenu,
             workspaceSession = workspaceSession,
             setIsShowGraph = { graphId, value ->
                 graphDialogScope.setIsShowGraphDialog(targetId = graphId, isShow = value)

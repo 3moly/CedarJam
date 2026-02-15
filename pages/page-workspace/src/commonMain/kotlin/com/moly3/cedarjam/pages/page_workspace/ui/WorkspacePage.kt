@@ -31,14 +31,6 @@ import com.moly3.cedarjam.pages.page_workspace.WorkspaceComponent
 import com.moly3.cedarjam.pages.page_workspace.ui.internal.WorkspacePageContent
 import kotlin.time.ExperimentalTime
 
-
-data class ToolbarState(
-    val isFullscreen: Boolean,
-    val menuButtonsWidth: Dp,
-    val isFirstCut: Boolean,
-    val controlsWidthToCut: Dp
-)
-
 @OptIn(ExperimentalTime::class)
 @Composable
 fun JvmWindowScope.WorkspacePage(
@@ -68,8 +60,6 @@ fun JvmWindowScope.WorkspacePage(
             Box(
                 Modifier
                     .background(LocalAppTheme.current.colors.backgroundPrimary)
-//                    .statusBarsPadding()
-//                    .navigationBarsPadding()
                     .imePadding()
             ) {
                 WorkspacePageContent(

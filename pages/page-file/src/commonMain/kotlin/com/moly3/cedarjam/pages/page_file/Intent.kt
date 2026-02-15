@@ -18,4 +18,5 @@ sealed interface Intent {
     data class RemoveLinkTag(val value: TagLinkDTO) : Intent
     data class AddAnnotation(val value: CreateAnnotationRequest) : Intent
     data class DeleteAnnotation(val value: AnnotationDTO) : Intent
+    data object OpenWorkspaceSettings : Intent
 }

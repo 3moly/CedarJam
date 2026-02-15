@@ -7,10 +7,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 
 @Composable
-fun Modifier.flatClickable(onClick: () -> Unit): Modifier {
+fun Modifier.flatClickable(
+    interactionSource: MutableInteractionSource? = null,
+    onClick: () -> Unit = {}
+): Modifier {
     return this.clickable(
         indication = null, // This removes the ripple effect
-        interactionSource = remember { MutableInteractionSource() }
+        interactionSource = interactionSource
     ) {
         onClick()
     }

@@ -124,6 +124,9 @@ class WorkspaceComponentImpl(
                     storeFactory = storeFactory,
                     workspaceSession = workspaceSession,
                     index = config.index,
+                    openMenu = {
+                        store.accept(Intent.SetIsFullMenu(it))
+                    },
                     onSelfDestroy = {
                         removeTabs(index = config.index)
                     },

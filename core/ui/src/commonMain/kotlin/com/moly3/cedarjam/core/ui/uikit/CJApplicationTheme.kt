@@ -5,6 +5,7 @@ import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -25,7 +26,7 @@ fun CJApplicationTheme(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Normal,
         fontSize = 14.sp,
-        color =  appSettings.theme.colors.primaryFont
+        color = appSettings.theme.colors.primaryFont
     )
     val appTheme: CJAppTheme = remember(appSettings.theme) {
         CJAppTheme(
@@ -43,8 +44,12 @@ fun CJApplicationTheme(
         LocalAppTheme provides appTheme,
         LocalTextStyle provides textStyle
     ) {
-        LocalinaApp {
+        if (LocalInspectionMode.current) {
             content()
+        } else {
+            LocalinaApp {
+                content()
+            }
         }
     }
 }

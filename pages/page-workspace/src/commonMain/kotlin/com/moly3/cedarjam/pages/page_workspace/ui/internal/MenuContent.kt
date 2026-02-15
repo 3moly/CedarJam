@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -52,7 +53,7 @@ internal fun MenuContent(
     dragAndDropState: DragAndDropState<FileTreeItemPresentation>,
     onIntent: (Intent) -> Unit
 ) {
-    Box(modifier = modifier.background(LocalAppTheme.current.colors.backgroundPrimary)) {
+    Box(modifier = modifier.background(LocalAppTheme.current.colors.backgroundPrimary).navigationBarsPadding()) {
         Box(Modifier.fillMaxSize().hazeSource(hazeState)) {
             Box(
                 Modifier.fillMaxSize()
@@ -64,7 +65,9 @@ internal fun MenuContent(
             LocalHazeStyle provides hazeStyle
         ) {
             Column(
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier
+
+                    .fillMaxSize()
                     .padding(bottom = 8.dp)
                     .padding(horizontal = 12.dp)
             ) {
@@ -137,62 +140,6 @@ internal fun MenuContent(
                         }
                     }
                 }
-//                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-//                    val new = remember(state.indexes) {
-//                        state.indexes.count { d -> d.serverSyncStatus == com.moly3.cedarjam.core.domain.model.SyncStatus.NEW }
-//                    }
-//                    val upload = remember(state.indexes) {
-//                        state.indexes.count { d -> d.serverSyncStatus == com.moly3.cedarjam.core.domain.model.SyncStatus.DIRTY }
-//                    }
-//                    val deleted = remember(state.indexes) {
-//                        state.indexes.count { d -> d.serverSyncStatus == com.moly3.cedarjam.core.domain.model.SyncStatus.DELETED }
-//                    }
-//                    Row(
-//                        modifier = Modifier,
-//                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-//                    ) {
-//                        Row(
-//                            Modifier
-//                                .border(volumedBorderStroke, RoundedCornerShape(8.dp))
-//                                .padding(4.dp),
-//                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-//                            verticalAlignment = Alignment.CenterVertically
-//                        ) {
-//                            CJText(text = "->")
-//                            CJText(text = (upload + new).toString())
-//                        }
-////                       todo Row(
-////                            Modifier
-////                                .border(volumedBorderStroke, RoundedCornerShape(8.dp))
-////                                .padding(4.dp),
-////                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-////                            verticalAlignment = Alignment.CenterVertically
-////                        ) {
-////                            CJText(text = "<-")
-////                            CJText(text = new.toString())
-////                        }
-//                        Row(
-//                            Modifier
-//                                .border(volumedBorderStroke, RoundedCornerShape(8.dp))
-//                                .padding(4.dp),
-//                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-//                            verticalAlignment = Alignment.CenterVertically
-//                        ) {
-//                            CJText(text = "D")
-//                            CJText(text = deleted.toString())
-//                        }
-//                        if (!state.syncStatus.isLoading()) {
-//                            CJButton(text = "sync") {
-//                                onIntent(Intent.Sync)
-//                            }
-//                            if (state.syncStatus.isError()) {
-//                                Box(Modifier.size(10.dp).background(Color.Red))
-//                            }
-//                        } else {
-//
-//                        }
-//                    }
-//                }
                 val toDownload = when(val sync = state.syncStatus){
                     is UIState.Error<*> -> 0
                     UIState.Loading -> 0

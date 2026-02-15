@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.func.flatClickable
+import com.moly3.cedarjam.core.ui.service.KVibrator
 import com.moly3.cedarjam.core.ui.vectors.NetworkNode
 import com.moly3.cedarjam.core.ui.uikit.CJText
 import com.moly3.cedarjam.core.ui.uikit.NeumorphicButton
@@ -37,14 +38,18 @@ fun SelectOption(
     onSetIsShowGraph: (Boolean) -> Unit
 ) {
     NeumorphicButton(
-        modifier = modifier.padding(16.dp).size(48.dp).flatClickable({
+        modifier = modifier.padding(16.dp).size(48.dp).flatClickable{
+            KVibrator.vibrateShort()
+
             onSetIsShowGraph(!isOpened)
-        }),
-        unpressedColor = LocalAppTheme.current.primaryColor,
+        },
+//        unpressedColor = LocalAppTheme.current.primaryColor,
+        unpressedColor = Color.White,
         isPressed = isOpened,
         buttonShape = RoundedCornerShape(100.dp),
         painter = rememberVectorPainter(Tag),
-        accentColor = Color.White// Color(0xFFFF916D)
+        accentColor = Color(0xFF222325),
+//        accentColor = Color.White// Color(0xFFFF916D)
     )
 //    Box(
 //        modifier = modifier

@@ -1,0 +1,161 @@
+package com.moly3.cedarjam.core.ui.uikit
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import com.moly3.cedarjam.core.domain.model.AppColorsData
+import com.moly3.cedarjam.core.domain.model.AppThemeData
+import com.moly3.cedarjam.core.domain.model.settings.AppSettings
+import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
+import com.moly3.cedarjam.core.ui.func.flatClickable
+import com.moly3.cedarjam.core.ui.vectors.BarLeft
+import com.moly3.cedarjam.core.ui.vectors.DummySquareSmall
+import com.moly3.cedarjam.core.ui.vectors.Settings
+import com.moly3.cedarjam.core.ui.volumedBorderStroke
+
+@Composable
+fun FileMenuContent(
+    modifier: Modifier,
+    isOpenedMenu: Boolean,
+    openWorkspaceSettings: () -> Unit = {},
+    onClick: () -> Unit
+) {
+    val padding = 8
+    Box(
+        modifier = modifier
+            .statusBarsPadding()
+            .navigationBarsPadding()
+            .fillMaxSize()
+            .let {
+                if (isOpenedMenu) {
+                    it.flatClickable {}
+                } else {
+                    it
+                }
+            }
+
+    ) {
+        if (isOpenedMenu) {
+            Box(
+                modifier = Modifier
+                    .padding(top = padding.dp)
+                    .padding(horizontal = padding.dp)
+                    .border(
+                        1.dp,
+                        LocalAppTheme.current.colors.backgroundPrimary,
+                        shape = RoundedCornerShape(16.dp)
+                    )
+                    .clip(RoundedCornerShape(16.dp))
+                    .fillMaxSize()
+                    .background(LocalAppTheme.current.colors.backgroundSecondary)
+            ) {
+                Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        NeumorphicButton(
+                            modifier = Modifier.weight(1f).height(40.dp),
+                            isPressed = true,
+                            buttonShape = RoundedCornerShape(100.dp),
+                            painter = rememberVectorPainter(DummySquareSmall),
+                            content = {
+                                CJText(text = "ssdsdsd")
+                            },
+                            onClick = {}
+                        )
+                        NeumorphicButton(
+                            modifier = Modifier.size(40.dp),
+                            isPressed = true,
+                            buttonShape = RoundedCornerShape(100.dp),
+                            painter = rememberVectorPainter(DummySquareSmall),
+                            content = {
+                                CJText(text = "pdf")
+                            },
+                            onClick = {}
+                        )
+                    }
+
+                }
+                NeumorphicButton(
+                    modifier = Modifier
+                        .padding(padding.dp)
+                        .align(Alignment.BottomStart)
+                        .size(48.dp),
+                    isPressed = false,
+                    buttonShape = RoundedCornerShape(100.dp),
+                    painter = rememberVectorPainter(BarLeft),
+                    onClick = openWorkspaceSettings
+                )
+            }
+        }
+
+        NeumorphicButton(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end = padding.dp)
+                .padding(padding.dp)
+                .size(48.dp),
+            isPressed = isOpenedMenu,
+            buttonShape = RoundedCornerShape(100.dp),
+            painter = rememberVectorPainter(DummySquareSmall),
+            onClick = onClick
+        )
+    }
+}
+
+@Preview
+@Composable
+fun FidgetPoppinPreviewLight() {
+    CJApplicationTheme(
+        appSettings = AppSettings(AppThemeData.Default.copy(colors = AppColorsData.Light))
+    ) {
+        var isPressed by remember { mutableStateOf(false) }
+        Box(
+            Modifier.fillMaxSize().background(Color(0xFF191A1C)),
+            contentAlignment = Alignment.Center
+        ) {
+            FileMenuContent(Modifier.fillMaxSize(), isOpenedMenu = isPressed, onClick = {
+                isPressed = !isPressed
+            })
+        }
+    }
+}
+
+@Preview
+@Composable
+fun FidgetPoppinPreview2() {
+    CJApplicationTheme(
+        appSettings = AppSettings(AppThemeData.Default.copy(colors = AppColorsData.Dark))
+    ) {
+        var isPressed by remember { mutableStateOf(false) }
+        Box(
+            Modifier.fillMaxSize().background(Color(0xFF191A1C)),
+            contentAlignment = Alignment.Center
+        ) {
+            FileMenuContent(Modifier.fillMaxSize(), isOpenedMenu = isPressed, onClick = {
+                isPressed = !isPressed
+            })
+        }
+    }
+}

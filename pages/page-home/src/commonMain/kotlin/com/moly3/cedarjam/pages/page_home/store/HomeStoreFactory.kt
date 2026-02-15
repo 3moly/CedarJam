@@ -123,9 +123,12 @@ internal class HomeStoreFactory(
             _searchTextState.value = state().searchTextFieldValue.text
 
             lifecycle.doOnResume {
-                val allNodes =
-                    workspaceSession.workspaceEnvStateFlow.value.getNodes(null).getAll(true)
-                dispatch(Msg.SetAllNodesState(UIState.Success(allNodes.toPersistentList())))
+                try {
+                    val allNodes =
+                        workspaceSession.workspaceEnvStateFlow.value.getNodes(null).getAll(true)
+                    dispatch(Msg.SetAllNodesState(UIState.Success(allNodes.toPersistentList())))
+                } catch (exc: Exception) {
+                }
             }
             scopeFromStartToStop.launch {
                 combine(

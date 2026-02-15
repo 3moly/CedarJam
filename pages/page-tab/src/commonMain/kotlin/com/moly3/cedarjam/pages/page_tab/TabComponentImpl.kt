@@ -55,6 +55,7 @@ class TabComponentImpl(
     private val workspaceSession: WorkspaceSession,
     context: ComponentContext,
     storeFactory: StoreFactory,
+    private val openMenu: (Boolean) -> Unit,
     private val tabIndex: Int
 ) : KoinComponent,
     ComponentContext by context,
@@ -101,6 +102,7 @@ class TabComponentImpl(
                     FileComponentImpl(
                         componentContext = childContext,
                         storeFactory = storeFactory,
+                        openMenu = openMenu,
                         data = g.data,
                         workspaceSession = workspaceSession
                     )

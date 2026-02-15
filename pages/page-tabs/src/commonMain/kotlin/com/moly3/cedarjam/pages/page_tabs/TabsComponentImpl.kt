@@ -36,6 +36,7 @@ class TabsComponentImpl(
     context: ComponentContext,
     storeFactory: StoreFactory,
     workspaceSession: WorkspaceSession,
+    private val openMenu: (Boolean) -> Unit,
     private val onSelfDestroy: () -> Unit,
     private val onNewTabs: () -> Unit,
     private val onFileReveal: (PageNameData.PageType) -> Unit,
@@ -63,6 +64,7 @@ class TabsComponentImpl(
                     context = childContext,
                     storeFactory = storeFactory,
                     tabIndex = g.index,
+                    openMenu = openMenu,
                     workspaceSession = workspaceSession
                 )
             )
