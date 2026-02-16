@@ -22,7 +22,6 @@ import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.extensions.compose.experimental.stack.ChildStack
 import com.arkivanov.decompose.extensions.compose.experimental.stack.animation.stackAnimation
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
-import com.moly3.cedarjam.core.ui.JvmWindowScope
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalHazeState
 import com.moly3.cedarjam.core.ui.compositions.LocalVideoPlayer
@@ -47,12 +46,7 @@ import io.github.kdroidfilter.composemediaplayer.rememberVideoPlayerState
 
 @OptIn(ExperimentalDecomposeApi::class)
 @Composable
-fun JvmWindowScope.MainApp(
-    root: Root,
-    titleBarContent: @Composable (@Composable () -> Unit) -> Unit = {
-        it()
-    }
-) {
+fun MainApp(root: Root) {
     val stack by root.childStack.subscribeAsState()
     val appSettings by root.appSettingsFlow.collectAsState()
 
@@ -64,7 +58,8 @@ fun JvmWindowScope.MainApp(
             LocalVideoPlayer provides playerState,
         ) {
             Box(
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier
+                    .fillMaxSize()
                     .background(LocalAppTheme.current.colors.backgroundPrimary)
             ) {
                 ChildStack(
@@ -82,11 +77,7 @@ fun JvmWindowScope.MainApp(
                     animation = stackAnimation()
                 ) {
                     when (val instance = it.instance) {
-                        is Root.Child.Workspace -> WorkspacePage(
-                            component = instance.component,
-                            titleBarContent = titleBarContent
-                        )
-
+                        is Root.Child.Workspace -> WorkspacePage(component = instance.component)
                         is Root.Child.SelectWorkspace -> SelectWorkspacePage(component = instance.component)
                     }
                 }
@@ -140,9 +131,6 @@ fun JvmWindowScope.MainApp(
                 AppComposableWidgetHideKeyboard()
                 TopAlertServiceUI(root.alertService)
             }
-//            Box(Modifier.fillMaxSize()) {
-//                //ChibiCharacter()
-//            }
         }
     }
 }

@@ -68,6 +68,7 @@ import kotlin.collections.forEachIndexed
 internal class HomeStoreFactory(
     private val workspaceSession: WorkspaceSession,
     private val storeFactory: StoreFactory,
+    private val openWorkspaceSettings: (Boolean) -> Unit
 ) : KoinComponent {
 
     private val fileManagerService: FileManagerService by lazy {
@@ -293,6 +294,10 @@ internal class HomeStoreFactory(
 
                 is Intent.OpenTag -> {
                     navigator.navigate(Tag(TagPageInput(intent.id)))
+                }
+
+                is Intent.OpenWorkspaceSettings -> {
+                    openWorkspaceSettings(true)
                 }
 
                 Intent.OpenTags -> {

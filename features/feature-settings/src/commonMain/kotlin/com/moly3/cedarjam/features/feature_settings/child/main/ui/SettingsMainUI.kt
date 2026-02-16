@@ -10,7 +10,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.moly3.cedarjam.core.ui.JvmWindowScope
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.uikit.CJDraggableArea
 import com.moly3.cedarjam.core.ui.uikit.CJText
@@ -26,15 +25,13 @@ import com.moly3.cedarjam.ui.storage
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
-fun JvmWindowScope.SettingsMainUI(component: ISettingsMainComponent) {
+fun SettingsMainUI(component: ISettingsMainComponent) {
     SettingsContent {
-        Box {
-            CJDraggableArea {
-                CJToolbar(
-                    title = stringResource(Res.string.f_settings_title),
-                    onClose = { component.onIntent(Intent.Close) }
-                )
-            }
+        CJDraggableArea{
+            CJToolbar(
+                title = stringResource(Res.string.f_settings_title),
+                onClose = { component.onIntent(Intent.Close) }
+            )
         }
         Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())) {
             CJText(

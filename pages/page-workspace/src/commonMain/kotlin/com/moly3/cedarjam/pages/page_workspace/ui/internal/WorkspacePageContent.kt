@@ -11,10 +11,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -28,14 +25,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalWindowInfo
-import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import com.mohamedrejeb.compose.dnd.DragAndDropContainer
@@ -44,15 +38,16 @@ import com.moly3.cedarjam.core.domain.func.getPlatform
 import com.moly3.cedarjam.core.domain.model.Platform
 import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.domain.model.error.DatabaseError
-import com.moly3.cedarjam.core.ui.ToolbarHeight
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalDragAndDrop
 import com.moly3.cedarjam.core.ui.compositions.LocalJvmToolbarState
 import com.moly3.cedarjam.core.ui.func.PointerIconType
 import com.moly3.cedarjam.core.ui.func.absoluteOffset
+import com.moly3.cedarjam.core.ui.func.consumeWindowToolbarPaddingCJ
 import com.moly3.cedarjam.core.ui.func.getPointerIcon
 import com.moly3.cedarjam.core.ui.func.isCompactUI
 import com.moly3.cedarjam.core.ui.func.rememberWindowSize
+import com.moly3.cedarjam.core.ui.func.windowToolbarPadding
 import com.moly3.cedarjam.core.ui.model.CJText
 import com.moly3.cedarjam.core.ui.model.FileTreeItemPresentation
 import com.moly3.cedarjam.core.ui.model.WindowSize
@@ -62,12 +57,9 @@ import com.moly3.cedarjam.core.ui.onPointerEvent
 import com.moly3.cedarjam.core.ui.uikit.CJButton
 import com.moly3.cedarjam.core.ui.uikit.CJContextMenu
 import com.moly3.cedarjam.core.ui.uikit.CJContextMenuButton
-import com.moly3.cedarjam.core.ui.uikit.CJIcon
+import com.moly3.cedarjam.core.ui.uikit.CJDraggableArea
 import com.moly3.cedarjam.core.ui.uikit.CJLinearProgressIndicator
 import com.moly3.cedarjam.core.ui.uikit.CJText
-import com.moly3.cedarjam.core.ui.vectors.BarLeft
-import com.moly3.cedarjam.core.ui.vectors.TrashEmpty
-import com.moly3.cedarjam.pages.page_tabs.ui.TabsPage
 import com.moly3.cedarjam.pages.page_tabs.ui.TabsPageContent
 import com.moly3.cedarjam.pages.page_workspace.Intent
 import com.moly3.cedarjam.pages.page_workspace.State
@@ -88,7 +80,6 @@ import org.jetbrains.compose.resources.stringResource
 internal fun WorkspacePageContent(
     component: WorkspaceComponent,
     state: State,
-    titleBarContent: @Composable (@Composable () -> Unit) -> Unit = {},
     onIntent: (Intent) -> Unit
 ) {
     val hazeState = rememberHazeState(blurEnabled = false)
@@ -266,15 +257,13 @@ internal fun WorkspacePageContent(
                         LocalDragAndDrop provides dragAndDropState
                     ) {
                         val toolbarState = LocalJvmToolbarState.current
-//                        val windowSize by rememberWindowSize()
-                        Column {
-                            if (!isCompactUI() || state.isMenuOpened) {
+                        Column(Modifier) {
+                            if (!isCompactUI()) {
                                 TabsToolbarContent(
-                                    modifier = Modifier.statusBarsPadding(),
+                                    modifier = Modifier.consumeWindowToolbarPaddingCJ(),
                                     state = state,
                                     toolbarState = toolbarState,
                                     items = items,
-                                    titleBarContent = titleBarContent,
                                     updatedScreenWidth = updatedScreenWidth,
                                     component = component,
                                     onIntent = onIntent
@@ -282,15 +271,11 @@ internal fun WorkspacePageContent(
                             }
                             PageContent(
                                 modifier = Modifier
-
                                     .hazeSource(state = hazeState)
                                     .weight(1f)
                                     .fillMaxWidth(),
                                 state = state,
                                 labelsFlow = component.labels,
-                                onSetIsFullMenu = {
-                                    onIntent(Intent.SetIsFullMenu(it))
-                                },
                                 onIntent = {
                                     onIntent(it)
                                 }) {
@@ -346,6 +331,11 @@ internal fun WorkspacePageContent(
                                     }
                                 }
                             }
+                        }
+                        if(isCompactUI()){
+                            CJDraggableArea(
+                                Modifier.fillMaxWidth().height(windowToolbarPadding.dp)
+                            ) {}
                         }
 
                     }

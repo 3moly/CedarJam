@@ -49,6 +49,7 @@ import com.moly3.cedarjam.core.ui.vectors.Tag
 @Composable
 fun NeumorphicButton(
     modifier: Modifier = Modifier,
+    isEnabled: Boolean = true,
     accentColor: Color = LocalAppTheme.current.colors.backgroundPrimary,
     isPressed: Boolean = false,
     buttonShape: Shape = CircleShape, // Dynamic shape
@@ -57,7 +58,7 @@ fun NeumorphicButton(
     pressedColor: Color = Color.Gray,
     unpressedColor: Color = LocalAppTheme.current.colors.icon,
     content: (@Composable BoxScope.() -> Unit)? = null,
-    onClick: () -> Unit = {}
+    onClick: (() -> Unit)? = null
 ) {
 
     val interactionSource = remember { MutableInteractionSource() }
@@ -77,12 +78,14 @@ fun NeumorphicButton(
     val isInspect = LocalInspectionMode.current
     Box(
         modifier = modifier
+
             .size(100.dp)
             .graphicsLayer {
                 shadowElevation = 15f * raised * strength
                 shape = buttonShapeUpdated
                 clip = false
             }
+
             .drawBehind {
                 val centerOffset = Offset(size.width * 0.358f, size.height * 0.293f)
                 val outline = buttonShapeUpdated.createOutline(size, layoutDirection, this)
@@ -118,15 +121,21 @@ fun NeumorphicButton(
                 this.offset = Offset(15f * progress, 15f * progress)
             }
             .clip(buttonShape)
-            .flatClickable(interactionSource) {
-                if (!isInspect) {
-                    if (isPressed) {
-                        KVibrator.vibrateShort()
-                    } else {
-                        KVibrator.vibrateShort()
+            .let {
+                if (onClick != null) {
+                    it.flatClickable(enabled = isEnabled, interactionSource) {
+                        if (!isInspect) {
+                            if (isPressed) {
+                                KVibrator.vibrateShort()
+                            } else {
+                                KVibrator.vibrateShort()
+                            }
+                        }
+                        onClick.invoke()
                     }
+                } else {
+                    it
                 }
-                onClick()
             },
         contentAlignment = Alignment.Center
     ) {

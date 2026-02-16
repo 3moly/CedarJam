@@ -4,19 +4,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalWindowInfo
 import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.extensions.compose.experimental.stack.ChildStack
-import com.moly3.cedarjam.core.ui.JvmWindowScope
 import com.moly3.cedarjam.features.feature_settings.IDialogSettingsComponent
 import com.moly3.cedarjam.features.feature_settings.child.general.ui.SettingsGeneralUI
 import com.moly3.cedarjam.features.feature_settings.child.main.ui.SettingsMainUI
 import com.moly3.cedarjam.features.feature_settings.child.storage.ui.SettingsStorageUI
-import com.moly3.cedarjam.features.feature_settings.child.sync.SettingsSyncComponent
 import com.moly3.cedarjam.features.feature_settings.child.sync.ui.SettingsSyncUI
 import com.moly3.cedarjam.features.feature_settings.child.transparent.ui.SettingsTransparentUI
 import com.moly3.cedarjam.navigation.func.backAnimation2
 
 @OptIn(ExperimentalDecomposeApi::class)
 @Composable
-fun JvmWindowScope.DialogSettingsUI(
+fun DialogSettingsUI(
     component: IDialogSettingsComponent
 ) {
     val windowInfo = LocalWindowInfo.current

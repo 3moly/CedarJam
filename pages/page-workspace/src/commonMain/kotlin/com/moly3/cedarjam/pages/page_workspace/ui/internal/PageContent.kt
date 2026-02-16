@@ -49,7 +49,6 @@ fun PageContent(
     state: State,
     labelsFlow: Flow<Label>,
     onIntent: (Intent) -> Unit,
-    onSetIsFullMenu: (Boolean) -> Unit,
     content: @Composable () -> Unit
 ) {
     val dragAndDropState = LocalDragAndDrop.current

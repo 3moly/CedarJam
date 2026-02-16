@@ -11,7 +11,8 @@ import kotlinx.coroutines.flow.StateFlow
 class HomeComponentImpl(
     componentContext: ComponentContext,
     storeFactory: StoreFactory,
-    private val workspaceSession: WorkspaceSession
+    private val workspaceSession: WorkspaceSession,
+    private val openWorkspaceSettings: (Boolean) -> Unit
 ) : HomeComponent,
     ComponentContext by componentContext {
 
@@ -19,6 +20,7 @@ class HomeComponentImpl(
         HomeStoreFactory(
             workspaceSession = workspaceSession,
             storeFactory = storeFactory,
+            openWorkspaceSettings = openWorkspaceSettings
         ).create(stateKeeper = stateKeeper, lifecycle = lifecycle)
     }
 

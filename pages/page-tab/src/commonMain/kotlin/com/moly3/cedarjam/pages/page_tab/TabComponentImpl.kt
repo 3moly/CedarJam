@@ -76,7 +76,10 @@ class TabComponentImpl(
                     HomeComponentImpl(
                         componentContext = childContext,
                         storeFactory = storeFactory,
-                        workspaceSession = workspaceSession
+                        workspaceSession = workspaceSession,
+                        openWorkspaceSettings = {
+                            openMenu(true)
+                        }
                     )
                 )
 

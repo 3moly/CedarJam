@@ -24,7 +24,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
-import com.arkivanov.decompose.value.Value
 import com.moly3.cedarjam.core.domain.func.getPlatform
 import com.moly3.cedarjam.core.domain.model.Platform
 import com.moly3.cedarjam.core.ui.ToolbarHeight
@@ -33,6 +32,7 @@ import com.moly3.cedarjam.core.ui.func.rememberWindowSize
 import com.moly3.cedarjam.core.ui.model.JvmToolbarState
 import com.moly3.cedarjam.core.ui.model.WindowSize
 import com.moly3.cedarjam.core.ui.onPointerEvent
+import com.moly3.cedarjam.core.ui.uikit.CJDraggableArea
 import com.moly3.cedarjam.core.ui.uikit.CJIcon
 import com.moly3.cedarjam.core.ui.vectors.BarLeft
 import com.moly3.cedarjam.core.ui.vectors.TrashEmpty
@@ -49,77 +49,72 @@ fun TabsToolbarContent(
     items: WorkspaceComponent.Children<*, TabsComponent>,
     updatedScreenWidth: Float?,
     toolbarState: JvmToolbarState,
-    titleBarContent: @Composable (@Composable () -> Unit) -> Unit = {},
     onIntent: (Intent) -> Unit,
     component: WorkspaceComponent
 ) {
     val windowSize by rememberWindowSize()
     val density = LocalDensity.current.density
-    titleBarContent {
-        val menuWidth = remember(state.menuWidth, state.isMenuOpened) {
-            if (state.isMenuOpened) {
-                state.menuWidth.dp
-            } else {
+    val menuWidth = remember(state.menuWidth, state.isMenuOpened) {
+        if (state.isMenuOpened) {
+            state.menuWidth.dp
+        } else {
+            45.dp
+        }
+    }
+    val menuWidthCustomEnd = remember(
+        menuWidth,
+        toolbarState
+    ) {
+        if (toolbarState.isFirstCut) {
+            (menuWidth - toolbarState.controlsWidthToCut).coerceAtLeast(
                 45.dp
-            }
+            )
+        } else {
+            menuWidth
         }
-        val menuWidthCustomEnd = remember(
-            menuWidth,
-            toolbarState
-        ) {
+    }
+    val controlsToCut =
+        remember(toolbarState, menuWidth, menuWidthCustomEnd) {
             if (toolbarState.isFirstCut) {
-                (menuWidth - toolbarState.controlsWidthToCut).coerceAtLeast(
-                    45.dp
-                )
+                if (menuWidthCustomEnd == 45.dp) {
+                    //toolbarState.menuButtonsWidth
+                    toolbarState.controlsWidthToCut + menuWidthCustomEnd - menuWidth
+                } else {
+                    0.dp
+                }
             } else {
-                menuWidth
+                toolbarState.controlsWidthToCut
             }
         }
-        val controlsToCut =
-            remember(toolbarState, menuWidth, menuWidthCustomEnd) {
-                if (toolbarState.isFirstCut) {
-                    if (menuWidthCustomEnd == 45.dp) {
-                        //toolbarState.menuButtonsWidth
-                        toolbarState.controlsWidthToCut + menuWidthCustomEnd - menuWidth
-                    } else {
-                        0.dp
-                    }
-                } else {
-                    toolbarState.controlsWidthToCut
-                }
-            }
-        val lastWeightToCut = remember(
-            updatedScreenWidth,
-            menuWidth,
-            state.tabSizes,
-            controlsToCut,
-            density
-        ) {
-            if (updatedScreenWidth == null || state.tabSizes.isEmpty()) {
+    val lastWeightToCut = remember(
+        updatedScreenWidth,
+        menuWidth,
+        state.tabSizes,
+        controlsToCut,
+        density
+    ) {
+        if (updatedScreenWidth == null || state.tabSizes.isEmpty()) {
+            0f
+        } else {
+            val availableWidth =
+                updatedScreenWidth!! - menuWidth.value
+            val totalWeight = state.tabSizes.map { b -> b.value }
+                .sumOf { it.toDouble() }.toFloat()
+            val widthPerWeightUnit = availableWidth / totalWeight
+            if (widthPerWeightUnit > 0) {
+                controlsToCut.value * density / widthPerWeightUnit
+            } else {
                 0f
-            } else {
-                val availableWidth =
-                    updatedScreenWidth!! - menuWidth.value
-                val totalWeight = state.tabSizes.map { b -> b.value }
-                    .sumOf { it.toDouble() }.toFloat()
-                val widthPerWeightUnit = availableWidth / totalWeight
-                if (widthPerWeightUnit > 0) {
-                    controlsToCut.value * density / widthPerWeightUnit
-                } else {
-                    0f
-                }
             }
         }
-        Box(
-            modifier
-                .height(ToolbarHeight.dp)
-                .fillMaxWidth()
-        ) {
+    }
+
+    CJDraggableArea(modifier = modifier.then(toolbarState.modifier).height(ToolbarHeight.dp)) {
+        Box(Modifier.fillMaxWidth()) {
             Row(
                 Modifier.fillMaxSize(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-
                 Box(
                     Modifier.fillMaxHeight().let {
                         if (windowSize != WindowSize.Compact) {
@@ -140,12 +135,12 @@ fun TabsToolbarContent(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         if (state.isMenuOpened) {
-                            CJIcon(
-                                painter = rememberVectorPainter(TrashEmpty),
-                                onClick = {
-                                    onIntent(Intent.Sync)
-                                }
-                            )
+//                            CJIcon(
+//                                painter = rememberVectorPainter(TrashEmpty),
+//                                onClick = {
+//                                    onIntent(Intent.Sync)
+//                                }
+//                            )
                             Box(Modifier.weight(1f))
                         }
                         CJIcon(

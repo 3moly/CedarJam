@@ -1,10 +1,15 @@
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -28,10 +33,11 @@ import com.badoo.reaktive.coroutinesinterop.asScheduler
 import com.badoo.reaktive.scheduler.overrideSchedulers
 import com.moly3.cedarjam.core.domain.DefaultJson
 import com.moly3.cedarjam.core.domain.model.AndroidApplicationContext
-import com.moly3.cedarjam.core.domain.repository.IFilesRepository
-import com.moly3.cedarjam.core.storage.ISystemFilesManager
 import com.moly3.cedarjam.core.ui.ToolbarHeight
+import com.moly3.cedarjam.core.ui.compositions.LocalDecoratedWindowScope
 import com.moly3.cedarjam.core.ui.compositions.LocalJvmToolbarState
+import com.moly3.cedarjam.core.ui.func.bottomNavigationBarPadding
+import com.moly3.cedarjam.core.ui.func.topStatusBarPadding
 import com.moly3.cedarjam.core.ui.model.JvmToolbarState
 import com.moly3.cedarjam.core.ui.vectors.Tag
 import com.moly3.cedarjam.di.initApp
@@ -39,7 +45,6 @@ import com.moly3.cedarjam.navigation.Root
 import com.moly3.cedarjam.navigation.createRootComponentSafe
 import com.moly3.cedarjam.navigation.ui.ActualPredictiveBackGestureOverlay
 import com.moly3.cedarjam.ui.MainApp
-import com.moly3.cedarjam.ui.NestedSharedBoundsSample
 import dev.datlag.kcef.KCEF
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.filesDir
@@ -60,7 +65,6 @@ import org.jetbrains.jewel.window.styling.TitleBarColors
 import org.jetbrains.jewel.window.styling.TitleBarMetrics
 import org.jetbrains.jewel.window.styling.TitleBarStyle
 import org.jetbrains.jewel.window.utils.DesktopPlatform
-import org.koin.mp.KoinPlatform.getKoin
 import java.io.File
 
 
@@ -85,28 +89,9 @@ private const val SAVED_STATE_FILE_NAME = "saved_state.dat"
 
 @OptIn(
     ExperimentalComposeUiApi::class, ExperimentalJewelApi::class,
-    ExperimentalDecomposeApi::class
+    ExperimentalDecomposeApi::class, ExperimentalFoundationApi::class
 )
 fun main() {
-    //ComposeStabilityAnalyzer.setEnabled(false)
-//    ComposeStabilityAnalyzer.setLogger(object : RecompositionLogger {
-//        override fun log(event: RecompositionEvent) {
-//            if (false) {
-////                if (event.tag in tagsToLog || event.tag.isEmpty()) {
-////                    // Example: Send to Firebase Analytics only log events with specific tags
-////                    FirebaseAnalytics.getInstance(this).logEvent("excessive_recomposition") {
-////                        param("tag", event.tag)
-////                        param("composable", event.composableName)
-////                        param("count", event.recompositionCount)
-////                        param("unstable_params", event.unstableParameters.joinToString())
-////                    }
-////                }
-//            } else {
-//                // Log everything on the debug mode
-//                //Logger.e{event.toString()}
-//            }
-//        }
-//    })
     overrideSchedulers(main = Dispatchers.Main::asScheduler)
 
     initApp(AndroidApplicationContext())
@@ -126,7 +111,6 @@ fun main() {
             Logger.e(exc.message ?: "")
         }
     }
-    //val textMeasurementExecutor = Executors.newSingleThreadExecutor()
     val root: Root = runOnUiThread {
         createRootComponentSafe(
             lifecycle = lifecycle,
@@ -143,33 +127,8 @@ fun main() {
             }
         )
     }
-//    addTempDirectoryRemovalHook()
-//    Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
-//        val errorMessage = "💥 Uncaught exception in thread ${thread.name}: ${throwable.message}"
-//        root.messageService.sendMessage(throwable.toString())
-//        println(errorMessage)
-//        throwable.printStackTrace()
-//        // You can also log to file or show a UI dialog here
-//    }
-    //LocalWindowExceptionHandlerFactory provides WindowExceptionHandlerFactory { window ->
-    //                WindowExceptionHandler { ex ->
-    //                    root.messageService.sendMessage(ex.toString())
-    ////                    ex.
-    ////                    lastException = ex
-    ////                    exitApplication()
-    //                }
-    //            }
-//        val fontFamily = FontFamily(listOf(font))
-    //                    if (!isFullScreenMode) {
-//                        MacWindowControls(windowState = state, onClose = {
-//                            exitApplication()
-//                        })
-//                    }
-
     application {
-        System.setProperty("apple.awt.application.name", "Kotlin Explorer")
-//        enableNewSwingCompositing()
-
+        System.setProperty("apple.awt.application.name", "CedarJam")
         val trayState = rememberTrayState()
         Tray(
             icon = rememberVectorPainter(Tag),
@@ -178,12 +137,8 @@ fun main() {
                 Item("Quit App", onClick = ::exitApplication)
             }
         )
-
-        //val screenSize: Dimension = Toolkit.getDefaultToolkit().screenSize
-
         val windowState = rememberWindowState(
             placement = WindowPlacement.Floating,
-            //size = DpSize(screenSize.width.dp, screenSize.height.dp),
             position = androidx.compose.ui.window.WindowPosition(0.dp, 0.dp)
         )
 
@@ -227,7 +182,7 @@ fun main() {
                                 .padding(start = 70.dp)
                                 .padding(end = 70.dp)
 
-                            DesktopPlatform.MacOS -> Modifier.padding(horizontal = padding)
+                            DesktopPlatform.MacOS -> Modifier.padding(start = padding*2)
                             DesktopPlatform.Unknown -> Modifier
                         }
                         val isStartCut = when (DesktopPlatform.Current) {
@@ -256,26 +211,31 @@ fun main() {
                         }
                     }
 
-                    CompositionLocalProvider(LocalJvmToolbarState provides toolbarState) {
+                    CompositionLocalProvider(
+                        LocalDecoratedWindowScope provides this,
+                        LocalJvmToolbarState provides toolbarState
+                    ) {
                         ActualPredictiveBackGestureOverlay(
                             backDispatcher = backDispatcher,
                             modifier = Modifier
                         ) {
-                            MainApp(root = root) { titleBarContent ->
-                                TitleBar(Modifier) { state ->
-                                    Box(Modifier.then(toolbarState.modifier).fillMaxSize()) {
-                                        titleBarContent(
-//                                        ToolbarState(
-//                                            isFullscreen = state.isFullscreen,
-//                                            menuButtonsWidth = toolbarState.controlsWidthToCut,
-//                                            isFirstCut = toolbarState.isFirstCut,
-//                                            controlsWidthToCut = toolbarState.endControlsWidth
-//                                        )
-                                        )
-                                    }
+                            TitleBar(Modifier) { state ->
+                                Box(Modifier.then(toolbarState.modifier).fillMaxSize()) {
                                 }
                             }
-                            //NestedSharedBoundsSample()
+                            MainApp(root = root)
+                            Box(Modifier.fillMaxSize()) {
+                                Box(
+                                    Modifier.align(Alignment.TopCenter)
+                                        .height(topStatusBarPadding.dp).fillMaxWidth()
+                                        .background(Color.Red.copy(alpha = 0.3f))
+                                )
+                                Box(
+                                    Modifier.align(Alignment.BottomCenter)
+                                        .height(bottomNavigationBarPadding.dp).fillMaxWidth()
+                                        .background(Color.Black.copy(alpha = 0.3f))
+                                )
+                            }
                         }
                     }
                 }

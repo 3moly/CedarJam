@@ -16,18 +16,14 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.moly3.cedarjam.core.domain.model.AppColorsData
 import com.moly3.cedarjam.core.domain.model.ColorsType
-import com.moly3.cedarjam.core.domain.model.settings.AppSettings
 import com.moly3.cedarjam.core.domain.model.settings.WorkspaceSettings
-import com.moly3.cedarjam.core.ui.JvmWindowScope
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalSystemDensity
-import com.moly3.cedarjam.core.ui.uikit.CJApplicationTheme
 import com.moly3.cedarjam.core.ui.uikit.CJDraggableArea
 import com.moly3.cedarjam.core.ui.uikit.CJSlider
 import com.moly3.cedarjam.core.ui.uikit.CJText
@@ -41,7 +37,6 @@ import com.moly3.cedarjam.ui.Res
 import com.moly3.cedarjam.ui.dark
 import com.moly3.cedarjam.ui.f_settings_general_appearance
 import com.moly3.cedarjam.ui.f_settings_general_title
-import com.moly3.cedarjam.ui.f_settings_options
 import com.moly3.cedarjam.ui.language
 import com.moly3.cedarjam.ui.light
 import com.moly3.cedarjam.ui.theme
@@ -53,25 +48,22 @@ import org.jetbrains.compose.resources.stringResource
 
 @OptIn(FlowPreview::class)
 @Composable
-internal fun JvmWindowScope.SettingsGeneralUIContent(
+internal fun SettingsGeneralUIContent(
     settings: WorkspaceSettings,
     onIntent: (Intent) -> Unit
 ) {
-
     SettingsContent {
-        Box {
-            CJDraggableArea {
-                CJToolbar(
-                    title = stringResource(Res.string.f_settings_general_title),
-                    onBack = {
-                        onIntent(Intent.Back)
-                    },
-                    onClose = {
-                        onIntent(Intent.Close)
-                    }
-                )
-            }
-        }
+        CJDraggableArea(modifier = Modifier, {
+            CJToolbar(
+                title = stringResource(Res.string.f_settings_general_title),
+                onBack = {
+                    onIntent(Intent.Back)
+                },
+                onClose = {
+                    onIntent(Intent.Close)
+                }
+            )
+        })
         Column(
             Modifier
                 .weight(1f)

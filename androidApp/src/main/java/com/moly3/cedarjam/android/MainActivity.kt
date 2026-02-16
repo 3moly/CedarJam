@@ -16,7 +16,6 @@ import com.arkivanov.essenty.statekeeper.StateKeeperDispatcher
 import com.moly3.cedarjam.navigation.createRootComponentSafe
 import com.moly3.cedarjam.ui.MainApp
 import com.moly3.cedarjam.core.domain.DefaultJson
-import com.moly3.cedarjam.navigation.RootComponent
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.dialogs.init
 import io.github.vinceglb.filekit.filesDir

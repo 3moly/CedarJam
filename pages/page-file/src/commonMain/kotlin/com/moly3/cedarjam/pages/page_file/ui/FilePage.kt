@@ -24,6 +24,7 @@ import kotlinx.collections.immutable.persistentListOf
 fun FilePage(component: FileComponent) {
     val state = component.state.collectAsState().value
     var isPressed by remember { mutableStateOf(false) }
+    var isIOPressed by remember { mutableStateOf(false) }
     ContentNearGraphUI(
         mainContent = {
             val dialogSlot by component.dialogCanvasSlot.subscribeAsState()
@@ -71,10 +72,14 @@ fun FilePage(component: FileComponent) {
             }
 
             FileMenuContent(
-                modifier = Modifier.safeDrawingPadding() .fillMaxSize(),
+                modifier = Modifier.safeDrawingPadding().fillMaxSize(),
+                isIOSwitchPressed = isIOPressed,
                 isOpenedMenu = isPressed,
                 openWorkspaceSettings = {
                     component.onIntent(Intent.OpenWorkspaceSettings)
+                },
+                onIOClick = {
+                    isIOPressed=!isIOPressed
                 },
                 onClick = {
                     isPressed = !isPressed

@@ -20,9 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.moly3.cedarjam.core.domain.model.UIState
-import com.moly3.cedarjam.core.ui.JvmWindowScope
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
-import com.moly3.cedarjam.core.ui.model.CJText
 import com.moly3.cedarjam.core.ui.uikit.CJCircularProgressIndicator
 import com.moly3.cedarjam.core.ui.uikit.CJDraggableArea
 import com.moly3.cedarjam.core.ui.uikit.CJText
@@ -36,21 +34,19 @@ import com.moly3.cedarjam.ui.f_settings_general_title
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
-fun JvmWindowScope.SettingsSyncUI(component: ISettingsSyncComponent) {
+fun SettingsSyncUI(component: ISettingsSyncComponent) {
     val state by component.state.collectAsState()
     SettingsContent {
-        Box {
-            CJDraggableArea {
-                CJToolbar(
-                    title = stringResource(Res.string.f_settings_general_title),
-                    onBack = {
-                        component.onIntent(Intent.Back)
-                    },
-                    onClose = {
-                        component.onIntent(Intent.Close)
-                    }
-                )
-            }
+        CJDraggableArea {
+            CJToolbar(
+                title = stringResource(Res.string.f_settings_general_title),
+                onBack = {
+                    component.onIntent(Intent.Back)
+                },
+                onClose = {
+                    component.onIntent(Intent.Close)
+                }
+            )
         }
         Box(
             Modifier

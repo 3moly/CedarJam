@@ -7,24 +7,20 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.Dp
 import coil3.ImageLoader
 import coil3.compose.LocalPlatformContext
 import coil3.disk.DiskCache
 import coil3.memory.MemoryCache
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
-import com.moly3.cedarjam.core.ui.JvmWindowScope
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalImageLoader
+import com.moly3.cedarjam.core.ui.func.imePaddingCJ
 import com.moly3.cedarjam.core.ui.uikit.CJWorkspaceTheme
 import com.moly3.cedarjam.features.feature_settings.ui.DialogSettingsUI
 import com.moly3.cedarjam.pages.page_workspace.WorkspaceComponent
@@ -33,10 +29,7 @@ import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class)
 @Composable
-fun JvmWindowScope.WorkspacePage(
-    component: WorkspaceComponent,
-    titleBarContent: @Composable (@Composable () -> Unit) -> Unit = {}
-) {
+fun WorkspacePage(component: WorkspaceComponent) {
     val state by component.state.collectAsState()
     val context = LocalPlatformContext.current
     val imageLoader = remember {
@@ -60,15 +53,12 @@ fun JvmWindowScope.WorkspacePage(
             Box(
                 Modifier
                     .background(LocalAppTheme.current.colors.backgroundPrimary)
-                    .imePadding()
+                    .imePaddingCJ()
             ) {
                 WorkspacePageContent(
                     component = component,
                     state = state,
-                    onIntent = {
-                        component.onIntent(it)
-                    },
-                    titleBarContent = titleBarContent
+                    onIntent = { component.onIntent(it) }
                 )
             }
 

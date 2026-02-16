@@ -1,5 +1,6 @@
 package com.moly3.cedarjam.pages.page_workspace
 
+import androidx.compose.runtime.Stable
 import androidx.compose.ui.geometry.Offset
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.IndexFileDto
@@ -25,6 +26,7 @@ import kotlinx.collections.immutable.toPersistentMap
 import kotlinx.collections.immutable.toPersistentSet
 import kotlinx.serialization.Serializable
 
+@Stable
 data class State(
     val isMenuOpened: Boolean = false,
     val activeTabsIndex: Int = 0,

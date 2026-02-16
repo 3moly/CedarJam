@@ -3,6 +3,7 @@ package com.moly3.cedarjam.pages.page_home.ui
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberCoroutineScope
+import com.moly3.cedarjam.core.ui.uikit.JustMenuContent
 import com.moly3.cedarjam.pages.page_home.HomeComponent
 import com.moly3.cedarjam.pages.page_home.ui.internal.PageContent
 import kotlinx.coroutines.Dispatchers

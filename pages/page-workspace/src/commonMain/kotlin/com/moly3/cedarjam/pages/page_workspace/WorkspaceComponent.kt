@@ -1,6 +1,7 @@
 package com.moly3.cedarjam.pages.page_workspace
 
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.Stable
 import com.arkivanov.decompose.Child
 import com.arkivanov.decompose.router.slot.ChildSlot
 import com.arkivanov.decompose.value.Value
@@ -29,6 +30,7 @@ interface WorkspaceComponent {
     fun setActiveTabs(component: Any)
     fun getActiveTabsIndex(item: Any): Int
 
+    @Stable
     class Children<out C : Any, out T : Any>(
         val items: List<Child.Created<C, T>>,
     )

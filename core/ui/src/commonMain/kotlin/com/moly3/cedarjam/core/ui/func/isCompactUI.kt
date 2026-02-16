@@ -1,19 +1,22 @@
 package com.moly3.cedarjam.core.ui.func
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import com.moly3.cedarjam.core.domain.func.getPlatform
 import com.moly3.cedarjam.core.domain.model.Platform
+import com.moly3.cedarjam.core.ui.model.WindowSize
 
 @Composable
 fun isCompactUI(): Boolean {
-//    val windowSize = rememberWindowSize()
-    return remember {
+    val windowSize by rememberWindowSize()
+    return remember(windowSize) {
         when (getPlatform()) {
             Platform.Android,
             Platform.Ios -> true
+
             Platform.Jvm,
-            Platform.Wasm -> false
+            Platform.Wasm -> windowSize == WindowSize.Compact
         }
     }
 }

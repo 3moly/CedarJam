@@ -8,10 +8,12 @@ import androidx.compose.ui.Modifier
 
 @Composable
 fun Modifier.flatClickable(
+    enabled: Boolean = true,
     interactionSource: MutableInteractionSource? = null,
     onClick: () -> Unit = {}
 ): Modifier {
     return this.clickable(
+        enabled = enabled,
         indication = null, // This removes the ripple effect
         interactionSource = interactionSource
     ) {

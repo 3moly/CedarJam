@@ -1,7 +1,7 @@
 package com.moly3.cedarjam.core.ui.uikit
 
 import androidx.compose.runtime.Composable
-import com.moly3.cedarjam.core.ui.JvmWindowScope
+import androidx.compose.ui.Modifier
 
 @Composable
-expect fun JvmWindowScope.CJDraggableArea(content: @Composable () -> Unit)
+expect fun CJDraggableArea(modifier: Modifier = Modifier, content: @Composable () -> Unit)

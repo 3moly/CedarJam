@@ -14,11 +14,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -38,30 +35,33 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.moly3.cedarjam.core.domain.func.getPlatform
 import com.moly3.cedarjam.core.domain.model.Platform
-import com.moly3.cedarjam.core.ui.JvmWindowScope
+import com.moly3.cedarjam.core.ui.func.imePaddingCJ
+import com.moly3.cedarjam.core.ui.func.navigationBarsPaddingCJ
 import com.moly3.cedarjam.pages.page_select_workspace.ISelectWorkspaceComponent
 import com.moly3.cedarjam.pages.page_select_workspace.Intent
 import com.moly3.cedarjam.pages.page_select_workspace.State
 import com.moly3.cedarjam.core.ui.func.rememberWindowSize
-import com.moly3.cedarjam.core.ui.model.CJText
+import com.moly3.cedarjam.core.ui.func.statusBarsPaddingCJ
+import com.moly3.cedarjam.core.ui.func.windowToolbarPadding
 import com.moly3.cedarjam.core.ui.model.WindowSize
 import com.moly3.cedarjam.core.ui.uikit.CJButton
+import com.moly3.cedarjam.core.ui.uikit.CJDraggableArea
 import com.moly3.cedarjam.core.ui.uikit.CJText
 import com.moly3.cedarjam.core.ui.uikit.UIStateContentLazy
 import com.moly3.cedarjam.core.ui.uikit.UIStateContentNoBox
 import com.moly3.cedarjam.core.ui.vectors.SettingsFuture
 
 @Composable
-fun JvmWindowScope.SelectWorkspacePage(component: ISelectWorkspaceComponent) {
+fun SelectWorkspacePage(component: ISelectWorkspaceComponent) {
     val state by component.state.collectAsState(State())
     val windowSize by rememberWindowSize()
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFF0F1F17))
-            .statusBarsPadding()
-            .navigationBarsPadding()
-            .imePadding()
+            .statusBarsPaddingCJ()
+            .navigationBarsPaddingCJ()
+            .imePaddingCJ()
     ) {
         val screenHeight = maxHeight
         val titleOffset = screenHeight * when (windowSize) {
@@ -221,6 +221,7 @@ fun JvmWindowScope.SelectWorkspacePage(component: ISelectWorkspaceComponent) {
                     color = Color(0xFFA5D6A7)
                 )
             }
+            CJDraggableArea(modifier = Modifier.height(windowToolbarPadding.dp).fillMaxWidth()) { }
         }
     }
 }

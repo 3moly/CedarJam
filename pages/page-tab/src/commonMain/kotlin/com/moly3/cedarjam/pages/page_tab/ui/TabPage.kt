@@ -95,9 +95,9 @@ fun TabPage(component: TabComponent) {
             )
         }
     }
-//    val windowSize by rememberWindowSize()
     Column(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
             .background(LocalAppTheme.current.colors.backgroundSecondary)
     ) {
         if (!isCompactUI()) {

@@ -22,9 +22,7 @@ import androidx.compose.ui.unit.sp
 import com.moly3.cedarjam.core.domain.func.formatFileSize
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.UIState
-import com.moly3.cedarjam.core.ui.JvmWindowScope
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
-import com.moly3.cedarjam.core.ui.model.CJText
 import com.moly3.cedarjam.core.ui.uikit.CJDraggableArea
 import com.moly3.cedarjam.core.ui.uikit.CJText
 import com.moly3.cedarjam.core.ui.uikit.CJToolbar
@@ -38,21 +36,19 @@ import com.moly3.cedarjam.ui.f_settings_general_title
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
-fun JvmWindowScope.SettingsStorageUI(component: ISettingsStorageComponent) {
+fun SettingsStorageUI(component: ISettingsStorageComponent) {
     val state by component.state.collectAsState()
     SettingsContent {
-        Box {
-            CJDraggableArea {
-                CJToolbar(
-                    title = stringResource(Res.string.f_settings_general_title),
-                    onBack = {
-                        component.onIntent(Intent.Back)
-                    },
-                    onClose = {
-                        component.onIntent(Intent.Close)
-                    }
-                )
-            }
+        CJDraggableArea {
+            CJToolbar(
+                title = stringResource(Res.string.f_settings_general_title),
+                onBack = {
+                    component.onIntent(Intent.Back)
+                },
+                onClose = {
+                    component.onIntent(Intent.Close)
+                }
+            )
         }
         Column(
             Modifier.weight(1f).fillMaxWidth().padding(12.dp).verticalScroll(rememberScrollState())

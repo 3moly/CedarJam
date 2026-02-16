@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -22,7 +23,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.mohamedrejeb.compose.dnd.DragAndDropState
 import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.pages.page_workspace.Intent
@@ -32,12 +35,19 @@ import com.moly3.cedarjam.core.ui.model.PageNameData
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalHazeState
 import com.moly3.cedarjam.core.ui.compositions.LocalHazeStyle
+import com.moly3.cedarjam.core.ui.func.isCompactUI
+import com.moly3.cedarjam.core.ui.func.navigationBarsPaddingCJ
+import com.moly3.cedarjam.core.ui.func.statusBarsPaddingCJ
+import com.moly3.cedarjam.core.ui.func.windowToolbarPaddingCJ
+import com.moly3.cedarjam.core.ui.func.wstatusBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.model.CJText
 import com.moly3.cedarjam.core.ui.model.FileTreeItemPresentation
 import com.moly3.cedarjam.core.ui.uikit.CJButton
 import com.moly3.cedarjam.core.ui.uikit.CJText
+import com.moly3.cedarjam.core.ui.uikit.NeumorphicButton
 import com.moly3.cedarjam.core.ui.uikit.UIStateContentNoBox
 import com.moly3.cedarjam.core.ui.volumedBorderStroke
+import com.moly3.cedarjam.navigation.ui.BarLeft
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.hazeSource
@@ -51,9 +61,14 @@ internal fun MenuContent(
     state: State,
     listState: LazyListState,
     dragAndDropState: DragAndDropState<FileTreeItemPresentation>,
-    onIntent: (Intent) -> Unit
+    onIntent: (Intent) -> Unit,
 ) {
-    Box(modifier = modifier.background(LocalAppTheme.current.colors.backgroundPrimary).navigationBarsPadding()) {
+    Box(
+        modifier = modifier
+            .background(LocalAppTheme.current.colors.backgroundPrimary)
+            .wstatusBarsPaddingCJ()
+            .navigationBarsPaddingCJ()
+    ) {
         Box(Modifier.fillMaxSize().hazeSource(hazeState)) {
             Box(
                 Modifier.fillMaxSize()
@@ -140,26 +155,40 @@ internal fun MenuContent(
                         }
                     }
                 }
-                val toDownload = when(val sync = state.syncStatus){
+                val toDownload = when (val sync = state.syncStatus) {
                     is UIState.Error<*> -> 0
                     UIState.Loading -> 0
                     is UIState.Success -> sync.data.toDownload.size
                 }
-                val toUpload = when(val sync = state.syncStatus){
+                val toUpload = when (val sync = state.syncStatus) {
                     is UIState.Error<*> -> 0
                     UIState.Loading -> 0
                     is UIState.Success -> sync.data.toUpload.size
                 }
-                WorkspaceSelect(
-                    activeWorkspace = state.activeWorkspace,
-                    onChangeWorkspace = {
-                        onIntent(Intent.SelectWorkspace)
-                    },
-                    toDownload = toDownload,
-                    toUpload = toUpload,
-                    onChangeSettings = {
-                        onIntent(Intent.OpenSettings)
-                    })
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    if (isCompactUI()) {
+                        NeumorphicButton(
+                            modifier = Modifier.padding(start = 4.dp).size(48.dp),
+                            painter = rememberVectorPainter(BarLeft)
+                        ) {
+                            onIntent(Intent.SetIsFullMenu(!state.isMenuOpened))
+                        }
+                    }
+                    WorkspaceSelect(
+                        modifier = Modifier.weight(1f),
+                        activeWorkspace = state.activeWorkspace,
+                        onChangeWorkspace = {
+                            onIntent(Intent.SelectWorkspace)
+                        },
+                        toDownload = toDownload,
+                        toUpload = toUpload,
+                        onChangeSettings = {
+                            onIntent(Intent.OpenSettings)
+                        })
+                }
             }
         }
     }
