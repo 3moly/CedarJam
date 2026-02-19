@@ -37,6 +37,7 @@ kotlin {
             linkerOpts("-lsqlite3")
         }
     }
+    
     sourceSets {
         val commonMain by getting {
             dependencies {

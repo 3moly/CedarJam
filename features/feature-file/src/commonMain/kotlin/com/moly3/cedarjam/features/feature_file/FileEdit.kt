@@ -1,10 +1,15 @@
 package com.moly3.cedarjam.features.feature_file
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
@@ -16,27 +21,25 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextLayoutResult
-import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.moly3.cedarjam.core.domain.io
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
+import com.moly3.cedarjam.core.ui.func.navigationBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.uikit.CJText
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.launchIn
 
 @OptIn(FlowPreview::class)
 @Composable
@@ -76,7 +79,7 @@ fun FileEdit(
     val lineNumbers = remember {
         mutableStateOf("")
     }
-    if(true){
+    if (true) {
         LaunchedEffect(Unit) {
             snapshotFlow {
                 textEdit.value to textLayoutResult
@@ -147,11 +150,12 @@ fun FileEdit(
         )
     )
 
-    Row(
+    Column(
         modifier = modifier
             .fillMaxSize()
             //.background(Color(0xFF1E1E1E))
             .padding(horizontal = (horizontalPadding * zoom).dp)
+            .navigationBarsPaddingCJ()
     ) {
         Row(modifier = Modifier.fillMaxHeight().weight(1f)) {
             CJText(
@@ -167,7 +171,6 @@ fun FileEdit(
                 modifier = Modifier
                     .focusRequester(focusRequester)
                     .weight(1f)
-                    .fillMaxHeight()
                     .verticalScroll(scrollState),
                 value = textEdit.value,
                 textStyle = editorTextStyle,
@@ -179,7 +182,10 @@ fun FileEdit(
                 onTextLayout = { layoutResult ->
                     textLayoutResult = layoutResult
                 },
-                cursorBrush = SolidColor(appTheme.primaryColor)
+                cursorBrush = SolidColor(appTheme.primaryColor),
+                decorationBox = {
+                    it()
+                }
             )
         }
     }

@@ -31,7 +31,6 @@ fun WorkspaceSelect(
     toDownload: Int,
     activeWorkspace: WorkspacePresentation?,
     onChangeWorkspace: () -> Unit,
-    onChangeSettings: () -> Unit,
 ) {
     Row(
         modifier = modifier
@@ -70,11 +69,11 @@ fun WorkspaceSelect(
                 CJText(text = toDownload.toString())
             }
         }
-        CJIcon(
-            modifier = Modifier.padding(top = 4.dp, end = 4.dp, bottom = 4.dp),
-            painter = rememberVectorPainter(SettingsFuture),
-            isEnabled = true,
-            onClick = onChangeSettings
-        )
+//        CJIcon(
+//            modifier = Modifier.padding(top = 4.dp, end = 4.dp, bottom = 4.dp),
+//            painter = rememberVectorPainter(SettingsFuture),
+//            isEnabled = true,
+//            onClick = onChangeSettings
+//        )
     }
 }

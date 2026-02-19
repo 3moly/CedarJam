@@ -41,7 +41,7 @@ fun <Input, Result> CJDialogGeneric(
             val appTheme = LocalAppTheme.current
             ModalBottomSheet(
                 sheetState = state.sheetState,
-                sheetMaxWidth = 300.dp,
+                sheetMaxWidth = 400.dp,
                 containerColor = appTheme.colors.backgroundSecondary,
                 onDismissRequest = {
                     scope.launch {

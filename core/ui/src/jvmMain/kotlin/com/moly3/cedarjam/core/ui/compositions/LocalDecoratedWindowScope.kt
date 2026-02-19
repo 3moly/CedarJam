@@ -1,8 +1,8 @@
 package com.moly3.cedarjam.core.ui.compositions
 
 import androidx.compose.runtime.staticCompositionLocalOf
-import org.jetbrains.jewel.window.DecoratedWindowScope
+import androidx.compose.ui.window.FrameWindowScope
 
-val LocalDecoratedWindowScope = staticCompositionLocalOf<DecoratedWindowScope> {
+val LocalDecoratedWindowScope = staticCompositionLocalOf<FrameWindowScope> {
     error("DecoratedWindowScope not provided")
 }

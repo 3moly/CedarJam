@@ -21,6 +21,7 @@ import com.moly3.cedarjam.core.domain.model.canvas.CanvasDataWithErrors
 import com.moly3.cedarjam.core.storage.func.calculateFileHash
 import com.moly3.cedarjam.core.storage.func.setLastWriteTimeUtc
 import io.github.vinceglb.filekit.FileKit
+import io.github.vinceglb.filekit.filesDir
 import io.github.vinceglb.filekit.utils.toPath
 import kotlinx.io.buffered
 import kotlinx.io.files.FileNotFoundException
@@ -61,6 +62,14 @@ internal class SystemFilesManager : ISystemFilesManager {
                 raise(exc.toString())
             }
         }
+    }
+
+    override fun appWorkspacesDir(): IPathWrapper {
+        val firstPart = FileKit.filesDir.toString()
+        return pathWrapper(
+            firstPart,
+            "workspaces"
+        )
     }
 
     override fun toAbsoluteAppPath(relativePath: IPathWrapper): IPathWrapper {

@@ -47,16 +47,16 @@ internal fun PageContent(
                     onIntent(Intent.SetSearchText(it))
                 }
             )
-            UIStateContentNoBox(state = state.allNodes) {
-                val associated = it
-                    .sortedBy { d -> d.getRelativePath() }
-                    .associateBy { d -> d.getRelativePath() }
-                Column {
-                    for (item in associated) {
-                        CJText(text = "node: ${item.key}")
-                    }
-                }
-            }
+//            UIStateContentNoBox(state = state.allNodes) {
+//                val associated = it
+//                    .sortedBy { d -> d.getRelativePath() }
+//                    .associateBy { d -> d.getRelativePath() }
+//                Column {
+//                    for (item in associated) {
+//                        CJText(text = "node: ${item.key}")
+//                    }
+//                }
+//            }
             UIStateContentNoBox(state = state.timeMachinesState) { timeMachines ->
                 Row(Modifier) {
                     CJText(text = "Results: ${timeMachines.size}")

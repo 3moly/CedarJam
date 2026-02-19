@@ -51,18 +51,23 @@ kotlin {
             api(libs.localina)
             api(libs.liquid)
             api(libs.zoomimage.compose.coil3)
+            implementation("com.shakster:gifkt:0.3.1")
+//            implementation("com.shakster:gifkt-compose:0.3.1") {
+//                exclude("com.shakster.gifkt","gifkt-android")
+//                exclude group: "com.shakster", module: "gifkt-android"
+//            }
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
         jvmMain.dependencies {
-            api(libs.jewel.decorated.window)
+//            api(libs.jewel.decorated.window)
             implementation(libs.pdfbox)
-            api(libs.pdfmp.compose)
+
         }
         androidMain.dependencies {
-            api(libs.pdfmp.compose)
             implementation(libs.compose.ui.tooling)
+//            implementation("com.shakster:gifkt-compose-android:0.3.1")
         }
         iosMain.dependencies {
 

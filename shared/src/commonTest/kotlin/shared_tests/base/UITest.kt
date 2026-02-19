@@ -1,5 +1,6 @@
 package shared_tests.base
 
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.runComposeUiTest
@@ -17,6 +18,7 @@ import com.moly3.cedarjam.navigation.RootComponent
 import com.moly3.cedarjam.ui.MainApp
 import com.moly3.cedarjam.core.domain.func.runBlocking
 import com.moly3.cedarjam.core.storage.func.init
+import com.moly3.cedarjam.core.ui.compositions.LocalUITestScope
 import com.moly3.cedarjam.pages.page_tab.TabComponent
 import com.moly3.cedarjam.pages.page_tabs.TabsComponent
 import com.moly3.cedarjam.pages.page_workspace.WorkspaceComponent
@@ -28,7 +30,6 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
 import org.koin.core.context.stopKoin
 import org.koin.mp.KoinPlatformTools
-import shared_tests.ui.JvmScopeCover
 import kotlin.test.BeforeTest
 
 @OptIn(ExperimentalTestApi::class)
@@ -138,7 +139,7 @@ abstract class UITest : BaseTest() {
         runComposeUiTest {
             beforeSetContent()
             setContent {
-                JvmScopeCover {
+                CompositionLocalProvider(LocalUITestScope provides true){
                     MainApp(component!!)
                 }
             }

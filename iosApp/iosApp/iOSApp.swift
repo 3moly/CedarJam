@@ -10,7 +10,7 @@ struct iOSApp: App {
     
     init(){
         
-        InitAppKt.doInitApp(context: DomainAndroidApplicationContext(), isTest: false)
+        InitAppKt.doInitApp(context: DomainAndroidApplicationContext(), isRelease: true, isTest: false)
     }
     
     var fixedPreferredContentSizeCategory: UIContentSizeCategory {

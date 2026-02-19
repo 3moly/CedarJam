@@ -1,7 +1,6 @@
 package com.moly3.cedarjam.core.domain.usecase
 
 import co.touchlab.kermit.Logger
-import com.moly3.cedarjam.core.domain.func.hiddenDirectory
 import com.moly3.cedarjam.core.domain.func.isMoreThan
 import com.moly3.cedarjam.core.domain.func.normalizeText
 import com.moly3.cedarjam.core.domain.func.pathWrapper
@@ -22,6 +21,7 @@ import com.moly3.cedarjam.core.domain.model.resultBlock
 import com.moly3.cedarjam.core.domain.model.shouldBeSuccess
 import com.moly3.cedarjam.core.domain.repository.IFilesRepository
 import com.moly3.cedarjam.core.domain.repository.IWorkspaceEnvironment
+import com.moly3.cedarjam.core.domain.repository.getTempFileNode
 import com.moly3.cedarjam.core.domain.service.AlertService
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.projectDir
@@ -314,26 +314,18 @@ class SyncUseCase(
     ): ResultWrapper<SyncStatus2, String> {
         emitChannel("init", 1)
         val workspaceAbsolutePath = workspaceEnv.getWorkspace().absolutePath
-        val hiddenDirPath = pathWrapper(hiddenDirectory).pathString
-        val importNode =
-            FileTreeNode.File(
-                FileName(
-                    "import",
-                    "zip"
-                ),
-                workspaceAbsolutePath,
-                hiddenDirPath
+        val importNode = workspaceEnv.getTempFileNode(
+            FileName(
+                "import",
+                "zip"
             )
-        val exportArchiveNode =
-            FileTreeNode.File(
-                FileName(
-                    "export",
-                    "zip"
-                ),
-                workspaceAbsolutePath,
-                hiddenDirPath
+        )
+        val exportArchiveNode = workspaceEnv.getTempFileNode(
+            FileName(
+                "export",
+                "zip"
             )
-
+        )
         return resultBlock {
             try {
                 val serverFiles = bind(workspaceEnv.getServerFiles()).files
@@ -448,8 +440,10 @@ class SyncUseCase(
                 if (isAbsoluteNewLocal) {
                     workspaceEnv.syncAllIndexes()
                 }
+                _sendingBranch.emit(UIState.Loading)
                 SyncStatus2(isLoading = false)
             } catch (exc: Exception) {
+                _sendingBranch.emit(UIState.Loading)
                 alertService.sendMessage(exc.message ?: "Sync failed")
                 Logger.e(exc) { "Sync failed: ${exc.message}" }
                 raise(exc.message ?: "Unknown sync error")

@@ -7,6 +7,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import coil3.compose.rememberAsyncImagePainter
+import com.github.panpf.zoomimage.CoilZoomAsyncImage
+import com.github.panpf.zoomimage.compose.rememberZoomState
+import com.github.panpf.zoomimage.rememberCoilZoomState
 import com.moly3.cedarjam.core.domain.model.AnnotationDTO
 import com.moly3.cedarjam.core.domain.model.FileType
 import com.moly3.cedarjam.core.domain.model.request.CreateAnnotationRequest
@@ -70,24 +73,18 @@ fun FileView(
                     toPage = { toPage(fl, it) },
                     onDeleteAnnotation = onDeleteAnnotation,
                     onAddAnnotation = onAddAnnotation,
-                    annotations =annotations,
+                    annotations = annotations,
                 )
             }
 
             is FileType.Image -> {
-                CJZoomableViewLayout(
+                val zoomState = rememberCoilZoomState()
+                CoilZoomAsyncImage(
+                    zoomState = zoomState,
+                    model = fl.fileNode.getFullPath(),
+                    contentDescription = "view image",
                     modifier = Modifier.fillMaxSize(),
-                    macTrackpadGestureService = macTrackpadGestureService
-                ) {
-                    Image(
-                        painter = rememberAsyncImagePainter(
-                            model = fl.fileNode.getFullPath(),
-                            imageLoader = LocalImageLoader.current
-                        ),
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
+                )
             }
 
             is FileType.Text -> contentFileEdit(fl)

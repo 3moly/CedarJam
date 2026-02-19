@@ -1,5 +1,6 @@
 package com.moly3.cedarjam.pages.page_home
 
+import androidx.compose.runtime.Stable
 import androidx.compose.ui.text.input.TextFieldValue
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.pages.page_home.model.TimeMachine
@@ -7,14 +8,13 @@ import com.moly3.cedarjam.core.domain.model.UIState
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.serialization.Serializable
 
+@Stable
 data class State(
     val allNodes: UIState<ImmutableList<FileTreeNode>, String> = UIState.Loading,
     val searchTextFieldValue: TextFieldValue = TextFieldValue(""),
     val count: Int = 0,
-    val timeMachinesState: UIState<ImmutableList<TimeMachine>, Nothing> = UIState.Loading,
-
-
-    ) {
+    val timeMachinesState: UIState<ImmutableList<TimeMachine>, Nothing> = UIState.Loading
+) {
     @Serializable
     data class SaveableState(
         val searchText: String = "",
@@ -25,9 +25,8 @@ data class State(
         fun SaveableState.fromSaveable(): State {
             return State(
                 searchTextFieldValue = TextFieldValue(this.searchText),
-                count = this.count,
-
-                )
+                count = this.count
+            )
         }
 
         fun State.toSaveable(): SaveableState {

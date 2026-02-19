@@ -7,11 +7,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -44,9 +45,11 @@ import com.moly3.cedarjam.core.ui.compositions.LocalJvmToolbarState
 import com.moly3.cedarjam.core.ui.func.PointerIconType
 import com.moly3.cedarjam.core.ui.func.absoluteOffset
 import com.moly3.cedarjam.core.ui.func.consumeWindowToolbarPaddingCJ
+import com.moly3.cedarjam.core.ui.func.flatClickable
 import com.moly3.cedarjam.core.ui.func.getPointerIcon
 import com.moly3.cedarjam.core.ui.func.isCompactUI
 import com.moly3.cedarjam.core.ui.func.rememberWindowSize
+import com.moly3.cedarjam.core.ui.func.statusBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.func.windowToolbarPadding
 import com.moly3.cedarjam.core.ui.model.CJText
 import com.moly3.cedarjam.core.ui.model.FileTreeItemPresentation
@@ -68,12 +71,6 @@ import com.moly3.cedarjam.pages.page_workspace.func.getTab
 import com.moly3.cedarjam.pages.page_workspace.model.LockedMenuData
 import com.moly3.cedarjam.pages.page_workspace.ui.dialog.DialogSelectTagUI
 import com.moly3.cedarjam.pages.page_workspace.ui.dialog.DialogTagToTagUI
-import dev.chrisbanes.haze.HazeDefaults
-import dev.chrisbanes.haze.HazeStyle
-import dev.chrisbanes.haze.HazeTint
-import dev.chrisbanes.haze.hazeEffect
-import dev.chrisbanes.haze.hazeSource
-import dev.chrisbanes.haze.rememberHazeState
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -82,17 +79,6 @@ internal fun WorkspacePageContent(
     state: State,
     onIntent: (Intent) -> Unit
 ) {
-    val hazeState = rememberHazeState(blurEnabled = false)
-
-    val primaryColor = LocalAppTheme.current.primaryColor
-    val hazeStyle = remember(primaryColor) {
-        HazeStyle(
-            backgroundColor = primaryColor,
-            tints = listOf(HazeTint(primaryColor.copy(0.2f))),
-            blurRadius = 4.dp,
-            noiseFactor = HazeDefaults.noiseFactor
-        )
-    }
     val scope = rememberCoroutineScope()
 
     val windowSize by rememberWindowSize()
@@ -163,89 +149,102 @@ internal fun WorkspacePageContent(
                             )
                         }
                     }
-                    .pointerInput(Unit) {
-                        detectPointerTransformGestures(
-                            scope = scope,
-                            numberOfPointers = 0,
-                            consume = false,
-                            requisite = PointerRequisite.GreaterThan,
-                            onClick = {
-                                onIntent(Intent.HideContextMenu)
-                            },
-                            onCursorMove = { cursorOffset ->
-                                onIntent(Intent.SetCursorPosition(cursorOffset))
-
-                                val tab = getTab(
-                                    screenWidth = (updatedScreenWidth
-                                        ?: 0f) / updatedDensity.value,
-                                    menuWidth = if (updatedIsMenuOpened) (updatedMenuWidth) else {
-                                        if (updatedWindowSize == WindowSize.Compact)
-                                            0f
-                                        else
-                                            50f
-                                    },
-                                    updatedTabSizes = updatedTabSizes,
-                                    cursorOffset = cursorOffset / updatedDensity.value,
-                                    divideSize = 15f,
-                                    isLog = false
+                    .let {
+                        if (isCompactUI()) {
+                            it.pointerInput(Unit) {
+                                detectPointerTransformGestures(
+                                    scope = scope,
+                                    numberOfPointers = 0,
+                                    consume = false,
+                                    requisite = PointerRequisite.GreaterThan,
+                                    onCursorMove = { cursorOffset ->
+                                        onIntent(Intent.SetCursorPosition(cursorOffset))
+                                    }
                                 )
-                                onIntent(Intent.SetMenuUnder(tab))
-                            },
-                            onGestureStart = { input ->
+                            }
+                        } else {
+                            it.pointerInput(Unit) {
+                                detectPointerTransformGestures(
+                                    scope = scope,
+                                    numberOfPointers = 0,
+                                    consume = false,
+                                    requisite = PointerRequisite.GreaterThan,
+                                    onCursorMove = { cursorOffset ->
+                                        onIntent(Intent.SetCursorPosition(cursorOffset))
 
-                                val sop = input.position / updatedDensity.value
-
-                                val tab = getTab(
-                                    screenWidth = (updatedScreenWidth
-                                        ?: 0f) / updatedDensity.value,
-                                    menuWidth = if (updatedIsMenuOpened) updatedMenuWidth else {
-                                        if (updatedWindowSize == WindowSize.Compact)
-                                            0f
-                                        else
-                                            50f
-                                    },
-                                    updatedTabSizes = updatedTabSizes,
-                                    cursorOffset = sop,
-                                    divideSize = 15f,
-                                    isLog = false
-                                )
-                                if (tab == null) {
-                                    onIntent(Intent.SetLockedMenuUnder(null))
-                                } else {
-                                    println("tab detected: ${tab}")
-                                    onIntent(
-                                        Intent.SetLockedMenuUnder(
-                                            LockedMenuData(
-                                                offsetX = sop.x,
-                                                menu = tab
-                                            )
-                                        )
-                                    )
-                                }
-                            },
-                            onGesture = { centroid, pan, zoom, rotation, mainPointer, changes ->
-                                val allTabs = items.items.map {
-                                    it.instance.index
-                                }
-                                if (updatedScreenWidth != null) {
-                                    onIntent(
-                                        Intent.OnOffsetTabChangeOffset(
-                                            allTabIndexes = allTabs,
+                                        val tab = getTab(
                                             screenWidth = (updatedScreenWidth
                                                 ?: 0f) / updatedDensity.value,
-                                            data = pan.x / updatedDensity.value,
-                                            isEnd = false
+                                            menuWidth = if (updatedIsMenuOpened) (updatedMenuWidth) else {
+                                                if (updatedWindowSize == WindowSize.Compact)
+                                                    0f
+                                                else
+                                                    50f
+                                            },
+                                            updatedTabSizes = updatedTabSizes,
+                                            cursorOffset = cursorOffset / updatedDensity.value,
+                                            divideSize = 15f,
+                                            isLog = false
                                         )
-                                    )
-                                }
-                            },
-                            onGestureEnd = { input ->
-                                onIntent(Intent.SetLockedMenuUnder(null))
-                            },
-                            onGestureCancel = {
-                                onIntent(Intent.SetLockedMenuUnder(null))
+                                        onIntent(Intent.SetMenuUnder(tab))
+                                    },
+                                    onGestureStart = { input ->
+
+                                        val sop = input.position / updatedDensity.value
+
+                                        val tab = getTab(
+                                            screenWidth = (updatedScreenWidth
+                                                ?: 0f) / updatedDensity.value,
+                                            menuWidth = if (updatedIsMenuOpened) updatedMenuWidth else {
+                                                if (updatedWindowSize == WindowSize.Compact)
+                                                    0f
+                                                else
+                                                    50f
+                                            },
+                                            updatedTabSizes = updatedTabSizes,
+                                            cursorOffset = sop,
+                                            divideSize = 15f,
+                                            isLog = false
+                                        )
+                                        if (tab == null) {
+                                            onIntent(Intent.SetLockedMenuUnder(null))
+                                        } else {
+                                            println("tab detected: ${tab}")
+                                            onIntent(
+                                                Intent.SetLockedMenuUnder(
+                                                    LockedMenuData(
+                                                        offsetX = sop.x,
+                                                        menu = tab
+                                                    )
+                                                )
+                                            )
+                                        }
+                                    },
+                                    onGesture = { centroid, pan, zoom, rotation, mainPointer, changes ->
+                                        val allTabs = items.items.map {
+                                            it.instance.index
+                                        }
+                                        if (updatedScreenWidth != null) {
+                                            onIntent(
+                                                Intent.OnOffsetTabChangeOffset(
+                                                    allTabIndexes = allTabs,
+                                                    screenWidth = (updatedScreenWidth
+                                                        ?: 0f) / updatedDensity.value,
+                                                    data = pan.x / updatedDensity.value,
+                                                    isEnd = false
+                                                )
+                                            )
+                                        }
+                                    },
+                                    onGestureEnd = { input ->
+                                        onIntent(Intent.SetLockedMenuUnder(null))
+                                    },
+                                    onGestureCancel = {
+                                        onIntent(Intent.SetLockedMenuUnder(null))
+                                    }
+                                )
                             }
-                        )
+                        }
                     }
             ) {
                 val dragAndDropState = rememberDragAndDropState<FileTreeItemPresentation>()
@@ -257,10 +256,20 @@ internal fun WorkspacePageContent(
                         LocalDragAndDrop provides dragAndDropState
                     ) {
                         val toolbarState = LocalJvmToolbarState.current
-                        Column(Modifier) {
+                        Column(
+                            Modifier.fillMaxSize()
+                                .let{
+                                    if(isCompactUI()){
+                                        it
+                                    }else{
+                                        it.statusBarsPaddingCJ()
+                                            .consumeWindowToolbarPaddingCJ()
+                                    }
+                                }
+                        ) {
                             if (!isCompactUI()) {
                                 TabsToolbarContent(
-                                    modifier = Modifier.consumeWindowToolbarPaddingCJ(),
+                                    modifier = Modifier,
                                     state = state,
                                     toolbarState = toolbarState,
                                     items = items,
@@ -271,7 +280,6 @@ internal fun WorkspacePageContent(
                             }
                             PageContent(
                                 modifier = Modifier
-                                    .hazeSource(state = hazeState)
                                     .weight(1f)
                                     .fillMaxWidth(),
                                 state = state,
@@ -331,8 +339,9 @@ internal fun WorkspacePageContent(
                                     }
                                 }
                             }
+
                         }
-                        if(isCompactUI()){
+                        if (isCompactUI()) {
                             CJDraggableArea(
                                 Modifier.fillMaxWidth().height(windowToolbarPadding.dp)
                             ) {}
@@ -341,6 +350,13 @@ internal fun WorkspacePageContent(
                     }
                 }
                 if (state.contextMenuData != null) {
+                    Box(
+                        Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.2f))
+                            .flatClickable {
+                                onIntent(Intent.HideContextMenu)
+                            }) {
+
+                    }
                     CJContextMenu(
                         modifier = Modifier
                             .absoluteOffset(state.contextMenuData.cursorPosition / density)
@@ -350,7 +366,7 @@ internal fun WorkspacePageContent(
                                 LocalAppTheme.current.primaryColor,
                                 shape = RoundedCornerShape(8.dp)
                             )
-                            .hazeEffect(state = hazeState, style = hazeStyle),
+                            .background(LocalAppTheme.current.primaryColor),
                         columnModifier = Modifier
                     ) {
                         for (button in state.contextMenuData.menuButtons) {

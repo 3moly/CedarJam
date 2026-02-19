@@ -10,7 +10,7 @@ fun createRootComponentSafe(
     stateKeeper: StateKeeperDispatcher,
     backDispatcher: BackHandler,
     onDestroy: () -> Unit,
-    onErrorInit: () -> StateKeeperDispatcher
+    onErrorInit: (Exception) -> StateKeeperDispatcher
 ): RootComponent {
     return try {
         RootComponent(
@@ -25,7 +25,7 @@ fun createRootComponentSafe(
         RootComponent(
             DefaultComponentContext(
                 lifecycle = lifecycle,
-                stateKeeper = onErrorInit(),
+                stateKeeper = onErrorInit(exc),
                 backHandler = backDispatcher
             ),
             onDestroy = onDestroy

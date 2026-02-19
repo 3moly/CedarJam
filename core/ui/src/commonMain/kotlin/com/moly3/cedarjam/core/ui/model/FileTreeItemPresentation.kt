@@ -20,6 +20,7 @@ data class FileTreeItemPresentation(
     sealed class FileTreeItemPresentationData {
         data object Home : FileTreeItemPresentationData()
         data object Graph : FileTreeItemPresentationData()
+        data object Annotations : FileTreeItemPresentationData()
         data object Tags : FileTreeItemPresentationData()
         data object Collections : FileTreeItemPresentationData()
         data class Directory(

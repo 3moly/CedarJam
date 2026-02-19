@@ -156,7 +156,7 @@ We've checked many popular apps, for example graph nodes are always give random 
 
 
 `./gradlew :shared:hotRunJvm --autoReload`
-`./gradlew :jvmRun`
+`./gradlew :shared:jvmRun`
 `./gradlew :shared:hotRunJvm --auto`
 `./gradlew assembleRelease -PcomposeCompilerReports=true --rerun-tasks`
 `./gradlew createModuleGraph --rerun-tasks`

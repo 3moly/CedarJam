@@ -15,4 +15,5 @@ sealed interface Intent {
     data class SetGraphUserPosition(val value: Offset) : Intent
     data class SetGraphViewSettings(val value: GraphViewSettings) : Intent
     data class SetIsShowSettings(val value: Boolean) : Intent
+    data object OpenWorkspaceSettings : Intent
 }

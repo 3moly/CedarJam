@@ -4,5 +4,5 @@ import androidx.compose.runtime.Composable
 
 @Composable
 actual fun rememberDeviceOrientation(): DeviceOrientation {
-    TODO("Not yet implemented")
+    return DeviceOrientation.Portrait
 }

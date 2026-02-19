@@ -54,8 +54,7 @@ data class PageNameWorkspace(
 class WorkspaceComponentImpl(
     private val workspaceInput: WorkspaceInput,
     context: ComponentContext,
-    storeFactory: StoreFactory,
-
+    storeFactory: StoreFactory
 ) : KoinComponent,
     ComponentContext by context,
     IDecomposeScopeComponent,
@@ -106,7 +105,7 @@ class WorkspaceComponentImpl(
         children(
             source = navigation,
             stateSerializer = NavigationState.serializer(),
-            key = "workspace",
+            key = "workspace_${workspaceInput.name}",
             initialState = {
                 NavigationState(
                     configurations = listOf(Config.Tabs(index = 0))

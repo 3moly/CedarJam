@@ -65,14 +65,6 @@ sealed class FileTreeNode {
 
         override fun getFullPath(): String {
             return pathWrapper(workspaceFullPath, parentRelativePath, getFullName()).pathString
-//            val fullName = getFullName()
-//            if (fullName.isEmpty())
-//                return parentFullPath
-//
-//            return pathWrapper(
-//                parentFullPath,
-//                getFullName()
-//            ).toString()
         }
     }
 

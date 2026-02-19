@@ -25,10 +25,12 @@ import com.moly3.cedarjam.pages.page_graph.Intent
 import com.moly3.cedarjam.pages.page_graph.State
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
+import com.moly3.cedarjam.core.ui.func.wstatusBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.onPointerEvent
 import com.moly3.cedarjam.core.ui.uikit.CJButtonIcon
 import com.moly3.cedarjam.core.ui.uikit.CJSlider
 import com.moly3.cedarjam.core.ui.uikit.CJText
+import com.moly3.cedarjam.core.ui.uikit.JustMenuContent
 import com.moly3.cedarjam.core.ui.vectors.SettingsFuture
 import com.moly3.dataviz.graph.ui.Graph
 import kotlin.time.ExperimentalTime
@@ -87,6 +89,7 @@ internal fun PageContent(state: State, onIntent: (Intent) -> Unit) {
 
         Column(
             modifier = Modifier
+                .wstatusBarsPaddingCJ()
                 .padding(16.dp)
                 .align(Alignment.TopEnd)
                 .clip(RoundedCornerShape(8.dp))
@@ -317,5 +320,8 @@ internal fun PageContent(state: State, onIntent: (Intent) -> Unit) {
                 }
             }
         }
+    }
+    JustMenuContent {
+        onIntent(Intent.OpenWorkspaceSettings)
     }
 }

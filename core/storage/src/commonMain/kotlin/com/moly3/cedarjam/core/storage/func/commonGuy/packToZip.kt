@@ -15,10 +15,10 @@ suspend fun packToZip(
         mode = FileMode.Write,
         zip64 = false
     ).use {
-        for (absolutePath in filesToArchive) {
+        for (absolutePath in filesToArchive.sortedBy { d -> d }) {
             val inputFile = File(pathWrapper(workspaceFolderAbsolutePath, absolutePath).pathString)
             if (inputFile.isDirectory) {
-                it.zipDirectory(inputFile, shallow = true, filter = {false})
+                it.zipDirectory(inputFile, shallow = true, filter = { false })
             } else {
                 it.zipFile(
                     inputFile,

@@ -7,6 +7,7 @@ import com.moly3.cedarjam.core.domain.model.canvas.CanvasDataWithErrors
 
 interface ISystemFilesManager {
     fun toAbsoluteAppPath(relativePath: IPathWrapper): IPathWrapper
+    fun appWorkspacesDir(): IPathWrapper
     fun toRelativeAppPath(relativePath: IPathWrapper): IPathWrapper
     fun getFileHash(fullPath: String): String
     fun getFileNodeFromFullPath(workspacePath: String, fullPath: String): FileTreeNode.File

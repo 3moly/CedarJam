@@ -10,6 +10,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.unit.dp
+import com.moly3.cedarjam.core.ui.compositions.LocalUIConfig
 import com.moly3.cedarjam.core.ui.func.isCompactUI
 import com.moly3.cedarjam.core.ui.func.navigationBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.func.statusBarsPaddingCJ
@@ -30,12 +31,12 @@ fun JustMenuContent(
                 .navigationBarsPaddingCJ()
                 .fillMaxSize()
         ) {
-            NeumorphicButton(
+            NeumorphicShape(
                 modifier = Modifier
                     .padding(start = padding.dp)
                     .padding(padding.dp)
                     .align(Alignment.BottomStart)
-                    .size(48.dp),
+                    .size(LocalUIConfig.current.fabCircleSize),
                 isPressed = false,
                 buttonShape = RoundedCornerShape(100.dp),
                 painter = rememberVectorPainter(BarLeft),

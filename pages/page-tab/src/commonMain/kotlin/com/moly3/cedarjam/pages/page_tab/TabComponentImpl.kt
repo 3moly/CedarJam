@@ -83,6 +83,15 @@ class TabComponentImpl(
                     )
                 )
 
+                is Config.Graph -> TabComponent.Child.Graph(
+                    GraphComponentImpl(
+                        componentContext = childContext,
+                        storeFactory = storeFactory,
+                        workspaceSession = workspaceSession,
+                        openMenu
+                    )
+                )
+
                 is Config.CollRow -> TabComponent.Child.CollectionRow(
                     CollectionRowComponentImpl(
                         componentContext = childContext,
@@ -111,13 +120,7 @@ class TabComponentImpl(
                     )
                 )
 
-                is Config.Graph -> TabComponent.Child.Graph(
-                    GraphComponentImpl(
-                        componentContext = childContext,
-                        storeFactory = storeFactory,
-                        workspaceSession = workspaceSession
-                    )
-                )
+
 
                 is Config.Tag -> TabComponent.Child.Tag(
                     TagComponentImpl(

@@ -10,9 +10,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.unit.IntOffset
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalDecoratedWindowScope
+import com.moly3.cedarjam.core.ui.compositions.LocalUITestScope
 import java.awt.MouseInfo
 import java.awt.Point
 import java.awt.Window
@@ -21,11 +23,11 @@ import java.awt.event.MouseEvent
 import java.awt.event.MouseMotionAdapter
 
 @Composable
-actual fun CJDraggableArea(modifier: Modifier, content: @Composable (() -> Unit)) {
+actual fun CJDraggableArea(modifier: Modifier, content: @Composable ((Modifier) -> Unit)) {
     WindowDraggableArea(
-        modifier = modifier.background(LocalAppTheme.current.primaryColor.copy(alpha = 0.1f))
+        modifier = modifier //.background(LocalAppTheme.current.primaryColor.copy(alpha = 0.1f))
     ) {
-        content()
+        content(Modifier)
     }
 }
 
@@ -35,20 +37,27 @@ fun WindowDraggableArea(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit = {}
 ) {
-    val window = LocalDecoratedWindowScope.current.window
-    val handler = remember { DragHandler(window) }
+    if (LocalUITestScope.current) {
+        Box(modifier = modifier) {
+            content()
+        }
+    } else {
+        val window = LocalDecoratedWindowScope.current.window
+        val handler = remember { DragHandler(window) }
 
-    Box(
-        modifier = modifier
-            .pointerInput(Unit) {
-                awaitEachGesture {
-                    awaitFirstDown()
-                    handler.onDragStarted()
+        Box(
+            modifier = modifier
+                .pointerInput(Unit) {
+                    awaitEachGesture {
+                        awaitFirstDown()
+                        handler.onDragStarted()
+                    }
                 }
-            }
-    ) {
-        content()
+        ) {
+            content()
+        }
     }
+
 }
 
 fun currentPointerLocation(): IntOffset? {

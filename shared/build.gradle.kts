@@ -2,19 +2,16 @@
 
 import org.jetbrains.compose.ExperimentalComposeLibrary
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
-import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.plugin.mpp.NativeBuildType
 import java.util.Properties
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
-//    alias(libs.plugins.androidLibrary)
     alias(libs.plugins.android.kotlin.multiplatform.library)
     alias(libs.plugins.compose)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.serialization)
     alias(libs.plugins.composeHotReload)
-//    alias(libs.plugins.stability.analyzer)
     kotlin("native.cocoapods")
 }
 
@@ -109,6 +106,8 @@ kotlin {
     jvm()
     iosArm64()
     iosSimulatorArm64()
+    
+
     cocoapods {
         summary = "Some description for the Shared Module"
         homepage = "Link to the Shared Module homepage"
@@ -163,7 +162,7 @@ kotlin {
             implementation(libs.compose.foundation)
             implementation(libs.compose.ui)
             implementation(libs.compose.components.resources)
-            implementation(libs.compose.ui.tooling.preview)
+//            implementation(libs.compose.ui.tooling.preview)
 
 
             implementation(libs.filekit.core)
@@ -212,10 +211,11 @@ kotlin {
             implementation(libs.reaktive.reaktive)
             implementation(libs.reaktive.coroutinesInterop)
 
-            implementation(libs.serialization)
-
             implementation(libs.jewel.decorated.window)
             implementation(libs.jewel.int.ui.standalone)
+
+            implementation(libs.serialization)
+
         }
         androidMain.dependencies {
 
@@ -228,9 +228,6 @@ kotlin {
             implementation(libs.robolectric)
             implementation(libs.android.videoplayer.contextprovider)
         }
-        wasmJsMain.dependencies {
-
-        }
     }
 }
 
@@ -238,7 +235,6 @@ dependencies {
     commonMainApi(libs.decompose)
     commonMainApi(libs.essenty.keeper)
     commonMainApi(libs.essenty.lifecycle)
-    //debugApi(libs.compose.ui.tooling)
 }
 
 
@@ -251,6 +247,9 @@ compose {
         application {
             buildTypes.release.proguard {
                 isEnabled = false
+                optimize = false
+                obfuscate = false
+                version.set("7.8.2")
                 configurationFiles.from("compose-desktop.pro")
             }
 
@@ -267,19 +266,30 @@ compose {
                 jvmArgs("--add-opens", "java.desktop/sun.lwawt=ALL-UNNAMED")
                 jvmArgs("--add-opens", "java.desktop/sun.lwawt.macosx=ALL-UNNAMED")
             }
-
             args("-XDignore.symbol.file --add-exports java.desktop/com.apple.eawt.event=ALL-UNNAMED")
 
             nativeDistributions {
                 //appName = "CedarJam"
+
+                // https://github.com/JetBrains/compose-multiplatform/blob/master/tutorials/Native_distributions_and_local_execution/README.md
                 modules(
+                    "java.compiler",
+                    "java.instrument",
+                    "java.management",
+                    "java.rmi",
+                    "jdk.unsupported",
+                    "java.naming",
                     "java.base",
                     "java.desktop",
                     "java.logging",
                     "java.sql",
-                    "jdk.unsupported"
                 )
-                targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
+                targetFormats(
+                    TargetFormat.Dmg,
+                    TargetFormat.Msi,
+                    TargetFormat.Exe,
+                    TargetFormat.Deb
+                )
                 packageName = "CedarJam"
                 packageVersion = "1.0.0"
 
@@ -287,10 +297,15 @@ compose {
                     dockName = "CedarJam"
                     iconFile.set(project.file("../docs/media/AppIcon.icns"))
                 }
+
+//                appResourcesRootDir = layout.projectDirectory.dir("src/desktopMain/assets")
+//                jvmArgs += "-splash:${'$'}APPDIR/resources/splash.png"
             }
         }
     }
 }
+
+
 
 val localPropertiesFile = rootProject.file("local.properties")
 val localProperties = Properties()
@@ -300,6 +315,7 @@ if (localPropertiesFile.exists()) {
 
 val mySyncServerUrl = localProperties.getProperty("cedarjam_server.url") ?: ""
 val mySyncServerToken = localProperties.getProperty("cedarjam_server.token") ?: ""
+val myIsRelease = localProperties.getProperty("cedarjam.is_release") ?: ""
 
 // Register cache-safe task
 abstract class GenerateBuildConfigTask : DefaultTask() {
@@ -308,6 +324,9 @@ abstract class GenerateBuildConfigTask : DefaultTask() {
 
     @get:Input
     abstract val syncServerToken: Property<String>
+
+    @get:Input
+    abstract val syncJustToken: Property<String>
 
     @get:OutputDirectory
     abstract val outputDir: DirectoryProperty
@@ -323,6 +342,7 @@ abstract class GenerateBuildConfigTask : DefaultTask() {
             object BuildConfig {
                 const val SyncServerUrl = "${syncServerUrl.get()}"
                 const val SyncServerToken = "${syncServerToken.get()}"
+                const val IsRelease = ${syncJustToken.get()}
             }
             """.trimIndent()
         )
@@ -332,6 +352,7 @@ abstract class GenerateBuildConfigTask : DefaultTask() {
 val generateBuildConfig by tasks.registering(GenerateBuildConfigTask::class) {
     syncServerUrl.set(mySyncServerUrl)
     syncServerToken.set(mySyncServerToken)
+    syncJustToken.set(myIsRelease)
     outputDir.set(layout.buildDirectory.dir("generated/source/buildConfig/commonMain/kotlin"))
 }
 

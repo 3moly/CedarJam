@@ -4,10 +4,13 @@ import androidx.compose.runtime.Stable
 
 @Stable
 sealed class UIState<out T, out E> {
+    @Stable
     data object Loading : UIState<Nothing, Nothing>()
 
+    @Stable
     data class Error<E>(val error: E) : UIState<Nothing, E>()
 
+    @Stable
     data class Success<T>(val data: T) : UIState<T, Nothing>()
 
     fun isLoading() = this is Loading

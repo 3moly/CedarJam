@@ -254,4 +254,10 @@ class WorkspaceSession(
         env.reinitDatabase()
         return syncResult
     }
+
+    companion object{
+        fun WorkspaceSession.workspaceName():String{
+            return this.workspaceEnvStateFlow.value.getWorkspace().name
+        }
+    }
 }

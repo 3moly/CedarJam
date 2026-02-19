@@ -2,6 +2,7 @@ package shared_tests.base
 
 import co.touchlab.kermit.CommonWriter
 import co.touchlab.kermit.Logger
+import co.touchlab.kermit.Severity
 import com.moly3.cedarjam.di.initApp
 import com.moly3.cedarjam.core.domain.func.getPlatform
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
@@ -77,7 +78,6 @@ abstract class AppEnvironmentTest : BaseTest() {
         return WorkspacePresentation(
             name = "test_env2",
             fullpath = fullPath,
-            absolutePath = fullPath,
             serverName = "test_env2"
         )
     }

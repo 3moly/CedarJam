@@ -1,24 +1,12 @@
 package com.moly3.cedarjam.di
 
 import co.touchlab.kermit.CommonWriter
-import co.touchlab.kermit.LogWriter
 import co.touchlab.kermit.Logger
+import co.touchlab.kermit.Severity
 import com.arkivanov.essenty.statekeeper.StateKeeper
-import com.moly3.cedarjam.core.data.WorkspaceEnvironment
-import com.moly3.cedarjam.core.net.di.net
-import com.moly3.cedarjam.navigation.Navigator
-import com.moly3.cedarjam.navigation.NavigatorDispatcher
-import com.moly3.cedarjam.navigation.NavigatorImpl
-import com.moly3.cedarjam.pages.page_workspace.WorkspaceComponentImpl
 import com.moly3.cedarjam.core.data.AppEnvironment
 import com.moly3.cedarjam.core.data.FilesRepository
-import com.moly3.cedarjam.repository.getJvmBrowserService
-import com.moly3.cedarjam.repository.getUtilsService
-import com.moly3.cedarjam.service.MessageServiceImpl
-import com.moly3.cedarjam.core.domain.usecase.NavigateToFileUseCase
-import com.moly3.cedarjam.core.domain.usecase.OpenNodeDataUseCase
-import com.moly3.cedarjam.core.domain.usecase.SyncUseCase
-import com.moly3.core_domain.BuildConfig
+import com.moly3.cedarjam.core.data.WorkspaceEnvironment
 import com.moly3.cedarjam.core.domain.model.AndroidApplicationContext
 import com.moly3.cedarjam.core.domain.model.WorkspaceInput
 import com.moly3.cedarjam.core.domain.repository.IAppEnvironment
@@ -27,35 +15,49 @@ import com.moly3.cedarjam.core.domain.repository.IWorkspaceEnvironment
 import com.moly3.cedarjam.core.domain.service.AlertService
 import com.moly3.cedarjam.core.domain.service.AppContextProvider
 import com.moly3.cedarjam.core.domain.service.FileManagerService
-import com.moly3.cedarjam.core.ui.service.IJvmBrowserService
 import com.moly3.cedarjam.core.domain.service.IMessageService
 import com.moly3.cedarjam.core.domain.service.IUtilsService
-import com.moly3.cedarjam.core.ui.service.MacTrackpadGestureService
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
 import com.moly3.cedarjam.core.domain.usecase.INavigateToFileUseCase
 import com.moly3.cedarjam.core.domain.usecase.IOpenNodeDataUseCase
 import com.moly3.cedarjam.core.domain.usecase.ISyncUseCase
+import com.moly3.cedarjam.core.domain.usecase.NavigateToFileUseCase
+import com.moly3.cedarjam.core.domain.usecase.OpenNodeDataUseCase
+import com.moly3.cedarjam.core.domain.usecase.SyncUseCase
+import com.moly3.cedarjam.core.net.di.net
 import com.moly3.cedarjam.core.storage.ISqlStorage
 import com.moly3.cedarjam.core.storage.di.db
 import com.moly3.cedarjam.core.storage.func.init
+import com.moly3.cedarjam.core.ui.service.IJvmBrowserService
+import com.moly3.cedarjam.core.ui.service.MacTrackpadGestureService
+import com.moly3.cedarjam.navigation.Navigator
+import com.moly3.cedarjam.navigation.NavigatorDispatcher
+import com.moly3.cedarjam.navigation.NavigatorImpl
+import com.moly3.cedarjam.pages.page_workspace.WorkspaceComponentImpl
+import com.moly3.cedarjam.repository.getJvmBrowserService
+import com.moly3.cedarjam.repository.getUtilsService
+import com.moly3.cedarjam.service.MessageServiceImpl
+import com.moly3.core_domain.BuildConfig
 import io.github.vinceglb.filekit.FileKit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import org.koin.core.context.startKoin
 import org.koin.core.parameter.parametersOf
 import org.koin.dsl.module
-import org.koin.mp.KoinPlatform
 
 fun initApp(
     context: AndroidApplicationContext,
+    isRelease: Boolean = BuildConfig.IsRelease,
     isTest: Boolean = false
 ) {
-    Logger.addLogWriter(CommonWriter())
+    if (isRelease && false) {
+        Logger.setLogWriters(listOf())
+        Logger.setMinSeverity(Severity.Assert)
+    } else {
+        Logger.addLogWriter(CommonWriter())
+    }
     FileKit.init(context)
     val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     val navigator = NavigatorImpl(scope)

@@ -59,10 +59,11 @@ data class CollectionRowPresentation(
 
 @Composable
 internal fun CollectionDataGrid(
+    modifier: Modifier,
     workspace: WorkspacePresentation?,
-    rows: List<CollectionRowDTO>,
+    rows: ImmutableList<CollectionRowDTO>,
     tags: ImmutableList<TagDTO>,
-    tagCollectionRows: List<TagCollectionRowDTO>,
+    tagCollectionRows: ImmutableList<TagCollectionRowDTO>,
     openRow: (CollectionRowDTO) -> Unit,
     addTag: (CollectionRowDTO) -> Unit,
     renameRow: (CollectionRowDTO, String) -> Unit,
@@ -103,7 +104,7 @@ internal fun CollectionDataGrid(
                                         it.row.fileRelativePath!!
                                     ).toString()
                                     try {
-                                        co.touchlab.kermit.Logger.w{"getPdfImage: ${it.row.fileRelativePath}"}
+                                        co.touchlab.kermit.Logger.w { "getPdfImage: ${it.row.fileRelativePath}" }
                                         imgBitmap = if (it.row.fileRelativePath != null) {
                                             getPdfImage(
                                                 path,
@@ -114,7 +115,7 @@ internal fun CollectionDataGrid(
                                             null
                                         }
                                     } catch (exc: Exception) {
-                                        co.touchlab.kermit.Logger.w{"getPdfImage result: ${exc.message}"}
+                                        co.touchlab.kermit.Logger.w { "getPdfImage result: ${exc.message}" }
                                     }
                                 }
                             }
@@ -240,11 +241,9 @@ internal fun CollectionDataGrid(
                 ),
             )
         }
-
-
     val primaryColor = LocalAppTheme.current.primaryColor
     CJDataTable(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         itemModifierBuilder = { data ->
             this.dropTarget(
                 key = "targetKey: ${data.row.id}",

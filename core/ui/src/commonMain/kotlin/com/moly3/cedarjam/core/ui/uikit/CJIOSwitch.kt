@@ -1,10 +1,8 @@
 package com.moly3.cedarjam.core.ui.uikit
 
 import androidx.compose.animation.animateColor
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDp
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.background
@@ -34,7 +32,6 @@ import com.moly3.cedarjam.core.domain.model.AppColorsData
 import com.moly3.cedarjam.core.domain.model.AppThemeData
 import com.moly3.cedarjam.core.domain.model.settings.AppSettings
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
-import com.moly3.cedarjam.core.ui.model.CJText
 
 @Composable
 fun CJIOSwitch(
@@ -91,7 +88,7 @@ fun CJIOSwitch(
         if (pressed) height.dp else (height * 0.1f).dp
     }
 
-    NeumorphicButton(
+    NeumorphicShape(
         modifier = modifier
             .height(height.dp)
             .width((height * 2).dp),
@@ -119,7 +116,7 @@ fun CJIOSwitch(
                 color = Color.White
             )
 
-            NeumorphicButton(
+            NeumorphicShape(
                 modifier = Modifier
                     .align(Alignment.CenterStart)
                     .padding(start = padding)

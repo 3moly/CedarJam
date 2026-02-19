@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
@@ -18,6 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.ExperimentalDecomposeApi
@@ -113,12 +115,19 @@ fun TabsPageContent(
 ) {
     Box(modifier = modifier) {
         val stack by component.childStack.subscribeAsState()
-        val twin = remember(stack) {
-            TwinStack(stack)
+//        val twin = remember(stack) {
+//            TwinStack(stack)
+//        }
+        ChildStack(
+            stack = stack,
+            modifier = Modifier.fillMaxSize(),
+            animation = stackAnimation()
+        ) {
+            when (val instance = it.instance) {
+                is TabsComponent.Child.Tab -> TabPage(component = instance.component)
+            }
         }
-        TwinChildren(stack = twin)
         if (!isLastTab) {
-
             Box(
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
@@ -139,21 +148,13 @@ fun TabsPageContent(
     }
 }
 
-@Immutable
-data class TwinStack(
-    val stack: ChildStack<*, TabsComponent.Child>
-)
+//@Immutable
+//data class TwinStack(
+//    val stack: ChildStack<*, TabsComponent.Child>
+//)
 
-@OptIn(ExperimentalDecomposeApi::class)
-@Composable
-internal fun TwinChildren(stack: TwinStack) {
-    ChildStack(
-        stack = stack.stack,
-        modifier = Modifier.fillMaxSize(),
-        animation = stackAnimation()
-    ) {
-        when (val instance = it.instance) {
-            is TabsComponent.Child.Tab -> TabPage(component = instance.component)
-        }
-    }
-}
+//@OptIn(ExperimentalDecomposeApi::class)
+//@Composable
+//internal fun TwinChildren(stack: TwinStack) {
+//
+//}

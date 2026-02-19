@@ -1,5 +1,6 @@
 package com.moly3.cedarjam.pages.page_home.store
 
+import co.touchlab.kermit.Logger
 import com.arkivanov.essenty.lifecycle.Lifecycle
 import com.arkivanov.essenty.lifecycle.doOnResume
 import com.arkivanov.essenty.statekeeper.StateKeeper
@@ -44,6 +45,7 @@ import com.moly3.cedarjam.core.domain.model.shouldBeSuccess
 import com.moly3.cedarjam.core.domain.repository.IFilesRepository
 import com.moly3.cedarjam.core.domain.service.FileManagerService
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
+import com.moly3.cedarjam.core.domain.service.WorkspaceSession.Companion.workspaceName
 import com.moly3.cedarjam.core.domain.usecase.INavigateToFileUseCase
 import com.moly3.cedarjam.core.domain.usecase.ISyncUseCase
 import com.moly3.cedarjam.navigation.Route
@@ -70,6 +72,10 @@ internal class HomeStoreFactory(
     private val storeFactory: StoreFactory,
     private val openWorkspaceSettings: (Boolean) -> Unit
 ) : KoinComponent {
+
+    init {
+        Logger.w { "HomeStoreFactory created ${workspaceSession.workspaceName()}" }
+    }
 
     private val fileManagerService: FileManagerService by lazy {
         workspaceSession.fileManagerService
@@ -114,8 +120,7 @@ internal class HomeStoreFactory(
 
         override fun executeAction(action: Unit) {
             super.executeAction(action)
-
-            lifecycle.subToLog("HomeStoreState")
+            lifecycle.subToLog("HomeStoreState ${workspaceSession.workspaceEnvStateFlow.value.getWorkspace().name}")
         }
 
         @OptIn(ExperimentalCoroutinesApi::class)

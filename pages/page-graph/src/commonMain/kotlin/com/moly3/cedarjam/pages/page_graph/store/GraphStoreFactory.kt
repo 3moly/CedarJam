@@ -49,7 +49,8 @@ import org.koin.core.parameter.parametersOf
 internal class GraphStoreFactory(
     private val storeFactory: StoreFactory,
     private val lifecycle: Lifecycle,
-    private val workspaceSession: WorkspaceSession
+    private val workspaceSession: WorkspaceSession,
+    private val openWorkspaceSettings: (Boolean) -> Unit
 ) : KoinComponent {
 
     private val navigator: Navigator by inject()
@@ -160,6 +161,10 @@ internal class GraphStoreFactory(
 
                 is Intent.SetIsShowSettings -> {
                     dispatch(SetIsShowSettings(intent.value))
+                }
+
+                is Intent.OpenWorkspaceSettings -> {
+                    openWorkspaceSettings(true)
                 }
 
                 is Intent.SetGraphUserPosition -> {

@@ -22,14 +22,20 @@ import com.moly3.cedarjam.core.domain.dialog.DialogColorPickerService
 import com.moly3.cedarjam.core.domain.dialog.DialogCreateWorkspaceService
 import com.moly3.cedarjam.core.domain.dialog.DialogDeleteService
 import com.moly3.cedarjam.core.domain.dialog.DialogSelectWorkspaceService
+import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.domain.model.settings.AppSettings
 import com.moly3.cedarjam.core.domain.model.WorkspaceInput
 import com.moly3.cedarjam.core.domain.repository.IAppEnvironment
 import com.moly3.cedarjam.core.domain.service.AlertService
 import com.moly3.cedarjam.core.ui.service.MacTrackpadGestureService
 import com.moly3.cedarjam.core.domain.service.IMessageService
+import com.moly3.cedarjam.core.domain.usecase.ISyncUseCase
+import com.moly3.cedarjam.core.domain.usecase.SyncStatusChannel
+import com.moly3.cedarjam.core.domain.usecase.SyncUseCase
+import com.moly3.core_domain.BuildConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
@@ -48,6 +54,9 @@ class RootComponent(
 
     override val scope by componentScope()
 
+    override val isRelease: Boolean by lazy {
+        BuildConfig.IsRelease
+    }
     private val storeFactory: StoreFactory = DefaultStoreFactory()
     private val navigation = StackNavigation<Config>()
     private val navigator: NavigatorDispatcher by inject()
@@ -62,7 +71,9 @@ class RootComponent(
     override val appEnvironment: IAppEnvironment by inject()
     override val appSettingsFlow: StateFlow<AppSettings> = appEnvironment.getAppSettingsFlow()
     override val alertService: AlertService by inject()
-
+    val syncUseCase: ISyncUseCase by inject()
+    override val sendingBranchFlow: Flow<UIState<SyncStatusChannel, String>>
+        get() = syncUseCase.sendingBranchFlow()
     private val _stack = childStack(
         source = navigation,
         serializer = Config.serializer(),
@@ -91,8 +102,8 @@ class RootComponent(
                     onSelectWorkspace = {
                         Logger.d("onSelectWorkspace: ${it.name}")
                         try {
-                            navigation.replaceAll(Config.Workspace(it))
-//                            navigation.pushToFront(Config.Workspace(it))
+//                            navigation.replaceAll(Config.Workspace(it))
+                            navigation.pushToFront(Config.Workspace(it))
                         } catch (exc: Exception) {
                             Logger.d("onSelectWorkspace: ${exc.message}")
                         }

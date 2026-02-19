@@ -35,7 +35,6 @@ import com.moly3.cedarjam.core.ui.onPointerEvent
 import com.moly3.cedarjam.core.ui.uikit.CJDraggableArea
 import com.moly3.cedarjam.core.ui.uikit.CJIcon
 import com.moly3.cedarjam.core.ui.vectors.BarLeft
-import com.moly3.cedarjam.core.ui.vectors.TrashEmpty
 import com.moly3.cedarjam.pages.page_tabs.TabsComponent
 import com.moly3.cedarjam.pages.page_tabs.ui.TabsPage
 import com.moly3.cedarjam.pages.page_workspace.Intent
@@ -110,7 +109,7 @@ fun TabsToolbarContent(
     }
 
     CJDraggableArea(modifier = modifier.then(toolbarState.modifier).height(ToolbarHeight.dp)) {
-        Box(Modifier.fillMaxWidth()) {
+        Box(it.fillMaxWidth()) {
             Row(
                 Modifier.fillMaxSize(),
                 verticalAlignment = Alignment.CenterVertically

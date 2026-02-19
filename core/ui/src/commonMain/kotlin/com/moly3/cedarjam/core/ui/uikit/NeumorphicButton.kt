@@ -47,7 +47,7 @@ import com.moly3.cedarjam.core.ui.service.KVibrator
 import com.moly3.cedarjam.core.ui.vectors.Tag
 
 @Composable
-fun NeumorphicButton(
+fun NeumorphicShape(
     modifier: Modifier = Modifier,
     isEnabled: Boolean = true,
     accentColor: Color = LocalAppTheme.current.colors.backgroundPrimary,
@@ -78,8 +78,6 @@ fun NeumorphicButton(
     val isInspect = LocalInspectionMode.current
     Box(
         modifier = modifier
-
-            .size(100.dp)
             .graphicsLayer {
                 shadowElevation = 15f * raised * strength
                 shape = buttonShapeUpdated
@@ -174,15 +172,15 @@ fun FidgetPoppinPreview() {
         }, valueRange = 0f..100f)
 
         Column(modifier = Modifier) {
-            NeumorphicButton(
+            NeumorphicShape(
                 modifier = modifier,
                 isPressed = isPressed,
-                buttonShape = RoundedCornerShape(shapeSize.dp),
+                buttonShape = RoundedCornerShape(topStart = 16.dp, bottomEnd = 16.dp),
                 accentColor = Color(0xFFFF4200),
                 painter = rememberVectorPainter(Tag),
                 unpressedColor = Color.White
             )
-            NeumorphicButton(
+            NeumorphicShape(
                 modifier = modifier,
                 isPressed = isPressed,
                 buttonShape = RoundedCornerShape(shapeSize.dp),
@@ -190,7 +188,7 @@ fun FidgetPoppinPreview() {
                 painter = rememberVectorPainter(Tag),
                 unpressedColor = Color.White
             )
-            NeumorphicButton(
+            NeumorphicShape(
                 modifier = modifier,
                 isPressed = true,
                 buttonShape = RoundedCornerShape(shapeSize.dp),

@@ -193,3 +193,15 @@ suspend fun IWorkspaceEnvironment.getCollections(): List<CollectionDTO> {
 suspend fun IWorkspaceEnvironment.getCollectionRows(collectionId: Long?): List<CollectionRowDTO> {
     return getCollectionRowsFlow(collectionId = collectionId).first()
 }
+
+fun IWorkspaceEnvironment.getTempFileNode(fileName: FileName): FileTreeNode.File {
+    val workspaceAbsolutePath = getWorkspace().absolutePath
+    val hiddenDirPath = pathWrapper(hiddenDirectory).pathString
+    val importNode =
+        FileTreeNode.File(
+            fileName,
+            workspaceAbsolutePath,
+            hiddenDirPath
+        )
+    return importNode
+}

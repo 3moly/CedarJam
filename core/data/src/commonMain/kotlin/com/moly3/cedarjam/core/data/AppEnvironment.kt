@@ -59,7 +59,7 @@ class AppEnvironment(
         return WorkspacePresentation(
             name = name,
             fullpath = platformPath,
-            absolutePath = absolutePath,
+//            absolutePath = absolutePath,
             serverName = serverName
         )
     }
@@ -78,7 +78,7 @@ class AppEnvironment(
     override fun getWorkspace(name: String): WorkspacePresentation {
         val workspaces = getWorkspaces()
         val workspace = workspaces.firstOrNull { d -> d.name == name }
-            ?: WorkspacePresentation(name = name, "", "", "")
+            ?: WorkspacePresentation(name = name, "", "")
         return workspace
     }
 
@@ -105,22 +105,21 @@ class AppEnvironment(
     override suspend fun getLocalWorkspaces(): ResultWrapper<List<FileTreeNode>, String> {
         return withContext(io) {
             resultBlock {
-                when (getPlatform()) {
+                val absolutePath = when (getPlatform()) {
                     Platform.Android,
                     Platform.Ios -> {
-                        val absolutePath =
-                            systemFilesManager.toAbsoluteAppPath(pathWrapper("workspaces")).pathString
-                        systemFilesManager.createDirectory(absolutePath)
-                        val nodes =
-                            systemFilesManager.getNodes(directoryAbsolutePath = absolutePath)
-                        nodes
+                        systemFilesManager.toAbsoluteAppPath(pathWrapper("workspaces")).pathString
                     }
 
                     Platform.Jvm,
                     Platform.Wasm -> {
-                        listOf()
+                        systemFilesManager.appWorkspacesDir().pathString
                     }
                 }
+                systemFilesManager.createDirectory(absolutePath)
+                val nodes =
+                    systemFilesManager.getNodes(directoryAbsolutePath = absolutePath)
+                nodes
             }
         }
     }
@@ -154,7 +153,7 @@ class AppEnvironment(
 
                 workspaceEnv.createIndexDatabaseFiles()
 
-                syncService.syncronize(workspaceEnv,isAbsoluteNewLocal = true).shouldBeSuccess()
+                syncService.syncronize(workspaceEnv, isAbsoluteNewLocal = true).shouldBeSuccess()
 
                 workspaceEnv.createDatabaseFiles()
                 workspaceEnv.createDatabase()

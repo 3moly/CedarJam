@@ -30,19 +30,22 @@ import com.moly3.cedarjam.pages.page_workspace.model.ContextMenuData
 import com.moly3.cedarjam.pages.page_workspace.model.RenameFileNodeData
 import com.moly3.cedarjam.core.domain.dialog.DialogColorPickerService
 import com.moly3.cedarjam.core.domain.dialog.DialogDeleteService
-import com.moly3.cedarjam.core.domain.func.combine
+import com.moly3.cedarjam.core.domain.func.combine as cjCombine
 import com.moly3.cedarjam.core.domain.func.doNothing
 import com.moly3.cedarjam.core.domain.func.findNewNameOrDefault
 import com.moly3.cedarjam.core.domain.func.hiddenDirectory
 import com.moly3.cedarjam.core.domain.func.nowInMs
 import com.moly3.cedarjam.core.domain.func.openFileInExplorer
 import com.moly3.cedarjam.core.domain.func.pathWrapper
-import com.moly3.cedarjam.core.domain.func.relativeTo
+import com.moly3.cedarjam.core.domain.func.shareBytes
+import com.moly3.cedarjam.core.domain.func.shareFile
 import com.moly3.cedarjam.core.domain.io
 import com.moly3.cedarjam.core.domain.model.FileName
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
+import com.moly3.cedarjam.core.domain.model.FileTreeNode.Companion.getAll
 import com.moly3.cedarjam.core.domain.model.IndexFileDto
 import com.moly3.cedarjam.core.domain.model.NavigateToFile
+import com.moly3.cedarjam.core.domain.model.NavigateToFile.*
 import com.moly3.cedarjam.core.ui.model.PageNameData
 import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.domain.model.bind
@@ -56,6 +59,8 @@ import com.moly3.cedarjam.core.domain.model.request.RenameTagRequest
 import com.moly3.cedarjam.core.domain.model.request.UpdateTagRequest
 import com.moly3.cedarjam.core.domain.model.resultBlock
 import com.moly3.cedarjam.core.domain.repository.IFilesRepository
+import com.moly3.cedarjam.core.domain.repository.getTempFileNode
+import com.moly3.cedarjam.core.domain.service.AlertService
 import com.moly3.cedarjam.core.domain.service.FileManagerService
 import com.moly3.cedarjam.core.domain.service.IMessageService
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
@@ -63,8 +68,12 @@ import com.moly3.cedarjam.core.domain.usecase.INavigateToFileUseCase
 import com.moly3.cedarjam.core.domain.usecase.ISyncUseCase
 import com.moly3.cedarjam.core.ui.func.recalculateTabWeights
 import com.moly3.cedarjam.core.ui.model.CJText
+import com.moly3.cedarjam.core.ui.model.CJText.*
 import com.moly3.cedarjam.core.ui.model.FileTreeItemPresentation
+import com.moly3.cedarjam.navigation.Route.*
 import com.moly3.cedarjam.pages.page_workspace.Label.*
+import com.moly3.cedarjam.pages.page_workspace.func.findIndexInVisibleList
+import com.moly3.cedarjam.pages.page_workspace.func.revealFile
 import com.moly3.cedarjam.pages.page_workspace.store.WorkspaceStore.Msg.*
 import com.moly3.cedarjam.pages.page_workspace.ui.internal.MenuCoveredId
 import com.moly3.cedarjam.ui.Res
@@ -81,6 +90,7 @@ import io.github.vinceglb.filekit.extension
 import io.github.vinceglb.filekit.nameWithoutExtension
 import io.github.vinceglb.filekit.readBytes
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableMap
 import kotlinx.collections.immutable.toImmutableSet
 import kotlinx.collections.immutable.toPersistentList
@@ -88,13 +98,18 @@ import kotlinx.collections.immutable.toPersistentSet
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.koin.core.parameter.parametersOf
+import kotlin.math.exp
 
 internal class WorkspaceStoreFactory(
     private val storeFactory: StoreFactory,
@@ -103,6 +118,8 @@ internal class WorkspaceStoreFactory(
     private val onSettingsOpen: () -> Unit
 ) : KoinComponent {
 
+    private val alertService: AlertService by inject()
+    private val filesRepo: IFilesRepository by inject()
     private val syncUseCase: ISyncUseCase by inject()
     private val messagerService: IMessageService by inject()
     private val dialogColorPickerService: DialogColorPickerService by inject()
@@ -143,7 +160,6 @@ internal class WorkspaceStoreFactory(
         indexFiles: List<IndexFileDto>
     ): List<FileTreeItemPresentation> {
         val resourceItems = mutableListOf<FileTreeItemPresentation>()
-
 
         for (fileNode in fileNodes.sortedBy { b ->
             when (b) {
@@ -187,105 +203,33 @@ internal class WorkspaceStoreFactory(
         return resourceItems
     }
 
-    fun findAndRevealFile(
-        targetPath: String,
-        files: ImmutableList<FileTreeItemPresentation>,
-        openedDirectories: MutableSet<String>
-    ): String? {
-
-        fun searchInTree(
-            nodes: ImmutableList<FileTreeItemPresentation>,
-            targetPath: String
-        ): List<String>? {
-            for (node in nodes) {
-                if (node.key == targetPath) {
-                    return listOf(node.key)
-                }
-                node.children?.let { children ->
-                    val pathToTarget = searchInTree(children, targetPath)
-                    if (pathToTarget != null) {
-                        // prepend current node to path
-                        return listOf(node.key) + pathToTarget
-                    }
-                }
-            }
-            return null
-        }
-
-        val pathInFiles = searchInTree(files, targetPath) ?: return null
-
-        // open all parents, but not the file itself (last element is the target)
-        val parentDirectories = pathInFiles.dropLast(1)
-        parentDirectories.forEach { dirPath ->
-            if (dirPath !in openedDirectories) {
-                openedDirectories.add(dirPath)
-            }
-        }
-
-        return targetPath
-    }
-
-    fun findIndexInVisibleList(
-        key: String,
-        files: ImmutableList<FileTreeItemPresentation>,
-        openedDirectories: ImmutableList<String>
-    ): Int? {
-        var index = 0
-
-        fun traverse(nodes: ImmutableList<FileTreeItemPresentation>): Int? {
-            for (node in nodes) {
-                if (node.key == key) {
-                    return index
-                }
-                index++
-                val nodeChildren = node.children
-                if (nodeChildren != null &&
-                    node.key in openedDirectories
-                ) {
-                    val found = traverse(nodeChildren)
-                    if (found != null) return found
-                }
-            }
-            return null
-        }
-
-        return traverse(files)
-    }
 
     private inner class ExecutorImpl :
         BaseExecutor<Intent, Unit, State, WorkspaceStore.Msg, Label>(lifecycle) {
 
-        private suspend fun revealFile(targetPath: String): Pair<Set<String>, Int>? {
-            val openedDirectories = state().openedDirectories.toMutableSet()
-            val revealedPath = findAndRevealFile(
-                targetPath = targetPath,
-                files = state().files,
-                openedDirectories = openedDirectories
+        private val menuTreeState = MutableStateFlow<ImmutableList<FileTreeItemPresentation>>(
+            persistentListOf()
+        )
+        private val annoationsTreeState = MutableStateFlow<ImmutableList<FileTreeItemPresentation>>(
+            persistentListOf()
+        )
+        private val tagsTreeState = MutableStateFlow<ImmutableList<FileTreeItemPresentation>>(
+            persistentListOf()
+        )
+        private val collectionsTreeState =
+            MutableStateFlow<ImmutableList<FileTreeItemPresentation>>(
+                persistentListOf()
             )
-
-            //onIntent(Intent.SetOpenedDirectories(openedDirectories.toPersistentSet()))
-
-            return if (revealedPath != null) {
-                // Wait for recomposition after opening directories
-                delay(50) // Small delay to allow recomposition
-
-                val itemIndex = findIndexInVisibleList(
-                    key = revealedPath,
-                    files = state().files,
-                    openedDirectories = openedDirectories.toPersistentList()
-                )
-                Logger.i("index found scroll: ${itemIndex}")
-                // Calculate the index and scroll
-//                        val itemIndex = calculateItemIndex(targetPath, state, openedDirectories)
-                if (itemIndex != null) {
-                    // listState.animateScrollToItem(itemIndex)
-                    openedDirectories to itemIndex
-                } else null
-            } else null
-        }
+        private val filesTreeState = MutableStateFlow<ImmutableList<FileTreeItemPresentation>>(
+            persistentListOf()
+        )
 
         private suspend fun send(targetPath: String) {
-            val pair = revealFile(targetPath)
+            val pair = revealFile(
+                targetPath,
+                openedDirectories = state().openedDirectories,
+                files = state().files
+            )
             if (pair != null) {
                 dispatch(WorkspaceStore.Msg.SetOpenedDirectories(pair.first.toImmutableSet()))
                 publish(Label.ScrollToIndex(pair.second))
@@ -293,12 +237,12 @@ internal class WorkspaceStoreFactory(
         }
 
         private fun updateSyncStatus() {
-            scope.launch {
-                dispatch(WorkspaceStore.Msg.SetSyncStatus(UIState.Loading))
-                val sync =
-                    syncUseCase.getStatus(workspace = workspaceSession.workspaceEnvStateFlow.value)
-                dispatch(WorkspaceStore.Msg.SetSyncStatus(sync.mapToUIState { "" }))
-            }
+//            scope.launch {
+//                dispatch(WorkspaceStore.Msg.SetSyncStatus(UIState.Loading))
+//                val sync =
+//                    syncUseCase.getStatus(workspace = workspaceSession.workspaceEnvStateFlow.value)
+//                dispatch(WorkspaceStore.Msg.SetSyncStatus(sync.mapToUIState { "" }))
+//            }
         }
 
         override fun onStart(scopeFromStartToStop: CoroutineScope) {
@@ -333,30 +277,60 @@ internal class WorkspaceStoreFactory(
                 }
             }
             scopeFromStartToStop.launch {
-                combine(
-                    workspaceSession.getFileNodes,
-                    workspaceSession.tagsFlow,
-                    workspaceSession.collectionsFlow,
-                    workspaceSession.getResources(),
-                    workspaceSession.workspaceFlow,
-                    workspaceSession.indexFilesFlow
-                ) { files, tags, collections, resourcesState, workspace, indexFiles ->
-                    val presentations = mutableListOf<FileTreeItemPresentation>()
+                cjCombine(
+                    menuTreeState,
+                    annoationsTreeState,
+                    tagsTreeState,
+                    collectionsTreeState,
+                    filesTreeState
+                ) { menu, annotations, tags, collections, files ->
+                    val allTree = mutableListOf<FileTreeItemPresentation>()
+                    allTree.addAll(menu)
+                    allTree.addAll(annotations)
+                    allTree.addAll(tags)
+                    allTree.addAll(collections)
+                    allTree.addAll(files)
+                    allTree.toPersistentList()
+                }.flowOn(io).collectLatest {
+                    dispatch(WorkspaceStore.Msg.SetFileNodesTree(it))
+                }
+            }
+            val menuPressentaitons = mutableListOf<FileTreeItemPresentation>()
 
-                    presentations.add(
-                        FileTreeItemPresentation(
-                            key = "home_tab",
-                            name = CJText.Res(Res.string.home),
-                            data = FileTreeItemPresentation.FileTreeItemPresentationData.Home,
+            menuPressentaitons.add(
+                FileTreeItemPresentation(
+                    key = "home_tab",
+                    name = CJText.Res(Res.string.home),
+                    data = FileTreeItemPresentation.FileTreeItemPresentationData.Home,
+                )
+            )
+            menuPressentaitons.add(
+                FileTreeItemPresentation(
+                    key = "graph_tab",
+                    name = CJText.Res(Res.string.graph),
+                    data = FileTreeItemPresentation.FileTreeItemPresentationData.Graph,
+                )
+            )
+            scopeFromStartToStop.launch {
+                menuTreeState.emit(menuPressentaitons.toPersistentList())
+            }
+            scopeFromStartToStop.launch {
+                workspaceSession.annotationsFlow.collectLatest {
+                    annoationsTreeState.emit(
+                        persistentListOf(
+                            FileTreeItemPresentation(
+                                key = "annotations_tab",
+                                name = CJText.Raw("annotations: ${it.size}"),
+                                data = FileTreeItemPresentation.FileTreeItemPresentationData.Annotations,
+                            )
                         )
                     )
-                    presentations.add(
-                        FileTreeItemPresentation(
-                            key = "graph_tab",
-                            name = CJText.Res(Res.string.graph),
-                            data = FileTreeItemPresentation.FileTreeItemPresentationData.Graph,
-                        )
-                    )
+                }
+            }
+
+            scopeFromStartToStop.launch {
+                workspaceSession.tagsFlow.map { tags ->
+                    val presentations = mutableListOf<FileTreeItemPresentation>()
                     val tagItems = mutableListOf<FileTreeItemPresentation>()
                     for (tag in tags) {
                         tagItems.add(
@@ -378,8 +352,15 @@ internal class WorkspaceStoreFactory(
                             children = tagItems.toPersistentList()
                         )
                     )
-
-
+                    presentations.toPersistentList()
+                }.flowOn(io)
+                    .collectLatest {
+                        tagsTreeState.emit(it)
+                    }
+            }
+            scopeFromStartToStop.launch {
+                workspaceSession.collectionsFlow.map { collections ->
+                    val presentations = mutableListOf<FileTreeItemPresentation>()
                     val collectionsItems = mutableListOf<FileTreeItemPresentation>()
                     for (collection in collections) {
                         collectionsItems.add(
@@ -400,6 +381,18 @@ internal class WorkspaceStoreFactory(
                             children = collectionsItems.toPersistentList()
                         )
                     )
+                    presentations.toPersistentList()
+                }.flowOn(io).collectLatest {
+                    collectionsTreeState.emit(it)
+                }
+            }
+            scopeFromStartToStop.launch {
+                combine(
+                    workspaceSession.getFileNodes,
+                    workspaceSession.getResources(),
+                    workspaceSession.indexFilesFlow
+                ) { files, resourcesState, indexFiles ->
+                    val presentations = mutableListOf<FileTreeItemPresentation>()
 
                     try {
                         val resourcesDirectory: FileTreeNode.Directory? = when (resourcesState) {
@@ -450,17 +443,13 @@ internal class WorkspaceStoreFactory(
                                 )
                             )
                         }
-
-
                     } catch (exc: Exception) {
                         val msg = "" + exc.message
                     }
-
-
-                    presentations
+                    presentations.toPersistentList()
                 }.flowOn(io)
                     .collectLatest {
-                        dispatch(WorkspaceStore.Msg.SetFileNodes(it.toPersistentList()))
+                        filesTreeState.emit(it)
                     }
             }
             scopeFromStartToStop.launch {
@@ -482,14 +471,6 @@ internal class WorkspaceStoreFactory(
         }
 
         private fun createFile(parentNode: FileTreeNode.Directory, newFileName: FileName) {
-//            val parentFolder = systemFilesManager.getFileNodeFromFullPath(
-//                workspacePath = workspaceSession.workspaceEnvStateFlow.value.getWorkspace().absolutePath,
-//                fullPath = parentRelativePath,
-//                isDirectory = true
-//            )
-//            if (parentFolder is FileTreeNode.Directory) {
-//
-//            }
             scope.launch {
                 workspaceSession.workspaceEnvStateFlow.value.createFileNode(
                     parentRelativePath = parentNode.getRelativePath(),
@@ -498,6 +479,52 @@ internal class WorkspaceStoreFactory(
                     byteArray = null
                 )
             }
+        }
+
+        private suspend fun exportNodeAndShare(node: FileTreeNode) {
+            val workspaceEnv = workspaceSession.workspaceEnvStateFlow.value
+            val workspacePath = workspaceEnv.getWorkspace().absolutePath
+            val node = when(node){
+                is FileTreeNode.Directory -> filesRepo.getNodes(
+                    workspacePath,
+                    node.getFullPath()
+                )
+                is FileTreeNode.File -> listOf(node)
+            }
+            val exportFile = workspaceEnv.getTempFileNode(FileName("exportShare", "zip"))
+            filesRepo.deleteNode(exportFile)
+            val filesToPackInZip = mutableListOf<String>()
+            val allNodes = node.getAll()
+            for (node in allNodes) {
+                filesToPackInZip.add(node.getRelativePath())
+            }
+//            when (node) {
+//                is FileTreeNode.Directory -> {
+//
+//                }
+//
+//                is FileTreeNode.File -> {
+//                    filesToPackInZip.add(node.getRelativePath())
+//                }
+//            }
+            filesRepo.packFilesToZip(
+                workspacePath,
+                filesToPackInZip,
+                exportFile.getFullPath()
+            )
+            delay(1000L)
+
+//            val bytes = filesRepo.getNodeBytes(exportFile)
+//            Logger.w{"bytes of zip: ${bytes.size}"}
+            withContext(Dispatchers.Main) {
+                if (filesRepo.isNodeExists(exportFile)) {
+                    shareFile(exportFile.getFullPath())
+//                    shareBytes(bytes)
+                } else {
+                    alertService.sendMessage("export file is not exists")
+                }
+            }
+
         }
 
         override fun executeIntent(intent: Intent) {
@@ -516,86 +543,96 @@ internal class WorkspaceStoreFactory(
                         is FileTreeItemPresentation.FileTreeItemPresentationData.Directory -> {
                             buttons.add(
                                 ContextMenuButton(
-                                    title = CJText.Raw("Create markdown file"),
+                                    title = Raw("Create markdown file"),
                                     onClick = {
                                         createFile(
                                             parentNode = data.fileNode,
                                             newFileName = FileName("Untitled", "md")
                                         )
                                         updateSyncStatus()
+                                        hideContextMenu()
                                     }
                                 ))
                             buttons.add(
                                 ContextMenuButton(
-                                    title = CJText.Raw("Upload resource"),
+                                    title = Raw("Upload file"),
                                     onClick = {
-                                        executeIntent(Intent.UploadResource)
-//                                        createFile(
-//                                            parentFullPath = data.fileNode.getFullPath(),
-//                                            newFileName = FileName("Untitled", "md")
-//                                        )
+                                        executeIntent(Intent.UploadResource(directory = data.fileNode))
+                                        hideContextMenu()
                                     }
                                 ))
                             buttons.add(
                                 ContextMenuButton(
-                                    title = CJText.Raw("Create canvas file"),
+                                    title = Raw("Upload as resource"),
+                                    onClick = {
+                                        executeIntent(Intent.UploadResource(null))
+                                        hideContextMenu()
+                                    }
+                                ))
+                            buttons.add(
+                                ContextMenuButton(
+                                    title = Raw("Export as Zip"),
+                                    onClick = {
+                                        hideContextMenu()
+                                        scope.launch(io) {
+                                            exportNodeAndShare(data.fileNode)
+                                        }
+                                    }
+                                ))
+                            buttons.add(
+                                ContextMenuButton(
+                                    title = Raw("Create canvas file"),
                                     onClick = {
                                         createFile(
                                             parentNode = data.fileNode,
                                             newFileName = FileName("Untitled", "canvas")
                                         )
                                         updateSyncStatus()
+                                        hideContextMenu()
                                     }
                                 ))
                             buttons.add(
                                 ContextMenuButton(
-                                    title = CJText.Raw("Show in finder"),
+                                    title = Raw("Show in finder"),
                                     onClick = {
-//                                        val fileNode = systemFilesManager.getFileNodeFromFullPath(
-//                                            fullPath = data.fileNode.getFullPath(),
-//                                            is
-//                                        )
-                                        openFileInExplorer(data.fileNode)
+                                        openFileInExplorer(data.fileNode.getFullPath())
+                                        hideContextMenu()
                                     }
                                 ))
                             if (data.isDragEnabled) {
                                 buttons.add(
                                     ContextMenuButton(
-                                        title = CJText.Raw("Rename"),
+                                        title = Raw("Rename"),
                                         onClick = {
                                             dispatch(
                                                 SetRenameFileNodeData(
                                                     RenameFileNodeData(intent.target)
                                                 )
                                             )
+                                            hideContextMenu()
                                         }
                                     ))
                                 buttons.add(
                                     ContextMenuButton(
-                                        title = CJText.Raw("Delete"),
+                                        title = Raw("Delete"),
                                         onClick = {
+                                            hideContextMenu()
                                             val workspaceEnv =
                                                 workspaceSession.workspaceEnvStateFlow.value
                                             val fileNode = data.fileNode
-//                                                systemFilesManager.getFileNodeFromFullPath(
-//                                                    fullPath = data.fileNode.getFullPath(),
-//                                                    isDirectory = true
-//                                                )
-                                            if (fileNode is FileTreeNode.Directory) {
-                                                scope.launch {
-                                                    val fullPath = fileNode.getFullPath()
-                                                    val nodes = workspaceEnv.getNodes(fullPath)
-                                                    val result = dialogDeleteService.open(Unit)
-                                                    if (result) {
-                                                        try {
-                                                            for (item in nodes) {
-                                                                workspaceEnv.deleteNode(item)
-                                                            }
-                                                        } catch (exc: Exception) {
-                                                            println("exc: ${exc.message}")
+                                            scope.launch {
+                                                val fullPath = fileNode.getFullPath()
+                                                val nodes = workspaceEnv.getNodes(fullPath)
+                                                val result = dialogDeleteService.open(Unit)
+                                                if (result) {
+                                                    try {
+                                                        for (item in nodes) {
+                                                            workspaceEnv.deleteNode(item)
                                                         }
-                                                        updateSyncStatus()
+                                                    } catch (exc: Exception) {
+                                                        println("exc: ${exc.message}")
                                                     }
+                                                    updateSyncStatus()
                                                 }
                                             }
                                         }
@@ -608,35 +645,43 @@ internal class WorkspaceStoreFactory(
                         is FileTreeItemPresentation.FileTreeItemPresentationData.File -> {
                             buttons.add(
                                 ContextMenuButton(
-                                    title = CJText.Raw("Show in finder"),
+                                    title = Raw("Show in finder"),
                                     onClick = {
-//                                        val fileNode = systemFilesManager.getFileNodeFromFullPath(
-//                                            fullPath = data.fileNode.getFullPath()
-//                                        )
-                                        openFileInExplorer(data.fileNode)
+                                        openFileInExplorer(data.fileNode.getFullPath())
+                                        hideContextMenu()
                                     }
                                 ))
                             buttons.add(
                                 ContextMenuButton(
-                                    title = CJText.Raw("Rename"),
+                                    title = Raw("Export as Zip"),
+                                    onClick = {
+                                        hideContextMenu()
+                                        scope.launch(io) {
+                                            exportNodeAndShare(data.fileNode)
+                                        }
+                                    }
+                                ))
+                            buttons.add(
+                                ContextMenuButton(
+                                    title = Raw("Rename"),
                                     onClick = {
                                         dispatch(
                                             SetRenameFileNodeData(
                                                 RenameFileNodeData(intent.target)
                                             )
                                         )
+                                        hideContextMenu()
                                     }
                                 ))
                             buttons.add(
                                 ContextMenuButton(
-                                    title = CJText.Raw("Delete"),
+                                    title = Raw("Delete"),
                                     onClick = {
+                                        hideContextMenu()
                                         val workspaceEnv =
                                             workspaceSession.workspaceEnvStateFlow.value
                                         val fileNode = data.fileNode
-//                                            systemFilesManager.getFileNodeFromFullPath(
-//                                            fullPath = data.fileNode.getFullPath()
-//                                        )
+
                                         scope.launch {
                                             val result = dialogDeleteService.open(Unit)
                                             if (result) {
@@ -662,18 +707,19 @@ internal class WorkspaceStoreFactory(
                         is FileTreeItemPresentation.FileTreeItemPresentationData.Collection -> {
                             buttons.add(
                                 ContextMenuButton(
-                                    title = CJText.Raw("Rename"),
+                                    title = Raw("Rename"),
                                     onClick = {
                                         dispatch(
                                             SetRenameFileNodeData(
                                                 RenameFileNodeData(intent.target)
                                             )
                                         )
+                                        hideContextMenu()
                                     }
                                 ))
                             buttons.add(
                                 ContextMenuButton(
-                                    title = CJText.Raw("Delete"),
+                                    title = Raw("Delete"),
                                     onClick = {
                                         scope.launch {
                                             val result = dialogDeleteService.open(Unit)
@@ -685,6 +731,7 @@ internal class WorkspaceStoreFactory(
                                                 updateSyncStatus()
                                             }
                                         }
+                                        hideContextMenu()
                                     }
                                 ))
                         }
@@ -693,7 +740,7 @@ internal class WorkspaceStoreFactory(
                         is FileTreeItemPresentation.FileTreeItemPresentationData.Tag -> {
                             buttons.add(
                                 ContextMenuButton(
-                                    title = CJText.Raw("Change color"),
+                                    title = Raw("Change color"),
                                     onClick = {
                                         scope.launch {
                                             val selectedColor =
@@ -709,22 +756,24 @@ internal class WorkspaceStoreFactory(
                                                 updateSyncStatus()
                                             }
                                         }
+                                        hideContextMenu()
                                     }
                                 ))
                             buttons.add(
                                 ContextMenuButton(
-                                    title = CJText.Raw("Rename"),
+                                    title = Raw("Rename"),
                                     onClick = {
                                         dispatch(
                                             SetRenameFileNodeData(
                                                 RenameFileNodeData(intent.target)
                                             )
                                         )
+                                        hideContextMenu()
                                     }
                                 ))
                             buttons.add(
                                 ContextMenuButton(
-                                    title = CJText.Raw("Delete"),
+                                    title = Raw("Delete"),
                                     onClick = {
                                         scope.launch {
                                             val result = dialogDeleteService.open(Unit)
@@ -736,6 +785,7 @@ internal class WorkspaceStoreFactory(
                                                 updateSyncStatus()
                                             }
                                         }
+                                        hideContextMenu()
                                     }
                                 ))
                         }
@@ -744,6 +794,7 @@ internal class WorkspaceStoreFactory(
                         FileTreeItemPresentation.FileTreeItemPresentationData.Graph -> {}
                         FileTreeItemPresentation.FileTreeItemPresentationData.Home -> {}
                         FileTreeItemPresentation.FileTreeItemPresentationData.Tags -> {}
+                        FileTreeItemPresentation.FileTreeItemPresentationData.Annotations -> {}
                     }
                     if (buttons.count() > 0) {
                         val context = ContextMenuData(
@@ -782,13 +833,16 @@ internal class WorkspaceStoreFactory(
 
                             val workspaceEnv = workspaceSession.workspaceEnvStateFlow.value
 
-                            val resourcesDirectory = pathWrapper(
-                                hiddenDirectory,
-                                "resources",
-                                file.extension
-                            )
+                            val resourcesDirectory =
+                                if (intent.directory != null)
+                                    intent.directory.getRelativePath()
+                                else pathWrapper(
+                                    hiddenDirectory,
+                                    "resources",
+                                    file.extension
+                                ).pathString
                             workspaceEnv.createFileNode(
-                                parentRelativePath = resourcesDirectory.pathString,
+                                parentRelativePath = resourcesDirectory,
                                 fileName = FileName(
                                     name = file.nameWithoutExtension,
                                     extension = file.extension
@@ -914,6 +968,10 @@ internal class WorkspaceStoreFactory(
                         is FileTreeItemPresentation.FileTreeItemPresentationData.Collection -> {
                             navigator.navigate(Collection(CollectionPageInput(collectionId = data.id)))
                         }
+
+                        FileTreeItemPresentation.FileTreeItemPresentationData.Annotations -> {
+
+                        }
                     }
                 }
 
@@ -980,6 +1038,7 @@ internal class WorkspaceStoreFactory(
                         is FileTreeItemPresentation.FileTreeItemPresentationData.Collection,
                         FileTreeItemPresentation.FileTreeItemPresentationData.Graph,
                         FileTreeItemPresentation.FileTreeItemPresentationData.Home,
+                        FileTreeItemPresentation.FileTreeItemPresentationData.Annotations,
                         is FileTreeItemPresentation.FileTreeItemPresentationData.Tag -> doNothing()
                     }
                 }
@@ -1074,6 +1133,7 @@ internal class WorkspaceStoreFactory(
                         FileTreeItemPresentation.FileTreeItemPresentationData.Collections,
                         FileTreeItemPresentation.FileTreeItemPresentationData.Graph,
                         FileTreeItemPresentation.FileTreeItemPresentationData.Home,
+                        FileTreeItemPresentation.FileTreeItemPresentationData.Annotations,
                         FileTreeItemPresentation.FileTreeItemPresentationData.Tags -> doNothing()
                     }
                     dispatch(SetRenameFileNodeData(null))
@@ -1085,31 +1145,6 @@ internal class WorkspaceStoreFactory(
                         workspaceSession.setSettings(intent.data)
                     }
                 }
-
-//                is Intent.Sync -> {
-//                    scope.launch {
-//                        dispatch(WorkspaceStore.Msg.SetSyncStatus(UIState.Loading))
-//                        val sd = syncUseCase.invoke(workspaceSession.workspaceEnvStateFlow.value)
-//                        dispatch(WorkspaceStore.Msg.SetSyncStatus(sd.mapToUIState {
-//                            it.message ?: ""
-//                        }))
-//                        when (sd) {
-//                            is ResultWrapper.Error -> {
-//
-//                            }
-//
-//                            is ResultWrapper.Success -> {
-////                                syncUseCase.getStatus(workspaceSession.workspaceEnvStateFlow.value)
-//
-//                                workspaceSession.initConfigAndFiles()
-//
-//                                workspaceSession.loadLocalFont()
-//
-////                                updateSyncStatus()
-//                            }
-//                        }
-//                    }
-//                }
 
                 is Intent.ClearingTabs -> {
                     val sizes =
@@ -1190,7 +1225,7 @@ internal class WorkspaceStoreFactory(
                 is SetContextMenu -> copy(contextMenuData = msg.value)
                 is SetActiveWorkspace -> copy(activeWorkspace = msg.value)
                 is SetDatabaseStatus -> copy(databaseStatus = msg.value)
-                is SetFileNodes -> copy(files = msg.value)
+                is SetFileNodesTree -> copy(files = msg.value)
                 is SetCurrentTabData -> copy(activeTabPageData = msg.value)
                 is SetOpenedDirectories -> copy(openedDirectories = msg.value)
                 is SetIsFullMenu -> copy(isMenuOpened = msg.value)

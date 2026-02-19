@@ -3,10 +3,12 @@ package com.moly3.cedarjam.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -22,12 +24,16 @@ import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.extensions.compose.experimental.stack.ChildStack
 import com.arkivanov.decompose.extensions.compose.experimental.stack.animation.stackAnimation
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
+import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalHazeState
 import com.moly3.cedarjam.core.ui.compositions.LocalVideoPlayer
+import com.moly3.cedarjam.core.ui.model.CJText
 import com.moly3.cedarjam.core.ui.onPointerEvent
 import com.moly3.cedarjam.core.ui.uikit.CJApplicationTheme
 import com.moly3.cedarjam.core.ui.uikit.CJButton
+import com.moly3.cedarjam.core.ui.uikit.GifPlayer
+import com.moly3.cedarjam.core.ui.uikit.NeumorphicShape
 import com.moly3.cedarjam.navigation.Root
 import com.moly3.cedarjam.navigation.Route
 import com.moly3.cedarjam.pages.page_select_workspace.ui.SelectWorkspacePage
@@ -49,8 +55,8 @@ import io.github.kdroidfilter.composemediaplayer.rememberVideoPlayerState
 fun MainApp(root: Root) {
     val stack by root.childStack.subscribeAsState()
     val appSettings by root.appSettingsFlow.collectAsState()
-
-    CJApplicationTheme(appSettings = appSettings) {
+    val syncStatus by root.sendingBranchFlow.collectAsState(UIState.Loading)
+    CJApplicationTheme(isRelease = root.isRelease, appSettings = appSettings) {
         val hazeState = rememberHazeState(blurEnabled = false)
         val playerState = rememberVideoPlayerState()
         CompositionLocalProvider(
@@ -130,6 +136,31 @@ fun MainApp(root: Root) {
                 }
                 AppComposableWidgetHideKeyboard()
                 TopAlertServiceUI(root.alertService)
+                when (val sync = syncStatus) {
+                    is UIState.Error,
+                    UIState.Loading -> {
+                    }
+
+                    is UIState.Success -> {
+                        NeumorphicShape(
+                            modifier = Modifier.align(Alignment.Center).size(200.dp),
+                            content = {
+                                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        com.moly3.cedarjam.core.ui.uikit.CJText(
+                                            text = sync.data.message
+                                        )
+                                        com.moly3.cedarjam.core.ui.uikit.CJText(
+                                            text = "progress: ${sync.data.progress}/${sync.data.all}"
+                                        )
+                                    }
+                                }
+                            }) {
+
+                        }
+                    }
+                }
+//                GifPlayer(gifUrl = "https://cdn.svgator.com/images/2026/01/Chart-run-cycle.gif")
             }
         }
     }

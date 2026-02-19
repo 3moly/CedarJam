@@ -13,6 +13,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.moly3.cedarjam.core.domain.func.getPlatform
 import com.moly3.cedarjam.core.domain.model.Platform
+import com.moly3.cedarjam.core.ui.compositions.LocalIsRelease
 
 const val topStatusBarPadding = 0
 const val windowToolbarPadding = 40
@@ -38,9 +39,12 @@ private val DesktopWindowToolbarInsets
 
 private val DesktopNavigationBarsInsets
     @Composable
-    get() = WindowInsets(
-        bottom = with(LocalDensity.current) { bottomNavigationBarPadding.dp.roundToPx() }
-    )
+    get() = if(!LocalIsRelease.current){
+        WindowInsets(
+            bottom = with(LocalDensity.current) { bottomNavigationBarPadding.dp.roundToPx() }
+        )
+    }else
+        WindowInsets()
 
 @Composable
 fun Modifier.compactOnlyStatusBar(): Modifier {

@@ -6,7 +6,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     var backDispatcher: BackDispatcher = BackDispatcherKt.BackDispatcher()
     
     lazy var root: RootComponent = {
-        CreateRootComponentSafeKt.createRootComponentSafe(lifecycle: ApplicationLifecycle(),stateKeeper: stateKeeper, backDispatcher: backDispatcher, onDestroy: {}) {
+        CreateRootComponentSafeKt.createRootComponentSafe(lifecycle: ApplicationLifecycle(),stateKeeper: stateKeeper, backDispatcher: backDispatcher, onDestroy: {}) {_ in 
             StateKeeperDispatcherKt.StateKeeperDispatcher(savedState: nil)
         }
     }()

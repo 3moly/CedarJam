@@ -1,6 +1,7 @@
 package com.moly3.cedarjam.pages.page_workspace
 
 import androidx.compose.ui.geometry.Offset
+import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.ui.model.PageNameData
 import com.moly3.cedarjam.core.domain.model.settings.WorkspaceSettings
 import com.moly3.cedarjam.core.ui.model.FileTreeItemPresentation
@@ -22,7 +23,7 @@ sealed interface Intent {
         val file: FileTreeItemPresentation
     ) : Intent
 
-    data object UploadResource : Intent
+    data class UploadResource(val directory: FileTreeNode.Directory?) : Intent
 
     data class OnOffsetTabChangeOffset(
         val allTabIndexes: List<Int>,

@@ -404,10 +404,10 @@ internal class CollectionStoreFactory(
     private object ReducerImpl : Reducer<State, CollectionStore.Msg> {
         override fun State.reduce(msg: CollectionStore.Msg): State {
             return when (msg) {
-                is CollectionStore.Msg.SetRows -> copy(rows = msg.value)
+                is CollectionStore.Msg.SetRows -> copy(rows = msg.value.toPersistentList())
                 is CollectionStore.Msg.SetCollection -> copy(collection = msg.value)
                 is CollectionStore.Msg.SetWorkspace -> copy(workspace = msg.value)
-                is CollectionStore.Msg.SetTagCollectionRows -> copy(tagCollectionRows = msg.value)
+                is CollectionStore.Msg.SetTagCollectionRows -> copy(tagCollectionRows = msg.value.toPersistentList())
                 is CollectionStore.Msg.SetCurrentPage -> copy(currentPage = msg.value)
                 is CollectionStore.Msg.SetMaxPage -> copy(maxPage = msg.value)
                 is CollectionStore.Msg.SetTags -> copy(tags = msg.value)

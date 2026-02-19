@@ -109,6 +109,7 @@ class DialogSettingsComponentImpl(
     private val navigation = StackNavigation<Config>()
 
     private val _stack = childStack(
+        key = "settings",
         source = navigation,
         serializer = Config.serializer(),
         initialStack = { listOf(Config.Transparent, Config.Main) },

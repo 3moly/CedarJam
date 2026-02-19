@@ -11,7 +11,8 @@ import com.moly3.cedarjam.core.domain.service.WorkspaceSession
 class GraphComponentImpl(
     componentContext: ComponentContext,
     storeFactory: StoreFactory,
-    workspaceSession: WorkspaceSession
+    workspaceSession: WorkspaceSession,
+    private val openWorkspaceSettings: (Boolean) -> Unit
 ) : GraphComponent,
     ComponentContext by componentContext {
 
@@ -19,7 +20,8 @@ class GraphComponentImpl(
         GraphStoreFactory(
             storeFactory = storeFactory,
             lifecycle = lifecycle,
-            workspaceSession = workspaceSession
+            workspaceSession = workspaceSession,
+            openWorkspaceSettings = openWorkspaceSettings
         ).create(componentContext.stateKeeper)
     }
 

@@ -13,6 +13,7 @@ plugins {
     alias(libs.plugins.sqlDelight).apply(false)
     alias(libs.plugins.composeHotReload).apply(false)
     alias(libs.plugins.compose).apply(false)
+    alias(libs.plugins.serialization).apply(false)
 //    alias(libs.plugins.stability.analyzer).apply(false)
     alias(libs.plugins.modulegraph.mermaid)
     alias(libs.plugins.android.kotlin.multiplatform.library).apply(false)

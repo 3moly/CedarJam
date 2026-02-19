@@ -4,9 +4,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
-import com.dshatz.pdfmp.compose.PdfView
-import com.dshatz.pdfmp.compose.state.rememberPdfState
-import com.dshatz.pdfmp.source.PdfSource
+//import com.dshatz.pdfmp.compose.PdfView
+//import com.dshatz.pdfmp.compose.state.rememberPdfState
+//import com.dshatz.pdfmp.source.PdfSource
 import com.moly3.cedarjam.core.domain.model.AnnotationDTO
 import com.moly3.cedarjam.core.domain.model.request.CreateAnnotationRequest
 import com.moly3.cedarjam.features.feature_file_view.ObsPdfDocument
@@ -23,17 +23,17 @@ actual fun CJPdf(
     onAddAnnotation: (CreateAnnotationRequest) -> Unit,
     onDeleteAnnotation: (AnnotationDTO) -> Unit
 ) {
-    val state = rememberPdfState(PdfSource.PdfPath(Path(filePath)))
-    PdfView(state, modifier.fillMaxSize())
-    LaunchedEffect(currentPage) {
-        try {
-//           val staa= state.displayState.value
+//    val state = rememberPdfState(PdfSource.PdfPath(Path(filePath)))
+//    PdfView(state, modifier.fillMaxSize())
+//    LaunchedEffect(currentPage) {
+//        try {
+////           val staa= state.displayState.value
+////
+////            if (state.isInitialized.value) {
+////                state.listState.scrollToItem(currentPage)
+////            }
 //
-//            if (state.isInitialized.value) {
-//                state.listState.scrollToItem(currentPage)
-//            }
-
-        } catch (exc: Exception) {
-        }
-    }
+//        } catch (exc: Exception) {
+//        }
+//    }
 }

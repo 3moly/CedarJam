@@ -21,6 +21,8 @@ import com.moly3.cedarjam.core.domain.model.TagLinkDtoData
 import com.moly3.cedarjam.core.domain.repository.IFilesRepository
 import com.moly3.cedarjam.core.domain.service.IUtilsService
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
+import com.moly3.cedarjam.core.ui.func.navigationBarsPaddingCJ
+import com.moly3.cedarjam.core.ui.func.wstatusBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.service.IJvmBrowserService
 import com.moly3.cedarjam.core.ui.service.MacTrackpadGestureService
 import com.moly3.cedarjam.core.ui.uikit.CJButton
@@ -59,7 +61,7 @@ internal fun PageContent(
                         fileNode = state.fileType,
                         contentFileEdit = { fileType ->
                             FileEdit(
-                                modifier = Modifier,
+                                modifier = Modifier.wstatusBarsPaddingCJ(),
                                 text = fileType.value,
                                 isCompact = false,
                                 onSave = {

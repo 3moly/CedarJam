@@ -1,8 +1,10 @@
 package com.moly3.cedarjam.core.data
 
+import co.touchlab.kermit.Logger
 import com.moly3.cedarjam.core.net.IRemoteSyncRepository
 import com.moly3.cedarjam.core.domain.DefaultJson
 import com.moly3.cedarjam.core.domain.func.doNothing
+import com.moly3.cedarjam.core.domain.func.insertNode
 import com.moly3.cedarjam.core.domain.func.normalizeText
 import com.moly3.cedarjam.core.domain.func.nowInMs
 import com.moly3.cedarjam.core.domain.func.toColor
@@ -61,6 +63,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -183,9 +187,19 @@ class WorkspaceEnvironment(
         }
     }
 
+    private val refreshMutex = Mutex()
+
     override suspend fun updateTimes() {
-        val state = tryToGet()
-        fileNodesState.emit(state)
+        withContext(io) {
+            if (fileNodesState.value is UIState.Success && false) {
+
+            } else {
+                refreshMutex.withLock {
+                    val state = tryToGet()
+                    fileNodesState.emit(state)
+                }
+            }
+        }
     }
 
     override suspend fun reinitDatabase() {
@@ -269,11 +283,11 @@ class WorkspaceEnvironment(
         return sqlStorage
             .getCollectionRows(collectionId = collectionId)
             .map {
-                println(
+                Logger.w {
                     "${collectionId} rows: mapping to dto ${
                         Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
                     }"
-                )
+                }
                 it.map { d -> d.toDTO() }
             }
             .flowOn(io)
@@ -466,7 +480,6 @@ class WorkspaceEnvironment(
         return result
     }
 
-
     override suspend fun createFileNode(
         parentRelativePath: String,
         fileName: FileName,
@@ -509,9 +522,18 @@ class WorkspaceEnvironment(
         return resultBlock {
             val fileNode = bind(newNode)
             ensure(fileNode is FileTreeNode.File) { "Expected file to be created" }
-            updateTimes()
+            se(parentRelativePath, fileNode)
             fileNode
         }
+    }
+
+    private suspend fun se(parentRelativePath: String, createdNode: FileTreeNode) {
+        updateTimes()
+//        val filesState = fileNodesState.value
+//        if (filesState is UIState.Success) {
+//            val files = filesState.data.insertNode(createdNode, parentRelativePath)
+//            fileNodesState.emit(UIState.Success(files))
+//        }
     }
 
     override suspend fun createDirectory(
@@ -549,8 +571,6 @@ class WorkspaceEnvironment(
                 )
             )
         }
-
-
         return resultBlock {
             val fileNode = bind(newNode)
             ensure(fileNode is FileTreeNode.Directory) { "Expected directory to be created" }
@@ -560,7 +580,9 @@ class WorkspaceEnvironment(
                 deletedFiles.remove(fileNode.getRelativePath())
                 saveDeletedMetadata(deletedFiles)
             }
-            updateTimes()
+            if (parentFolder != null) {
+                se(parentFolder.getRelativePath(), fileNode)
+            }
             fileNode
         }
     }
@@ -929,15 +951,8 @@ class WorkspaceEnvironment(
     }
 
     override suspend fun saveDeletedMetadata(list: Map<String, IndexFileDto>): ResultWrapper<Unit, String> {
-//        val fullpath = workspace.absolutePath
-
         return resultBlock {
-            sqlStorage.syncIndexDeletedFiles(
-                list
-//                .toList().associate { d ->
-//                pathWrapper(d.first.replace(fullpath, "")).pathString to d.second
-//            }
-            )
+            sqlStorage.syncIndexDeletedFiles(list)
         }
     }
 

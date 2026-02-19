@@ -4,6 +4,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 
 @Composable
-actual fun CJDraggableArea(modifier: Modifier, content: @Composable (() -> Unit)) {
-    content()
+actual fun CJDraggableArea(modifier: Modifier, content: @Composable ((Modifier) -> Unit)) {
+    content(modifier)
 }
