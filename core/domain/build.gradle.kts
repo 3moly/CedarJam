@@ -12,6 +12,9 @@ plugins {
 }
 
 kotlin {
+    compilerOptions {
+        freeCompilerArgs.add("-opt-in=kotlin.uuid.ExperimentalUuidApi")
+    }
     android {
         namespace = "com.moly3.cedarjam.domain"
         compileSdk = libs.versions.android.compileSdk.get().toInt()

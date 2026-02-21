@@ -36,8 +36,9 @@ fun FilePage(component: FileComponent) {
     val state by component.state.collectAsState()
     var isPressed by remember { mutableStateOf(false) }
     var isIOPressed by remember { mutableStateOf(false) }
-    val hazeState = rememberHazeState(blurEnabled = true)
+
     val appTheme = LocalAppTheme.current
+    val hazeState = rememberHazeState(blurEnabled = true)
     val hazeStyle = remember(appTheme) {
         HazeStyle(
             backgroundColor = appTheme.colors.backgroundSecondary.copy(alpha = 0.8f),
@@ -95,17 +96,9 @@ fun FilePage(component: FileComponent) {
             }
             FileMenuContent(
                 modifier = Modifier.safeDrawingPadding().fillMaxSize(),
-                borderModifier = Modifier.clip(RoundedCornerShape(16.dp))
+                borderModifier = Modifier
+                    .clip(RoundedCornerShape(16.dp))
                     .hazeEffect(hazeState, hazeStyle)
-//                    .liquid(liquidState) {
-//                    this.frost = 1.dp
-//                    refraction = 0.05f
-//                    edge = 0.05f
-//                    curve = 0.4f
-//                    saturation = 0.5f
-//                    dispersion = 0.3f
-//                    shape= RoundedCornerShape(16.dp)
-//                }
                 ,
                 annotationsCount = state.annotations.size,
                 isIOSwitchPressed = isIOPressed,

@@ -55,7 +55,8 @@ internal class CollectionRowStoreFactory(
     private val storeFactory: StoreFactory,
     private val lifecycle: Lifecycle,
     private val pageInput: CollectionRowPageInput,
-    private val setIsShowGraph: (Boolean) -> Unit
+    private val setIsShowGraph: (Boolean) -> Unit,
+    private val openWorkspaceSettings: (Boolean) -> Unit
 ) : KoinComponent {
     private val fileManagerService: FileManagerService by lazy {
         workspaceSession.fileManagerService
@@ -195,6 +196,9 @@ internal class CollectionRowStoreFactory(
                             )
                         }
                     }
+                }
+                is Intent.OpenWorkspaceSettings->{
+                    openWorkspaceSettings(true)
                 }
 
                 is Intent.Rename -> {

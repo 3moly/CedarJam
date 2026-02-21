@@ -20,6 +20,7 @@ import coil3.request.ImageRequest
 import coil3.request.SuccessResult
 import com.shakster.gifkt.GifDecoder
 import com.shakster.gifkt.asRandomAccess
+import com.shakster.gifkt.compose.createImageBitmap
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.delay
@@ -37,8 +38,6 @@ data class GifFrame(
     val frame: Int,
     val image: ImageBitmap
 )
-
-expect fun createImageBitmap(argb: IntArray, width: Int, height: Int): ImageBitmap
 
 @Composable
 fun GifPlayer(gifUrl: String) {

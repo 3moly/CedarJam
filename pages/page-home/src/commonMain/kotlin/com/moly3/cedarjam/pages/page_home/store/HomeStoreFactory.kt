@@ -27,6 +27,7 @@ import com.moly3.cedarjam.pages.page_home.model.LineMatch
 import com.moly3.cedarjam.pages.page_home.model.TimeMachine
 import com.moly3.cedarjam.core.domain.func.combine
 import com.moly3.cedarjam.core.domain.func.getRelativePath
+import com.moly3.cedarjam.core.domain.func.ignoreSearchByRelativePath
 import com.moly3.cedarjam.core.domain.io
 import com.moly3.cedarjam.core.domain.model.CollectionDTO
 import com.moly3.cedarjam.core.domain.model.CollectionRowDTO
@@ -215,6 +216,9 @@ internal class HomeStoreFactory(
                                             continue
                                         }
                                     }
+                                    if (ignoreSearchByRelativePath.contains(file.getRelativePath())) {
+                                        continue
+                                    }
                                     timeMachines.add(
                                         TimeMachine.FileNode(
                                             file = file,
@@ -268,37 +272,44 @@ internal class HomeStoreFactory(
             }
         }
 
+        private fun openFileNode(node: FileTreeNode) {
+            scope.launch {
+                resultBlock {
+                    val route =
+                        navigateToFileUseCase.invoke(NavigateToFile.RelativePath(node.getRelativePath()))
+                    val timestamp = bind(route)
+                    navigator.navigate(Route.File(FilePageInput(timestamp)))
+                }
+            }
+        }
+
+        private fun openRow(row: CollectionRowDTO) {
+            navigator.navigate(
+                CollRow(
+                    CollectionRowPageInput(
+                        collectionId = row.collectionId,
+                        rowId = row.id
+                    )
+                )
+            )
+        }
+
         override fun executeIntent(intent: Intent) {
             when (intent) {
 
-                is Intent.OpenFileNode -> {
-                    scope.launch {
-                        resultBlock {
-                            val route =
-                                navigateToFileUseCase.invoke(NavigateToFile.RelativePath(intent.fullPath))
-                            val timestamp = bind(route)
-                            navigator.navigate(Route.File(FilePageInput(timestamp)))
-                        }
-                    }
-                }
-
-                is Intent.OpenCollection -> {
-                    navigator.navigate(Collection(CollectionPageInput(intent.id)))
-                }
-
-                is Intent.OpenRow -> {
-                    navigator.navigate(
-                        CollRow(
-                            CollectionRowPageInput(
-                                collectionId = intent.collectionId,
-                                rowId = intent.id
+                is Intent.OpenTimeMachine -> {
+                    when (val tm = intent.timeMachine) {
+                        is TimeMachine.Collection -> navigator.navigate(
+                            Collection(
+                                CollectionPageInput(tm.collection.id)
                             )
                         )
-                    )
-                }
 
-                is Intent.OpenTag -> {
-                    navigator.navigate(Tag(TagPageInput(intent.id)))
+                        is TimeMachine.FileNode -> openFileNode(tm.file)
+                        is TimeMachine.Row -> openRow(tm.row)
+
+                        is TimeMachine.Tag -> navigator.navigate(Tag(TagPageInput(tm.tag.id)))
+                    }
                 }
 
                 is Intent.OpenWorkspaceSettings -> {

@@ -11,6 +11,27 @@ data class FileName(
     val extension: String?
 )
 
+fun String?.toFileType(): FileTypeExt {
+    return when (this) {
+        "png", "jpeg", "jpg", "svg", "webp" -> {
+            FileTypeExt.Image
+        }
+
+        "mp4" -> FileTypeExt.Video
+        "pdf" -> FileTypeExt.Pdf
+
+        else -> FileTypeExt.None
+    }
+}
+
+enum class FileTypeExt {
+    None,
+    Pdf,
+    Image,
+    Video,
+    Text
+}
+
 @Serializable
 sealed class FileTreeNode {
 

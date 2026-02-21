@@ -30,6 +30,7 @@ liquid = "1.1.1"
 localina = "1.0.0-alpha3"
 material3 = "1.9.0"
 
+materialIconsExtended = "1.7.3"
 okio = "3.16.4"
 pdfmpCompose = "1.0.9"
 serialization = "1.10.0"
@@ -100,6 +101,7 @@ lazytable = { module = "io.github.oleksandrbalan:lazytable", version.ref = "lazy
 
 liquid = { module = "io.github.fletchmckee.liquid:liquid", version.ref = "liquid" }
 localina = { module = "io.github.sudarshanmhasrup.localina:localina", version.ref = "localina" }
+material-icons-extended = { module = "org.jetbrains.compose.material:material-icons-extended", version.ref = "materialIconsExtended" }
 okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
 serialization = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
 decompose = { group = "com.arkivanov.decompose", name = "decompose", version.ref = "decompose" }

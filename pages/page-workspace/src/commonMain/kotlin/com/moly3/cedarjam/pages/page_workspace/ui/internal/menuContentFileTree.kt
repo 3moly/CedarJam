@@ -9,6 +9,7 @@ import com.moly3.cedarjam.pages.page_workspace.ui.component.fileNodeTree
 import kotlinx.collections.immutable.ImmutableList
 
 internal fun LazyListScope.menuContentFileTree(
+    isCloseMenu: Boolean,
     selectedKey: String?,
     state: State,
     items: ImmutableList<FileTreeItemPresentation>,
@@ -26,7 +27,7 @@ internal fun LazyListScope.menuContentFileTree(
             contextMenuTargetKey = state.contextMenuData?.targetKey,
 
             onItemClick = {
-                onIntent(Intent.OnFileTreeClick(it))
+                onIntent(Intent.OnFileTreeClick(it, isCloseMenu = isCloseMenu))
             },
             onMove = { target, item ->
                 onIntent(

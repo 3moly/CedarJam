@@ -18,7 +18,8 @@ class CollectionRowComponentImpl(
     override val workspaceSession: WorkspaceSession,
     componentContext: ComponentContext,
     storeFactory: StoreFactory,
-    private val data: CollectionRowPageInput
+    private val data: CollectionRowPageInput,
+    private val openWorkspaceSettings: (Boolean) -> Unit
 ) : CollectionRowComponent,
     ComponentContext by componentContext {
 
@@ -28,6 +29,7 @@ class CollectionRowComponentImpl(
             lifecycle = lifecycle,
             pageInput = data,
             workspaceSession = workspaceSession,
+            openWorkspaceSettings = openWorkspaceSettings,
             setIsShowGraph = {
                 graphDialogScope.setIsShowGraphDialog(targetId = data.rowId.getCollectionRowGraphId(), isShow = it)
             }

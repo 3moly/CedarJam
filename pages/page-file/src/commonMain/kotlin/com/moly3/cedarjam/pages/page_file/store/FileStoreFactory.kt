@@ -14,6 +14,7 @@ import com.moly3.cedarjam.core.ui.model.PageNameData
 import com.moly3.cedarjam.core.domain.model.getGraphId
 import com.moly3.cedarjam.core.domain.model.navigation.input.FilePageInput
 import com.moly3.cedarjam.core.domain.model.request.CreateTagLinkRequest
+import com.moly3.cedarjam.core.domain.model.request.UpdateRowsByPdf
 import com.moly3.cedarjam.core.domain.model.toGetFileType
 import com.moly3.cedarjam.core.domain.repository.IAppEnvironment
 import com.moly3.cedarjam.core.domain.repository.IFilesRepository
@@ -201,6 +202,18 @@ internal class FileStoreFactory(
             }
         }
 
+        private fun navigatePdf(file: FileType.PDF, newPage: Int) {
+            scope.launch {
+                workspaceSession.workspaceEnvStateFlow.value.updateRowsForPdf(
+                    UpdateRowsByPdf(
+                        relativePath = file.fileNode.getRelativePath(),
+                        newPage = newPage
+                    )
+                )
+            }
+            dispatch(SetFile(file.copy(currentPage = newPage)))
+        }
+
         override fun executeIntent(intent: Intent) {
             when (intent) {
                 is Intent.SetIsShowGraph -> {
@@ -254,11 +267,14 @@ internal class FileStoreFactory(
                 }
 
                 is Intent.PageBack -> {
-                    dispatch(SetFile(intent.file.copy(currentPage = intent.file.currentPage - 1)))
+                    val newPage = intent.file.currentPage - 1
+                    navigatePdf(intent.file, newPage)
+
                 }
 
                 is Intent.PageNext -> {
-                    dispatch(SetFile(intent.file.copy(currentPage = intent.file.currentPage + 1)))
+                    val newPage = intent.file.currentPage + 1
+                    navigatePdf(intent.file, newPage)
                 }
 
                 is Intent.ToPage -> {

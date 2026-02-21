@@ -29,4 +29,6 @@ class HomeComponentImpl(
     override fun onIntent(intent: Intent) {
         store.accept(intent)
     }
+
+    override val workspaceFullPath: String = workspaceSession.workspaceEnvStateFlow.value.getWorkspace().absolutePath
 }

@@ -18,4 +18,5 @@ sealed interface Intent {
     data class OpenWebLink(val value: String) : Intent
     data class OpenDocument(val value: String) : Intent
     data class SetDocumentToRow(val row: CollectionRowDTO, val fileTreeNode: FileTreeItemPresentation) : Intent
+    data object OpenWorkspaceSettings: Intent
 }

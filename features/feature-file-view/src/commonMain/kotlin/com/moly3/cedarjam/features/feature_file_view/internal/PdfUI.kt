@@ -5,6 +5,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,10 +14,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
@@ -27,6 +26,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,11 +37,8 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.geometry.isSpecified
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PaintingStyle.Companion.Stroke
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.key.Key
@@ -50,19 +47,16 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import co.touchlab.kermit.Logger
-import com.github.panpf.zoomimage.CoilZoomAsyncImage
-import com.github.panpf.zoomimage.ZoomImage
 import com.github.panpf.zoomimage.compose.ZoomState
 import com.github.panpf.zoomimage.compose.rememberZoomState
 import com.moly3.cedarjam.core.domain.func.getPlatform
-import com.moly3.cedarjam.features.feature_file_view.ObsPdfDocument
 import com.moly3.cedarjam.features.feature_file_view.getObsPdfDocument
 import com.moly3.cedarjam.core.domain.io
 import com.moly3.cedarjam.core.domain.model.AnnotationDTO
@@ -74,8 +68,7 @@ import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
 import com.moly3.cedarjam.core.ui.func.blendMode
 import com.moly3.cedarjam.core.ui.func.darker
-import com.moly3.cedarjam.core.ui.func.flatClickable
-import com.moly3.cedarjam.core.ui.model.CJText
+import com.moly3.cedarjam.core.ui.func.navigationBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.onPointerEvent
 import com.moly3.cedarjam.core.ui.uikit.CJButton
 import com.moly3.cedarjam.core.ui.uikit.CJCircularProgressIndicator
@@ -83,8 +76,10 @@ import com.moly3.cedarjam.core.ui.uikit.CJText
 import com.moly3.cedarjam.core.ui.uikit.CJTextField
 import com.moly3.cedarjam.core.ui.uikit.CJZoomableViewLayout
 import com.moly3.cedarjam.core.ui.uikit.CJIcon
+import com.moly3.cedarjam.core.ui.uikit.NeumorphicShape
 import com.moly3.cedarjam.core.ui.vectors.ArrowLeft
 import com.moly3.cedarjam.core.ui.vectors.ArrowRight
+import com.moly3.cedarjam.core.ui.vectors.TrashEmpty
 import com.moly3.cedarjam.core.ui.volumedBorderStroke
 import com.moly3.cedarjam.features.feature_file_view.func.drawAnnotationsBehind
 import dev.chrisbanes.haze.HazeDefaults
@@ -98,7 +93,6 @@ import io.github.fletchmckee.liquid.liquid
 import io.github.fletchmckee.liquid.rememberLiquidState
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.coroutines.launch
-import kotlin.math.min
 
 
 fun AnnotationDTO.toPx(
@@ -212,6 +206,8 @@ internal fun PdfUI(
                         Platform.Android,
                         Platform.Jvm,
                         Platform.Wasm -> {
+                            val isEnableAnnotation = remember { mutableStateOf(false) }
+                            val isEnableAnnotationUpdated by rememberUpdatedState(isEnableAnnotation.value)
                             Box(Modifier.weight(1f).fillMaxHeight()) {
                                 if (painter != null) {
 //                                    ZoomImage(
@@ -236,9 +232,16 @@ internal fun PdfUI(
                                             .fillMaxSize()
                                             .hazeSource(hazeState)
                                             .liquefiable(liquidState),
+                                        isEnable = !isEnableAnnotation.value,
                                         macTrackpadGestureService = macTrackpadGestureService
                                     ) {
                                         painter?.let {
+                                            val startedDragging =
+                                                remember { mutableStateOf<Offset?>(null) }
+                                            val endDragging =
+                                                remember { mutableStateOf<Offset?>(null) }
+                                            val pdfPageSize =
+                                                remember { mutableStateOf<IntSize?>(null) }
                                             Image(
                                                 painter = it,
                                                 contentDescription = null,
@@ -247,8 +250,105 @@ internal fun PdfUI(
                                                         currentPage = currentPage,
                                                         annotations = annotations
                                                     )
+                                                    .drawWithContent {
+                                                        this.drawContent()
+
+                                                        val start = startedDragging.value
+                                                        val end = endDragging.value
+
+                                                        if (start != null && end != null) {
+                                                            val size = end - start
+                                                            drawRect(
+                                                                color = Color.Yellow.copy(alpha = 0.35f),
+                                                                topLeft = start,
+                                                                size = Size(
+                                                                    size.x,
+                                                                    size.y
+                                                                )
+                                                            )
+                                                        }
+                                                    }
+                                                    .onGloballyPositioned {
+                                                        pdfPageSize.value = it.size
+                                                    }
+                                                    .pointerInput(Unit) {
+                                                        detectDragGestures(
+                                                            onDragStart = {
+                                                                if (isEnableAnnotationUpdated) {
+                                                                    startedDragging.value = it
+                                                                }
+                                                            },
+                                                            onDragEnd = {
+                                                                if (isEnableAnnotationUpdated) {
+                                                                    val start = startedDragging.value
+                                                                    val end = endDragging.value
+
+                                                                    val pdf = pdfPageSize.value
+                                                                    if (start != null && end != null && pdf != null) {
+
+                                                                        val pdfWidth = pdf.width.toFloat()
+                                                                        val pdfHeight = pdf.height.toFloat()
+
+
+                                                                        val left = minOf(start.x, end.x)
+                                                                        val top = minOf(start.y, end.y)
+                                                                        val right = maxOf(start.x, end.x)
+                                                                        val bottom = maxOf(start.y, end.y)
+
+                                                                        val x1 = (left / pdfWidth).coerceIn(0f, 1f)
+                                                                        val width = ((right - left) / pdfWidth).coerceIn(0f, 1f)
+                                                                        val height = ((bottom - top) / pdfHeight).coerceIn(0f, 1f)
+
+// Convert screen top to PDF y (flip: y=0 is bottom in PDF space)
+                                                                        val y1 = (1f - (bottom / pdfHeight)).coerceIn(0f, 1f)
+
+                                                                        onAddAnnotation(
+                                                                            CreateAnnotationRequest(
+                                                                                dataPath = fileType.fileNode.getFullPath(),
+                                                                                description = "",
+                                                                                dataPoint = (currentPage - 1).toDouble(),
+                                                                                x = x1,
+                                                                                y = y1,       // PDF-space y (bottom origin)
+                                                                                width = width,
+                                                                                height = height
+                                                                            )
+                                                                        )
+                                                                    }
+                                                                    endDragging.value = null
+                                                                    startedDragging.value = null
+                                                                }
+                                                            },
+                                                            onDragCancel = {
+                                                                endDragging.value = null
+                                                                startedDragging.value = null
+                                                            },
+                                                            onDrag = { _, dragAmount ->
+                                                                if (isEnableAnnotationUpdated) {
+                                                                    endDragging.value =
+                                                                        (endDragging.value
+                                                                            ?: startedDragging.value!!) + dragAmount  // ✅
+                                                                }
+//                                                                accumulatedDelta += dragAmount.y
+//                                                                val steps = (accumulatedDelta / rowHeightPx).toInt()
+//                                                                if (steps != 0) {
+//                                                                    val targetIndex = (blockIndex + steps).coerceIn(0, totalBlocks - 1)
+//                                                                    onDrag(blockIndex, targetIndex)
+//                                                                    accumulatedDelta -= steps * rowHeightPx
+//                                                                }
+                                                            }
+                                                        )
+                                                    }
                                             )
                                         }
+                                    }
+                                    NeumorphicShape(
+                                        modifier = Modifier.align(Alignment.BottomEnd)
+                                            .padding(end = 80.dp, bottom = 8.dp)
+                                            .navigationBarsPaddingCJ(),
+                                        isPressed = isEnableAnnotation.value,
+                                        painter = rememberVectorPainter(TrashEmpty)
+                                    ) {
+                                        isEnableAnnotation.value = !isEnableAnnotation.value
                                     }
 
                                 } else {

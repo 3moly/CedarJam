@@ -10,4 +10,5 @@ sealed interface Intent {
     data class OpenNodeData(val data: Any) : Intent
     data object OpenCollection : Intent
     data class Rename(val newName: String) : Intent
+    data object OpenWorkspaceSettings : Intent
 }

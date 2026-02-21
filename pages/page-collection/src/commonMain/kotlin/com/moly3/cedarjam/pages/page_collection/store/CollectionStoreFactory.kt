@@ -61,7 +61,8 @@ internal class CollectionStoreFactory(
     private val storeFactory: StoreFactory,
     private val lifecycle: Lifecycle,
     private val pageData: CollectionPageInput,
-    private val workspaceSession: WorkspaceSession
+    private val workspaceSession: WorkspaceSession,
+    private val openWorkspaceSettings: (Boolean) -> Unit
 ) : KoinComponent {
 
     private val currentPageState = MutableStateFlow(0)
@@ -200,6 +201,10 @@ internal class CollectionStoreFactory(
         @OptIn(ExperimentalTime::class)
         override fun executeIntent(intent: Intent) {
             when (intent) {
+                is Intent.OpenWorkspaceSettings -> {
+                    openWorkspaceSettings(true)
+                }
+
                 is Intent.DeleteCollectionRow -> {
                     scope.launch {
                         val workspaceEnv = workspaceSession.workspaceEnvStateFlow.value

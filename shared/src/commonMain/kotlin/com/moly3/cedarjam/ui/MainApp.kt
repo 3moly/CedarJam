@@ -6,34 +6,60 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material.Icon
+import androidx.compose.material.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material3.SegmentedButtonDefaults.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.isBackPressed
 import androidx.compose.ui.input.pointer.isForwardPressed
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.extensions.compose.experimental.stack.ChildStack
 import com.arkivanov.decompose.extensions.compose.experimental.stack.animation.stackAnimation
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
+import com.moly3.cedarjam.core.domain.func.nowInMs
 import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalHazeState
 import com.moly3.cedarjam.core.ui.compositions.LocalVideoPlayer
+import com.moly3.cedarjam.core.ui.func.flatClickable
 import com.moly3.cedarjam.core.ui.model.CJText
 import com.moly3.cedarjam.core.ui.onPointerEvent
+import com.moly3.cedarjam.core.ui.uikit.BlockType
 import com.moly3.cedarjam.core.ui.uikit.CJApplicationTheme
 import com.moly3.cedarjam.core.ui.uikit.CJButton
-import com.moly3.cedarjam.core.ui.uikit.GifPlayer
+import com.moly3.cedarjam.core.ui.uikit.InlinePlaceholder
+import com.moly3.cedarjam.core.ui.uikit.MinimalTextView
 import com.moly3.cedarjam.core.ui.uikit.NeumorphicShape
+import com.moly3.cedarjam.core.ui.uikit.NotionBlock
+import com.moly3.cedarjam.core.ui.uikit.NotionEditor
+import com.moly3.cedarjam.core.ui.uikit.PlaceholderContent
+import com.moly3.cedarjam.core.ui.uikit.rememberMinimalTextViewState
+import com.moly3.cedarjam.core.ui.uikit.rememberNotionEditorState
 import com.moly3.cedarjam.navigation.Root
 import com.moly3.cedarjam.navigation.Route
 import com.moly3.cedarjam.pages.page_select_workspace.ui.SelectWorkspacePage
@@ -136,6 +162,8 @@ fun MainApp(root: Root) {
                 }
                 AppComposableWidgetHideKeyboard()
                 TopAlertServiceUI(root.alertService)
+
+
                 when (val sync = syncStatus) {
                     is UIState.Error,
                     UIState.Loading -> {
@@ -160,7 +188,37 @@ fun MainApp(root: Root) {
                         }
                     }
                 }
-//                GifPlayer(gifUrl = "https://cdn.svgator.com/images/2026/01/Chart-run-cycle.gif")
+//                Box(Modifier.fillMaxSize().background(Color.Black).padding(40.dp).flatClickable {}){
+//                    val editorState = rememberNotionEditorState(
+//                        initial = listOf(
+//                            NotionBlock(type = BlockType.H1, text = "My Document"),
+//                            NotionBlock(type = BlockType.Paragraph, text = "Start writing here..."),
+//                            NotionBlock(
+//                                type = BlockType.Custom,
+//                                customContent = {
+//                                    // Any composable you like
+//                                    Row(
+//                                        modifier = Modifier
+//                                            .fillMaxWidth()
+//                                            .background(Color(0xFFF5F5F5), RoundedCornerShape(8.dp))
+//                                            .padding(12.dp),
+//                                        verticalAlignment = Alignment.CenterVertically,
+//                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+//                                    ) {
+//                                        Icon(Icons.Default.Info, contentDescription = null, tint = Color(0xFF2383E2))
+//                                        Text("This is a custom block!", fontWeight = FontWeight.Medium)
+//                                    }
+//                                }
+//                            ),
+//                            NotionBlock(type = BlockType.Image), // placeholder until you supply an ImageBitmap
+//                        )
+//                    )
+//
+//                    NotionEditor(
+//                        state = editorState,
+//                        modifier = Modifier.fillMaxSize()
+//                    )
+//                }
             }
         }
     }

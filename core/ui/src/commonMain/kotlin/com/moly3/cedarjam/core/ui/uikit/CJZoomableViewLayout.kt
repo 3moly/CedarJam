@@ -34,11 +34,13 @@ import kotlin.math.min
 @Composable
 fun CJZoomableViewLayout(
     modifier: Modifier,
+    isEnable: Boolean,
     macTrackpadGestureService: MacTrackpadGestureService,
     content: @Composable () -> Unit
 ) {
     CJZoomableImageLayout(
         modifier = modifier,
+        isEnable = isEnable,
         macTrackpadGestureService = macTrackpadGestureService
     ) {
         content()
@@ -48,6 +50,7 @@ fun CJZoomableViewLayout(
 @Composable
 fun CJZoomableImageLayout(
     modifier: Modifier = Modifier,
+    isEnable: Boolean,
     macTrackpadGestureService: MacTrackpadGestureService? = null,
     minZoom: Float = 0.5f,
     maxZoom: Float = 5f,
@@ -67,9 +70,9 @@ fun CJZoomableImageLayout(
     val latestTranslationY by rememberUpdatedState(translationY)
 
     // Listen to magnify service if provided
-    LaunchedEffect(macTrackpadGestureService) {
+    LaunchedEffect(macTrackpadGestureService, isEnable) {
         macTrackpadGestureService?.valueStateFlow?.collectLatest { magnifyValue ->
-            if (isMouseCapturedUpdated) {
+            if (isEnable) {
                 zoom = max(minZoom, min(maxZoom, (magnifyValue + zoom).toFloat()))
             }
         }

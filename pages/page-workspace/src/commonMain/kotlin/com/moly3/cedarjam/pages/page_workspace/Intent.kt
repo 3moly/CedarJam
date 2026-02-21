@@ -39,7 +39,7 @@ sealed interface Intent {
 
     data class SelectActiveTabs(val index: Int) : Intent
     data class SetPageName(val value: PageNameWorkspace) : Intent
-    data class OnFileTreeClick(val value: FileTreeItemPresentation) : Intent
+    data class OnFileTreeClick(val value: FileTreeItemPresentation,val isCloseMenu: Boolean) : Intent
     data class SetOpenedDirectories(val value: ImmutableSet<String>) : Intent
     data class CreateFile(val directory: FileTreeItemPresentation) : Intent
     data class Rename(val directory: FileTreeItemPresentation, val newName: String) : Intent

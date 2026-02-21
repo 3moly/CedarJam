@@ -10,7 +10,7 @@ sealed class TimeMachine {
     abstract val modifiedTime: Long
 
     data class FileNode(
-        val file: FileTreeNode,
+        val file: FileTreeNode.File,
         val matches: ImmutableList<LineMatch>?,
         override val modifiedTime: Long
     ) : TimeMachine()

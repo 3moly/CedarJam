@@ -109,6 +109,13 @@ WHERE id = :id
     pronunciation    IS NOT :pronunciation
   );
 
+updateProgressByPdf:
+UPDATE DataCollectionRow
+SET currentProgress  = :currentProgress,
+    modifiedTime = :modifiedTime
+WHERE fileRelativePath = :fileRelativePath
+ AND (currentProgress IS NOT :currentProgress);
+
 rename:
 UPDATE DataCollectionRow
 SET name = :newName,

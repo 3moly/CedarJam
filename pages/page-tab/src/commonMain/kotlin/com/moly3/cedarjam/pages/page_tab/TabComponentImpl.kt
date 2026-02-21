@@ -97,7 +97,10 @@ class TabComponentImpl(
                         componentContext = childContext,
                         storeFactory = storeFactory,
                         data = g.data,
-                        workspaceSession = workspaceSession
+                        workspaceSession = workspaceSession,
+                        openWorkspaceSettings = {
+                            openMenu(true)
+                        }
                     )
                 )
 
@@ -106,7 +109,10 @@ class TabComponentImpl(
                         componentContext = childContext,
                         storeFactory = storeFactory,
                         data = g.data,
-                        workspaceSession = workspaceSession
+                        workspaceSession = workspaceSession,
+                        openWorkspaceSettings = {
+                            openMenu(true)
+                        }
                     )
                 )
 
@@ -119,8 +125,6 @@ class TabComponentImpl(
                         workspaceSession = workspaceSession
                     )
                 )
-
-
 
                 is Config.Tag -> TabComponent.Child.Tag(
                     TagComponentImpl(

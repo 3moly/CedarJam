@@ -34,6 +34,7 @@ kotlin {
 
             implementation(libs.compose.material3)
             implementation(libs.compose.material)
+            implementation(libs.material.icons.extended)
             api(libs.compose.runtime)
             api(libs.compose.foundation)
             api(libs.compose.ui)
@@ -51,7 +52,8 @@ kotlin {
             api(libs.localina)
             api(libs.liquid)
             api(libs.zoomimage.compose.coil3)
-            implementation("com.shakster:gifkt:0.3.1")
+            implementation("com.shakster:gifkt:0.3.2")
+            implementation("com.shakster:gifkt-compose:0.3.2")
 //            implementation("com.shakster:gifkt-compose:0.3.1") {
 //                exclude("com.shakster.gifkt","gifkt-android")
 //                exclude group: "com.shakster", module: "gifkt-android"

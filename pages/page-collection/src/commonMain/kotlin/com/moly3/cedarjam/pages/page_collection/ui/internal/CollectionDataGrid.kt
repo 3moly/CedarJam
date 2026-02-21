@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.rememberAsyncImagePainter
 import coil3.util.Logger
 import com.mohamedrejeb.compose.dnd.drop.dropTarget
+import com.moly3.cedarjam.core.domain.func.pathWrapper
 import com.moly3.cedarjam.core.domain.io
 import com.moly3.cedarjam.core.domain.model.CollectionRowDTO
 import com.moly3.cedarjam.core.domain.model.TagCollectionRowDTO
@@ -36,6 +37,7 @@ import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalDragAndDrop
 import com.moly3.cedarjam.core.ui.compositions.LocalImageLoader
 import com.moly3.cedarjam.core.ui.func.getPdfImage
+import com.moly3.cedarjam.core.ui.func.rememberPdfImage
 import com.moly3.cedarjam.core.ui.model.FileTreeItemPresentation
 import com.moly3.cedarjam.core.ui.uikit.CJButton
 import com.moly3.cedarjam.core.ui.uikit.CJDataTable
@@ -93,33 +95,12 @@ internal fun CollectionDataGrid(
                     content = {
                         val fileRelativePath = it.row.fileRelativePath
                         if (fileRelativePath != null) {
-
-                            var imgBitmap by remember {
-                                mutableStateOf<ImageBitmap?>(null)
-                            }
-                            LaunchedEffect(it.row.fileRelativePath, workspace) {
-                                launch(io) {
-                                    val path = Path(
-                                        workspace?.absolutePath ?: "",
-                                        it.row.fileRelativePath!!
-                                    ).toString()
-                                    try {
-                                        co.touchlab.kermit.Logger.w { "getPdfImage: ${it.row.fileRelativePath}" }
-                                        imgBitmap = if (it.row.fileRelativePath != null) {
-                                            getPdfImage(
-                                                path,
-                                                page = 0,
-                                                dpi = 100f
-                                            )
-                                        } else {
-                                            null
-                                        }
-                                    } catch (exc: Exception) {
-                                        co.touchlab.kermit.Logger.w { "getPdfImage result: ${exc.message}" }
-                                    }
-                                }
-                            }
-
+                            val imgBitmap = rememberPdfImage(
+                                pathWrapper(
+                                    workspace?.absolutePath ?: "",
+                                    fileRelativePath
+                                ).pathString
+                            )
                             if (imgBitmap != null) {
                                 Box(Modifier.height(200.dp)) {
                                     Image(

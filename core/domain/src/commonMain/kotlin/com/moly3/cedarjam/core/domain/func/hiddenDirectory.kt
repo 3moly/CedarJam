@@ -6,6 +6,7 @@ const val ignoredDsStoreFile: String = ".DS_Store"
 const val ignoredFont: String = "${hiddenDirectory}/default.otf"
 const val ignoredImportArchive: String = "${hiddenDirectory}/import.zip"
 const val ignoredExportArchive: String = "${hiddenDirectory}/export.zip"
+const val ignoredExportShareArchive: String = "${hiddenDirectory}/exportShare.zip"
 const val sqlDatabaseName = "sqlite"
 const val indexSqlDatabaseName = "indexes"
 const val imgCache = "img_cache"
@@ -19,8 +20,14 @@ val ignoreByRelativePath = listOf(
 //    ignoredFont,
     ignoredImportArchive,
     ignoredExportArchive,
+    ignoredExportShareArchive,
     ignoredDbShm,
     ignoredDbWal,
     ignoredDbJournal,
     ignoreIndexSqlDatabaseName
+)
+
+val ignoreSearchByRelativePath = listOf(
+    "${hiddenDirectory}/$sqlDatabaseName.db",
+    "${hiddenDirectory}/workspace_settings.json"
 )

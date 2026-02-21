@@ -42,29 +42,53 @@ import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
+import com.moly3.cedarjam.core.ui.func.darker
 import com.moly3.cedarjam.core.ui.func.flatClickable
+import com.moly3.cedarjam.core.ui.func.lighter
 import com.moly3.cedarjam.core.ui.service.KVibrator
 import com.moly3.cedarjam.core.ui.vectors.Tag
+
+data class NeumorphicShadowConfig(
+    val lightShadowAlpha: Float = 0.6f,
+    val lightShadowRadius: Float = 2f,
+    val lightShadowOffset: Offset = Offset(1f, 1f),
+
+    val darkShadowAlpha: Float = 0.5f,
+    val darkShadowRadius: Float = 2f,
+    val darkShadowOffset: Offset = Offset(-1f, -1f),
+
+    val pressedShadowAlpha: Float = 0.4f,
+    val pressedShadowRadius: Float = 40f,
+    val pressedShadowOffset: Offset = Offset(15f, 15f),
+
+    val elevationStrength: Float = 15f,
+) {
+    companion object {
+        val someShit = NeumorphicShadowConfig(
+            pressedShadowRadius = 1f
+        )
+    }
+}
 
 @Composable
 fun NeumorphicShape(
     modifier: Modifier = Modifier,
     isEnabled: Boolean = true,
-    accentColor: Color = LocalAppTheme.current.colors.backgroundPrimary,
+    accentColor: Color = LocalAppTheme.current.colors.backgroundPrimary.lighter(0.5f),
     isPressed: Boolean = false,
-    buttonShape: Shape = CircleShape, // Dynamic shape
+    buttonShape: Shape = CircleShape,
     strength: Float = 1f,
+    isShowBigGradient: Boolean = true,
+    shadowConfig: NeumorphicShadowConfig = NeumorphicShadowConfig(),
     painter: Painter? = null,
     pressedColor: Color = Color.Gray,
     unpressedColor: Color = LocalAppTheme.current.colors.icon,
     content: (@Composable BoxScope.() -> Unit)? = null,
     onClick: (() -> Unit)? = null
 ) {
-
     val interactionSource = remember { MutableInteractionSource() }
     val isPressedState by interactionSource.collectIsPressedAsState()
     val isPressed = isPressed || isPressedState
-    val buttonShapeUpdated = buttonShape
     val progress by animateFloatAsState(
         targetValue = if (isPressed) 1f else 0f,
         animationSpec = spring(
@@ -76,64 +100,61 @@ fun NeumorphicShape(
 
     val raised = 1f - progress
     val isInspect = LocalInspectionMode.current
+
     Box(
         modifier = modifier
             .graphicsLayer {
-                shadowElevation = 15f * raised * strength
-                shape = buttonShapeUpdated
+                shadowElevation = shadowConfig.elevationStrength * raised * strength
+                shape = buttonShape
                 clip = false
             }
-
             .drawBehind {
                 val centerOffset = Offset(size.width * 0.358f, size.height * 0.293f)
-                val outline = buttonShapeUpdated.createOutline(size, layoutDirection, this)
-                drawOutline(
-                    outline = outline,
-                    color = accentColor
+                val outline = buttonShape.createOutline(size, layoutDirection, this)
+                drawOutline(outline = outline, color = accentColor)
+                if (isShowBigGradient) {
+                    drawOutline(
+                        outline = outline,
+                        brush = Brush.radialGradient(
+                            0.0f to Color(0xFFCFCFCF),
+                            0.72f to Color(0xFFFCFCFA),
+                            1.0f to Color(0xFFFCFCFA),
+                            center = centerOffset,
+                            radius = size.maxDimension
+                        ),
+                        blendMode = BlendMode.Multiply
+                    )
+                }
+            }
+            // Light inner shadow (raised state)
+            .innerShadow(shape = buttonShape) {
+                color = Color.White.copy(alpha = shadowConfig.lightShadowAlpha * raised)
+                radius = shadowConfig.lightShadowRadius
+                offset = shadowConfig.lightShadowOffset
+            }
+            // Dark inner shadow (raised state)
+            .innerShadow(shape = buttonShape) {
+                color = Color.Black.copy(alpha = shadowConfig.darkShadowAlpha * raised)
+                radius = shadowConfig.darkShadowRadius
+                offset = shadowConfig.darkShadowOffset
+            }
+            // Pressed inner shadow
+            .innerShadow(shape = buttonShape) {
+                color = Color.Black.copy(alpha = shadowConfig.pressedShadowAlpha * progress)
+                radius = shadowConfig.pressedShadowRadius * progress
+                offset = Offset(
+                    shadowConfig.pressedShadowOffset.x * progress,
+                    shadowConfig.pressedShadowOffset.y * progress
                 )
-                drawOutline(
-                    outline = outline,
-                    brush = Brush.radialGradient(
-                        0.0f to Color(0xFFCFCFCF),
-                        0.72f to Color(0xFFFCFCFA),
-                        1.0f to Color(0xFFFCFCFA),
-                        center = centerOffset,
-                        radius = size.maxDimension
-                    ),
-                    blendMode = BlendMode.Multiply
-                )
-            }
-            .innerShadow(shape = buttonShape) {
-                this.color = Color.White.copy(alpha = 0.6f * raised)
-                this.radius = 2f
-                this.offset = Offset(1f, 1f)
-            }
-            .innerShadow(shape = buttonShape) {
-                this.color = Color.Black.copy(alpha = 0.5f * raised)
-                this.radius = 2f
-                this.offset = Offset(-1f, -1f)
-            }
-            .innerShadow(shape = buttonShape) {
-                this.color = Color.Black.copy(alpha = 0.4f * progress)
-                this.radius = 40f * progress
-                this.offset = Offset(15f * progress, 15f * progress)
             }
             .clip(buttonShape)
             .let {
                 if (onClick != null) {
                     it.flatClickable(enabled = isEnabled, interactionSource) {
-                        if (!isInspect) {
-                            if (isPressed) {
-                                KVibrator.vibrateShort()
-                            } else {
-                                KVibrator.vibrateShort()
-                            }
-                        }
+                        if (!isInspect) KVibrator.vibrateShort()
                         onClick.invoke()
                     }
-                } else {
-                    it
-                }
+                } else it
             },
         contentAlignment = Alignment.Center
     ) {

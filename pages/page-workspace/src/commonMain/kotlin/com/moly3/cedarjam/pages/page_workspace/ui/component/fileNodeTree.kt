@@ -17,6 +17,7 @@ import com.mohamedrejeb.compose.dnd.drag.DraggableItem
 import com.mohamedrejeb.compose.dnd.drop.dropTarget
 import com.moly3.cedarjam.core.domain.func.getPlatform
 import com.moly3.cedarjam.core.domain.model.Platform
+import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.pages.page_workspace.model.RenameFileNodeData
 import com.moly3.cedarjam.core.ui.func.onSecondaryClickWithPosition
 import com.moly3.cedarjam.core.ui.func.rememberWindowSize
@@ -125,7 +126,7 @@ fun LazyListScope.fileNodeTree(
                     is FileTreeItemPresentation.FileTreeItemPresentationData.File -> data.syncStatus
                     else -> null
                 },
-                backColor = item.backColor,
+                backColor = item.backColor ?: LocalAppTheme.current.colors.backgroundSecondary,
                 isOpen = isOpened,
                 isSelected = selectedKey == item.key,
                 isDragTarget = isDragTarget,

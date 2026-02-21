@@ -40,6 +40,7 @@ import com.moly3.cedarjam.core.domain.model.request.RenameDataCollectionRowReque
 import com.moly3.cedarjam.core.domain.model.request.RenameTagRequest
 import com.moly3.cedarjam.core.domain.model.request.UpdateDataCollectionRequest
 import com.moly3.cedarjam.core.domain.model.request.UpdateDataCollectionRowRequest
+import com.moly3.cedarjam.core.domain.model.request.UpdateRowsByPdf
 import com.moly3.cedarjam.core.domain.model.request.UpdateTagRequest
 import com.moly3.cedarjam.core.domain.service.AppContextProvider
 import com.moly3.cedarjam.core.storage.func.syncAllFiles
@@ -829,6 +830,16 @@ internal class SqlStorage(
                 pronunciation = request.pronunciation,
 
                 modifiedTime = request.modifiedTime,
+            )
+        }
+    }
+
+    override fun updateRowsForPdf(request: UpdateRowsByPdf) {
+        runQueryOrThrow { db ->
+            db.dataCollectionRowQueries.updateProgressByPdf(
+                fileRelativePath = request.relativePath.normalizeText(),
+                currentProgress = request.newPage.toDouble(),
+                modifiedTime = nowInMs()
             )
         }
     }

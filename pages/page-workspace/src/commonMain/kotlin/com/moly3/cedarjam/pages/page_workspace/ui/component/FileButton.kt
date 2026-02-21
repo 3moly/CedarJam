@@ -69,7 +69,7 @@ fun FileButton(
     isDirectory: Boolean,
     title: String,
     syncStatus: SyncStatus?,
-    backColor: Color?,
+    backColor: Color = LocalAppTheme.current.colors.backgroundSecondary,
     onCreateDirectoryClick: (() -> Unit)?,
     onCreateFileClick: (() -> Unit)?,
     isDragTarget: Boolean,
@@ -274,7 +274,7 @@ private fun FileButtonIcon(
     modifier: Modifier = Modifier,
     iconModifier: Modifier = Modifier,
     borderColor: Color = Color.Transparent,
-    backColor: Color? = null,
+    backColor: Color = LocalAppTheme.current.colors.backgroundSecondary,
     imageVector: ImageVector?
 ) {
     val shape = RoundedCornerShape(4.dp)
@@ -282,7 +282,7 @@ private fun FileButtonIcon(
         modifier = modifier
             .size(20.dp)
             .background(
-                backColor ?: Color(0xFF696969),
+                backColor,
                 shape = shape
             )
             .border(1.dp, borderColor, shape),
@@ -308,7 +308,6 @@ fun FileButtonPreview() {
         isDirectory = true,
         onClick = {},
         fileExtension = null,
-        backColor = null,
         onCreateDirectoryClick = null,
         onCreateFileClick = null,
         isDragTarget = false,

@@ -17,6 +17,9 @@ plugins {
 
 
 kotlin {
+    compilerOptions {
+        freeCompilerArgs.add("-opt-in=kotlin.uuid.ExperimentalUuidApi")
+    }
     // It works for unit testing ios
     targets.withType<org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget> {
         binaries.all {
@@ -161,6 +164,9 @@ kotlin {
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.ui)
+            implementation(libs.compose.material)
+            implementation(libs.compose.material3)
+            implementation(libs.material.icons.extended)
             implementation(libs.compose.components.resources)
 //            implementation(libs.compose.ui.tooling.preview)
 

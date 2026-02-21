@@ -15,6 +15,7 @@ import com.moly3.cedarjam.core.domain.model.request.RenameDataCollectionRowReque
 import com.moly3.cedarjam.core.domain.model.request.RenameTagRequest
 import com.moly3.cedarjam.core.domain.model.request.UpdateDataCollectionRequest
 import com.moly3.cedarjam.core.domain.model.request.UpdateDataCollectionRowRequest
+import com.moly3.cedarjam.core.domain.model.request.UpdateRowsByPdf
 import com.moly3.cedarjam.core.domain.model.request.UpdateTagRequest
 import com.moly3.cedarjam.db.Annotation
 import com.moly3.cedarjam.db.DataCollection
@@ -95,6 +96,7 @@ interface ISqlStorage {
 
 
     fun updateCollectionRow(request: UpdateDataCollectionRowRequest)
+    fun updateRowsForPdf(request: UpdateRowsByPdf)
     fun updateCollection(request: UpdateDataCollectionRequest)
 
     fun deleteAnnotation(id: Long)

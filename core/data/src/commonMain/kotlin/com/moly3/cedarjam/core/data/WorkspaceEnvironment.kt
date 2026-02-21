@@ -50,6 +50,7 @@ import com.moly3.cedarjam.core.domain.model.request.RenameDataCollectionRowReque
 import com.moly3.cedarjam.core.domain.model.request.RenameTagRequest
 import com.moly3.cedarjam.core.domain.model.request.UpdateDataCollectionRequest
 import com.moly3.cedarjam.core.domain.model.request.UpdateDataCollectionRowRequest
+import com.moly3.cedarjam.core.domain.model.request.UpdateRowsByPdf
 import com.moly3.cedarjam.core.domain.model.request.UpdateTagRequest
 import com.moly3.cedarjam.core.domain.model.settings.WorkspaceSettings
 import com.moly3.cedarjam.core.domain.service.FileManagerService
@@ -861,6 +862,10 @@ class WorkspaceEnvironment(
 
     override fun updateCollectionRow(request: UpdateDataCollectionRowRequest) {
         sqlStorage.updateCollectionRow(request = request)
+    }
+
+    override fun updateRowsForPdf(request: UpdateRowsByPdf) {
+        sqlStorage.updateRowsForPdf(request = request)
     }
 
     override fun deleteCollectionRow(id: Long) {

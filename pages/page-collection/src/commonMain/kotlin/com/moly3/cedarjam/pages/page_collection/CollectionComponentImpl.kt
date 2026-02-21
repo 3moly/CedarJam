@@ -15,7 +15,8 @@ class CollectionComponentImpl(
     workspaceSession: WorkspaceSession,
     componentContext: ComponentContext,
     storeFactory: StoreFactory,
-    private val data: CollectionPageInput
+    private val data: CollectionPageInput,
+    private val openWorkspaceSettings: (Boolean) -> Unit
 ) : CollectionComponent,
     ComponentContext by componentContext {
 
@@ -24,7 +25,8 @@ class CollectionComponentImpl(
             storeFactory = storeFactory,
             lifecycle = lifecycle,
             pageData = data,
-            workspaceSession = workspaceSession
+            workspaceSession = workspaceSession,
+            openWorkspaceSettings = openWorkspaceSettings
         ).create()
     }
 

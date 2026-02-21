@@ -30,6 +30,7 @@ import com.moly3.cedarjam.core.ui.compositions.LocalHazeStyle
 import com.moly3.cedarjam.core.ui.compositions.LocalUIConfig
 import com.moly3.cedarjam.core.ui.func.isCompactUI
 import com.moly3.cedarjam.core.ui.func.navigationBarsPaddingCJ
+import com.moly3.cedarjam.core.ui.func.rememberWindowSize
 import com.moly3.cedarjam.core.ui.func.wstatusBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.model.FileTreeItemPresentation
 import com.moly3.cedarjam.core.ui.uikit.NeumorphicShape
@@ -91,6 +92,7 @@ internal fun MenuContent(
                     }
                     Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
                         AnimatedVisibility(isFullMenu) {
+                            val isCompact = isCompactUI()
                             LazyColumn(
                                 modifier = Modifier
                                     .weight(1f)
@@ -100,6 +102,7 @@ internal fun MenuContent(
                                 state = listState
                             ) {
                                 menuContentFileTree(
+                                    isCloseMenu = isCompact,
                                     selectedKey = selectedKey,
                                     state = state,
                                     items = state.files,

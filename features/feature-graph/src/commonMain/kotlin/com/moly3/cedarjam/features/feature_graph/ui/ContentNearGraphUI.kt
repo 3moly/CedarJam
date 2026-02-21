@@ -4,13 +4,18 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import com.arkivanov.decompose.router.slot.ChildSlot
@@ -20,6 +25,7 @@ import com.moly3.cedarjam.features.feature_graph.IDialogGraphComponent
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.func.rememberWindowSize
 import com.moly3.cedarjam.core.ui.model.WindowSize
+import com.moly3.cedarjam.core.ui.uikit.FileMenuContent
 import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
@@ -35,6 +41,7 @@ fun ContentNearGraphUI(
     setIsShowGraph: (Boolean) -> Unit,
     optionsAlignment: Alignment = Alignment.BottomCenter
 ) {
+
     val backgroundSecondary = LocalAppTheme.current.colors.backgroundSecondary
 //    val hazeState = rememberHazeState(blurEnabled = false)
 //    val hazeStyle = remember(backgroundSecondary) {
@@ -73,4 +80,5 @@ fun ContentNearGraphUI(
 //            count = connectionsCount,
 //            onSetIsShowGraph = { setIsShowGraph(it) })
     }
+
 }
