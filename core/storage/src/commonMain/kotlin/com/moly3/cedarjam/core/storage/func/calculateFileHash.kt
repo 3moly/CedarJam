@@ -1,5 +1,6 @@
 package com.moly3.cedarjam.core.storage.func
 
+import okio.ByteString.Companion.encodeUtf8
 import okio.HashingSource
 import okio.Path.Companion.toPath
 import okio.blackholeSink
@@ -14,4 +15,11 @@ fun calculateFileHash(filePath: String): String {
             return hashingSource.hash.hex()
         }
     }
+}
+
+fun calculatePathHash(relativePath: String): String {
+    return relativePath
+        .encodeUtf8()
+        .sha256()
+        .hex()
 }

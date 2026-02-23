@@ -36,8 +36,8 @@ interface Root : NavigationComponent<Root.Child>, WebNavigationOwner {
     fun shareMagnifyValue(value: Double)
     val sendingBranchFlow: Flow<UIState<SyncStatusChannel, String>>
 
-    sealed class Child {
-        class SelectWorkspace(val component: ISelectWorkspaceComponent) : Child()
-        class Workspace(val component: WorkspaceComponent) : Child()
+    sealed class Child : NavigationInstance {
+        class SelectWorkspace(override val component: ISelectWorkspaceComponent) : Child()
+        class Workspace(override val component: WorkspaceComponent) : Child()
     }
 }

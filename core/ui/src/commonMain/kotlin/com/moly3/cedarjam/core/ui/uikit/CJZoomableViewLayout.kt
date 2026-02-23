@@ -91,67 +91,77 @@ fun CJZoomableImageLayout(
             .onPointerEvent(PointerEventType.Exit) {
                 isMouseCaptured = false
             }
-            .pointerInput(Unit) {
-                detectPointerTransformGestures(
-                    scope = scope,
-                    numberOfPointers = 0,
-                    requisite = PointerRequisite.GreaterThan,
-                    onVerticalScrollChange = { scrollDelta ->
-                        val zoomFactor = (if (scrollDelta > 0) 1.01f else 0.99f)
-                        val newZoom = max(minZoom, min(maxZoom, latestZoom * zoomFactor))
-                        zoom = newZoom
-                    },
-                    onGesture = { gestureCentroid: Offset,
-                                  gesturePan: Offset,
-                                  gestureZoom: Float,
-                                  gestureRotate: Float,
-                                  mainPointerInputChange: PointerInputChange,
-                                  pointerList: List<PointerInputChange> ->
-
-                        when (pointerList.size) {
-                            1 -> {
-                                // Single finger/mouse - pan
-                                translationX = latestTranslationX + gesturePan.x
-                                translationY = latestTranslationY + gesturePan.y
-                            }
-
-                            2 -> {
-                                // Two fingers - zoom and pan
-                                val newZoom = max(minZoom, min(maxZoom, latestZoom * gestureZoom))
+            .let {
+                if (isEnable) {
+                    it.pointerInput(Unit) {
+                        detectPointerTransformGestures(
+                            scope = scope,
+                            numberOfPointers = 0,
+                            requisite = PointerRequisite.GreaterThan,
+                            onVerticalScrollChange = { scrollDelta ->
+                                val zoomFactor = (if (scrollDelta > 0) 1.01f else 0.99f)
+                                val newZoom = max(minZoom, min(maxZoom, latestZoom * zoomFactor))
                                 zoom = newZoom
+                            },
+                            onGesture = { gestureCentroid: Offset,
+                                          gesturePan: Offset,
+                                          gestureZoom: Float,
+                                          gestureRotate: Float,
+                                          mainPointerInputChange: PointerInputChange,
+                                          pointerList: List<PointerInputChange> ->
 
-                                // Apply pan with zoom compensation
-                                translationX = latestTranslationX + gesturePan.x / latestZoom
-                                translationY = latestTranslationY + gesturePan.y / latestZoom
+                                when (pointerList.size) {
+                                    1 -> {
+                                        // Single finger/mouse - pan
+                                        translationX = latestTranslationX + gesturePan.x
+                                        translationY = latestTranslationY + gesturePan.y
+                                    }
+
+                                    2 -> {
+                                        // Two fingers - zoom and pan
+                                        val newZoom =
+                                            max(minZoom, min(maxZoom, latestZoom * gestureZoom))
+                                        zoom = newZoom
+
+                                        // Apply pan with zoom compensation
+                                        translationX =
+                                            latestTranslationX + gesturePan.x / latestZoom
+                                        translationY =
+                                            latestTranslationY + gesturePan.y / latestZoom
+                                    }
+                                }
+                            },
+                            onGestureEnd = {
+                                Logger.d("Gesture ended")
+                            },
+                            onGestureCancel = {
+                                Logger.d("Gesture cancelled")
                             }
-                        }
-                    },
-                    onGestureEnd = {
-                        Logger.d("Gesture ended")
-                    },
-                    onGestureCancel = {
-                        Logger.d("Gesture cancelled")
+                        )
                     }
-                )
-            }
-            // Add additional pointer input for more precise drag handling
-            .pointerInput(Unit) {
-                detectDragGestures { change, dragAmount ->
-                    change.consume()
-                    translationX += dragAmount.x
-                    translationY += dragAmount.y
+                } else {
+                    it
                 }
             }
-            // Double tap to reset zoom and translation
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onDoubleTap = {
-                        zoom = initialZoom
-                        translationX = 0f
-                        translationY = 0f
-                    }
-                )
-            }
+
+        // Add additional pointer input for more precise drag handling
+//            .pointerInput(Unit) {
+//                detectDragGestures { change, dragAmount ->
+//                    change.consume()
+//                    translationX += dragAmount.x
+//                    translationY += dragAmount.y
+//                }
+//            }
+//            // Double tap to reset zoom and translation
+//            .pointerInput(Unit) {
+//                detectTapGestures(
+//                    onDoubleTap = {
+//                        zoom = initialZoom
+//                        translationX = 0f
+//                        translationY = 0f
+//                    }
+//                )
+//            }
     ) {
         Box(
             modifier = Modifier

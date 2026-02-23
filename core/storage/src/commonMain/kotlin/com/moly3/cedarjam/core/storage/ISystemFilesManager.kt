@@ -4,12 +4,12 @@ import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.ResultWrapper
 import com.moly3.cedarjam.core.domain.util.IPathWrapper
 import com.moly3.cedarjam.core.domain.model.canvas.CanvasDataWithErrors
+import com.moly3.cedarjam.core.domain.service.IFileHasher
 
-interface ISystemFilesManager {
+interface ISystemFilesManager : IFileHasher {
     fun toAbsoluteAppPath(relativePath: IPathWrapper): IPathWrapper
     fun appWorkspacesDir(): IPathWrapper
     fun toRelativeAppPath(relativePath: IPathWrapper): IPathWrapper
-    fun getFileHash(fullPath: String): String
     fun getFileNodeFromFullPath(workspacePath: String, fullPath: String): FileTreeNode.File
     fun getDirectoryNodeFromFullPath(
         workspacePath: String,
@@ -28,7 +28,7 @@ interface ISystemFilesManager {
     ): ResultWrapper<FileTreeNode, String>
 
     fun createDirectory(
-        fullPath:String
+        fullPath: String
     ): ResultWrapper<Unit, String>
 
     fun createNode(

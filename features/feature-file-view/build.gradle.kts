@@ -47,6 +47,7 @@ kotlin {
             implementation(libs.icepdf.core)
 //            implementation(libs.pdfbox)
             implementation(libs.jai.imageio.jpeg2000)
+
         }
         androidMain.dependencies {
             implementation(libs.compose.pdf)
@@ -54,4 +55,5 @@ kotlin {
         }
     }
 }
+
 

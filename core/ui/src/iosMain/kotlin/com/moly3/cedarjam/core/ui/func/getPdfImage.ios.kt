@@ -20,30 +20,31 @@ import org.jetbrains.skia.ImageInfo
 actual fun getPdfImage(
     path: String,
     page: Int,
-    dpi: Float
+    density: Float
 ): ImageBitmap {
     val url = NSURL.fileURLWithPath(path)
     val document = PDFDocument(url) ?: throw IllegalArgumentException("Could not load PDF at $path")
     val pdfPage = document.pageAtIndex(page.toULong()) ?: throw IllegalArgumentException("Page $page not found")
 
     // PDFKit coordinates are points (1/72 inch). Calculate scale based on desired DPI.
-    val scale = dpi / 72f
+    val scale = (density * 160f) / 72f
     val pageRect = pdfPage.boundsForBox(kPDFDisplayBoxMediaBox)
+    val pointWidth = CGRectGetWidth(pageRect)
+    val pointHeight = CGRectGetHeight(pageRect)
 
-    val width = (CGRectGetWidth(pageRect) * scale).toInt()
-    val height = (CGRectGetHeight(pageRect) * scale).toInt()
+    val rendererFormat = UIGraphicsImageRendererFormat.defaultFormat().apply {
+        this.scale = scale.toDouble()
+    }
+    val renderer = UIGraphicsImageRenderer(
+        size = CGSizeMake(pointWidth, pointHeight),
+        format = rendererFormat
+    )
 
-    // Use UIGraphicsImageRenderer to draw the PDF page into a UIImage
-    val rendererFormat = UIGraphicsImageRendererFormat.defaultFormat()
-    val renderer = UIGraphicsImageRenderer(size = CGSizeMake(width.toDouble(), height.toDouble()), format = rendererFormat)
-
-    val uiImage = renderer.imageWithActions { context ->
+    val uiImage = renderer.imageWithActions { _ ->
         val cgContext = UIGraphicsGetCurrentContext()
         if (cgContext != null) {
-            // Flip the coordinate system (iOS/Quartz uses bottom-left origin)
-            CGContextTranslateCTM(cgContext, 0.0, height.toDouble())
-            CGContextScaleCTM(cgContext, scale.toDouble(), -scale.toDouble())
-
+            CGContextTranslateCTM(cgContext, 0.0, pointHeight)
+            CGContextScaleCTM(cgContext, 1.0, -1.0)  // No DPI scale here — renderer handles it
             pdfPage.drawWithBox(kPDFDisplayBoxMediaBox, toContext = cgContext)
         }
     }

@@ -10,6 +10,7 @@ import com.arkivanov.decompose.router.children.SimpleNavigation
 import com.arkivanov.decompose.router.children.children
 import com.arkivanov.decompose.router.slot.activate
 import com.arkivanov.decompose.router.slot.child
+import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.value.Value
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.arkivanov.mvikotlin.extensions.coroutines.labels
@@ -149,6 +150,11 @@ class WorkspaceComponentImpl(
     override val children: Value<WorkspaceComponent.Children<*, TabsComponent>>
         get() = _children
 
+    override fun getItems(): List<Child<*, *>> {
+
+        return _children.stateFlow.value.items
+    }
+
     init {
         coroutineScope.launch {
             _children.stateFlow.collectLatest {
@@ -217,7 +223,6 @@ class WorkspaceComponentImpl(
                 foundActive?.instance?.onNavigate(route)
             }
         }
-
     }
 
     override fun setActiveTabs(component: Any) {

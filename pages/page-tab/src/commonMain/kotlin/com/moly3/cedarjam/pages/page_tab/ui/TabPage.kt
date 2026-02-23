@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.runtime.Composable
@@ -14,8 +13,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.extensions.compose.experimental.stack.ChildStack
 import com.arkivanov.decompose.extensions.compose.experimental.stack.animation.stackAnimation
@@ -24,10 +21,7 @@ import com.moly3.cedarjam.core.domain.func.formatEpochMillis
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.func.getPageTypeIcon
 import com.moly3.cedarjam.core.ui.func.isCompactUI
-import com.moly3.cedarjam.core.ui.func.rememberWindowSize
 import com.moly3.cedarjam.core.ui.model.CJText
-import com.moly3.cedarjam.core.ui.model.WindowSize
-import com.moly3.cedarjam.navigation.ui.ChildStack2
 import com.moly3.cedarjam.pages.page_collection.ui.CollectionPage
 import com.moly3.cedarjam.pages.page_collection_row.ui.CollectionRowPage
 import com.moly3.cedarjam.pages.page_file.ui.FilePage
@@ -124,7 +118,7 @@ fun TabPage(component: TabComponent) {
             )
         }
         Box(Modifier.fillMaxWidth().weight(1f)) {
-            val stack by component.childStack.subscribeAsState()
+            val stack by component.children.subscribeAsState()
             ChildStack(
                 stack = stack,
                 modifier = Modifier.fillMaxSize(),

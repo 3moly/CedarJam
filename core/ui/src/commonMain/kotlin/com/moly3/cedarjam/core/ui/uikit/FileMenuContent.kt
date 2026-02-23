@@ -28,6 +28,7 @@ import com.moly3.cedarjam.core.domain.model.AppThemeData
 import com.moly3.cedarjam.core.domain.model.settings.AppSettings
 import com.moly3.cedarjam.core.ui.compositions.LocalUIConfig
 import com.moly3.cedarjam.core.ui.func.flatClickable
+import com.moly3.cedarjam.core.ui.func.isCompactUI
 import com.moly3.cedarjam.core.ui.func.navigationBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.func.statusBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.func.windowToolbarPaddingCJ
@@ -116,13 +117,16 @@ fun FileMenuContent(
                         .padding(padding.dp)
                         .align(Alignment.BottomStart)
                 ) {
-                    NeumorphicShape(
-                        modifier = Modifier.size(LocalUIConfig.current.fabCircleSize),
-                        isPressed = false,
-                        buttonShape = RoundedCornerShape(100.dp),
-                        painter = rememberVectorPainter(BarLeft),
-                        onClick = openWorkspaceSettings
-                    )
+                    if(isCompactUI()){
+                        NeumorphicShape(
+                            modifier = Modifier.size(LocalUIConfig.current.fabCircleSize),
+                            isPressed = false,
+                            buttonShape = RoundedCornerShape(100.dp),
+                            painter = rememberVectorPainter(BarLeft),
+                            onClick = openWorkspaceSettings
+                        )
+                    }
+
                 }
 
             }

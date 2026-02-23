@@ -7,5 +7,6 @@ data class CreateAnnotationRequest(
     val x: Float,
     val y: Float,
     val width: Float,
-    val height: Float
+    val height: Float,
+    val rowId: Long?
 )

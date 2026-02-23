@@ -1,6 +1,7 @@
 package com.moly3.cedarjam.navigation
 
 import co.touchlab.kermit.Logger
+import com.arkivanov.decompose.Child
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.router.stack.ChildStack
@@ -50,7 +51,8 @@ class RootComponent(
 ) : Root,
     ComponentContext by parentComponentContext,
     IDecomposeScopeComponent,
-    KoinComponent {
+    KoinComponent,
+    NavigationParent {
 
     override val scope by componentScope()
 
@@ -165,7 +167,10 @@ class RootComponent(
         }
     }
 
-    override val childStack: Value<ChildStack<*, Root.Child>> = _stack
+    override val children: Value<ChildStack<*, Root.Child>> = _stack
+    override fun getItems(): List<Child<*, *>> {
+        return children.stateFlow.value.items
+    }
 
     override fun shareMagnifyValue(value: Double) {
         coroutineScope.launch {

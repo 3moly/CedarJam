@@ -17,7 +17,6 @@ class SelectWorkspaceComponent(
     ComponentContext by componentContext,
     KoinComponent {
 
-
     private val store by lazy {
         SelectWorkspaceStoreFactory(
             storeFactory = storeFactory,

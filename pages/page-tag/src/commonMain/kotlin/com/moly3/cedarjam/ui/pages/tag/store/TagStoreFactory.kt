@@ -43,7 +43,8 @@ internal class TagStoreFactory(
     private val storeFactory: StoreFactory,
     private val lifecycle: Lifecycle,
     private val pageData: TagPageInput,
-    private val setIsShowGraph: (Boolean) -> Unit
+    private val setIsShowGraph: (Boolean) -> Unit,
+    private val openWorkspaceSettings: (Boolean) -> Unit
 ) : KoinComponent {
 
     private val coroutineScope: CoroutineScope by inject()
@@ -126,6 +127,10 @@ internal class TagStoreFactory(
 
                 is Intent.SetIsShowGraph -> {
                     setIsShowGraph(intent.value)
+                }
+
+                is Intent.OpenWorkspaceSettings -> {
+                    openWorkspaceSettings(true)
                 }
 
                 is Intent.OpenLink -> {

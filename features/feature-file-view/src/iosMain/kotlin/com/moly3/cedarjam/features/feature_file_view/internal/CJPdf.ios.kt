@@ -343,7 +343,8 @@ actual fun CJPdf(
                             x = it.rect.x,
                             y = it.rect.y,
                             width = it.rect.width,
-                            height = it.rect.height
+                            height = it.rect.height,
+                            rowId = null
                         )
                     )
                 }
@@ -374,15 +375,19 @@ actual fun CJPdf(
         }
 
         val lastAnnotations = remember { mutableStateOf<List<AnnotationDTO>>(listOf()) }
-        LaunchedEffect(annotations) {
+        val pdfData by pdf.pdfDataState
+        LaunchedEffect(annotations, pdfView, pdfData) {
             //clearAllAnnotations(pdfView)
-            for (item in annotations.filter { d -> !lastAnnotations.value.any { x -> x.id == d.id } }) {
-                applyHighlight(item, pdfView)
+            if (pdfData != null) {
+                for (item in annotations.filter { d -> !lastAnnotations.value.any { x -> x.id == d.id } }) {
+                    applyHighlight(item, pdfView)
+                }
+                lastAnnotations.value = annotations
             }
-            lastAnnotations.value = annotations
         }
-        LaunchedEffect(currentPage) {
-            val page = pdf.getPdfData()?.pageAtIndex((currentPage - 1L).toULong())
+
+        LaunchedEffect(currentPage, pdfData) {
+            val page = pdfData?.pageAtIndex((currentPage - 1L).toULong())
             if (page != null) {
                 pdfView.goToPage(page)
                 pdfView.refreshAnnotations()

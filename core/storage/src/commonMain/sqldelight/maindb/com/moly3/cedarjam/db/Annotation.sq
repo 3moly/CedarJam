@@ -7,11 +7,13 @@ CREATE TABLE Annotation (
   createdTime INTEGER NOT NULL,
   modifiedTime INTEGER NOT NULL,
 
-  posX REAL NOT NULL,
-  posY REAL NOT NULL,
-  width REAL NOT NULL,
-  height REAL NOT NULL
+  posX REAL NOT NULL, -- 0f .. 1f
+  posY REAL NOT NULL, -- 0f .. 1f
+  width REAL NOT NULL, -- 0f .. 1f
+  height REAL NOT NULL, -- 0f .. 1f
 
+  rowId INTEGER,
+  FOREIGN KEY (rowId) REFERENCES DataCollectionRow(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 selectAll:
@@ -34,7 +36,7 @@ DELETE FROM Annotation
 WHERE id = :id;
 
 insertNew:
-INSERT INTO Annotation(dataPath, dataPoint, description, createdTime, modifiedTime,posX,posY,width,height)
+INSERT INTO Annotation(dataPath, dataPoint, description, createdTime, modifiedTime,posX,posY,width,height, rowId)
 VALUES ?;
 
 updateDataPath:
@@ -46,3 +48,6 @@ updateDataPathById:
 UPDATE Annotation
 SET dataPath = :newFileRelativePath
 WHERE id = :id;
+
+lastInsertId:
+SELECT last_insert_rowid();

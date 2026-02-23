@@ -102,7 +102,7 @@ fun AnnotationDTO.toPx(
     val drawnH = canvasSize.height.toFloat()
 
     val left = drawnW * x
-    val top = drawnH * (1f - y - height)
+    val top = drawnH * y
 
     return Rect(
         left,
@@ -124,19 +124,11 @@ internal fun PdfUI(
     onDeleteAnnotation: (AnnotationDTO) -> Unit
 ) {
     val isShowAnnotations = remember { mutableStateOf(false) }
-//    var documentState by remember { mutableStateOf<ObsPdfDocument?>(null) }
     val pdfFullPath = remember(fileType.fileNode) {
         val abs = fileType.fileNode.getFullPath()
         abs
     }
     val documentState = getObsPdfDocument(pdfFullPath)
-//    LaunchedEffect(Unit) {
-//        launch(io) {
-//            if (documentState == null) {
-//                documentState =
-//            }
-//        }
-//    }
     val currentPage = fileType.currentPage
     val canGoBack = remember(documentState, currentPage) {
         if (documentState != null) {
@@ -205,6 +197,7 @@ internal fun PdfUI(
                     when (getPlatform()) {
                         Platform.Android,
                         Platform.Jvm,
+                            Platform.Ios,
                         Platform.Wasm -> {
                             val isEnableAnnotation = remember { mutableStateOf(false) }
                             val isEnableAnnotationUpdated by rememberUpdatedState(isEnableAnnotation.value)
@@ -246,13 +239,13 @@ internal fun PdfUI(
                                                 painter = it,
                                                 contentDescription = null,
                                                 modifier = Modifier
+                                                    .background(Color.White)
                                                     .drawAnnotationsBehind(
                                                         currentPage = currentPage,
                                                         annotations = annotations
                                                     )
                                                     .drawWithContent {
                                                         this.drawContent()
-
                                                         val start = startedDragging.value
                                                         val end = endDragging.value
 
@@ -271,73 +264,71 @@ internal fun PdfUI(
                                                     .onGloballyPositioned {
                                                         pdfPageSize.value = it.size
                                                     }
-                                                    .pointerInput(Unit) {
-                                                        detectDragGestures(
-                                                            onDragStart = {
-                                                                if (isEnableAnnotationUpdated) {
-                                                                    startedDragging.value = it
-                                                                }
-                                                            },
-                                                            onDragEnd = {
-                                                                if (isEnableAnnotationUpdated) {
-                                                                    val start = startedDragging.value
-                                                                    val end = endDragging.value
+                                                    .let{
+                                                        if(isEnableAnnotationUpdated){
+                                                            it   .pointerInput(Unit) {
+                                                                detectDragGestures(
+                                                                    onDragStart = {
+                                                                        if (isEnableAnnotationUpdated) {
+                                                                            startedDragging.value = it
+                                                                        }
+                                                                    },
+                                                                    onDragEnd = {
+                                                                        if (isEnableAnnotationUpdated) {
+                                                                            val start = startedDragging.value
+                                                                            val end = endDragging.value
 
-                                                                    val pdf = pdfPageSize.value
-                                                                    if (start != null && end != null && pdf != null) {
+                                                                            val pdf = pdfPageSize.value
+                                                                            if (start != null && end != null && pdf != null) {
 
-                                                                        val pdfWidth = pdf.width.toFloat()
-                                                                        val pdfHeight = pdf.height.toFloat()
+                                                                                val pdfWidth = pdf.width.toFloat()
+                                                                                val pdfHeight = pdf.height.toFloat()
 
+                                                                                val left = minOf(start.x, end.x)
+                                                                                val top = minOf(start.y, end.y)
+                                                                                val right = maxOf(start.x, end.x)
+                                                                                val bottom = maxOf(start.y, end.y)
 
-                                                                        val left = minOf(start.x, end.x)
-                                                                        val top = minOf(start.y, end.y)
-                                                                        val right = maxOf(start.x, end.x)
-                                                                        val bottom = maxOf(start.y, end.y)
+                                                                                val x1 = (left / pdfWidth).coerceIn(0f, 1f)
+                                                                                val y1 = (top / pdfHeight).coerceIn(0f, 1f)
+                                                                                val width = ((right - left) / pdfWidth).coerceIn(0f, 1f)
+                                                                                val height = ((bottom - top) / pdfHeight).coerceIn(0f, 1f)
 
-                                                                        val x1 = (left / pdfWidth).coerceIn(0f, 1f)
-                                                                        val width = ((right - left) / pdfWidth).coerceIn(0f, 1f)
-                                                                        val height = ((bottom - top) / pdfHeight).coerceIn(0f, 1f)
-
-// Convert screen top to PDF y (flip: y=0 is bottom in PDF space)
-                                                                        val y1 = (1f - (bottom / pdfHeight)).coerceIn(0f, 1f)
-
-                                                                        onAddAnnotation(
-                                                                            CreateAnnotationRequest(
-                                                                                dataPath = fileType.fileNode.getFullPath(),
-                                                                                description = "",
-                                                                                dataPoint = (currentPage - 1).toDouble(),
-                                                                                x = x1,
-                                                                                y = y1,       // PDF-space y (bottom origin)
-                                                                                width = width,
-                                                                                height = height
-                                                                            )
-                                                                        )
+                                                                                onAddAnnotation(
+                                                                                    CreateAnnotationRequest(
+                                                                                        dataPath = fileType.fileNode.getFullPath(),
+                                                                                        description = "",
+                                                                                        dataPoint = (currentPage - 1).toDouble(),
+                                                                                        x = x1,
+                                                                                        y = y1,       // PDF-space y (bottom origin)
+                                                                                        width = width,
+                                                                                        height = height,
+                                                                                        rowId = null
+                                                                                    )
+                                                                                )
+                                                                            }
+                                                                            endDragging.value = null
+                                                                            startedDragging.value = null
+                                                                        }
+                                                                    },
+                                                                    onDragCancel = {
+                                                                        endDragging.value = null
+                                                                        startedDragging.value = null
+                                                                    },
+                                                                    onDrag = { _, dragAmount ->
+                                                                        if (isEnableAnnotationUpdated) {
+                                                                            endDragging.value =
+                                                                                (endDragging.value
+                                                                                    ?: startedDragging.value!!) + dragAmount  // ✅
+                                                                        }
                                                                     }
-                                                                    endDragging.value = null
-                                                                    startedDragging.value = null
-                                                                }
-                                                            },
-                                                            onDragCancel = {
-                                                                endDragging.value = null
-                                                                startedDragging.value = null
-                                                            },
-                                                            onDrag = { _, dragAmount ->
-                                                                if (isEnableAnnotationUpdated) {
-                                                                    endDragging.value =
-                                                                        (endDragging.value
-                                                                            ?: startedDragging.value!!) + dragAmount  // ✅
-                                                                }
-//                                                                accumulatedDelta += dragAmount.y
-//                                                                val steps = (accumulatedDelta / rowHeightPx).toInt()
-//                                                                if (steps != 0) {
-//                                                                    val targetIndex = (blockIndex + steps).coerceIn(0, totalBlocks - 1)
-//                                                                    onDrag(blockIndex, targetIndex)
-//                                                                    accumulatedDelta -= steps * rowHeightPx
-//                                                                }
+                                                                )
                                                             }
-                                                        )
+                                                        }else{
+                                                            it
+                                                        }
                                                     }
+
                                             )
                                         }
                                     }
@@ -461,14 +452,6 @@ internal fun PdfUI(
                             } catch (exc: Exception) {
                                 val msg = "" + exc.message
                             }
-
-                            //                                            imgBitmap = getPdfImage(
-//                                                Path(
-//                                                    fileNode.fileNode.getFullPath()
-//                                                ).toString(),
-//                                                page = currentPage,
-//                                                dpi = 100f
-//                                            )
                         }
                     }
                 }

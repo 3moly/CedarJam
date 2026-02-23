@@ -1,5 +1,6 @@
 package com.moly3.cedarjam.pages.page_home.model
 
+import com.moly3.cedarjam.core.domain.model.AnnotationDTO
 import com.moly3.cedarjam.core.domain.model.CollectionDTO
 import com.moly3.cedarjam.core.domain.model.CollectionRowDTO
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
@@ -27,6 +28,11 @@ sealed class TimeMachine {
 
     data class Collection(
         val collection: CollectionDTO,
+        override val modifiedTime: Long
+    ) : TimeMachine()
+
+    data class Annotation(
+        val annotation: AnnotationDTO,
         override val modifiedTime: Long
     ) : TimeMachine()
 }

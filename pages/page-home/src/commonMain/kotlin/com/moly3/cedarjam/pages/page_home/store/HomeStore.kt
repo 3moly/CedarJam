@@ -14,7 +14,6 @@ internal interface HomeStore : Store<Intent, State, Unit> {
     sealed interface Msg {
         data class SetAllNodesState(val value: UIState<ImmutableList<FileTreeNode>, Nothing>) : Msg
         data class SetSearchTextFieldValue(val value: TextFieldValue) : Msg
-        data class SetCount(val value: Int) : Msg
         data class SetTimes(val value: UIState<ImmutableList<TimeMachine>, Nothing>) : Msg
     }
 }

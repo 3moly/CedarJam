@@ -576,10 +576,10 @@ internal class SqlStorage(
     override fun createAnnotation(annotation: Annotation): ResultWrapper<Long, String> {
         return runQueryOrThrow { db ->
             resultBlock {
-                db.annotationQueries.insertNew(
-                    annotation
-                )
-                0L
+                db.annotationQueries.transactionWithResult(){
+                    db.annotationQueries.insertNew(annotation)
+                    db.annotationQueries.lastInsertId().executeAsOne()
+                }
             }
         }
     }

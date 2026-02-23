@@ -13,7 +13,7 @@ import java.io.File
 actual fun getPdfImage(
     path: String,
     page: Int,
-    dpi: Float
+    density: Float
 ): ImageBitmap {
     val file = File(path)
     val fileDescriptor = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
@@ -23,7 +23,7 @@ actual fun getPdfImage(
 
     // Calculate dimensions based on DPI
     // PdfRenderer uses points (72 DPI). Scale to desired DPI.
-    val scale = dpi / 72f
+    val scale = (density * 160f) / 72f
     val width = (pdfPage.width * scale).toInt()
     val height = (pdfPage.height * scale).toInt()
 

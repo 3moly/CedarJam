@@ -50,7 +50,7 @@ class UI1Test : UITest() {
         Logger.d("step 2")
         waitUntil("Navigation to Workspace", 10_000L) {
             waitForIdle() // Ensure compose updates are processed
-            component!!.childStack.active.instance is Root.Child.Workspace
+            component!!.children.active.instance is Root.Child.Workspace
         }
 
         Logger.d("step 3")
@@ -160,7 +160,7 @@ class UI1Test : UITest() {
         assertEquals(0, emptyWorkspaceFiles.size)
 
         val tabs = instance.component.children.value.items.first().instance
-        val sre = tabs.childStack.value.active.instance.component as TabComponent
+        val sre = tabs.children.value.active.instance.component as TabComponent
         val syncUseCase = koin.get<ISyncUseCase>()
 
         val home = waitAndTabGetComponent<TabComponent.Child.Home>(sre, 5000L)

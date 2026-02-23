@@ -119,7 +119,7 @@ interface IWorkspaceEnvironment {
 
     fun getNodeText(node: FileTreeNode.File): ResultWrapper<String, String>
     suspend fun setNodeText(node: FileTreeNode.File, text: String): ResultWrapper<Unit, String>
-    fun createAnnotation(data: CreateAnnotationRequest)
+    suspend fun createAnnotation(data: CreateAnnotationRequest): ResultWrapper<Long, String>
     fun createTag(request: CreateTagRequest): ResultWrapper<Long, String>
     fun createTagToTag(request: CreateTagToTagRequest): ResultWrapper<Long, String>
     fun createCollection(request: CreateCollectionRequest): ResultWrapper<Long, String>

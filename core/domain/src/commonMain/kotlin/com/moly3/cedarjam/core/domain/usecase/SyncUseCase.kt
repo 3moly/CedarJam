@@ -58,12 +58,6 @@ class SyncUseCase(
         return _sendingBranch.asStateFlow()
     }
 
-    enum class SyncAction { UPLOAD, DOWNLOAD, NONE }
-
-    //(
-    //        val action: SyncAction,
-    //        val reason: String
-    //    )
     sealed class SyncResult {
         data class Upload(val reason: String, val local: IndexFileDto) : SyncResult()
         data class Download(val reason: String, val server: FileItem) : SyncResult()
@@ -116,7 +110,7 @@ class SyncUseCase(
                     server
                 )
 
-                local.serverSyncStatus != SyncStatus.SYNCED || !local.isDirectory && localNewer || hashMismatch -> {
+                local.serverSyncStatus != SyncStatus.SYNCED && hashMismatch || !local.isDirectory && localNewer && hashMismatch -> {
                     val reason = when {
                         local.serverSyncStatus != SyncStatus.SYNCED -> "Local status: ${local.serverSyncStatus}"
                         localNewer -> "Local is newer ($diffMs)"
@@ -189,7 +183,13 @@ class SyncUseCase(
         }
         val uploadResult = workspaceEnv.uploadSync(
             archiveNode = importNode,
-            metadata = filesToUploadMeta,
+            metadata = filesToUploadMeta.filter { meta ->
+                if (meta.isDeleted) {
+                    true
+                } else {
+                    filesToPackInZip.contains(meta.relativePath)
+                }
+            },
             filesToDownload = filesToDownloadPaths,
             onUpload = { curr, total ->
                 emitChannel(
@@ -399,7 +399,6 @@ class SyncUseCase(
                     val isDeleteToUpload = filesToUploadMeta.filter { d -> d.isDeleted }
                     ensure(isDeleteToUpload.isEmpty()) { "no files need to delete in server when workspace is new: ${isDeleteToUpload}" }
                 }
-                FileKit.projectDir
                 val chunks =
                     buildSyncChunks(filesToPackInZip, filesToDownloadPaths.map { d -> d.value })
 

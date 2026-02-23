@@ -275,6 +275,7 @@ compose {
             args("-XDignore.symbol.file --add-exports java.desktop/com.apple.eawt.event=ALL-UNNAMED")
 
             nativeDistributions {
+//                appResourcesRootDir.set(file("appResources"))
                 //appName = "CedarJam"
 
                 // https://github.com/JetBrains/compose-multiplatform/blob/master/tutorials/Native_distributions_and_local_execution/README.md
@@ -312,6 +313,9 @@ compose {
 }
 
 
+//tasks.withType<JavaExec> {
+//    systemProperty("compose.application.resources.dir", file("appResources").absolutePath)
+//}
 
 val localPropertiesFile = rootProject.file("local.properties")
 val localProperties = Properties()

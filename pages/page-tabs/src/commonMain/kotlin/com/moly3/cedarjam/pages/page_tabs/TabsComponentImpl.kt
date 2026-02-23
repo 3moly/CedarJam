@@ -1,5 +1,6 @@
 package com.moly3.cedarjam.pages.page_tabs
 
+import com.arkivanov.decompose.Child
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.StackNavigation
@@ -18,6 +19,7 @@ import com.moly3.cedarjam.pages.page_tab.TabComponentImpl
 import com.moly3.cedarjam.pages.page_tabs.TabsComponentImpl.Config.Tab
 import com.moly3.cedarjam.core.ui.model.PageNameData
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
+import com.moly3.cedarjam.navigation.NavigationParent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -44,17 +46,22 @@ class TabsComponentImpl(
 ) : KoinComponent,
     ComponentContext by context,
     IDecomposeScopeComponent,
-    TabsComponent {
+    TabsComponent,
+    NavigationParent {
 
     private val coroutineScope: CoroutineScope by inject()
 
     override val scope by componentScope()
     private val navigation = StackNavigation<Config>()
 
-    override val childStack: Value<ChildStack<*, TabsComponent.Child>>
-        get() = router
+    override val children: Value<ChildStack<*, TabsComponent.Child>>
+        get() = _children
 
-    private val router = context.childStack(
+    override fun getItems(): List<Child<*, *>> {
+        return _children.value.items
+    }
+
+    private val _children = context.childStack(
         source = navigation,
         serializer = Config.serializer(),
         initialConfiguration = Tab(index = 0),
@@ -71,7 +78,7 @@ class TabsComponentImpl(
         },
     )
 
-    override val activeTab: Flow<TabsState> = router.stateFlow.map {
+    override val activeTab: Flow<TabsState> = _children.stateFlow.map {
         TabsState(
             activeTabIndex = it.active.configuration.index,
             activeFlowName = it.active.instance.component.nameFlow
@@ -80,12 +87,12 @@ class TabsComponentImpl(
 
     override fun onNavigate(route: Route) {
         coroutineScope.launch(Dispatchers.Main.immediate) {
-            val activeConfig = router.active.configuration
+            val activeConfig = _children.active.configuration
             bringTabAndRoute(activeConfig, route)
         }
     }
 
-    override val state: StateFlow<State> = router.stateFlow.map {
+    override val state: StateFlow<State> = _children.stateFlow.map {
         val activeIndex = it.active.configuration.index
         State(
             currentTabIndex = activeIndex,
@@ -119,7 +126,7 @@ class TabsComponentImpl(
 
             is Intent.CloseTab -> {
                 val activeIndex = state.value.currentTabIndex
-                if (router.value.backStack.isEmpty()) {
+                if (_children.value.backStack.isEmpty()) {
                     onSelfDestroy()
                 } else {
                     if (activeIndex != null) {
@@ -144,7 +151,7 @@ class TabsComponentImpl(
 
     private fun bringTabAndRoute(config: Config, route: Route) {
         navigation.pushToFront(config, onComplete = {
-            val component = router.value.active.instance.component
+            val component = _children.value.active.instance.component
             component.onNavigate(route)
         })
     }

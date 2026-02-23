@@ -31,6 +31,7 @@ localina = "1.0.0-alpha3"
 material3 = "1.9.0"
 
 materialIconsExtended = "1.7.3"
+mediampAll = "0.1.2"
 okio = "3.16.4"
 pdfmpCompose = "1.0.9"
 serialization = "1.10.0"
@@ -45,7 +46,7 @@ kotlinx-immutable-list = "0.4.0"
 ktor = "3.4.0"
 sqldelight = "2.2.1"
 key-value-settings = "1.3.0"
-kotlinx-io-core = "0.8.2"
+kotlinx-io-core = "0.9.0"
 filekit-core = "0.12.0"
 kmpIoVersion = "0.3.0"
 # compose/ui
@@ -56,18 +57,18 @@ hypnoticcanvas = "0.4.1"
 colorpicker-compose = "1.1.3"
 
 video-player = "0.8.7"
-jewelDecoratedWindow = "0.33.0-253.29795"
+jewelDecoratedWindow = "0.34.0-253.31033.149"
 compose-data-viz = "0.1.6"
 dnd = "0.4.0"
 webview = "2.0.3"
 moko-resources = "0.26.0"
 # pdf
-icepdf = "7.3.1"
+icepdf = "7.3.2"
 pdfbox = "3.0.6"
 composePdf = "1.2.0"
 jaiImageioJpeg2000 = "1.4.0"
 # secondary
-haze = "1.7.1"
+haze = "1.7.2"
 # helpers
 compose-hot-reload = "1.0.0"
 kotestProperty = "6.1.3"
@@ -102,6 +103,10 @@ lazytable = { module = "io.github.oleksandrbalan:lazytable", version.ref = "lazy
 liquid = { module = "io.github.fletchmckee.liquid:liquid", version.ref = "liquid" }
 localina = { module = "io.github.sudarshanmhasrup.localina:localina", version.ref = "localina" }
 material-icons-extended = { module = "org.jetbrains.compose.material:material-icons-extended", version.ref = "materialIconsExtended" }
+mediamp-all = { module = "org.openani.mediamp:mediamp-all", version.ref = "mediampAll" }
+mediamp-vlc = { module = "org.openani.mediamp:mediamp-vlc", version.ref = "mediampAll" }
+mediamp-vlc-compose = { module = "org.openani.mediamp:mediamp-vlc-compose", version.ref = "mediampAll" }
+mediamp-vlc-loader = { module = "org.openani.mediamp:mediamp-vlc-loader", version.ref = "mediampAll" }
 okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
 serialization = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
 decompose = { group = "com.arkivanov.decompose", name = "decompose", version.ref = "decompose" }

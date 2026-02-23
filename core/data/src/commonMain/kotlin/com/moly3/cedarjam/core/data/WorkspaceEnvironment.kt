@@ -4,7 +4,6 @@ import co.touchlab.kermit.Logger
 import com.moly3.cedarjam.core.net.IRemoteSyncRepository
 import com.moly3.cedarjam.core.domain.DefaultJson
 import com.moly3.cedarjam.core.domain.func.doNothing
-import com.moly3.cedarjam.core.domain.func.insertNode
 import com.moly3.cedarjam.core.domain.func.normalizeText
 import com.moly3.cedarjam.core.domain.func.nowInMs
 import com.moly3.cedarjam.core.domain.func.toColor
@@ -312,7 +311,8 @@ class WorkspaceEnvironment(
                     x = it.posX.toFloat(),
                     y = it.posY.toFloat(),
                     width = it.width.toFloat(),
-                    height = it.height.toFloat()
+                    height = it.height.toFloat(),
+                    modifiedTime = it.modifiedTime
                 )
             }
         }.flowOn(io)
@@ -878,8 +878,8 @@ class WorkspaceEnvironment(
 
 
     @OptIn(ExperimentalTime::class)
-    override fun createAnnotation(data: CreateAnnotationRequest) {
-        sqlStorage.createAnnotation(
+    override suspend fun createAnnotation(data: CreateAnnotationRequest): ResultWrapper<Long, String> {
+        return sqlStorage.createAnnotation(
             annotation = Annotation(
                 id = 0L,
                 dataPath = data.dataPath.normalizeText(),
@@ -891,6 +891,7 @@ class WorkspaceEnvironment(
                 posY = data.y.toDouble(),
                 width = data.width.toDouble(),
                 height = data.height.toDouble(),
+                rowId = data.rowId
             )
         )
     }

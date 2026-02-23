@@ -41,12 +41,15 @@ actual fun getObsPdfDocument(absolutePath: String): ObsPdfDocument? {
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 private class AndroidPdfDocument(
     private val renderer: PdfRenderer,
-    private val fileDescriptor: ParcelFileDescriptor
+    private val fileDescriptor: ParcelFileDescriptor,
+
 ) : ObsPdfDocument {
 
     override fun isActive(): Boolean = true
 
     override fun getNumberOfPages(): Int = renderer.pageCount
+
+    override val pdfDataState: State<PdfData?> = derivedStateOf { null }
 
 
     override fun getPagePainter(index: Int): Painter? {

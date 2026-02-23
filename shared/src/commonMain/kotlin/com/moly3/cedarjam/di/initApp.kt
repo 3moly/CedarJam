@@ -15,6 +15,7 @@ import com.moly3.cedarjam.core.domain.repository.IWorkspaceEnvironment
 import com.moly3.cedarjam.core.domain.service.AlertService
 import com.moly3.cedarjam.core.domain.service.AppContextProvider
 import com.moly3.cedarjam.core.domain.service.FileManagerService
+import com.moly3.cedarjam.core.domain.service.IImageTransform
 import com.moly3.cedarjam.core.domain.service.IMessageService
 import com.moly3.cedarjam.core.domain.service.IUtilsService
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
@@ -36,6 +37,7 @@ import com.moly3.cedarjam.navigation.NavigatorImpl
 import com.moly3.cedarjam.pages.page_workspace.WorkspaceComponentImpl
 import com.moly3.cedarjam.repository.getJvmBrowserService
 import com.moly3.cedarjam.repository.getUtilsService
+import com.moly3.cedarjam.service.ImageTransform
 import com.moly3.cedarjam.service.MessageServiceImpl
 import com.moly3.core_domain.BuildConfig
 import io.github.vinceglb.filekit.FileKit
@@ -62,6 +64,7 @@ fun initApp(
     val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     val navigator = NavigatorImpl(scope)
     val koinModule = module {
+        single<IImageTransform> { ImageTransform() }
         single<AlertService> { AlertService() }
         factory<INavigateToFileUseCase> { params ->
             val filesManager: FileManagerService = params.get()

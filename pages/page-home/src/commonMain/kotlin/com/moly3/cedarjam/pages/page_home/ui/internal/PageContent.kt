@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
+import com.moly3.cedarjam.core.domain.func.hiddenDirectory
 import com.moly3.cedarjam.core.domain.func.pathWrapper
 import com.moly3.cedarjam.core.domain.model.FileTypeExt
 import com.moly3.cedarjam.core.domain.model.toFileType
@@ -69,6 +70,7 @@ fun TimeMachine.dpSize(): DpSize {
         is TimeMachine.Row -> DpSize(150.dp, 150.dp)
 
         is TimeMachine.Tag -> DpSize(250.dp, 50.dp)
+        is TimeMachine.Annotation -> DpSize(250.dp, 150.dp)
     }
 }
 
@@ -82,7 +84,8 @@ internal fun PageContent(
     UIStateContentNoBox(state = state.timeMachinesState) { timeMachines ->
         Column(modifier = Modifier.fillMaxSize()) {
             CJSearchTextField(
-                modifier = Modifier.wstatusBarsPaddingCJ().padding(horizontal = 16.dp).fillMaxWidth(),
+                modifier = Modifier.wstatusBarsPaddingCJ().padding(horizontal = 16.dp)
+                    .fillMaxWidth(),
                 isSearchIcon = true,
                 placeholderText = "Search...",
                 value = state.searchTextFieldValue,
@@ -99,7 +102,8 @@ internal fun PageContent(
             ) {
                 LazyFlowRowV8(
                     modifier = Modifier.padding(horizontal = 16.dp).fillMaxSize(),
-                    afterScrollModifier = Modifier.padding(vertical = 16.dp).navigationBarsPaddingCJ()
+                    afterScrollModifier = Modifier.padding(vertical = 16.dp)
+                        .navigationBarsPaddingCJ()
                         .onGloballyPositioned({
                             rowSize.value = it.size
                         }),
@@ -110,144 +114,12 @@ internal fun PageContent(
                     itemSize = { it.dpSize().toPx(density) }) {
 
                     val modifier = Modifier.size(it.dpSize())
-
-                    NeumorphicShape(
+                    TimeMachineItem(
                         modifier = modifier,
-                        buttonShape = RoundedCornerShape(16.dp),
-                        strength = 0.01f,
-                        pressedColor = Color.Yellow,
-                        unpressedColor = Color.Red,
-                        isShowBigGradient = false,
-                        shadowConfig = NeumorphicShadowConfig(
-                            lightShadowRadius = 0.1f,
-                            darkShadowRadius = 0.1f,
-                            pressedShadowRadius = 14f,
-                            pressedShadowOffset = Offset(0f, 0f),
-                            elevationStrength = 10f
-                        ),
-                        content = {
-                            Box(Modifier.fillMaxSize()) {
-                                when (it) {
-                                    is TimeMachine.Collection -> {
-                                        CJText(text = "Collection")
-                                    }
-
-                                    is TimeMachine.FileNode -> {
-                                        when (it.file.name.extension.toFileType()) {
-                                            FileTypeExt.None -> {}
-                                            FileTypeExt.Pdf -> {
-                                                val pdfImg = rememberPdfImage(it.file.getFullPath())
-                                                if (pdfImg != null) {
-                                                    Image(
-                                                        bitmap = pdfImg,
-                                                        contentDescription = null,
-                                                        contentScale = ContentScale.Crop
-                                                    )
-                                                }
-                                            }
-
-                                            FileTypeExt.Image -> {
-                                                AsyncImage(
-                                                    model = it.file.getFullPath(),
-                                                    contentDescription = null,
-                                                    modifier = Modifier.fillMaxSize(),
-                                                    contentScale = ContentScale.Crop
-                                                )
-                                            }
-
-                                            FileTypeExt.Video -> {}
-                                            FileTypeExt.Text -> {
-
-                                            }
-                                        }
-                                        Box(
-                                            Modifier
-                                                .align(Alignment.BottomCenter)
-                                                .fillMaxWidth()
-                                                .height(40.dp)
-                                                .background(
-                                                    LocalAppTheme.current.colors.icon.copy(
-                                                        alpha = 0.8f
-                                                    )
-                                                )
-                                                .padding(horizontal = 8.dp),
-                                            contentAlignment = Alignment.CenterStart
-                                        ) {
-                                            CJText(text = it.file.getFullName())
-                                        }
-
-                                    }
-
-                                    is TimeMachine.Row -> {
-                                        val isPdf = remember(it.row) {
-                                            val relativePath = it.row.fileRelativePath
-                                            relativePath?.contains(".pdf") ?: false
-                                        }
-                                        if (isPdf) {
-                                            val pdfImg = rememberPdfImage(
-                                                pathWrapper(
-                                                    workspaceFullPath,
-                                                    it.row.fileRelativePath ?: ""
-                                                ).pathString
-                                            )
-                                            if (pdfImg != null) {
-                                                Image(
-                                                    bitmap = pdfImg,
-                                                    contentDescription = null,
-                                                    contentScale = ContentScale.Crop
-                                                )
-                                            }
-                                        } else {
-                                            CJText(text = "Row ${it.row}")
-                                        }
-                                    }
-
-                                    is TimeMachine.Tag -> {
-                                        Row(
-                                            modifier = Modifier.padding(horizontal = 16.dp)
-                                                .fillMaxHeight(),
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(16.dp)
-                                        ) {
-                                            val hashColor = remember(it.tag.color) {
-                                                if (it.tag.color.luminance() > 0.5f) {
-                                                    Color.Black
-                                                } else {
-                                                    Color.White
-                                                }
-                                            }
-                                            Box(
-                                                Modifier
-                                                    .size(40.dp)
-                                                    .background(it.tag.color, shape = CircleShape)
-                                                    .clip(CircleShape),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                CJText(
-                                                    text = "#",
-                                                    color = hashColor, // Important
-                                                    fontSize = 24.sp,
-                                                    modifier = Modifier
-                                                )
-                                            }
-                                            Column {
-                                                CJText(
-                                                    text = "#${it.tag.name}",
-                                                    fontSize = 16.sp,
-                                                    fontWeight = FontWeight.Bold,
-                                                    maxLines = 1
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }) {
-                        onIntent(Intent.OpenTimeMachine(it))
-                    }
-                    LaunchedEffect(Unit) {
-                        co.touchlab.kermit.Logger.w { "kekeke: ${it}" }
-                    }
+                        item = it,
+                        onIntent = onIntent,
+                        workspaceFullPath = workspaceFullPath
+                    )
                 }
             }
         }

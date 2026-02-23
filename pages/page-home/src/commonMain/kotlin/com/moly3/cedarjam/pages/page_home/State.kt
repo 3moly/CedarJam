@@ -12,27 +12,23 @@ import kotlinx.serialization.Serializable
 data class State(
     val allNodes: UIState<ImmutableList<FileTreeNode>, String> = UIState.Loading,
     val searchTextFieldValue: TextFieldValue = TextFieldValue(""),
-    val count: Int = 0,
     val timeMachinesState: UIState<ImmutableList<TimeMachine>, Nothing> = UIState.Loading
 ) {
     @Serializable
     data class SaveableState(
         val searchText: String = "",
-        val count: Int = 0,
     )
 
     companion object {
         fun SaveableState.fromSaveable(): State {
             return State(
                 searchTextFieldValue = TextFieldValue(this.searchText),
-                count = this.count
             )
         }
 
         fun State.toSaveable(): SaveableState {
             return SaveableState(
                 searchText = this.searchTextFieldValue.text,
-                count = this.count
             )
         }
     }

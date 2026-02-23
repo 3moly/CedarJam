@@ -29,5 +29,6 @@ val ignoreByRelativePath = listOf(
 
 val ignoreSearchByRelativePath = listOf(
     "${hiddenDirectory}/$sqlDatabaseName.db",
-    "${hiddenDirectory}/workspace_settings.json"
+    "${hiddenDirectory}/workspace_settings.json",
+    "${hiddenDirectory}/image_cache",
 )

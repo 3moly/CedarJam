@@ -929,7 +929,13 @@ internal class WorkspaceStoreFactory(
                 }
 
                 is Intent.OnFileTreeClick -> {
-                    if(intent.isCloseMenu){
+                    val isClose = when (val data = intent.value.data) {
+                        FileTreeItemPresentation.FileTreeItemPresentationData.Collections,
+                        FileTreeItemPresentation.FileTreeItemPresentationData.Tags,
+                        is FileTreeItemPresentation.FileTreeItemPresentationData.Directory -> false
+                        else -> true
+                    }
+                    if(intent.isCloseMenu && isClose){
                         dispatch(WorkspaceStore.Msg.SetIsFullMenu(false))
                     }
                     when (val data = intent.value.data) {

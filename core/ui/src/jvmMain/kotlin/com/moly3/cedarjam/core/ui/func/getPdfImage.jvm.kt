@@ -13,11 +13,11 @@ import javax.imageio.ImageIO
 actual fun getPdfImage(
     path: String,
     page: Int,
-    dpi: Float
+    density: Float
 ): ImageBitmap {
     val document = Loader.loadPDF(File(path))
     val renderer = PDFRenderer(document)
-    val image: BufferedImage = renderer.renderImageWithDPI(page, dpi)
+    val image: BufferedImage = renderer.renderImageWithDPI(page, (density * 160f))
     return bufferedImageToImageBitmap(image)
 }
 

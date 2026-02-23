@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
 import coil3.compose.rememberAsyncImagePainter
 import coil3.util.Logger
 import com.mohamedrejeb.compose.dnd.drop.dropTarget
@@ -96,6 +97,7 @@ internal fun CollectionDataGrid(
                         val fileRelativePath = it.row.fileRelativePath
                         if (fileRelativePath != null) {
                             val imgBitmap = rememberPdfImage(
+                                workspaceFullPath = workspace?.absolutePath,
                                 pathWrapper(
                                     workspace?.absolutePath ?: "",
                                     fileRelativePath
@@ -103,8 +105,8 @@ internal fun CollectionDataGrid(
                             )
                             if (imgBitmap != null) {
                                 Box(Modifier.height(200.dp)) {
-                                    Image(
-                                        bitmap = imgBitmap!!,
+                                    AsyncImage(
+                                        model = imgBitmap!!,
                                         contentDescription = null,
                                         modifier = Modifier.height(200.dp),
                                         contentScale = ContentScale.FillHeight

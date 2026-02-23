@@ -1,6 +1,7 @@
 package com.moly3.cedarjam.features.feature_file_view
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.painter.Painter
@@ -62,6 +63,9 @@ actual fun getObsPdfDocument(absolutePath: String): ObsPdfDocument? {
             override fun getPdfData(): PdfData? {
                 return null
             }
+
+            override val pdfDataState: State<PdfData?>
+                get() = TODO("Not yet implemented")
         }
     }
 }

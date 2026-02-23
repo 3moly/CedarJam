@@ -19,7 +19,8 @@ class TagComponentImpl(
     private val workspaceSession: WorkspaceSession,
     componentContext: ComponentContext,
     storeFactory: StoreFactory,
-    private val data: TagPageInput
+    private val data: TagPageInput,
+    private val openWorkspaceSettings: (Boolean) -> Unit
 ) : TagComponent,
     ComponentContext by componentContext {
     private val graphDialogScope by lazy {
@@ -40,8 +41,12 @@ class TagComponentImpl(
             lifecycle = lifecycle,
             pageData = data,
             setIsShowGraph = {
-                graphDialogScope.setIsShowGraphDialog(targetId = data.id.getTagGraphId(), isShow = it)
-            }
+                graphDialogScope.setIsShowGraphDialog(
+                    targetId = data.id.getTagGraphId(),
+                    isShow = it
+                )
+            },
+            openWorkspaceSettings = openWorkspaceSettings
         ).create()
     }
 

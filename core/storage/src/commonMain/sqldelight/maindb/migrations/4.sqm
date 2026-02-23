@@ -1,0 +1,52 @@
+-- 1. Create new table with nullable rowId
+CREATE TABLE Annotation_new (
+     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+     dataPath TEXT NOT NULL, -- relativePath
+     dataPoint REAL NOT NULL, -- page of PDF
+     description TEXT NOT NULL, -- text of PDF
+
+     createdTime INTEGER NOT NULL,
+     modifiedTime INTEGER NOT NULL,
+
+     posX REAL NOT NULL, -- 0f .. 1f
+     posY REAL NOT NULL, -- 0f .. 1f
+     width REAL NOT NULL, -- 0f .. 1f
+     height REAL NOT NULL, -- 0f .. 1f
+
+     rowId INTEGER,
+     FOREIGN KEY (rowId) REFERENCES DataCollectionRow(id) ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+-- 2. Copy data
+INSERT INTO Annotation_new (
+    id,
+    dataPath,
+    dataPoint,
+    description,
+    createdTime,
+    modifiedTime,
+    posX,
+    posY,
+    width,
+    height,
+    rowId
+)
+SELECT
+    id,
+    dataPath,
+    dataPoint,
+    description,
+    createdTime,
+    modifiedTime,
+    posX,
+    posY,
+    width,
+    height,
+    NULLIF(rowId, 0)
+FROM Annotation;
+
+-- 3. Drop old table
+DROP TABLE Annotation;
+
+-- 4. Rename new table
+ALTER TABLE Annotation_new RENAME TO Annotation;

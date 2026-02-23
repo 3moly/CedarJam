@@ -33,6 +33,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
@@ -78,7 +79,9 @@ internal fun PageContent(state: State, onIntent: (Intent) -> Unit) {
             var imgBitmap by remember {
                 mutableStateOf<ImageBitmap?>(null)
             }
-            LaunchedEffect(state.collectionRow.fileRelativePath, state.workspace) {
+
+            val density = LocalDensity.current.density
+            LaunchedEffect(state.collectionRow.fileRelativePath, state.workspace, density) {
                 launch(io) {
                     try {
                         imgBitmap = if (state.collectionRow.fileRelativePath != null) {
@@ -88,7 +91,7 @@ internal fun PageContent(state: State, onIntent: (Intent) -> Unit) {
                                     state.collectionRow.fileRelativePath!!
                                 ).toString(),
                                 page = 0,
-                                dpi = 100f
+                                density = density
                             )
                         } else {
                             null
@@ -238,8 +241,7 @@ internal fun PageContent(state: State, onIntent: (Intent) -> Unit) {
         modifier = Modifier.safeDrawingPadding().fillMaxSize(),
         borderModifier = Modifier
             .clip(RoundedCornerShape(16.dp))
-            .hazeEffect(hazeState, hazeStyle)
-        ,
+            .hazeEffect(hazeState, hazeStyle),
         annotationsCount = 0,
         isIOSwitchPressed = isIOPressed,
         isOpenedMenu = isPressed,

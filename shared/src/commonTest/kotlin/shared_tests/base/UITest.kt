@@ -101,7 +101,7 @@ abstract class UITest : BaseTest() {
         waitUntil("", timeoutMillis) {
             currentPage<CurrentPage>()
         }
-        return component!!.childStack.active.instance as CurrentPage
+        return component!!.children.active.instance as CurrentPage
     }
 
     inline fun <reified CurrentPage> ComposeUiTest.waitAndWorkspaceGetComponent(
@@ -120,16 +120,16 @@ abstract class UITest : BaseTest() {
         timeoutMillis: Long = 1_000L
     ): CurrentPage {
         waitUntil("", timeoutMillis) {
-            Logger.e("active component: ${component.childStack.active}")
-            component.childStack.active.instance is CurrentPage
+            Logger.e("active component: ${component.children.active}")
+            component.children.active.instance is CurrentPage
         }
-        return component.childStack.active.instance as CurrentPage
+        return component.children.active.instance as CurrentPage
     }
 
 
     inline fun <reified CurrentPage> currentPage(): Boolean {
 
-        return component!!.childStack.active.instance is CurrentPage
+        return component!!.children.active.instance is CurrentPage
     }
 
     fun runUITest(

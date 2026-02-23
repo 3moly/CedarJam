@@ -1,6 +1,7 @@
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.window.application
 import co.touchlab.kermit.Logger
@@ -16,12 +17,15 @@ import com.moly3.cedarjam.core.domain.DefaultJson
 import com.moly3.cedarjam.core.domain.model.AndroidApplicationContext
 import com.moly3.cedarjam.core.ui.compositions.LocalIsRelease
 import com.moly3.cedarjam.di.initApp
+import com.moly3.cedarjam.logger.DecomposeLogger
+import com.moly3.cedarjam.logger.DecomposeLogger.walk
 import com.moly3.cedarjam.navigation.Root
 import com.moly3.cedarjam.navigation.createRootComponentSafe
 import dev.datlag.kcef.KCEF
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.filesDir
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.json.encodeToStream
@@ -103,9 +107,15 @@ fun main() {
         throwable.printStackTrace()
         // You can also log to file or show a UI dialog here
     }
-    application {
 
+    application {
+        LaunchedEffect(Unit){
+            launch {
+                this.walk(root)
+            }
+        }
         System.setProperty("apple.awt.application.name", "CedarJam")
+
 
 
         JewelDesktop(

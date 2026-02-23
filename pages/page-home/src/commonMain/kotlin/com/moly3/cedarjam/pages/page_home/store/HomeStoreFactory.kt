@@ -1,5 +1,6 @@
 package com.moly3.cedarjam.pages.page_home.store
 
+import androidx.compose.runtime.Immutable
 import co.touchlab.kermit.Logger
 import com.arkivanov.essenty.lifecycle.Lifecycle
 import com.arkivanov.essenty.lifecycle.doOnResume
@@ -51,16 +52,21 @@ import com.moly3.cedarjam.core.domain.usecase.INavigateToFileUseCase
 import com.moly3.cedarjam.core.domain.usecase.ISyncUseCase
 import com.moly3.cedarjam.navigation.Route
 import com.moly3.cedarjam.pages.page_home.store.HomeStore.Msg
+import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
@@ -118,6 +124,206 @@ internal class HomeStoreFactory(
 
         private val _searchTextState = MutableStateFlow("")
 
+        private val collectionsFlow: Flow<ImmutableList<TimeMachine>> =
+            kotlinx.coroutines.flow.combine(
+                workspaceSession.collectionsFlow,
+                _searchTextState
+            ) { collections, search ->
+                Pair(collections, search)
+            }.map {
+                val searchText = it.second.lowercase()
+                val isSearch = it.second.isNotEmpty()
+
+                val timeMachines = mutableListOf<TimeMachine>()
+                for (collection in it.first) {
+                    if (isSearch && !collection.name.lowercase()
+                            .contains(searchText)
+                    ) continue
+                    timeMachines.add(
+                        TimeMachine.Collection(
+                            collection = collection,
+                            modifiedTime = collection.modifiedTime
+                        )
+                    )
+                }
+                timeMachines.toPersistentList()
+            }.shareIn(
+                scope = scope,
+                started = SharingStarted.Lazily,
+                replay = 1
+            )
+
+        private val tagsFlow: Flow<ImmutableList<TimeMachine>> =
+            kotlinx.coroutines.flow.combine(
+                workspaceSession.tagsFlow,
+                _searchTextState
+            ) { tags, search ->
+                Pair(tags, search)
+            }.map {
+                val searchText = it.second.lowercase()
+                val isSearch = it.second.isNotEmpty()
+
+                val timeMachines = mutableListOf<TimeMachine>()
+                for (tag in it.first) {
+                    if (isSearch && !tag.name.lowercase()
+                            .contains(searchText)
+                    ) continue
+                    timeMachines.add(
+                        TimeMachine.Tag(
+                            tag = tag,
+                            modifiedTime = tag.modifiedTime
+                        )
+                    )
+                }
+                timeMachines.toPersistentList()
+            }.shareIn(
+                scope = scope,
+                started = SharingStarted.Lazily,
+                replay = 1
+            )
+
+        private val rowsFlow: Flow<ImmutableList<TimeMachine>> =
+            kotlinx.coroutines.flow.combine(
+                workspaceSession.collectionRowsFlow,
+                _searchTextState
+            ) { rows, search ->
+                Pair(rows, search)
+            }.map {
+                val searchText = it.second.lowercase()
+                val isSearch = it.second.isNotEmpty()
+
+                val timeMachines = mutableListOf<TimeMachine>()
+                for (row in it.first) {
+                    if (isSearch && !row.name.lowercase()
+                            .contains(searchText)
+                    ) continue
+                    timeMachines.add(
+                        TimeMachine.Row(
+                            row = row,
+                            modifiedTime = row.modifiedTime
+                        )
+                    )
+                }
+                timeMachines.toPersistentList()
+            }.shareIn(
+                scope = scope,
+                started = SharingStarted.Lazily,
+                replay = 1
+            )
+
+        private val annotationsFlow: Flow<ImmutableList<TimeMachine>> =
+            kotlinx.coroutines.flow.combine(
+                workspaceSession.annotationsFlow,
+                _searchTextState
+            ) { rows, search ->
+                Pair(rows, search)
+            }.map {
+                val searchText = it.second.lowercase()
+                val isSearch = it.second.isNotEmpty()
+
+                val timeMachines = mutableListOf<TimeMachine>()
+                for (item in it.first) {
+                    if (isSearch && !item.description.lowercase()
+                            .contains(searchText)
+                    ) continue
+                    timeMachines.add(
+                        TimeMachine.Annotation(
+                            annotation = item,
+                            modifiedTime = item.modifiedTime
+                        )
+                    )
+                }
+                timeMachines.toPersistentList()
+            }.shareIn(
+                scope = scope,
+                started = SharingStarted.Lazily,
+                replay = 1
+            )
+
+        private val filesFlow: Flow<ImmutableList<TimeMachine>> =
+            kotlinx.coroutines.flow.combine(
+                workspaceSession.filesFlow,
+                _searchTextState
+            ) { rows, search ->
+                Pair(rows, search)
+            }.map {
+                val searchText = it.second.lowercase()
+                val isSearch = it.second.isNotEmpty()
+
+                val timeMachines = mutableListOf<TimeMachine>()
+                when (val state = it.first) {
+                    is UIState.Error<*> -> {}
+                    is UIState.Loading -> {}
+                    is UIState.Success -> {
+                        for (file in state.data.getAllFilesByExtension(null)) {
+                            val matches = mutableListOf<LineMatch>()
+                            if (isSearch) {
+
+                                val isTitleContains = file.getFullName().lowercase()
+                                    .contains(searchText)
+                                val isText = file.name.extension == "txt" ||
+                                        file.name.extension == "md"
+                                val isTextContains = if (isText) {
+                                    val textResult = filesRepository.getNodeText(file)
+                                    when (textResult) {
+                                        is ResultWrapper.Error -> false
+                                        is ResultWrapper.Success -> {
+                                            // Find matching lines
+                                            textResult.value.lines()
+                                                .forEachIndexed { index, line ->
+                                                    if (line.lowercase()
+                                                            .contains(searchText)
+                                                    ) {
+                                                        // Option 1: Add to simple string list
+                                                        matches.add(
+                                                            LineMatch(
+                                                                line = index,
+                                                                text = line
+                                                            )
+                                                        )
+
+                                                        // Option 2: Add to structured list
+//                                                        structuredMatches.add(
+//                                                            SearchMatch(
+//                                                                lineNumber = index + 1,
+//                                                                content = line,
+//                                                                type = MatchType.CONTENT
+//                                                            )
+//                                                        )
+                                                    }
+                                                }
+                                            matches.isNotEmpty()
+                                        }
+                                    }
+                                } else false
+
+                                if (isTitleContains || isTextContains) {
+
+                                } else {
+                                    continue
+                                }
+                            }
+                            val relativePath = file.getRelativePath()
+                            if (ignoreSearchByRelativePath.any { d -> relativePath.contains(d) }) {
+                                continue
+                            }
+                            timeMachines.add(
+                                TimeMachine.FileNode(
+                                    file = file,
+                                    modifiedTime = file.modifiedTime,
+                                    matches = if (matches.count() > 0) matches.toPersistentList() else null
+                                )
+                            )
+                        }
+                    }
+                }
+                timeMachines.toPersistentList()
+            }.shareIn(
+                scope = scope,
+                started = SharingStarted.Lazily,
+                replay = 1
+            )
+
 
         override fun executeAction(action: Unit) {
             super.executeAction(action)
@@ -129,145 +335,36 @@ internal class HomeStoreFactory(
             super.onStart(scopeFromStartToStop)
             _searchTextState.value = state().searchTextFieldValue.text
 
-            lifecycle.doOnResume {
-                try {
-                    val allNodes =
-                        workspaceSession.workspaceEnvStateFlow.value.getNodes(null).getAll(true)
-                    dispatch(Msg.SetAllNodesState(UIState.Success(allNodes.toPersistentList())))
-                } catch (exc: Exception) {
-                }
-            }
+//            lifecycle.doOnResume {
+//                try {
+//                    val allNodes =
+//                        workspaceSession.workspaceEnvStateFlow.value.getNodes(null).getAll(true)
+//                    dispatch(Msg.SetAllNodesState(UIState.Success(allNodes.toPersistentList())))
+//                } catch (exc: Exception) {
+//                }
+//            }
             scopeFromStartToStop.launch {
                 combine(
-                    workspaceSession.collectionsFlow,
-                    workspaceSession.tagsFlow,
-                    workspaceSession.collectionRowsFlow,
-                    workspaceSession.filesFlow,
-                    _searchTextState
-                ) { collections, tags, rows, filesState, searchText ->
-//                    Logger.e("HomeStoreFactory")
-                    SearchData(collections, tags, rows, filesState, searchText)
-                }.flatMapLatest { searchData ->
+                    collectionsFlow,
+                    tagsFlow,
+                    rowsFlow,
+                    filesFlow,
+                    annotationsFlow
+                ) { collections, tags, rows, files, annotations ->
+                    val timeMachines = mutableListOf<TimeMachine>()
+                    timeMachines.addAll(collections)
+                    timeMachines.addAll(tags)
+                    timeMachines.addAll(rows)
+                    timeMachines.addAll(files)
+                    timeMachines.addAll(annotations)
 
-                    val searchText = searchData.searchText.lowercase()
-                    val isSearch = searchData.searchText.isNotEmpty()
-                    flow {
-                        val timeMachines = mutableListOf<TimeMachine>()
-                        for (collection in searchData.collections) {
-                            if (isSearch && !collection.name.lowercase()
-                                    .contains(searchText)
-                            ) continue
-                            timeMachines.add(
-                                TimeMachine.Collection(
-                                    collection = collection,
-                                    modifiedTime = collection.modifiedTime
-                                )
-                            )
-                        }
-                        when (val state = searchData.filesState) {
-                            is UIState.Error<*> -> {}
-                            is UIState.Loading -> {}
-                            is UIState.Success -> {
-                                for (file in state.data.getAllFilesByExtension(null)) {
-                                    val matches = mutableListOf<LineMatch>()
-                                    if (isSearch) {
+                    UIState.Success(
+                        timeMachines
+                            .sortedByDescending { d -> d.modifiedTime }
+                            .toPersistentList())
+                }.flowOn(io).collectLatest { searchData ->
 
-                                        val isTitleContains = file.getShortName().lowercase()
-                                            .contains(searchText)
-                                        val isText = file.name.extension == "txt" ||
-                                                file.name.extension == "md"
-                                        val isTextContains = if (isText) {
-                                            val textResult = filesRepository.getNodeText(file)
-                                            when (textResult) {
-                                                is ResultWrapper.Error -> false
-                                                is ResultWrapper.Success -> {
-                                                    // Find matching lines
-                                                    textResult.value.lines()
-                                                        .forEachIndexed { index, line ->
-                                                            if (line.lowercase()
-                                                                    .contains(searchText)
-                                                            ) {
-                                                                // Option 1: Add to simple string list
-                                                                matches.add(
-                                                                    LineMatch(
-                                                                        line = index,
-                                                                        text = line
-                                                                    )
-                                                                )
-
-                                                                // Option 2: Add to structured list
-//                                                        structuredMatches.add(
-//                                                            SearchMatch(
-//                                                                lineNumber = index + 1,
-//                                                                content = line,
-//                                                                type = MatchType.CONTENT
-//                                                            )
-//                                                        )
-                                                            }
-                                                        }
-                                                    matches.isNotEmpty()
-                                                }
-                                            }
-                                        } else false
-
-                                        if (isTitleContains || isTextContains) {
-
-                                        } else {
-                                            continue
-                                        }
-                                    }
-                                    if (ignoreSearchByRelativePath.contains(file.getRelativePath())) {
-                                        continue
-                                    }
-                                    timeMachines.add(
-                                        TimeMachine.FileNode(
-                                            file = file,
-                                            modifiedTime = file.modifiedTime,
-                                            matches = if (matches.count() > 0) matches.toPersistentList() else null
-                                        )
-                                    )
-                                }
-                            }
-                        }
-                        for (tag in searchData.tags) {
-                            if (isSearch && !tag.name.lowercase()
-                                    .contains(searchText)
-                            ) continue
-
-                            timeMachines.add(
-                                TimeMachine.Tag(
-                                    tag = tag,
-                                    modifiedTime = tag.modifiedTime
-                                )
-                            )
-                        }
-                        for (row in searchData.rows) {
-                            if (isSearch && !row.name.lowercase()
-                                    .contains(searchData.searchText.lowercase())
-                            ) continue
-                            timeMachines.add(
-                                TimeMachine.Row(
-                                    row = row,
-                                    modifiedTime = row.modifiedTime
-                                )
-                            )
-                        }
-                        emit(
-                            UIState.Success(
-                                timeMachines
-                                    .sortedByDescending { d -> d.modifiedTime }
-                                    .toPersistentList()))
-                    }
-                }
-                    .flowOn(io)
-                    .collectLatest {
-                        dispatch(HomeStore.Msg.SetTimes(it))
-                    }
-            }
-            scopeFromStartToStop.launch {
-                while (this.isActive) {
-                    delay(1_00)
-                    dispatch(HomeStore.Msg.SetCount(state().count + 1))
+                    dispatch(HomeStore.Msg.SetTimes(searchData))
                 }
             }
         }
@@ -309,6 +406,9 @@ internal class HomeStoreFactory(
                         is TimeMachine.Row -> openRow(tm.row)
 
                         is TimeMachine.Tag -> navigator.navigate(Tag(TagPageInput(tm.tag.id)))
+                        is TimeMachine.Annotation -> {
+
+                        }
                     }
                 }
 
@@ -333,7 +433,6 @@ internal class HomeStoreFactory(
     private object ReducerImpl : Reducer<State, HomeStore.Msg> {
         override fun State.reduce(msg: HomeStore.Msg): State {
             return when (msg) {
-                is HomeStore.Msg.SetCount -> copy(count = msg.value)
                 is HomeStore.Msg.SetTimes -> copy(timeMachinesState = msg.value)
                 is HomeStore.Msg.SetSearchTextFieldValue -> copy(searchTextFieldValue = msg.value)
                 is HomeStore.Msg.SetAllNodesState -> copy(allNodes = msg.value)

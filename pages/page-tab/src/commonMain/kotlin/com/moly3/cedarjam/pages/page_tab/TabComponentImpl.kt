@@ -1,5 +1,6 @@
 package com.moly3.cedarjam.pages.page_tab
 
+import com.arkivanov.decompose.Child
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.DelicateDecomposeApi
 import com.arkivanov.decompose.router.stack.ChildStack
@@ -33,6 +34,7 @@ import com.moly3.cedarjam.core.domain.model.request.RenameDataCollectionRowReque
 import com.moly3.cedarjam.core.domain.model.request.RenameTagRequest
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
 import com.moly3.cedarjam.core.ui.model.CJText
+import com.moly3.cedarjam.navigation.NavigationParent
 import com.moly3.cedarjam.ui.Res
 import com.moly3.cedarjam.ui.graph
 import com.moly3.cedarjam.ui.home
@@ -60,13 +62,14 @@ class TabComponentImpl(
 ) : KoinComponent,
     ComponentContext by context,
     IDecomposeScopeComponent,
-    TabComponent {
+    TabComponent,
+    NavigationParent {
 
     private val coroutineScope: CoroutineScope by inject()
 
     val navigation = StackNavigation<Config>()
     private val _stateFlow = MutableStateFlow<State>(State())
-    private val router = context.childStack(
+    private val _children = context.childStack(
         source = navigation,
         serializer = Config.serializer(),
         initialConfiguration = Config.Empty(index = 0),
@@ -131,7 +134,10 @@ class TabComponentImpl(
                         componentContext = childContext,
                         storeFactory = storeFactory,
                         data = g.data,
-                        workspaceSession = workspaceSession
+                        workspaceSession = workspaceSession,
+                        openWorkspaceSettings = {
+                            openMenu(true)
+                        }
                     )
                 )
 
@@ -149,9 +155,9 @@ class TabComponentImpl(
 
     init {
 
-        router.subscribe {
+        _children.subscribe {
             val activeIndex = it.active.configuration.index
-            val indexes = router.value.items.map { d -> d.configuration.index }
+            val indexes = _children.value.items.map { d -> d.configuration.index }
             val minIndex = indexes.minOfOrNull { b -> b }
             val maxIndex = indexes.maxOfOrNull { b -> b }
             var canGoBack = false
@@ -176,11 +182,15 @@ class TabComponentImpl(
 
     override val scope by componentScope()
 
-    override val childStack: Value<ChildStack<*, TabComponent.Child>>
-        get() = router
+    override val children: Value<ChildStack<*, TabComponent.Child>>
+        get() = _children
+
+    override fun getItems(): List<Child<*, *>> {
+        return _children.value.items
+    }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    override val nameFlow: Flow<PageNameData?> = router.stateFlow.flatMapLatest { childStack ->
+    override val nameFlow: Flow<PageNameData?> = _children.stateFlow.flatMapLatest { childStack ->
         val nameStateFlow = when (val instance = childStack.active.instance) {
             is TabComponent.Child.Collection -> instance.component.nameFlow
             is TabComponent.Child.CollectionRow -> instance.component.nameFlow
@@ -204,7 +214,7 @@ class TabComponentImpl(
             is TabComponent.Child.Tag -> instance.component.nameFlow
             is TabComponent.Child.Tags -> flowOf(
                 PageNameData(
-                    name =CJText.Res(Res.string.tags),
+                    name = CJText.Res(Res.string.tags),
                     pageType = PageNameData.PageType.Tags,
                     modifiedTime = null
                 )
@@ -221,7 +231,7 @@ class TabComponentImpl(
                 Route.Back -> back()
                 Route.Forward -> forward()
                 else -> {
-                    val nextIndex = router.value.active.configuration.index + 1
+                    val nextIndex = _children.value.active.configuration.index + 1
 
                     val config = when (route) {
                         is Route.CollRow -> Config.CollRow(nextIndex, route.data)
@@ -229,6 +239,7 @@ class TabComponentImpl(
                         is Route.File -> {
                             Config.File(nextIndex, route.data)
                         }
+
                         Route.MainGraph -> Config.Graph(nextIndex)
                         Route.MainHome -> Config.Empty(nextIndex)
                         is Route.Tag -> {
@@ -256,11 +267,11 @@ class TabComponentImpl(
         get() = _stateFlow
 
     private fun back() {
-        val activeIndex = router.value.active.configuration.index
-        val previousIndex = router.value.items.map { d -> d.configuration.index }
+        val activeIndex = _children.value.active.configuration.index
+        val previousIndex = _children.value.items.map { d -> d.configuration.index }
             .filter { d -> activeIndex > d }
             .maxOfOrNull { z -> z }
-        val config = router.value.items.firstOrNull { d -> d.configuration.index == previousIndex }
+        val config = _children.value.items.firstOrNull { d -> d.configuration.index == previousIndex }
 
         if (config != null) {
             navigation.pushToFront(config.configuration)
@@ -268,8 +279,8 @@ class TabComponentImpl(
     }
 
     private fun openNext(config: Config) {
-        val activeIndex = router.value.active.configuration.index
-        val currentConfig = router.value.active.configuration
+        val activeIndex = _children.value.active.configuration.index
+        val currentConfig = _children.value.active.configuration
         val isSame = when (config) {
             is Config.CollRow -> when (currentConfig) {
                 is Config.CollRow -> currentConfig.data == config.data
@@ -310,7 +321,7 @@ class TabComponentImpl(
             }
 
         } catch (exc: Exception) {
-            val indexes = router.value.items.map { d -> d.configuration.index }
+            val indexes = _children.value.items.map { d -> d.configuration.index }
                 .sortedBy { b -> b }
             co.touchlab.kermit.Logger.e {
                 "error navigate - allIndexes: ${indexes}. new config: ${config.index}"
@@ -319,11 +330,11 @@ class TabComponentImpl(
     }
 
     private fun forward() {
-        val activeIndex = router.value.active.configuration.index
-        val previousIndex = router.value.items.map { d -> d.configuration.index }
+        val activeIndex = _children.value.active.configuration.index
+        val previousIndex = _children.value.items.map { d -> d.configuration.index }
             .filter { d -> activeIndex < d }
             .minOfOrNull { z -> z }
-        val config = router.value.items.firstOrNull { d -> d.configuration.index == previousIndex }
+        val config = _children.value.items.firstOrNull { d -> d.configuration.index == previousIndex }
 
         if (config != null) {
             navigation.pushToFront(config.configuration)

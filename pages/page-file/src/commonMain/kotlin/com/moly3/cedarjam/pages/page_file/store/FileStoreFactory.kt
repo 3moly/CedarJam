@@ -1,15 +1,20 @@
 package com.moly3.cedarjam.pages.page_file.store
 
+import co.touchlab.kermit.Logger
 import com.arkivanov.essenty.lifecycle.Lifecycle
 import com.arkivanov.essenty.statekeeper.StateKeeper
 import com.arkivanov.mvikotlin.core.store.Reducer
 import com.arkivanov.mvikotlin.core.store.SimpleBootstrapper
 import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
+import com.moly3.cedarjam.core.domain.func.hiddenDirectory
 import com.moly3.cedarjam.core.domain.func.normalizeText
+import com.moly3.cedarjam.core.domain.func.pathWrapper
+import com.moly3.cedarjam.core.domain.io
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.FileTreeNode.Companion.getAllFilesByExtension
 import com.moly3.cedarjam.core.domain.model.FileType
+import com.moly3.cedarjam.core.domain.model.ResultWrapper
 import com.moly3.cedarjam.core.ui.model.PageNameData
 import com.moly3.cedarjam.core.domain.model.getGraphId
 import com.moly3.cedarjam.core.domain.model.navigation.input.FilePageInput
@@ -19,7 +24,9 @@ import com.moly3.cedarjam.core.domain.model.toGetFileType
 import com.moly3.cedarjam.core.domain.repository.IAppEnvironment
 import com.moly3.cedarjam.core.domain.repository.IFilesRepository
 import com.moly3.cedarjam.core.domain.service.FileManagerService
+import com.moly3.cedarjam.core.domain.service.IImageTransform
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
+import com.moly3.cedarjam.core.ui.func.saveAsPng
 import com.moly3.cedarjam.core.ui.model.CJText
 import com.moly3.cedarjam.navigation.BaseExecutor
 import com.moly3.cedarjam.navigation.Navigator
@@ -56,6 +63,7 @@ internal class FileStoreFactory(
         workspaceSession.fileManagerService
     }
     private val navigator: Navigator by inject()
+    private val imageTransform: IImageTransform by inject()
     private val appEnvironment: IAppEnvironment by inject()
     private val filesRepository: IFilesRepository by inject()
 
@@ -282,9 +290,50 @@ internal class FileStoreFactory(
                 }
 
                 is Intent.AddAnnotation -> {
-                    val workspaceEnv = workspaceSession.workspaceEnvStateFlow.value
+                    val fileRelativePath = state().relativePath
+                    scope.launch(io) {
+                        val annotationRequest = intent.value.copy(dataPath = fileRelativePath)
 
-                    workspaceEnv.createAnnotation(intent.value.copy(dataPath = state().relativePath))
+                        val workspaceEnv = workspaceSession.workspaceEnvStateFlow.value
+                        val fullPath = pathWrapper(
+                            workspaceEnv.getWorkspace().absolutePath,
+                            fileRelativePath
+                        ).pathString
+
+
+                        val result = workspaceEnv.createAnnotation(annotationRequest)
+                        when (result) {
+                            is ResultWrapper.Error -> {
+                                Logger.w { "annotation adding error: ${result.error}" }
+                            }
+
+                            is ResultWrapper.Success -> {
+                                val cropCache = pathWrapper(
+                                    workspaceEnv.getWorkspace().absolutePath,
+                                    hiddenDirectory,
+                                    "image_cache",
+                                    "annotation_${result.value}.png"
+                                ).pathString
+                                try {
+                                    val image = imageTransform.getPdfImage(
+                                        path = fullPath,
+                                        page = annotationRequest.dataPoint.toInt(),
+                                        density = intent.density
+                                    )
+                                    val cropped = imageTransform.cropNormalized(
+                                        image,
+                                        x = annotationRequest.x,
+                                        y = annotationRequest.y,
+                                        width = annotationRequest.width,
+                                        height = annotationRequest.height
+                                    )
+                                    cropped.saveAsPng(cropCache)
+                                } catch (exc: Exception) {
+
+                                }
+                            }
+                        }
+                    }
                 }
 
                 is Intent.DeleteAnnotation -> {

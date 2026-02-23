@@ -1,5 +1,6 @@
 package com.moly3.cedarjam.core.storage.di
 
+import com.moly3.cedarjam.core.domain.service.IFileHasher
 import com.moly3.cedarjam.core.storage.IAppStorage
 import com.moly3.cedarjam.core.storage.internal.AppStorage
 import com.moly3.cedarjam.core.storage.ISqlStorage
@@ -14,6 +15,7 @@ fun db(isTest: Boolean) = module {
     single<Settings> { if (isTest) MapSettings() else Settings() }
     single<IAppStorage> { AppStorage(keyValueSettings = get()) }
     single<ISystemFilesManager> { createSystemFilesManager() }
+    single<IFileHasher> { get<ISystemFilesManager>() }
     factory<ISqlStorage> { (workspacePath: String) ->
         createSqlStorage(
             systemFilesManager = get(),

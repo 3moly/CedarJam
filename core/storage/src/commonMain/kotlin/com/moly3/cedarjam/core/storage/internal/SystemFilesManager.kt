@@ -18,6 +18,7 @@ import com.moly3.cedarjam.core.domain.model.resultBlock
 import com.moly3.cedarjam.core.domain.util.PathWrapper
 import com.moly3.cedarjam.core.storage.json.canvas.CanvasDataParser
 import com.moly3.cedarjam.core.domain.model.canvas.CanvasDataWithErrors
+import com.moly3.cedarjam.core.domain.service.IFileHasher
 import com.moly3.cedarjam.core.storage.func.calculateFileHash
 import com.moly3.cedarjam.core.storage.func.setLastWriteTimeUtc
 import io.github.vinceglb.filekit.FileKit
@@ -32,7 +33,7 @@ import kotlinx.io.readByteArray
 import kotlinx.io.readString
 import kotlinx.io.writeString
 
-internal class SystemFilesManager : ISystemFilesManager {
+internal class SystemFilesManager : ISystemFilesManager, IFileHasher {
 
     private val fs: FileSystem = SystemFileSystem
     private fun copyFile(sourcePath: ByteArray, destinationPath: String) {
@@ -42,7 +43,7 @@ internal class SystemFilesManager : ISystemFilesManager {
         if (parentDir != null && !fs.exists(parentDir)) {
             fs.createDirectories(parentDir)
         }
-        if(fs.exists(destination)){
+        if (fs.exists(destination)) {
             fs.delete(destination)
         }
         fs.sink(destination).buffered().use { destinationBuffer ->
@@ -112,7 +113,10 @@ internal class SystemFilesManager : ISystemFilesManager {
         return calculateFileHash(fullPath)
     }
 
-    override fun getFileNodeFromFullPath(workspacePath: String, fullPath: String): FileTreeNode.File {
+    override fun getFileNodeFromFullPath(
+        workspacePath: String,
+        fullPath: String
+    ): FileTreeNode.File {
         return getFileNodeFromPath(
             workspaceFullPath = workspacePath,
             Path(fullPath),
@@ -140,7 +144,8 @@ internal class SystemFilesManager : ISystemFilesManager {
     override fun deleteNode(nodePath: String) {
         try {
             fs.delete(Path(nodePath), true)
-        }catch (exc: Exception){}
+        } catch (exc: Exception) {
+        }
     }
 
     override fun deleteNodeHeavy(nodePath: String) {
@@ -207,7 +212,7 @@ internal class SystemFilesManager : ISystemFilesManager {
 
     override fun createDirectory(fullPath: String): ResultWrapper<Unit, String> {
         return resultBlock {
-            fs.createDirectories(Path(fullPath),mustCreate = true)
+            fs.createDirectories(Path(fullPath), mustCreate = true)
         }
     }
 

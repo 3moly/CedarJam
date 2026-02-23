@@ -9,24 +9,20 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.extensions.compose.experimental.stack.ChildStack
 import com.arkivanov.decompose.extensions.compose.experimental.stack.animation.stackAnimation
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
-import com.arkivanov.decompose.router.stack.ChildStack
 import com.moly3.cedarjam.pages.page_tab.ui.TabPage
 import com.moly3.cedarjam.pages.page_tabs.Intent
 import com.moly3.cedarjam.pages.page_tabs.TabsComponent
@@ -114,7 +110,7 @@ fun TabsPageContent(
     component: TabsComponent
 ) {
     Box(modifier = modifier) {
-        val stack by component.childStack.subscribeAsState()
+        val stack by component.children.subscribeAsState()
 //        val twin = remember(stack) {
 //            TwinStack(stack)
 //        }
