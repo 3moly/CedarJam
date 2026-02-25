@@ -30,3 +30,4 @@ moko-resources-generated.js
 /iosApp/Pods/
 *.podspec
 *.zip
+/gradle/gradle-daemon-jvm.properties

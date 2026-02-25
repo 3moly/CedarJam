@@ -18,6 +18,8 @@ plugins {
     alias(libs.plugins.modulegraph.mermaid)
     alias(libs.plugins.android.kotlin.multiplatform.library).apply(false)
     alias(libs.plugins.android.lint) apply false
+//    alias(libs.plugins.android.test) apply false
+//    alias(libs.plugins.baselineprofile).apply(false)
 }
 
 buildscript {

@@ -12,7 +12,7 @@ class NavigateToFileUseCase(
     private val filesRepository: IFilesRepository
 ) : INavigateToFileUseCase {
     override suspend fun invoke(navigate: NavigateToFile): ResultWrapper<Long, String> {
-        return resultBlock {
+        return resultBlock(onError = { "" }) {
             val timestamp = when (navigate) {
                 is NavigateToFile.RelativePath -> {
                     fileManagerService.openFile(

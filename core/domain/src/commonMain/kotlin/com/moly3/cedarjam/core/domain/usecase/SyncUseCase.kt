@@ -128,7 +128,7 @@ class SyncUseCase(
 
     override suspend fun getStatus(workspace: IWorkspaceEnvironment): ResultWrapper<GetSyncStatus, String> {
         return withContext(io) {
-            resultBlock {
+            resultBlock(onError = {""}) {
                 val serverFiles = bind(workspace.getServerFiles()).files
                 val diskNodes =
                     workspace.getNodes(null).firstOrNull()?.getChildrenOrNull()?.getAll()
@@ -326,7 +326,7 @@ class SyncUseCase(
                 "zip"
             )
         )
-        return resultBlock {
+        return resultBlock(onError = {""}) {
             try {
                 val serverFiles = bind(workspaceEnv.getServerFiles()).files
                 val diskNodesInitial =

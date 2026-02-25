@@ -6,6 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import co.touchlab.kermit.Logger
 import com.moly3.cedarjam.core.domain.func.hiddenDirectory
 import com.moly3.cedarjam.core.domain.func.pathWrapper
 import com.moly3.cedarjam.core.domain.io
@@ -65,18 +66,22 @@ fun rememberPdfImage(
 
         val fs = getKoin().get<IFileHasher>()
         launch(io) {
-            val hash = fs.getFileHash(fullPath)
-            val fileToSave = pathWrapper(
-                workspaceFullPath,
-                hiddenDirectory,
-                "image_cache",
-                "pdf_preview_$hash.png"
-            ).pathString
+            try {
+                val hash = fs.getFileHash(fullPath)
+                val fileToSave = pathWrapper(
+                    workspaceFullPath,
+                    hiddenDirectory,
+                    "image_cache",
+                    "pdf_preview_$hash.png"
+                ).pathString
 
-            previewPath = loader.loadOrGenerate(
-                fullPath,
-                fileToSave
-            )
+                previewPath = loader.loadOrGenerate(
+                    fullPath,
+                    fileToSave
+                )
+            } catch (exc: Exception) {
+                Logger.w { exc.toString() }
+            }
         }
     }
 

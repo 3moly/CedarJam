@@ -52,7 +52,7 @@ internal class SystemFilesManager : ISystemFilesManager, IFileHasher {
     }
 
     private fun writeText(filePath: Path, content: String): ResultWrapper<Unit, String> {
-        return resultBlock {
+        return resultBlock(onError = { it.toString() }) {
             try {
                 val sink = fs.sink(filePath)
                 val bufferedSink = sink.buffered()
@@ -169,7 +169,7 @@ internal class SystemFilesManager : ISystemFilesManager, IFileHasher {
         moveNodePath: String,
         isDirectory: Boolean
     ): ResultWrapper<FileTreeNode, String> {
-        return resultBlock {
+        return resultBlock(onError = { it.toString() }) {
             val path = Path(nodePath)
             val newFilePath = Path(moveNodePath)
             ensure(!fs.exists(newFilePath)) {
@@ -211,7 +211,7 @@ internal class SystemFilesManager : ISystemFilesManager, IFileHasher {
     }
 
     override fun createDirectory(fullPath: String): ResultWrapper<Unit, String> {
-        return resultBlock {
+        return resultBlock(onError = { it.toString() }) {
             fs.createDirectories(Path(fullPath), mustCreate = true)
         }
     }
@@ -227,7 +227,7 @@ internal class SystemFilesManager : ISystemFilesManager, IFileHasher {
             "create node: ${nodePath}"
         }
         val nodePath = toAbsoluteAppPath(PathWrapper(nodePath.toPath())).pathString
-        return resultBlock {
+        return resultBlock(onError = { it.toString() }) {
             val path = Path(nodePath)
             val meta = fs.metadataOrNull(path)
             if (meta != null && isMustCreate) {
@@ -285,7 +285,7 @@ internal class SystemFilesManager : ISystemFilesManager, IFileHasher {
     }
 
     override fun getNodeCanvas(nodePath: String): ResultWrapper<CanvasDataWithErrors, String> {
-        return resultBlock {
+        return resultBlock(onError = { it.toString() }) {
             val json = getNodeText(nodePath = nodePath)
             CanvasDataParser.parse(json)
         }
@@ -295,7 +295,7 @@ internal class SystemFilesManager : ISystemFilesManager, IFileHasher {
         nodePath: String,
         data: CanvasDataWithErrors
     ): ResultWrapper<Unit, String> {
-        return resultBlock {
+        return resultBlock(onError = { it.toString() }) {
             val json = CanvasDataParser.serialize(data)
             setNodeText(nodePath = nodePath, text = json)
         }

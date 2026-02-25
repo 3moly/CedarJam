@@ -1,24 +1,42 @@
 package com.moly3.cedarjam.pages.page_home.store
 
-import androidx.compose.runtime.Immutable
 import co.touchlab.kermit.Logger
 import com.arkivanov.essenty.lifecycle.Lifecycle
-import com.arkivanov.essenty.lifecycle.doOnResume
 import com.arkivanov.essenty.statekeeper.StateKeeper
 import com.arkivanov.mvikotlin.core.store.Reducer
 import com.arkivanov.mvikotlin.core.store.SimpleBootstrapper
 import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
+import com.moly3.cedarjam.core.domain.func.combine
+import com.moly3.cedarjam.core.domain.func.ignoreSearchByRelativePath
+import com.moly3.cedarjam.core.domain.io
+import com.moly3.cedarjam.core.domain.model.CollectionDTO
+import com.moly3.cedarjam.core.domain.model.CollectionRowDTO
+import com.moly3.cedarjam.core.domain.model.FileTreeNode
+import com.moly3.cedarjam.core.domain.model.FileTreeNode.Companion.getAllFilesByExtension
+import com.moly3.cedarjam.core.domain.model.NavigateToFile
+import com.moly3.cedarjam.core.domain.model.ResultWrapper
+import com.moly3.cedarjam.core.domain.model.TagDTO
+import com.moly3.cedarjam.core.domain.model.UIState
+import com.moly3.cedarjam.core.domain.model.bind
+import com.moly3.cedarjam.core.domain.model.navigation.input.CollectionPageInput
+import com.moly3.cedarjam.core.domain.model.navigation.input.CollectionRowPageInput
+import com.moly3.cedarjam.core.domain.model.navigation.input.FilePageInput
+import com.moly3.cedarjam.core.domain.model.navigation.input.TagPageInput
+import com.moly3.cedarjam.core.domain.model.resultBlock
+import com.moly3.cedarjam.core.domain.repository.IFilesRepository
+import com.moly3.cedarjam.core.domain.service.FileManagerService
+import com.moly3.cedarjam.core.domain.service.WorkspaceSession
+import com.moly3.cedarjam.core.domain.service.WorkspaceSession.Companion.workspaceName
+import com.moly3.cedarjam.core.domain.usecase.INavigateToFileUseCase
 import com.moly3.cedarjam.navigation.BaseExecutor
 import com.moly3.cedarjam.navigation.Navigator
+import com.moly3.cedarjam.navigation.Route
 import com.moly3.cedarjam.navigation.Route.CollRow
 import com.moly3.cedarjam.navigation.Route.Collection
 import com.moly3.cedarjam.navigation.Route.Tag
 import com.moly3.cedarjam.navigation.Route.Tags
 import com.moly3.cedarjam.navigation.consumeOrDefault
-import com.moly3.cedarjam.core.domain.model.navigation.input.CollectionPageInput
-import com.moly3.cedarjam.core.domain.model.navigation.input.CollectionRowPageInput
-import com.moly3.cedarjam.core.domain.model.navigation.input.TagPageInput
 import com.moly3.cedarjam.navigation.subToLog
 import com.moly3.cedarjam.pages.page_home.Intent
 import com.moly3.cedarjam.pages.page_home.State
@@ -26,53 +44,21 @@ import com.moly3.cedarjam.pages.page_home.State.Companion.fromSaveable
 import com.moly3.cedarjam.pages.page_home.State.Companion.toSaveable
 import com.moly3.cedarjam.pages.page_home.model.LineMatch
 import com.moly3.cedarjam.pages.page_home.model.TimeMachine
-import com.moly3.cedarjam.core.domain.func.combine
-import com.moly3.cedarjam.core.domain.func.getRelativePath
-import com.moly3.cedarjam.core.domain.func.ignoreSearchByRelativePath
-import com.moly3.cedarjam.core.domain.io
-import com.moly3.cedarjam.core.domain.model.CollectionDTO
-import com.moly3.cedarjam.core.domain.model.CollectionRowDTO
-import com.moly3.cedarjam.core.domain.model.FileTreeNode
-import com.moly3.cedarjam.core.domain.model.FileTreeNode.Companion.getAll
-import com.moly3.cedarjam.core.domain.model.FileTreeNode.Companion.getAllFilesByExtension
-import com.moly3.cedarjam.core.domain.model.NavigateToFile
-import com.moly3.cedarjam.core.domain.model.ResultWrapper
-import com.moly3.cedarjam.core.domain.model.TagDTO
-import com.moly3.cedarjam.core.domain.model.UIState
-import com.moly3.cedarjam.core.domain.model.bind
-import com.moly3.cedarjam.core.domain.model.mapToUIState
-import com.moly3.cedarjam.core.domain.model.navigation.input.FilePageInput
-import com.moly3.cedarjam.core.domain.model.resultBlock
-import com.moly3.cedarjam.core.domain.model.shouldBeSuccess
-import com.moly3.cedarjam.core.domain.repository.IFilesRepository
-import com.moly3.cedarjam.core.domain.service.FileManagerService
-import com.moly3.cedarjam.core.domain.service.WorkspaceSession
-import com.moly3.cedarjam.core.domain.service.WorkspaceSession.Companion.workspaceName
-import com.moly3.cedarjam.core.domain.usecase.INavigateToFileUseCase
-import com.moly3.cedarjam.core.domain.usecase.ISyncUseCase
-import com.moly3.cedarjam.navigation.Route
-import com.moly3.cedarjam.pages.page_home.store.HomeStore.Msg
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.shareIn
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.koin.core.parameter.parametersOf
-import kotlin.collections.forEachIndexed
 
 internal class HomeStoreFactory(
     private val workspaceSession: WorkspaceSession,
@@ -110,14 +96,6 @@ internal class HomeStoreFactory(
             it.state.toSaveable()
         }
     }
-
-    data class SearchData(
-        val collections: List<CollectionDTO>,
-        val tags: List<TagDTO>,
-        val rows: List<CollectionRowDTO>,
-        val filesState: UIState<List<FileTreeNode>, String>,
-        val searchText: String
-    )
 
     private inner class ExecutorImpl(private val lifecycle: Lifecycle) :
         BaseExecutor<Intent, Unit, State, HomeStore.Msg, Unit>(lifecycle) {
@@ -416,6 +394,10 @@ internal class HomeStoreFactory(
                     openWorkspaceSettings(true)
                 }
 
+                is Intent.OpenTimeMachineType -> {
+                    dispatch(HomeStore.Msg.SetFilterType(intent.value))
+                }
+
                 Intent.OpenTags -> {
                     navigator.navigate(Tags)
                 }
@@ -436,6 +418,7 @@ internal class HomeStoreFactory(
                 is HomeStore.Msg.SetTimes -> copy(timeMachinesState = msg.value)
                 is HomeStore.Msg.SetSearchTextFieldValue -> copy(searchTextFieldValue = msg.value)
                 is HomeStore.Msg.SetAllNodesState -> copy(allNodes = msg.value)
+                is HomeStore.Msg.SetFilterType -> copy(filterType = msg.value)
             }
         }
     }

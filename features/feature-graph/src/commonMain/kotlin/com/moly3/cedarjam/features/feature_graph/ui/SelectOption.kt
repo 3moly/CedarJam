@@ -42,7 +42,7 @@ fun SelectOption(
             onSetIsShowGraph(!isOpened)
         },
 //        unpressedColor = LocalAppTheme.current.primaryColor,
-        unpressedColor = Color.White,
+        unpressedIconColor = Color.White,
         isPressed = isOpened,
         buttonShape = RoundedCornerShape(100.dp),
         painter = rememberVectorPainter(Tag),

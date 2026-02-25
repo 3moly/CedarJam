@@ -17,7 +17,7 @@ class OpenNodeDataUseCase(
         data: ObsidianGraphData,
         isFromGraph: Boolean
     ): ResultWrapper<IOpenNodeDataUseCase.Result, String> {
-        return resultBlock {
+        return resultBlock(onError = { e -> "" }) {
             when (data) {
                 is ObsidianGraphData.Collection -> IOpenNodeDataUseCase.Result.ToCollection(
                     CollectionPageInput(

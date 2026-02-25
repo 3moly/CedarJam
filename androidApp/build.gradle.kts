@@ -3,6 +3,7 @@ plugins {
 //    alias(libs.plugins.kotlinAndroid)
     alias(libs.plugins.compose)
     alias(libs.plugins.compose.compiler)
+//    alias(libs.plugins.baselineprofile)
 }
 //kotlin {
 //    jvmToolchain(17)
@@ -54,4 +55,7 @@ dependencies {
     implementation(libs.compose.foundation)
     implementation(libs.compose.ui)
     implementation(libs.compose.material3)
+//    implementation(libs.androidx.profileinstaller)
+
+//    project(":baselineprofile")
 }

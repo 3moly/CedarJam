@@ -26,7 +26,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
-import com.moly3.cedarjam.core.domain.func.hiddenDirectory
 import com.moly3.cedarjam.core.domain.func.pathWrapper
 import com.moly3.cedarjam.core.domain.model.FileTypeExt
 import com.moly3.cedarjam.core.domain.model.toFileType
@@ -49,8 +48,8 @@ internal fun TimeMachineItem(
         modifier = modifier,
         buttonShape = RoundedCornerShape(16.dp),
         strength = 0.01f,
-        pressedColor = Color.Yellow,
-        unpressedColor = Color.Red,
+        pressedIconColor = Color.Yellow,
+        unpressedIconColor = Color.Red,
         isShowBigGradient = false,
         shadowConfig = NeumorphicShadowConfig(
             lightShadowRadius = 0.1f,

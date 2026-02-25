@@ -13,14 +13,6 @@ kotlin {
         androidResources {
             enable = true
         }
-//        defaultConfig {
-//            minSdk = libs.versions.android.minSdk.get().toInt()
-//        }
-//        buildFeatures.compose = true
-//        compileOptions {
-//            sourceCompatibility = JavaVersion.VERSION_17
-//            targetCompatibility = JavaVersion.VERSION_17
-//        }
     }
     jvm()
     listOf(iosArm64(), iosSimulatorArm64())
@@ -52,12 +44,10 @@ kotlin {
             api(libs.localina)
             api(libs.liquid)
             api(libs.zoomimage.compose.coil3)
+            api(libs.compose.lazyflow)
+            api(libs.compose.lazyflow.core)
             implementation("com.shakster:gifkt:0.3.2")
             implementation("com.shakster:gifkt-compose:0.3.2")
-//            implementation("com.shakster:gifkt-compose:0.3.1") {
-//                exclude("com.shakster.gifkt","gifkt-android")
-//                exclude group: "com.shakster", module: "gifkt-android"
-//            }
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

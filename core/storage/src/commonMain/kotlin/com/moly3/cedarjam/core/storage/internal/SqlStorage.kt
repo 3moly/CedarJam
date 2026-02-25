@@ -142,7 +142,7 @@ internal class SqlStorage(
         dbPath: String,
         schema: SqlSchema<QueryResult.Value<Unit>>
     ): ResultWrapper<SqlDriver, DatabaseError> {
-        return resultBlock {
+        return resultBlock<SqlDriver, DatabaseError>(onError = { DatabaseError.Error("")}) {
             val dbPath = systemFilesManager.toAbsoluteAppPath(pathWrapper(dbPath)).pathString
             ensure(systemFilesManager.isNodeExists(dbPath)) { DatabaseError.NotExist }
             Logger.w { " ALERT" }
@@ -536,6 +536,7 @@ internal class SqlStorage(
                         )
                     }
                 }
+                Unit
             }
         }
     }
@@ -680,6 +681,7 @@ internal class SqlStorage(
                     color = request.color.toHexString(),
                     modifiedTime = request.modifiedTime
                 )
+                Unit
             }
         }
     }

@@ -42,7 +42,6 @@ import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
-import com.moly3.cedarjam.core.ui.func.darker
 import com.moly3.cedarjam.core.ui.func.flatClickable
 import com.moly3.cedarjam.core.ui.func.lighter
 import com.moly3.cedarjam.core.ui.service.KVibrator
@@ -81,8 +80,8 @@ fun NeumorphicShape(
     isShowBigGradient: Boolean = true,
     shadowConfig: NeumorphicShadowConfig = NeumorphicShadowConfig(),
     painter: Painter? = null,
-    pressedColor: Color = Color.Gray,
-    unpressedColor: Color = LocalAppTheme.current.colors.icon,
+    pressedIconColor: Color = Color.Gray,
+    unpressedIconColor: Color = LocalAppTheme.current.colors.icon,
     content: (@Composable BoxScope.() -> Unit)? = null,
     onClick: (() -> Unit)? = null
 ) {
@@ -96,7 +95,7 @@ fun NeumorphicShape(
             stiffness = Spring.StiffnessMedium
         ), label = "press"
     )
-    val imageColor by animateColorAsState(if (isPressed) pressedColor else unpressedColor)
+    val imageColor by animateColorAsState(if (isPressed) pressedIconColor else unpressedIconColor)
 
     val raised = 1f - progress
     val isInspect = LocalInspectionMode.current
@@ -199,7 +198,7 @@ fun FidgetPoppinPreview() {
                 buttonShape = RoundedCornerShape(topStart = 16.dp, bottomEnd = 16.dp),
                 accentColor = Color(0xFFFF4200),
                 painter = rememberVectorPainter(Tag),
-                unpressedColor = Color.White
+                unpressedIconColor = Color.White
             )
             NeumorphicShape(
                 modifier = modifier,
@@ -207,7 +206,7 @@ fun FidgetPoppinPreview() {
                 buttonShape = RoundedCornerShape(shapeSize.dp),
                 accentColor = Color(0xFF222325),
                 painter = rememberVectorPainter(Tag),
-                unpressedColor = Color.White
+                unpressedIconColor = Color.White
             )
             NeumorphicShape(
                 modifier = modifier,
@@ -215,7 +214,7 @@ fun FidgetPoppinPreview() {
                 buttonShape = RoundedCornerShape(shapeSize.dp),
                 accentColor = Color(0xFF222325),
                 painter = rememberVectorPainter(Tag),
-                unpressedColor = Color.White
+                unpressedIconColor = Color.White
             )
         }
     }

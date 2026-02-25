@@ -345,7 +345,7 @@ class ObsGraphEco(
             for (file in directory.getChildrenOrNull() ?: listOf()) {
                 if (file is FileTreeNode.File) {
                     val fileNodeId = file.getGraphId()
-                    resultBlock {
+                    resultBlock(onError = { "" }) {
                         val textResult = workspaceSession.getNodeText(file)
                         val text = bind(textResult)
                         val links = text.extractLinks()

@@ -1,0 +1,22 @@
+CREATE TABLE TagAnnotation (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+
+    createdTime INTEGER NOT NULL,
+
+    tagId INTEGER NOT NULL,
+    annotationId INTEGER NOT NULL,
+    FOREIGN KEY (annotationId) REFERENCES Annotation(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY(tagId) REFERENCES Tag(id) ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+selectAll:
+SELECT *
+FROM TagAnnotation;
+
+delete:
+DELETE FROM TagAnnotation
+WHERE id = :id;
+
+insertObject:
+INSERT INTO TagAnnotation(createdTime,tagId,annotationId)
+VALUES ?;

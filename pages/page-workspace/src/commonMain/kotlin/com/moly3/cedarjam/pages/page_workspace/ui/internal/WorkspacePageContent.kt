@@ -104,6 +104,10 @@ internal fun WorkspacePageContent(
                         is DatabaseError.WrongFile -> {
                             CJText(text = dbError.message)
                         }
+
+                        is DatabaseError.Error -> {
+                            CJText(text = dbError.message)
+                        }
                     }
 
                     CJButton(text = "select workspace") {

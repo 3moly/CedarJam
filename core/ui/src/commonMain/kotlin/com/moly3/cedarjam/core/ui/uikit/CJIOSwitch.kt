@@ -95,8 +95,8 @@ fun CJIOSwitch(
         isPressed = true,
         strength = 1f,
         accentColor = animColor,
-        unpressedColor = Color.Red,
-        pressedColor = Color.Blue,
+        unpressedIconColor = Color.Red,
+        pressedIconColor = Color.Blue,
         content = {
             CJText(
                 modifier = Modifier.graphicsLayer {
