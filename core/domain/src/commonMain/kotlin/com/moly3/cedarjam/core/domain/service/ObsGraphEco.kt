@@ -5,6 +5,7 @@ import androidx.compose.ui.graphics.lerp
 import com.moly3.cedarjam.core.domain.func.extractLinks
 import com.moly3.cedarjam.core.domain.func.pathWrapper
 import com.moly3.cedarjam.core.domain.io
+import com.moly3.cedarjam.core.domain.model.AnnotationDTO
 import com.moly3.cedarjam.core.domain.model.CollectionDTO
 import com.moly3.cedarjam.core.domain.model.CollectionRowDTO
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
@@ -82,6 +83,10 @@ class ObsGraphEco(
 
     private val isShowRowsFlow = _settingsStateFlow
         .map { if (it.isRealFiles) false else it.isRows }
+        .distinctUntilChanged()
+
+    private val isShowAnnotationsFlow = _settingsStateFlow
+        .map { if (it.isRealFiles) false else it.isAnnotations }
         .distinctUntilChanged()
 
     private fun <T> Flow<T>.scoping(): Flow<T> {
@@ -167,14 +172,31 @@ class ObsGraphEco(
         }.scoping()
 
 
+    private val annotationsFlow: Flow<List<AnnotationDTO>> =
+        combine(
+            isShowAnnotationsFlow,
+            workspaceSession.annotationsFlow
+        ) { isShowRows, items ->
+
+            val all = mutableListOf<AnnotationDTO>()
+            if (isShowRows) {
+                for (item in items) {
+                    all.add(item)
+                }
+            }
+
+            all
+        }.scoping()
+
+
     private val collectionRowsFlow: Flow<List<CollectionRowDTO>> =
         combine(
             isShowRowsFlow,
             workspaceSession.collectionRowsFlow
-        ) { rowsConfig, items ->
+        ) { isShowRows, items ->
 
             val all = mutableListOf<CollectionRowDTO>()
-            if (rowsConfig) {
+            if (isShowRows) {
                 for (item in items) {
                     all.add(item)
                 }
@@ -223,8 +245,9 @@ class ObsGraphEco(
         collectionsFlow,
         collectionRowsFlow,
         tagsFlow,
-        filesFlow
-    ) { collections, rows, tags, files ->
+        filesFlow,
+        annotationsFlow
+    ) { collections, rows, tags, files, annotations ->
         val graphNodes = mutableListOf<ObsidianGraphNode>()
         val times = mutableMapOf<Any, Long>()
 
@@ -236,6 +259,20 @@ class ObsGraphEco(
                     name = item.name,
                     colorValue = Color.Companion.Green.value,
                     data = ObsidianGraphData.Collection(
+                        id = item.id
+                    )
+                )
+            )
+            times[graphId] = item.modifiedTime
+        }
+        for (item in annotations) {
+            val graphId = item.getGraphId()
+            graphNodes.add(
+                GraphNode(
+                    id = graphId,
+                    name = "annotation: page ${item.dataPoint}",
+                    colorValue = Color.Red.value,
+                    data = ObsidianGraphData.Annotation(
                         id = item.id
                     )
                 )
@@ -327,8 +364,9 @@ class ObsGraphEco(
         tagToTagsFlow,
         tagLinksFlow,
         tagRowsFlow,
-        workspaceSession.workspaceFlow
-    ) { rows, files, tagToTags, tagLinks, tagRows, workspace ->
+        annotationsFlow,
+        workspaceSession.workspaceFlow,
+    ) { rows, files, tagToTags, tagLinks, tagRows, annotations, workspace ->
         val workspaceSession = workspaceSession.workspaceEnvStateFlow.value
         val connections = mutableMapOf<String, List<String>>()
         fun setConnects(id: String, new: List<String>) {
@@ -368,6 +406,16 @@ class ObsGraphEco(
                     listOf(file.getGraphId())
                 )
             }
+        }
+        for(item in annotations){
+            val fullPath = pathWrapper(
+                workspace.fullpath,
+                item.dataPath
+            ).toString()
+            setConnects(
+                item.getGraphId(),
+                listOf(fullPath.getFileTreeNodeGraphId())
+            )
         }
         for (item in rows) {
             setConnects(

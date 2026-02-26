@@ -28,7 +28,7 @@ import com.moly3.cedarjam.core.domain.model.AnnotationDTO
 import com.moly3.cedarjam.core.ui.model.CJText
 import com.moly3.cedarjam.core.ui.uikit.AppThemePreview
 import com.moly3.cedarjam.core.ui.uikit.CJText
-import com.moly3.cedarjam.core.ui.vectors.TrashEmpty
+import vectors.TrashEmpty
 import com.moly3.cedarjam.pages.page_home.func.dpSize
 import com.moly3.cedarjam.pages.page_home.model.TimeMachine
 

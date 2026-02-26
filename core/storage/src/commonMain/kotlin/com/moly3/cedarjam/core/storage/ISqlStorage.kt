@@ -21,6 +21,7 @@ import com.moly3.cedarjam.db.Annotation
 import com.moly3.cedarjam.db.DataCollection
 import com.moly3.cedarjam.db.DataCollectionRow
 import com.moly3.cedarjam.db.Tag
+import com.moly3.cedarjam.db.TagAnnotation
 import com.moly3.cedarjam.db.TagCollectionRow
 import com.moly3.cedarjam.db.TagFileNode
 import com.moly3.cedarjam.db.TagToTag
@@ -44,7 +45,8 @@ interface ISqlStorage {
 
     fun getAnnotationsFlow(): Flow<List<Annotation>>
     fun createAnnotation(annotation: Annotation): ResultWrapper<Long, String>
-    fun getTagLinks(): Flow<List<TagFileNode>>
+    fun getTagFiles(): Flow<List<TagFileNode>>
+    fun getTagAnnotations(): Flow<List<TagAnnotation>>
     fun getCollections(): Flow<List<DataCollection>>
     fun getCollection(id: Long): Flow<DataCollection?>
     fun getTagCollectionRows(): Flow<List<TagCollectionRow>>

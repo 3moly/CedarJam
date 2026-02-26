@@ -51,6 +51,7 @@ import com.moly3.cedarjam.db.DataCollection
 import com.moly3.cedarjam.db.DataCollectionRow
 import com.moly3.cedarjam.db.Database
 import com.moly3.cedarjam.db.Tag
+import com.moly3.cedarjam.db.TagAnnotation
 import com.moly3.cedarjam.db.TagCollectionRow
 import com.moly3.cedarjam.db.TagFileNode
 import com.moly3.cedarjam.db.TagToTag
@@ -375,14 +376,24 @@ internal class SqlStorage(
         }
     }
 
-    override fun getTagLinks(): Flow<List<TagFileNode>> {
+    override fun getTagFiles(): Flow<List<TagFileNode>> {
         return dbFlow.flatMapLatest {
             if (it != null) {
                 it.tagFileNodeQueries
                     .selectAll()
                     .mapFlowList()
-//                    .asFlow()
-//                    .mapToList(mapContext)
+            } else {
+                flowOf(listOf())
+            }
+        }
+    }
+
+    override fun getTagAnnotations(): Flow<List<TagAnnotation>> {
+        return dbFlow.flatMapLatest {
+            if (it != null) {
+                it.tagAnnotationQueries
+                    .selectAll()
+                    .mapFlowList()
             } else {
                 flowOf(listOf())
             }
@@ -394,8 +405,6 @@ internal class SqlStorage(
             it?.dataCollectionQueries
                 ?.selectAll()
                 ?.mapFlowList() ?: flowOf(listOf())
-//                ?.asFlow()
-//                ?.mapToList(mapContext) ?: flowOf(listOf())
         }
     }
 

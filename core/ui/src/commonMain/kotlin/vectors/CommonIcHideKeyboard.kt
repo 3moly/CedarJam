@@ -1,4 +1,4 @@
-package com.moly3.cedarjam.core.ui.vectors
+package vectors
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathFillType

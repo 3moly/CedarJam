@@ -77,9 +77,9 @@ import com.moly3.cedarjam.core.ui.uikit.CJTextField
 import com.moly3.cedarjam.core.ui.uikit.CJZoomableViewLayout
 import com.moly3.cedarjam.core.ui.uikit.CJIcon
 import com.moly3.cedarjam.core.ui.uikit.NeumorphicShape
-import com.moly3.cedarjam.core.ui.vectors.ArrowLeft
-import com.moly3.cedarjam.core.ui.vectors.ArrowRight
-import com.moly3.cedarjam.core.ui.vectors.TrashEmpty
+import vectors.ArrowLeft
+import vectors.ArrowRight
+import vectors.TrashEmpty
 import com.moly3.cedarjam.core.ui.volumedBorderStroke
 import com.moly3.cedarjam.features.feature_file_view.func.drawAnnotationsBehind
 import dev.chrisbanes.haze.HazeDefaults

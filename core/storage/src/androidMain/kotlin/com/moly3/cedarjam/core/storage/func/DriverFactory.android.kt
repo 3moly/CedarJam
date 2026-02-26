@@ -17,7 +17,7 @@ actual fun createSqlDriver(
     dbPath: String,
     schema: SqlSchema<QueryResult.Value<Unit>>
 ): ResultWrapper<SqlDriver, DatabaseError> {
-    return resultBlock {
+    return resultBlock<SqlDriver, DatabaseError>(onError = { DatabaseError.Error(it.toString()) }) {
         ensure(androidApplicationContext is Context) { DatabaseError.WrongFile("android context is not provided") }
         val driver = AndroidSqliteDriver(
             schema,

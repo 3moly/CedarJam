@@ -13,6 +13,7 @@ import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.FileTreeNode.Companion.getHiddenNodes
 import com.moly3.cedarjam.core.domain.model.IndexFileDto
 import com.moly3.cedarjam.core.domain.model.ResultWrapper
+import com.moly3.cedarjam.core.domain.model.TagAnnotationDTO
 import com.moly3.cedarjam.core.domain.model.TagCollectionRowDTO
 import com.moly3.cedarjam.core.domain.model.TagDTO
 import com.moly3.cedarjam.core.domain.model.TagLinkDTO
@@ -60,7 +61,8 @@ interface IWorkspaceEnvironment {
     suspend fun deleteWorkspaceInServer(): ResultWrapper<Unit, String>
     fun getTagsFlow(): Flow<List<TagDTO>>
     fun getTagFlow(id: Long): Flow<TagDTO?>
-    fun getTagLinksFlow(): Flow<List<TagLinkDTO>>
+    fun getTagFilesFlow(): Flow<List<TagLinkDTO>>
+    fun getTagAnnotationsFlow(): Flow<List<TagAnnotationDTO>>
     fun getTagToTagsFlow(): Flow<List<TagToTagDTO>>
     fun getTagCollectionRowsFlow(): Flow<List<TagCollectionRowDTO>>
     fun getCollectionsFlow(): Flow<List<CollectionDTO>>

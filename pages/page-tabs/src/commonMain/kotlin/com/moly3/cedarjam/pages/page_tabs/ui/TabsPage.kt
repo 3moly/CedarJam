@@ -30,8 +30,8 @@ import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.func.getPageTypeIcon
 import com.moly3.cedarjam.core.ui.model.CJText
 import com.moly3.cedarjam.core.ui.uikit.CJIcon
-import com.moly3.cedarjam.core.ui.vectors.Add
-import com.moly3.cedarjam.core.ui.vectors.AddRow
+import vectors.Add
+import vectors.AddRow
 import org.jetbrains.compose.resources.stringResource
 
 @OptIn(ExperimentalDecomposeApi::class)

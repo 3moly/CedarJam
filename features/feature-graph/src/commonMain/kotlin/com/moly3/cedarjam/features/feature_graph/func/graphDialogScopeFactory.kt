@@ -8,10 +8,12 @@ import com.moly3.cedarjam.features.feature_graph.DialogGraphComponentImpl
 import com.moly3.cedarjam.features.feature_graph.model.DialogConfig
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
 import com.moly3.cedarjam.features.feature_graph.model.DialogScope
+import com.moly3.cedarjam.features.feature_graph.model.toGraphId
 
 fun ComponentContext.graphDialogScopeFactory(
     workspaceSession: WorkspaceSession,
-    storeFactory: StoreFactory
+    storeFactory: StoreFactory,
+    openWorkspaceSettings: (Boolean) -> Unit
 ): DialogScope {
     val dialogNavigation = SlotNavigation<DialogConfig>()
     val slot = childSlot(
@@ -24,8 +26,8 @@ fun ComponentContext.graphDialogScopeFactory(
                 workspaceSession = workspaceSession,
                 componentContext = context,
                 storeFactory = storeFactory,
-                startTargetId = config.targetId,
-                openNode = {}
+                startTargetId = config.target?.toGraphId(),
+                openWorkspaceSettings = openWorkspaceSettings
             )
         }
     )

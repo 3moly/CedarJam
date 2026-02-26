@@ -20,8 +20,8 @@ import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
 import com.moly3.cedarjam.core.ui.uikit.CJIcon
 import com.moly3.cedarjam.core.ui.uikit.CJText
 import com.moly3.cedarjam.core.ui.uikit.CJTextField2
-import com.moly3.cedarjam.core.ui.vectors.ArrowLeft
-import com.moly3.cedarjam.core.ui.vectors.ArrowRight
+import vectors.ArrowLeft
+import vectors.ArrowRight
 import com.moly3.cedarjam.pages.page_tab.Intent
 
 @Composable

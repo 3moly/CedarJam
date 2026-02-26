@@ -55,7 +55,7 @@ internal class FileStoreFactory(
     private val data: FilePageInput,
     private val openMenu: (Boolean) -> Unit,
     private val workspaceSession: WorkspaceSession,
-    private val setIsShowGraph: (String, Boolean) -> Unit,
+    private val setIsShowGraph: (Long, Boolean) -> Unit,
     private val showCanvasDialog: (FileTreeNode.File) -> Unit
 ) : KoinComponent {
 
@@ -64,7 +64,6 @@ internal class FileStoreFactory(
     }
     private val navigator: Navigator by inject()
     private val imageTransform: IImageTransform by inject()
-    private val appEnvironment: IAppEnvironment by inject()
     private val filesRepository: IFilesRepository by inject()
 
     private val foundNodeFlow = combine(
@@ -159,7 +158,7 @@ internal class FileStoreFactory(
 
 
             scopeFromStartToStop.launch {
-                workspaceEnv.getTagLinksFlow().collectLatest {
+                workspaceEnv.getTagFilesFlow().collectLatest {
                     dispatch(FileStore.Msg.SetTagLinks(it.toPersistentList()))
                 }
             }
@@ -225,13 +224,7 @@ internal class FileStoreFactory(
         override fun executeIntent(intent: Intent) {
             when (intent) {
                 is Intent.SetIsShowGraph -> {
-                    scope.launch {
-                        val file = foundNodeFlow.first()
-                        if (file != null) {
-                            val graphId = file.getGraphId()
-                            setIsShowGraph(graphId, intent.value)
-                        }
-                    }
+                    setIsShowGraph(data.timestamp, intent.value)
                 }
 
                 is Intent.ChangeTextNode -> {

@@ -11,6 +11,7 @@ import com.moly3.cedarjam.ui.pages.tag.store.TagStoreFactory
 import com.moly3.cedarjam.core.ui.model.PageNameData
 import com.moly3.cedarjam.core.domain.model.getTagGraphId
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
+import com.moly3.cedarjam.features.feature_graph.model.GraphDialog
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.StateFlow
 
@@ -24,13 +25,17 @@ class TagComponentImpl(
 ) : TagComponent,
     ComponentContext by componentContext {
     private val graphDialogScope by lazy {
-        graphDialogScopeFactory(workspaceSession, storeFactory)
+        graphDialogScopeFactory(
+            workspaceSession = workspaceSession,
+            storeFactory = storeFactory,
+            openWorkspaceSettings = openWorkspaceSettings
+        )
     }
     override val dialogSlot = graphDialogScope.slot
 
     init {
         if (data.isOpenGraphDialog && !graphDialogScope.isGraphDialogInited()) {
-            graphDialogScope.setIsShowGraphDialog(targetId = data.id.getTagGraphId(), isShow = true)
+            graphDialogScope.setIsShowGraphDialog(target = GraphDialog.Tag(data.id), isShow = true)
         }
     }
 
@@ -42,7 +47,7 @@ class TagComponentImpl(
             pageData = data,
             setIsShowGraph = {
                 graphDialogScope.setIsShowGraphDialog(
-                    targetId = data.id.getTagGraphId(),
+                    target = GraphDialog.Tag(data.id),
                     isShow = it
                 )
             },

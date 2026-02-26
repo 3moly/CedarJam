@@ -131,7 +131,7 @@ class WorkspaceSession(
     val tagLinksFlow: Flow<List<TagLinkDTO>> =
         workspaceEnvStateFlow
             .flatMapLatest {
-                it.getTagLinksFlow()
+                it.getTagFilesFlow()
             }.shareScope()
 
     private val resourcesFlow: Flow<UIState<List<FileTreeNode>, Nothing>> = combine(

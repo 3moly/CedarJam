@@ -45,7 +45,7 @@ import com.moly3.cedarjam.core.ui.uikit.CJDataTable
 import com.moly3.cedarjam.core.ui.uikit.CJIcon
 import com.moly3.cedarjam.core.ui.uikit.CJText
 import com.moly3.cedarjam.core.ui.uikit.Header
-import com.moly3.cedarjam.core.ui.vectors.ArrowRight
+import vectors.ArrowRight
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.PersistentList
 import kotlinx.collections.immutable.persistentListOf

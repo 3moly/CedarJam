@@ -7,8 +7,8 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import com.moly3.cedarjam.core.domain.model.CollectionViewType
 import com.moly3.cedarjam.core.ui.uikit.ButtSnapType
 import com.moly3.cedarjam.core.ui.uikit.CJButtSnap
-import com.moly3.cedarjam.core.ui.vectors.Data
-import com.moly3.cedarjam.core.ui.vectors.Tag
+import vectors.Data
+import vectors.Tag
 import com.moly3.cedarjam.pages.page_home.model.TimeMachineFilterType
 
 @Composable

@@ -109,11 +109,11 @@ fun main() {
     }
 
     application {
-        LaunchedEffect(Unit){
-            launch {
-                this.walk(root)
-            }
-        }
+//        LaunchedEffect(Unit){
+//            launch {
+//                this.walk(root)
+//            }
+//        }
         System.setProperty("apple.awt.application.name", "CedarJam")
 
 

@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,25 +27,24 @@ import androidx.compose.ui.unit.dp
 import com.moly3.cedarjam.core.domain.model.AppColorsData
 import com.moly3.cedarjam.core.domain.model.AppThemeData
 import com.moly3.cedarjam.core.domain.model.settings.AppSettings
+import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalUIConfig
 import com.moly3.cedarjam.core.ui.func.flatClickable
 import com.moly3.cedarjam.core.ui.func.isCompactUI
 import com.moly3.cedarjam.core.ui.func.navigationBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.func.statusBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.func.windowToolbarPaddingCJ
-import com.moly3.cedarjam.core.ui.vectors.BarLeft
-import com.moly3.cedarjam.core.ui.vectors.DummySquareSmall
+import vectors.BarLeft
+import vectors.DummySquareSmall
 
 @Composable
 fun FileMenuContent(
     modifier: Modifier,
     borderModifier: Modifier = Modifier,
-    annotationsCount: Int = 0,
     isOpenedMenu: Boolean,
-    isIOSwitchPressed: Boolean,
     openWorkspaceSettings: () -> Unit = {},
     onClick: () -> Unit,
-    onIOClick: () -> Unit
+    content: @Composable ColumnScope.() -> Unit = {}
 ) {
     val padding = 8
     Box(
@@ -63,7 +63,7 @@ fun FileMenuContent(
 
     ) {
         if (isOpenedMenu) {
-            Box(
+            Column(
                 modifier = Modifier
                     .padding(top = padding.dp)
                     .padding(horizontal = padding.dp)
@@ -75,49 +75,16 @@ fun FileMenuContent(
 //                    )
                     .clip(RoundedCornerShape(16.dp))
                     .fillMaxSize()
-//                    .background(LocalAppTheme.current.colors.backgroundSecondary)
+                    .background(LocalAppTheme.current.colors.backgroundSecondary.copy(alpha = 0.3f))
+                    .padding(padding.dp)
             ) {
-                Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                        NeumorphicShape(
-                            modifier = Modifier.weight(1f).height(40.dp),
-                            isPressed = true,
-                            buttonShape = RoundedCornerShape(100.dp),
-                            painter = rememberVectorPainter(DummySquareSmall),
-                            content = {
-                                CJText(text = "ssdsdsd")
-                            },
-                            onClick = {}
-                        )
-                        NeumorphicShape(
-                            modifier = Modifier.size(40.dp),
-                            isPressed = true,
-                            buttonShape = RoundedCornerShape(100.dp),
-                            painter = rememberVectorPainter(DummySquareSmall),
-                            content = {
-                                CJText(text = "pdf")
-                            },
-                            onClick = {}
-                        )
-                    }
-                    NeumorphicShape(
-                        modifier = Modifier.padding(top = 8.dp).fillMaxWidth().height(40.dp),
-                        isPressed = false,
-                        buttonShape = RoundedCornerShape(100.dp),
-                        painter = rememberVectorPainter(DummySquareSmall),
-                        content = {
-                            CJText(text = "Annotations: ${annotationsCount}")
-                        },
-                        onClick = {}
-                    )
-
+                Column(modifier=Modifier.weight(1f)) {
+                    content()
                 }
                 Column(
-                    modifier = Modifier
-                        .padding(padding.dp)
-                        .align(Alignment.BottomStart)
+                    modifier = Modifier.height(LocalUIConfig.current.fabCircleSize)
                 ) {
-                    if(isCompactUI()){
+                    if (isCompactUI()) {
                         NeumorphicShape(
                             modifier = Modifier.size(LocalUIConfig.current.fabCircleSize),
                             isPressed = false,
@@ -126,9 +93,7 @@ fun FileMenuContent(
                             onClick = openWorkspaceSettings
                         )
                     }
-
                 }
-
             }
         }
 
@@ -140,12 +105,12 @@ fun FileMenuContent(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalAlignment = Alignment.End
         ) {
-            CJIOSwitch(
-                height = (LocalUIConfig.current.fabCircleSize.value / 2f).toInt(),
-                isPressed = isIOSwitchPressed,
-                onClick = {
-                    onIOClick()
-                })
+//            CJIOSwitch(
+//                height = (LocalUIConfig.current.fabCircleSize.value / 2f).toInt(),
+//                isPressed = isIOSwitchPressed,
+//                onClick = {
+//                    onIOClick()
+//                })
             NeumorphicShape(
                 modifier = Modifier.size(LocalUIConfig.current.fabCircleSize),
                 isPressed = isOpenedMenu,
@@ -165,22 +130,17 @@ fun FidgetPoppinPreviewLight() {
         appSettings = AppSettings(AppThemeData.Default.copy(colors = AppColorsData.Light))
     ) {
         var isPressed by remember { mutableStateOf(true) }
-        var isIOPressed by remember { mutableStateOf(true) }
         Box(
             Modifier.fillMaxSize().background(Color(0xFF191A1C)),
             contentAlignment = Alignment.Center
         ) {
             FileMenuContent(
                 modifier = Modifier.fillMaxSize(),
-                isIOSwitchPressed = isIOPressed,
                 isOpenedMenu = isPressed,
                 onClick = {
                     isPressed = !isPressed
-                },
-
-                onIOClick = {
-                    isIOPressed = !isIOPressed
-                })
+                }
+            )
             JustMenuContent(modifier = Modifier, openWorkspaceSettings = {})
         }
     }
@@ -197,16 +157,11 @@ fun FidgetPoppinPreview2() {
             contentAlignment = Alignment.Center
         ) {
             var isPressed by remember { mutableStateOf(false) }
-            var isIOPressed by remember { mutableStateOf(false) }
             FileMenuContent(
                 modifier = Modifier.fillMaxSize(),
-                isIOSwitchPressed = isIOPressed,
                 isOpenedMenu = isPressed,
                 onClick = {
                     isPressed = !isPressed
-                },
-                onIOClick = {
-                    isIOPressed = !isIOPressed
                 })
         }
     }

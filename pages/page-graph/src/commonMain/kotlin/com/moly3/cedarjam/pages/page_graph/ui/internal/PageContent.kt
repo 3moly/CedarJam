@@ -31,7 +31,7 @@ import com.moly3.cedarjam.core.ui.uikit.CJButtonIcon
 import com.moly3.cedarjam.core.ui.uikit.CJSlider
 import com.moly3.cedarjam.core.ui.uikit.CJText
 import com.moly3.cedarjam.core.ui.uikit.JustMenuContent
-import com.moly3.cedarjam.core.ui.vectors.SettingsFuture
+import vectors.SettingsFuture
 import com.moly3.dataviz.graph.ui.Graph
 import kotlin.time.ExperimentalTime
 

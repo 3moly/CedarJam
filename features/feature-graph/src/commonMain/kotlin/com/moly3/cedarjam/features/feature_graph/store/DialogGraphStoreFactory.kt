@@ -44,7 +44,7 @@ internal class DialogGraphStoreFactory(
     private val storeFactory: StoreFactory,
     private val lifecycle: Lifecycle,
     private val startTargetId: String?,
-    private val openNode: (ObsidianGraphData) -> Unit
+    private val openWorkspaceSettings: (Boolean) -> Unit
 ) : KoinComponent {
 
     private val navigator: Navigator by inject()
@@ -125,6 +125,14 @@ internal class DialogGraphStoreFactory(
 
         override fun executeIntent(intent: Intent) {
             when (intent) {
+                is Intent.OpenWorkspaceSettings -> {
+                    openWorkspaceSettings(true)
+                }
+
+                is Intent.SetCurrentPage -> {
+                    dispatch(Msg.SetCurrentPage(intent.page))
+                }
+
                 is Intent.SetCoordinates -> {
                     dispatch(SetCoordinates(intent.value.toPersistentMap()))
                 }
@@ -163,6 +171,7 @@ internal class DialogGraphStoreFactory(
                 is Msg.SetVelocities -> copy(velocities = msg.value)
                 is Msg.SetZoom -> copy(zoom = msg.value)
                 is Msg.SetIsShowContent -> copy(isShowContent = msg.value)
+                is Msg.SetCurrentPage -> copy(currentPage = msg.value)
             }
         }
     }

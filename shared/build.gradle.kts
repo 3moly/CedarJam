@@ -17,6 +17,7 @@ plugins {
 
 
 kotlin {
+    jvmToolchain(21)
     compilerOptions {
         freeCompilerArgs.add("-opt-in=kotlin.uuid.ExperimentalUuidApi")
     }
@@ -251,6 +252,7 @@ compose {
     }
     desktop {
         application {
+            javaHome = "/Users/new07/Library/Java/JavaVirtualMachines/jbr-21.0.10/Contents/Home"
             buildTypes.release.proguard {
                 isEnabled = false
                 optimize = false

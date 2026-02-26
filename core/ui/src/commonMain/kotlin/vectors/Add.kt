@@ -1,4 +1,4 @@
-package com.moly3.cedarjam.core.ui.vectors
+package vectors
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -8,13 +8,13 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.unit.dp
 
-val SearchMagnifyingGlass: ImageVector
+val Add: ImageVector
     get() {
-        if (_SearchMagnifyingGlass != null) {
-            return _SearchMagnifyingGlass!!
+        if (_Add != null) {
+            return _Add!!
         }
-        _SearchMagnifyingGlass = ImageVector.Builder(
-            name = "SearchMagnifyingGlass",
+        _Add = ImageVector.Builder(
+            name = "Add",
             defaultWidth = 24.dp,
             defaultHeight = 24.dp,
             viewportWidth = 24f,
@@ -26,19 +26,19 @@ val SearchMagnifyingGlass: ImageVector
                 strokeLineCap = StrokeCap.Round,
                 strokeLineJoin = StrokeJoin.Round
             ) {
-                moveTo(15f, 15f)
-                lineTo(21f, 21f)
-                moveTo(10f, 17f)
-                curveTo(6.134f, 17f, 3f, 13.866f, 3f, 10f)
-                curveTo(3f, 6.134f, 6.134f, 3f, 10f, 3f)
-                curveTo(13.866f, 3f, 17f, 6.134f, 17f, 10f)
-                curveTo(17f, 13.866f, 13.866f, 17f, 10f, 17f)
-                close()
+                moveTo(6f, 12f)
+                horizontalLineTo(12f)
+                moveTo(12f, 12f)
+                horizontalLineTo(18f)
+                moveTo(12f, 12f)
+                verticalLineTo(18f)
+                moveTo(12f, 12f)
+                verticalLineTo(6f)
             }
         }.build()
 
-        return _SearchMagnifyingGlass!!
+        return _Add!!
     }
 
 @Suppress("ObjectPropertyName")
-private var _SearchMagnifyingGlass: ImageVector? = null
+private var _Add: ImageVector? = null

@@ -16,6 +16,7 @@ import com.moly3.cedarjam.features.feature_canvas.func.canvasDialogScopeFactory
 import com.moly3.cedarjam.features.feature_canvas.func.setIsShowGraphDialog
 import com.moly3.cedarjam.features.feature_graph.func.graphDialogScopeFactory
 import com.moly3.cedarjam.features.feature_graph.func.setIsShowGraphDialog
+import com.moly3.cedarjam.features.feature_graph.model.GraphDialog
 import com.moly3.cedarjam.pages.page_file.store.FileStoreFactory
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -33,9 +34,13 @@ class FileComponentImpl(
 ) : FileComponent,
     ComponentContext by componentContext,
     KoinComponent {
-
+//
     private val graphDialogScope by lazy {
-        graphDialogScopeFactory(workspaceSession, storeFactory)
+        graphDialogScopeFactory(
+            workspaceSession = workspaceSession,
+            storeFactory = storeFactory,
+            openWorkspaceSettings = openMenu
+        )
     }
     private val canvasDialogScope by lazy {
         canvasDialogScopeFactory(workspaceSession, storeFactory)
@@ -57,8 +62,11 @@ class FileComponentImpl(
             data = data,
             openMenu = openMenu,
             workspaceSession = workspaceSession,
-            setIsShowGraph = { graphId, value ->
-                graphDialogScope.setIsShowGraphDialog(targetId = graphId, isShow = value)
+            setIsShowGraph = { timestamp, value ->
+                graphDialogScope.setIsShowGraphDialog(
+                    target = GraphDialog.File(timestamp),
+                    isShow = value
+                )
             },
             showCanvasDialog = { file ->
                 canvasDialogScope.setIsShowGraphDialog(file, isShow = true)

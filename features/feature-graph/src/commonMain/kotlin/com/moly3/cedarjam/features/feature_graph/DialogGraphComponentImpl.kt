@@ -15,7 +15,7 @@ class DialogGraphComponentImpl(
     componentContext: ComponentContext,
     storeFactory: StoreFactory,
     private val startTargetId: String?,
-    private val openNode: (ObsidianGraphData) -> Unit
+    private val openWorkspaceSettings: (Boolean) -> Unit
 ) : IDialogGraphComponent,
     ComponentContext by componentContext {
 
@@ -28,7 +28,7 @@ class DialogGraphComponentImpl(
             lifecycle = lifecycle,
             workspaceSession = workspaceSession,
             startTargetId = startTargetId,
-            openNode = openNode
+            openWorkspaceSettings = openWorkspaceSettings
         ).create(stateKeeper = stateKeeper)
     }
 

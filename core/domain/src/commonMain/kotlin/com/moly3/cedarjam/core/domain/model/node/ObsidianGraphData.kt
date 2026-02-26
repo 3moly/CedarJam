@@ -1,18 +1,25 @@
 package com.moly3.cedarjam.core.domain.model.node
 
+import androidx.compose.runtime.Stable
 import com.moly3.cedarjam.core.domain.model.CollectionDTO
 import com.moly3.cedarjam.core.domain.model.CollectionRowDTO
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.TagDTO
+import com.moly3.cedarjam.core.domain.model.node.ObsidianGraphPresentation.*
 import kotlinx.serialization.Serializable
 
 @Serializable
+@Stable
 sealed class ObsidianGraphData {
     @Serializable
     data class Tag(val id: Long) : ObsidianGraphData()
 
     @Serializable
     data class Collection(val id: Long) : ObsidianGraphData()
+
+
+    @Serializable
+    data class Annotation(val id: Long) : ObsidianGraphData()
 
     @Serializable
     data class CollectionRow(val id: Long, val collectionId: Long) : ObsidianGraphData()
@@ -54,37 +61,41 @@ fun List<ObsidianGraphData>.toPresentation(
             is ObsidianGraphData.Collection -> {
                 val collection = collections.firstOrNull { x -> x.id == data.id }
                 if (collection != null) {
-                    ObsidianGraphPresentation.Collection(collection)
+                    Collection(collection)
                 } else {
-                    ObsidianGraphPresentation.Unknown(data)
+                    Unknown(data)
                 }
             }
 
             is ObsidianGraphData.CollectionRow -> {
                 val row = rows.firstOrNull { x -> x.id == data.id }
                 if (row != null) {
-                    ObsidianGraphPresentation.CollectionRow(row)
+                    CollectionRow(row)
                 } else {
-                    ObsidianGraphPresentation.Unknown(data)
+                    Unknown(data)
                 }
             }
 
             is ObsidianGraphData.File -> {
                 val file = files.firstOrNull { x -> x.getRelativePath() == data.relativePath }
                 if (file != null) {
-                    ObsidianGraphPresentation.File(file)
+                    File(file)
                 } else {
-                    ObsidianGraphPresentation.Unknown(data)
+                    Unknown(data)
                 }
             }
 
             is ObsidianGraphData.Tag -> {
                 val tag = tags.firstOrNull { x -> x.id == data.id }
                 if (tag != null) {
-                    ObsidianGraphPresentation.Tag(tag)
+                    Tag(tag)
                 } else {
-                    ObsidianGraphPresentation.Unknown(data)
+                    Unknown(data)
                 }
+            }
+
+            is ObsidianGraphData.Annotation -> {
+                Unknown(data)
             }
         }
     }

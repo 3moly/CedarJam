@@ -27,9 +27,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.unit.dp
-import com.moly3.cedarjam.core.ui.vectors.BarLeft
-import com.moly3.cedarjam.core.ui.vectors.FolderAdd
-import com.moly3.cedarjam.core.ui.vectors.TrashEmpty
+import vectors.BarLeft
+import vectors.FolderAdd
+import vectors.TrashEmpty
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable

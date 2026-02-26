@@ -21,6 +21,7 @@ import com.moly3.cedarjam.core.domain.model.FileTreeNode.Companion.getAll
 import com.moly3.cedarjam.core.domain.model.IndexFileDto
 import com.moly3.cedarjam.core.domain.model.ResultWrapper
 import com.moly3.cedarjam.core.domain.model.SyncStatus
+import com.moly3.cedarjam.core.domain.model.TagAnnotationDTO
 import com.moly3.cedarjam.core.domain.model.TagCollectionRowDTO
 import com.moly3.cedarjam.core.domain.model.TagDTO
 import com.moly3.cedarjam.core.domain.model.TagLinkDTO
@@ -318,9 +319,9 @@ class WorkspaceEnvironment(
         }.flowOn(io)
     }
 
-    override fun getTagLinksFlow(): Flow<List<TagLinkDTO>> {
+    override fun getTagFilesFlow(): Flow<List<TagLinkDTO>> {
         return sqlStorage
-            .getTagLinks()
+            .getTagFiles()
             .map {
                 it.mapNotNull {
                     var data: TagLinkDtoData? = null
@@ -335,6 +336,21 @@ class WorkspaceEnvironment(
                             data = data
                         )
                     else null
+                }
+            }
+            .flowOn(io)
+    }
+
+    override fun getTagAnnotationsFlow(): Flow<List<TagAnnotationDTO>> {
+        return sqlStorage
+            .getTagAnnotations()
+            .map {
+                it.map {
+                    TagAnnotationDTO(
+                        id=it.id,
+                        tagId = it.tagId,
+                        annotationId = it.annotationId
+                    )
                 }
             }
             .flowOn(io)

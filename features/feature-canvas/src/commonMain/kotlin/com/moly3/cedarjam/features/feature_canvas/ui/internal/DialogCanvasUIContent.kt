@@ -45,8 +45,8 @@ import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
 import com.moly3.cedarjam.core.ui.model.FileTreeItemPresentation
 import com.moly3.cedarjam.core.ui.uikit.CJText
 import com.moly3.cedarjam.core.ui.uikit.CJTextField
-import com.moly3.cedarjam.core.ui.vectors.Add
-import com.moly3.cedarjam.core.ui.vectors.TrashCan
+import vectors.Add
+import vectors.TrashCan
 import com.moly3.cedarjam.features.feature_canvas.Intent
 import com.moly3.cedarjam.features.feature_canvas.State
 import com.moly3.cedarjam.features.feature_canvas.ui.shader.UmlShader

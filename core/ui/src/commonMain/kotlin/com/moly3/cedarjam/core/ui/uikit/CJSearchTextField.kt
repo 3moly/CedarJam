@@ -25,7 +25,7 @@ import androidx.compose.ui.unit.dp
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
 import com.moly3.cedarjam.core.ui.func.darker
-import com.moly3.cedarjam.core.ui.vectors.SearchMagnifyingGlass
+import vectors.SearchMagnifyingGlass
 import com.moly3.cedarjam.core.ui.volumedBorderStroke
 
 @Composable

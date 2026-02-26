@@ -1,4 +1,4 @@
-package com.moly3.cedarjam.core.ui.vectors
+package vectors
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -7,13 +7,13 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.unit.dp
 
-val Right2: ImageVector
+val Left2: ImageVector
     get() {
-        if (_Right2 != null) {
-            return _Right2!!
+        if (_Left2 != null) {
+            return _Left2!!
         }
-        _Right2 = ImageVector.Builder(
-            name = "Right2",
+        _Left2 = ImageVector.Builder(
+            name = "Left2",
             defaultWidth = 24.dp,
             defaultHeight = 24.dp,
             viewportWidth = 24f,
@@ -24,15 +24,15 @@ val Right2: ImageVector
                 strokeLineWidth = 1.5f,
                 strokeLineCap = StrokeCap.Round
             ) {
-                moveTo(9f, 19f)
-                lineTo(14.331f, 12.781f)
-                curveTo(14.716f, 12.332f, 14.716f, 11.668f, 14.331f, 11.219f)
-                lineTo(9f, 5f)
+                moveTo(15f, 5f)
+                lineTo(9.669f, 11.219f)
+                curveTo(9.284f, 11.668f, 9.284f, 12.332f, 9.669f, 12.781f)
+                lineTo(15f, 19f)
             }
         }.build()
 
-        return _Right2!!
+        return _Left2!!
     }
 
 @Suppress("ObjectPropertyName")
-private var _Right2: ImageVector? = null
+private var _Left2: ImageVector? = null

@@ -21,7 +21,7 @@ import com.moly3.cedarjam.core.domain.model.WorkspacePresentation
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.uikit.CJIcon
 import com.moly3.cedarjam.core.ui.uikit.CJText
-import com.moly3.cedarjam.core.ui.vectors.SettingsFuture
+import vectors.SettingsFuture
 import com.moly3.cedarjam.core.ui.volumedBorderStroke
 
 @Composable

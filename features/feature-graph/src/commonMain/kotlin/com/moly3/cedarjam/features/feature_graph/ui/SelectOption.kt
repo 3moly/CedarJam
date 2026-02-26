@@ -25,7 +25,7 @@ import com.moly3.cedarjam.core.ui.func.flatClickable
 import com.moly3.cedarjam.core.ui.service.KVibrator
 import com.moly3.cedarjam.core.ui.uikit.CJText
 import com.moly3.cedarjam.core.ui.uikit.NeumorphicShape
-import com.moly3.cedarjam.core.ui.vectors.Tag
+import vectors.Tag
 import com.moly3.cedarjam.core.ui.volumedBorderStroke
 
 @Composable

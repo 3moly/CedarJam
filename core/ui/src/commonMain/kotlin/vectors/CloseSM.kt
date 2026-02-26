@@ -1,5 +1,4 @@
-package com.moly3.cedarjam.core.ui.vectors
-
+package vectors
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
@@ -8,13 +7,13 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.unit.dp
 
-val Add: ImageVector
+val CloseSM: ImageVector
     get() {
-        if (_Add != null) {
-            return _Add!!
+        if (_CloseSM != null) {
+            return _CloseSM!!
         }
-        _Add = ImageVector.Builder(
-            name = "Add",
+        _CloseSM = ImageVector.Builder(
+            name = "CloseSM",
             defaultWidth = 24.dp,
             defaultHeight = 24.dp,
             viewportWidth = 24f,
@@ -26,19 +25,19 @@ val Add: ImageVector
                 strokeLineCap = StrokeCap.Round,
                 strokeLineJoin = StrokeJoin.Round
             ) {
-                moveTo(6f, 12f)
-                horizontalLineTo(12f)
+                moveTo(16f, 16f)
+                lineTo(12f, 12f)
                 moveTo(12f, 12f)
-                horizontalLineTo(18f)
+                lineTo(8f, 8f)
                 moveTo(12f, 12f)
-                verticalLineTo(18f)
+                lineTo(16f, 8f)
                 moveTo(12f, 12f)
-                verticalLineTo(6f)
+                lineTo(8f, 16f)
             }
         }.build()
 
-        return _Add!!
+        return _CloseSM!!
     }
 
 @Suppress("ObjectPropertyName")
-private var _Add: ImageVector? = null
+private var _CloseSM: ImageVector? = null

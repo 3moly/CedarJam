@@ -45,7 +45,7 @@ import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.func.flatClickable
 import com.moly3.cedarjam.core.ui.func.lighter
 import com.moly3.cedarjam.core.ui.service.KVibrator
-import com.moly3.cedarjam.core.ui.vectors.Tag
+import vectors.Tag
 
 data class NeumorphicShadowConfig(
     val lightShadowAlpha: Float = 0.6f,
@@ -82,7 +82,7 @@ fun NeumorphicShape(
     painter: Painter? = null,
     pressedIconColor: Color = Color.Gray,
     unpressedIconColor: Color = LocalAppTheme.current.colors.icon,
-    content: (@Composable BoxScope.() -> Unit)? = null,
+    content: (@Composable BoxScope.(Color) -> Unit)? = null,
     onClick: (() -> Unit)? = null
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -158,7 +158,7 @@ fun NeumorphicShape(
         contentAlignment = Alignment.Center
     ) {
         if (content != null) {
-            content()
+            content(imageColor)
         } else {
             if (painter != null) {
                 Image(

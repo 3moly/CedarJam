@@ -93,7 +93,7 @@ class UI1Test : UITest() {
         getCollectionRowsFlow(null).checkFlowListSize(expectedSize = 0)
         getTagsFlow().checkFlowListSize(expectedSize = 0)
         getTagCollectionRowsFlow().checkFlowListSize(expectedSize = 0)
-        getTagLinksFlow().checkFlowListSize(expectedSize = 0)
+        getTagFilesFlow().checkFlowListSize(expectedSize = 0)
         getTagToTagsFlow().checkFlowListSize(expectedSize = 0)
     }
 

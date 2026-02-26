@@ -1,4 +1,4 @@
-package com.moly3.cedarjam.core.ui.vectors
+package vectors
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -8,13 +8,13 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.unit.dp
 
-val ChevronDownDuo: ImageVector
+val SearchMagnifyingGlass: ImageVector
     get() {
-        if (_ChevronDownDuo != null) {
-            return _ChevronDownDuo!!
+        if (_SearchMagnifyingGlass != null) {
+            return _SearchMagnifyingGlass!!
         }
-        _ChevronDownDuo = ImageVector.Builder(
-            name = "ChevronDownDuo",
+        _SearchMagnifyingGlass = ImageVector.Builder(
+            name = "SearchMagnifyingGlass",
             defaultWidth = 24.dp,
             defaultHeight = 24.dp,
             viewportWidth = 24f,
@@ -26,17 +26,19 @@ val ChevronDownDuo: ImageVector
                 strokeLineCap = StrokeCap.Round,
                 strokeLineJoin = StrokeJoin.Round
             ) {
-                moveTo(16f, 13f)
-                lineTo(12f, 17f)
-                lineTo(8f, 13f)
-                moveTo(16f, 7f)
-                lineTo(12f, 11f)
-                lineTo(8f, 7f)
+                moveTo(15f, 15f)
+                lineTo(21f, 21f)
+                moveTo(10f, 17f)
+                curveTo(6.134f, 17f, 3f, 13.866f, 3f, 10f)
+                curveTo(3f, 6.134f, 6.134f, 3f, 10f, 3f)
+                curveTo(13.866f, 3f, 17f, 6.134f, 17f, 10f)
+                curveTo(17f, 13.866f, 13.866f, 17f, 10f, 17f)
+                close()
             }
         }.build()
 
-        return _ChevronDownDuo!!
+        return _SearchMagnifyingGlass!!
     }
 
 @Suppress("ObjectPropertyName")
-private var _ChevronDownDuo: ImageVector? = null
+private var _SearchMagnifyingGlass: ImageVector? = null

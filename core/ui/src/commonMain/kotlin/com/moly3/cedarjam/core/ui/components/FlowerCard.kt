@@ -30,7 +30,7 @@ import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalImageLoader
 import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
 import com.moly3.cedarjam.core.ui.uikit.CJText
-import com.moly3.cedarjam.core.ui.vectors.SettingsFuture
+import vectors.SettingsFuture
 import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
@@ -122,7 +122,7 @@ fun FlowerCard(
             ) {
                 Image(
                     modifier = Modifier.size(12.dp),
-                    painter = rememberVectorPainter(SettingsFuture),
+                    painter = rememberVectorPainter(_root_ide_package_.vectors.SettingsFuture),
                     contentDescription = null,
                     colorFilter = ColorFilter.tint(Color.Green)
                 )

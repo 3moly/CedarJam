@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.sp
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.uikit.CJButtonIcon
 import com.moly3.cedarjam.core.ui.uikit.CJText
-import com.moly3.cedarjam.core.ui.vectors.CloseSM
+import vectors.CloseSM
 
 @Composable
 fun TabUI(

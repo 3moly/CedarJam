@@ -17,7 +17,7 @@ import androidx.compose.ui.unit.dp
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.func.drawUnder
 import com.moly3.cedarjam.core.ui.uikit.CJText
-import com.moly3.cedarjam.core.ui.vectors.Right2
+import vectors.Right2
 
 @Composable
 fun SelectOption(isShowBorder: Boolean, text: String, onClick: () -> Unit) {

@@ -5,6 +5,7 @@ import com.moly3.cedarjam.core.domain.model.ObsidianGraphNode
 import com.moly3.cedarjam.core.domain.model.OffsetData
 import com.moly3.cedarjam.core.domain.model.mapToOffset
 import com.moly3.cedarjam.core.domain.model.mapToOffsetData
+import com.moly3.cedarjam.features.feature_graph.model.GraphPage
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.collections.immutable.persistentListOf
@@ -15,6 +16,7 @@ import kotlinx.serialization.Serializable
 
 data class State(
     val isShowContent: Boolean = true,
+    val currentPage: GraphPage = GraphPage.General,
     val graphNodes: ImmutableList<ObsidianGraphNode> = persistentListOf(),
     val connections: ImmutableMap<String, ImmutableList<String>> = persistentMapOf(),
     val coordinates: ImmutableMap<String, Offset> = persistentMapOf(),
@@ -24,6 +26,7 @@ data class State(
     @Serializable
     data class SaveableState(
         val isShowContent: Boolean,
+        val currentPage: GraphPage,
         val zoom: Float,
         val graphNodes: List<ObsidianGraphNode>,
         val connections: Map<String, List<String>>,
@@ -41,7 +44,8 @@ data class State(
                 zoom = zoom,
                 coordinates = coordinates
                     .mapValues { it.value.mapToOffset() }
-                    .toPersistentMap()
+                    .toPersistentMap(),
+                currentPage = currentPage
             )
         }
 
@@ -53,7 +57,8 @@ data class State(
                 coordinates = coordinates
                     .mapValues { d -> d.value.mapToOffsetData() }
                     .toPersistentMap(),
-                isShowContent = isShowContent
+                isShowContent = isShowContent,
+                currentPage = currentPage
             )
         }
     }

@@ -34,7 +34,7 @@ import com.moly3.cedarjam.core.ui.func.rememberWindowSize
 import com.moly3.cedarjam.core.ui.func.wstatusBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.model.FileTreeItemPresentation
 import com.moly3.cedarjam.core.ui.uikit.NeumorphicShape
-import com.moly3.cedarjam.core.ui.vectors.Settings
+import vectors.Settings
 import com.moly3.cedarjam.navigation.ui.BarLeft
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle

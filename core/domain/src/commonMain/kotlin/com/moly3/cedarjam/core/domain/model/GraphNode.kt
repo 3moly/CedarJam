@@ -13,8 +13,16 @@ fun CollectionDTO.getGraphId(): String {
     return id.getCollectionGraphId()
 }
 
+fun AnnotationDTO.getGraphId(): String {
+    return id.getAnnotationGraphId()
+}
+
 fun Long.getCollectionGraphId(): String {
     return "collection: $this"
+}
+
+fun Long.getAnnotationGraphId(): String {
+    return "annotation: $this"
 }
 
 fun CollectionRowDTO.getGraphId(): String {

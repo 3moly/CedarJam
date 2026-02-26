@@ -1,22 +1,27 @@
 package com.moly3.cedarjam.core.ui.uikit
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
 @Composable
 fun CJButtSnap(
     modifier: Modifier = Modifier,
-    painter: Painter,
+    painter: Painter? = null,
+    content: (@Composable BoxScope.(Color) -> Unit)? = null,
     isSelected: Boolean,
     buttType: ButtSnapType = ButtSnapType.Center,
     onClick: () -> Unit
@@ -31,58 +36,53 @@ fun CJButtSnap(
     NeumorphicShape(
         modifier = modifier
             .height(32.dp)
-            .width(42.dp)
+            .widthIn(min = 42.dp)
             .background(Color.Transparent, shape),
         isPressed = isSelected,
         isEnabled = !isSelected,
         buttonShape = shape,
         painter = painter,
+        content = content,
         onClick = {
             onClick()
         }
     )
-//    Box(
-//        modifier = modifier
-//            .height(32.dp)
-//            .width(42.dp)
-//            .background(Color.Transparent, shape)
-//            .border(BorderStroke(1.dp, borderColor), shape = shape)
-//            .clip(shape)
-//            .clickable(enabled = !isSelected) {
-//                onClick()
-//            }
-//    ) {
-//        Box(Modifier.fillMaxHeight(), contentAlignment = Alignment.Center) {
-//            Image(
-//                modifier = Modifier.size(20.dp),
-//                painter = painter,
-//                contentDescription = null,
-//                colorFilter = ColorFilter.tint(borderColor)
-//            )
-//        }
-//    }
 }
 
 @Preview
 @Composable
 fun ButtSnapPreview() {
-    Row {
-//        ButtSnap(
-//            painter = painterResource(MR.images.img_flower),
-//            isSelected = false,
-//            buttType = ButtSnapType.Left
-//        ) {}
-//        ButtSnap(
-//            painter = painterResource(MR.images.img_flower),
-//            isSelected = true,
-//            buttType = ButtSnapType.Center
-//        ) {}
-//        ButtSnap(
-//            painter = painterResource(MR.images.img_flower),
-//            isSelected = false,
-//            buttType = ButtSnapType.Right
-//        ) {}
+    AppThemePreview {
+        Row {
+            CJButtSnap(
+                painter = rememberVectorPainter(vectors.BarLeft),
+                isSelected = false,
+                buttType = ButtSnapType.Left
+            ) {}
+            CJButtSnap(
+                painter = rememberVectorPainter(vectors.NetworkNode),
+                isSelected = true,
+                buttType = ButtSnapType.Center
+            ) {}
+            CJButtSnap(
+                isSelected = false,
+                content = {
+                    CJText(
+                        modifier = Modifier.padding(horizontal = 8.dp),
+                        text = "annotations",
+                        color = it
+                    )
+                },
+                buttType = ButtSnapType.Center
+            ) {}
+            CJButtSnap(
+                painter = rememberVectorPainter(vectors.Tag),
+                isSelected = false,
+                buttType = ButtSnapType.Right
+            ) {}
+        }
     }
+
 }
 
 enum class ButtSnapType {

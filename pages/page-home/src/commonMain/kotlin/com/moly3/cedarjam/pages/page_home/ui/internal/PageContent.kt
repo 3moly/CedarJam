@@ -2,7 +2,6 @@ package com.moly3.cedarjam.pages.page_home.ui.internal
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ContextualFlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -20,14 +19,11 @@ import androidx.compose.ui.unit.dp
 import com.moly3.cedarjam.core.ui.func.navigationBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.func.wstatusBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.uikit.CJSearchTextField
-import com.moly3.cedarjam.core.ui.uikit.CJText
 import com.moly3.cedarjam.core.ui.uikit.JustMenuContent
-import com.moly3.cedarjam.core.ui.uikit.LazyFlowRow
 import com.moly3.cedarjam.core.ui.uikit.UIStateContentNoBox
 import com.moly3.cedarjam.pages.page_home.Intent
 import com.moly3.cedarjam.pages.page_home.State
 import com.moly3.cedarjam.pages.page_home.func.dpSize
-import com.moly3.cedarjam.pages.page_home.func.toPx
 import com.moly3.cedarjam.pages.page_home.model.TimeMachine
 import com.moly3.cedarjam.pages.page_home.model.TimeMachineFilterType
 import com.moly3.lazyFlow.func.items

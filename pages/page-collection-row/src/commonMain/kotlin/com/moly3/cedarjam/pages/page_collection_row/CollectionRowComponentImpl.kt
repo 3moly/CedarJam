@@ -8,8 +8,8 @@ import com.moly3.cedarjam.features.feature_graph.func.setIsShowGraphDialog
 import com.moly3.cedarjam.core.domain.model.navigation.input.CollectionRowPageInput
 import com.moly3.cedarjam.pages.page_collection_row.store.CollectionRowStoreFactory
 import com.moly3.cedarjam.core.ui.model.PageNameData
-import com.moly3.cedarjam.core.domain.model.getCollectionRowGraphId
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
+import com.moly3.cedarjam.features.feature_graph.model.GraphDialog
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.StateFlow
 
@@ -31,7 +31,10 @@ class CollectionRowComponentImpl(
             workspaceSession = workspaceSession,
             openWorkspaceSettings = openWorkspaceSettings,
             setIsShowGraph = {
-                graphDialogScope.setIsShowGraphDialog(targetId = data.rowId.getCollectionRowGraphId(), isShow = it)
+                graphDialogScope.setIsShowGraphDialog(
+                    target = GraphDialog.Row(data.rowId),
+                    isShow = it
+                )
             }
         ).create()
     }
@@ -43,7 +46,11 @@ class CollectionRowComponentImpl(
     }
 
     private val graphDialogScope by lazy {
-        graphDialogScopeFactory(workspaceSession, storeFactory)
+        graphDialogScopeFactory(
+            workspaceSession = workspaceSession,
+            storeFactory = storeFactory,
+            openWorkspaceSettings = openWorkspaceSettings
+        )
     }
     override val dialogSlot = graphDialogScope.slot
 }

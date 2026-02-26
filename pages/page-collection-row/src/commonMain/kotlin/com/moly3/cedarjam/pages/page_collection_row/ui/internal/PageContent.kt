@@ -14,11 +14,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
@@ -29,7 +27,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -40,20 +37,19 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
-import com.moly3.cedarjam.pages.page_collection_row.Intent
-import com.moly3.cedarjam.pages.page_collection_row.State
-import com.moly3.cedarjam.core.ui.func.getPdfImage
 import com.moly3.cedarjam.core.domain.io
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
+import com.moly3.cedarjam.core.ui.func.getPdfImage
 import com.moly3.cedarjam.core.ui.uikit.CJButton
-import com.moly3.cedarjam.core.ui.uikit.CJTextField
 import com.moly3.cedarjam.core.ui.uikit.CJText
-import com.moly3.cedarjam.core.ui.uikit.FileMenuContent
+import com.moly3.cedarjam.core.ui.uikit.CJTextField
+import com.moly3.cedarjam.core.ui.uikit.JustMenuContent
 import com.moly3.cedarjam.core.ui.uikit.magmaTextFieldMinTextSize
+import com.moly3.cedarjam.pages.page_collection_row.Intent
+import com.moly3.cedarjam.pages.page_collection_row.State
 import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
-import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.coroutines.launch
 import kotlinx.io.files.Path
@@ -237,22 +233,25 @@ internal fun PageContent(state: State, onIntent: (Intent) -> Unit) {
             }
         }
     }
-    FileMenuContent(
-        modifier = Modifier.safeDrawingPadding().fillMaxSize(),
-        borderModifier = Modifier
-            .clip(RoundedCornerShape(16.dp))
-            .hazeEffect(hazeState, hazeStyle),
-        annotationsCount = 0,
-        isIOSwitchPressed = isIOPressed,
-        isOpenedMenu = isPressed,
-        openWorkspaceSettings = {
-            onIntent(Intent.OpenWorkspaceSettings)
-        },
-        onIOClick = {
-            isIOPressed = !isIOPressed
-        },
-        onClick = {
-            isPressed = !isPressed
-        }
-    )
+    JustMenuContent {
+        onIntent(Intent.OpenWorkspaceSettings)
+    }
+//    FileMenuContent(
+//        modifier = Modifier.safeDrawingPadding().fillMaxSize(),
+//        borderModifier = Modifier
+//            .clip(RoundedCornerShape(16.dp))
+//            .hazeEffect(hazeState, hazeStyle),
+//        annotationsCount = 0,
+//        isIOSwitchPressed = isIOPressed,
+//        isOpenedMenu = isPressed,
+//        openWorkspaceSettings = {
+//            onIntent(Intent.OpenWorkspaceSettings)
+//        },
+//        onIOClick = {
+//            isIOPressed = !isIOPressed
+//        },
+//        onClick = {
+//            isPressed = !isPressed
+//        }
+//    )
 }

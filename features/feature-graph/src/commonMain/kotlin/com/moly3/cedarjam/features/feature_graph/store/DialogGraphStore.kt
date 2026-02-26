@@ -5,6 +5,7 @@ import com.arkivanov.mvikotlin.core.store.Store
 import com.moly3.cedarjam.core.domain.model.ObsidianGraphNode
 import com.moly3.cedarjam.features.feature_graph.Intent
 import com.moly3.cedarjam.features.feature_graph.State
+import com.moly3.cedarjam.features.feature_graph.model.GraphPage
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableMap
 
@@ -17,5 +18,6 @@ internal interface DialogGraphStore : Store<Intent, State, Unit> {
         data class SetConnections(val value: ImmutableMap<String, ImmutableList<String>>) : Msg
         data class SetZoom(val value: Float) : Msg
         data class SetIsShowContent(val value: Boolean) : Msg
+        data class SetCurrentPage(val value: GraphPage) : Msg
     }
 }
