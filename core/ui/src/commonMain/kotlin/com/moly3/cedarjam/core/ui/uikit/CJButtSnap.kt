@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -28,9 +27,9 @@ fun CJButtSnap(
 ) {
     val shape = remember(buttType) {
         when (buttType) {
-            ButtSnapType.Left -> RoundedCornerShape(topStart = 16.dp, bottomStart = 16.dp)
+            ButtSnapType.Start -> RoundedCornerShape(topStart = 16.dp, bottomStart = 16.dp)
             ButtSnapType.Center -> RoundedCornerShape(0.dp)
-            ButtSnapType.Right -> RoundedCornerShape(topEnd = 16.dp, bottomEnd = 16.dp)
+            ButtSnapType.End -> RoundedCornerShape(topEnd = 16.dp, bottomEnd = 16.dp)
         }
     }
     NeumorphicShape(
@@ -57,7 +56,7 @@ fun ButtSnapPreview() {
             CJButtSnap(
                 painter = rememberVectorPainter(vectors.BarLeft),
                 isSelected = false,
-                buttType = ButtSnapType.Left
+                buttType = ButtSnapType.Start
             ) {}
             CJButtSnap(
                 painter = rememberVectorPainter(vectors.NetworkNode),
@@ -78,7 +77,7 @@ fun ButtSnapPreview() {
             CJButtSnap(
                 painter = rememberVectorPainter(vectors.Tag),
                 isSelected = false,
-                buttType = ButtSnapType.Right
+                buttType = ButtSnapType.End
             ) {}
         }
     }
@@ -86,7 +85,7 @@ fun ButtSnapPreview() {
 }
 
 enum class ButtSnapType {
-    Left,
+    Start,
     Center,
-    Right
+    End
 }

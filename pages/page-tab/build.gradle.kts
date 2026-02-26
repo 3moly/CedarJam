@@ -11,14 +11,6 @@ kotlin {
     android {
         namespace = "com.moly3.cedarjam.pages.page_tab"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
-//        defaultConfig {
-//            minSdk = libs.versions.android.minSdk.get().toInt()
-//        }
-//        buildFeatures.compose = true
-//        compileOptions {
-//            sourceCompatibility = JavaVersion.VERSION_17
-//            targetCompatibility = JavaVersion.VERSION_17
-//        }
     }
     jvm()
 
@@ -29,6 +21,7 @@ kotlin {
             implementation(projects.core.navigation)
             implementation(projects.core.ui)
 
+            implementation(projects.features.featureGraph)
             implementation(projects.pages.pageHome)
             implementation(projects.pages.pageFile)
             implementation(projects.pages.pageCollection)

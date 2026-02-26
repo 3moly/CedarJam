@@ -1,8 +1,11 @@
 package com.moly3.cedarjam.features.feature_graph
 
 import androidx.compose.ui.geometry.Offset
+import com.moly3.cedarjam.core.domain.model.AnnotationDTO
 import com.moly3.cedarjam.core.domain.model.ObsidianGraphNode
 import com.moly3.cedarjam.core.domain.model.OffsetData
+import com.moly3.cedarjam.core.domain.model.TagDTO
+import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.domain.model.mapToOffset
 import com.moly3.cedarjam.core.domain.model.mapToOffsetData
 import com.moly3.cedarjam.features.feature_graph.model.GraphPage
@@ -16,7 +19,10 @@ import kotlinx.serialization.Serializable
 
 data class State(
     val isShowContent: Boolean = true,
+    val graphTargetId: String? = null,
     val currentPage: GraphPage = GraphPage.General,
+    val tagsState: UIState<ImmutableList<TagDTO>, Unit> = UIState.Loading,
+    val annotationsState: UIState<ImmutableList<AnnotationDTO>, Unit> = UIState.Loading,
     val graphNodes: ImmutableList<ObsidianGraphNode> = persistentListOf(),
     val connections: ImmutableMap<String, ImmutableList<String>> = persistentMapOf(),
     val coordinates: ImmutableMap<String, Offset> = persistentMapOf(),
@@ -45,7 +51,7 @@ data class State(
                 coordinates = coordinates
                     .mapValues { it.value.mapToOffset() }
                     .toPersistentMap(),
-                currentPage = currentPage
+                currentPage = currentPage,
             )
         }
 

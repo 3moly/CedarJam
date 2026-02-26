@@ -6,7 +6,6 @@ import kotlinx.coroutines.flow.StateFlow
 @Stable
 interface IDialogGraphComponent {
 
-    val targetId: String?
     val state: StateFlow<State>
     fun onIntent(intent: Intent)
 

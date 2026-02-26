@@ -19,7 +19,7 @@ actual fun createSqlDriver(
     dbPath: String,
     schema: SqlSchema<QueryResult.Value<Unit>>
 ): ResultWrapper<SqlDriver, DatabaseError> {
-    return resultBlock {
+    return resultBlock<SqlDriver, DatabaseError>(onError = { DatabaseError.Error(it.toString()) }) {
         ensureNotNull(dbPath) { DatabaseError.WrongFile("db path is null") }
         val path = Path(dbPath)
         val parentPath = path.parent
@@ -34,7 +34,11 @@ actual fun createSqlDriver(
             schema,
             path.name,
             onConfiguration = {
-                it.copy(extendedConfig = extendedConfig, journalMode = JournalMode.DELETE, inMemory = false)
+                it.copy(
+                    extendedConfig = extendedConfig,
+                    journalMode = JournalMode.DELETE,
+                    inMemory = false
+                )
             }
         )
     }

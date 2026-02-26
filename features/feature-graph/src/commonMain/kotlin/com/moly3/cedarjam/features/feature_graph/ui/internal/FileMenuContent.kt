@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -34,12 +33,14 @@ import com.moly3.cedarjam.core.ui.func.isCompactUI
 import com.moly3.cedarjam.core.ui.func.navigationBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.func.statusBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.func.windowToolbarPaddingCJ
+import com.moly3.cedarjam.features.feature_graph.model.GraphTabState
 import vectors.BarLeft
 import vectors.DummySquareSmall
 
 @Composable
 fun FileMenuContent(
     modifier: Modifier,
+    state: GraphTabState,
     borderModifier: Modifier = Modifier,
     isOpenedMenu: Boolean,
     openWorkspaceSettings: () -> Unit = {},
@@ -68,30 +69,46 @@ fun FileMenuContent(
                     .padding(top = padding.dp)
                     .padding(horizontal = padding.dp)
                     .then(borderModifier)
-//                    .border(
-//                        1.dp,
-//                        LocalAppTheme.current.colors.backgroundPrimary,
-//                        shape = RoundedCornerShape(16.dp)
-//                    )
                     .clip(RoundedCornerShape(16.dp))
                     .fillMaxSize()
                     .background(LocalAppTheme.current.colors.backgroundSecondary.copy(alpha = 0.3f))
                     .padding(padding.dp)
             ) {
-                Column(modifier=Modifier.weight(1f)) {
+                Column(modifier = Modifier.weight(1f)) {
                     content()
                 }
                 Column(
                     modifier = Modifier.height(LocalUIConfig.current.fabCircleSize)
                 ) {
-                    if (isCompactUI()) {
-                        NeumorphicShape(
-                            modifier = Modifier.size(LocalUIConfig.current.fabCircleSize),
-                            isPressed = false,
-                            buttonShape = RoundedCornerShape(100.dp),
-                            painter = rememberVectorPainter(BarLeft),
-                            onClick = openWorkspaceSettings
-                        )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (isCompactUI()) {
+                            NeumorphicShape(
+                                modifier = Modifier.size(LocalUIConfig.current.fabCircleSize),
+                                isPressed = false,
+                                buttonShape = RoundedCornerShape(100.dp),
+                                painter = rememberVectorPainter(BarLeft),
+                                onClick = openWorkspaceSettings
+                            )
+                        }
+                        Box(Modifier.weight(1f))
+                        CJButtSnap(
+                            modifier = Modifier,
+                            painter = rememberVectorPainter(vectors.ArrowLeft),
+                            isSelected = !state.canGoBack,
+                            buttType = ButtSnapType.Start
+                        ) {
+                            state.goBack()
+                        }
+                        CJButtSnap(
+                            modifier = Modifier,
+                            painter = rememberVectorPainter(vectors.ArrowRight),
+                            isSelected = !state.canGoForward,
+                            buttType = ButtSnapType.End
+                        ) {
+                            state.goForward()
+                        }
+                        Box(Modifier.weight(1f))
+                        Box(Modifier.size(LocalUIConfig.current.fabCircleSize))
                     }
                 }
             }
@@ -123,7 +140,7 @@ fun FileMenuContent(
 }
 
 
-@Preview
+@Preview(widthDp = 275)
 @Composable
 fun FidgetPoppinPreviewLight() {
     CJApplicationTheme(
@@ -135,6 +152,7 @@ fun FidgetPoppinPreviewLight() {
             contentAlignment = Alignment.Center
         ) {
             FileMenuContent(
+                state = GraphTabState(false,true,{},{}),
                 modifier = Modifier.fillMaxSize(),
                 isOpenedMenu = isPressed,
                 onClick = {
@@ -159,6 +177,7 @@ fun FidgetPoppinPreview2() {
             var isPressed by remember { mutableStateOf(false) }
             FileMenuContent(
                 modifier = Modifier.fillMaxSize(),
+                state = GraphTabState(false,true,{},{}),
                 isOpenedMenu = isPressed,
                 onClick = {
                     isPressed = !isPressed

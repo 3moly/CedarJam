@@ -43,7 +43,6 @@ internal class TagStoreFactory(
     private val storeFactory: StoreFactory,
     private val lifecycle: Lifecycle,
     private val pageData: TagPageInput,
-    private val setIsShowGraph: (Boolean) -> Unit,
     private val openWorkspaceSettings: (Boolean) -> Unit
 ) : KoinComponent {
 
@@ -87,15 +86,6 @@ internal class TagStoreFactory(
         override fun onStart(scopeFromStartToStop: CoroutineScope) {
             super.onStart(scopeFromStartToStop)
 
-            val graphNodeTagId = pageData.id.getTagGraphId()
-
-            scopeFromStartToStop.launch {
-                workspaceSession
-                    .getConnectionPresentations(graphNodeTagId)
-                    .collectLatest {
-                        dispatch(TagStore.Msg.SetConnections(it.toPersistentList()))
-                    }
-            }
             scopeFromStartToStop.launch {
                 workspaceSession.tagsFlow.collect {
                     val tag = it.firstOrNull { d -> d.id == pageData.id }
@@ -123,10 +113,6 @@ internal class TagStoreFactory(
                             )
                         }
                     }
-                }
-
-                is Intent.SetIsShowGraph -> {
-                    setIsShowGraph(intent.value)
                 }
 
                 is Intent.OpenWorkspaceSettings -> {

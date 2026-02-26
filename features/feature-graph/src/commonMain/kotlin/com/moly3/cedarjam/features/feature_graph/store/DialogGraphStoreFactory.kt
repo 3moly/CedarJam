@@ -17,11 +17,15 @@ import com.moly3.cedarjam.navigation.BaseExecutor
 import com.moly3.cedarjam.navigation.consumeOrDefault
 import com.moly3.cedarjam.core.domain.io
 import com.moly3.cedarjam.core.domain.model.bind
-import com.moly3.cedarjam.core.domain.model.node.ObsidianGraphData
+import com.moly3.cedarjam.core.domain.model.getCollectionRowGraphId
+import com.moly3.cedarjam.core.domain.model.getFileTreeNodeGraphId
+import com.moly3.cedarjam.core.domain.model.getTagGraphId
 import com.moly3.cedarjam.core.domain.model.placeNodesCircular
 import com.moly3.cedarjam.core.domain.model.resultBlock
+import com.moly3.cedarjam.core.domain.service.FileManagerService
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
 import com.moly3.cedarjam.core.domain.usecase.IOpenNodeDataUseCase
+import com.moly3.cedarjam.features.feature_graph.model.GraphDialogInput
 import com.moly3.cedarjam.navigation.Navigator
 import com.moly3.cedarjam.navigation.mapper.toRoute
 import kotlinx.collections.immutable.toImmutableList
@@ -43,7 +47,7 @@ internal class DialogGraphStoreFactory(
     private val workspaceSession: WorkspaceSession,
     private val storeFactory: StoreFactory,
     private val lifecycle: Lifecycle,
-    private val startTargetId: String?,
+    private val targetInput: GraphDialogInput,
     private val openWorkspaceSettings: (Boolean) -> Unit
 ) : KoinComponent {
 
@@ -76,10 +80,55 @@ internal class DialogGraphStoreFactory(
     private inner class ExecutorImpl :
         BaseExecutor<Intent, Unit, State, Msg, Unit>(lifecycle) {
 
+        private val targetIdFlow = workspaceSession.fileManagerService.fileNodeState.map {
+            when (targetInput) {
+                is GraphDialogInput.File -> {
+                    val foundFile = it.states[targetInput.timestamp]
+                    if (foundFile != null) {
+                        foundFile.fileNodeRelativePath.getFileTreeNodeGraphId()
+                    } else {
+                        null
+                    }
+                }
+
+                is GraphDialogInput.Row -> targetInput.id.getCollectionRowGraphId()
+                is GraphDialogInput.Tag -> targetInput.id.getTagGraphId()
+            }
+        }
+
+        fun findAllConnected(
+            startId: String,
+            connections: Map<String, List<String>>
+        ): Set<String> {
+            val visited = mutableSetOf<String>()
+            val queue = ArrayDeque<String>()
+
+            queue.add(startId)
+            visited.add(startId)
+
+            while (queue.isNotEmpty()) {
+                val current = queue.removeFirst()
+                val neighbours = connections[current].orEmpty()
+
+                for (neighbour in neighbours) {
+                    if (visited.add(neighbour)) {
+                        queue.add(neighbour)
+                    }
+                }
+            }
+
+            return visited
+        }
+
         @OptIn(ExperimentalCoroutinesApi::class)
         override fun onStart(scopeFromStartToStop: CoroutineScope) {
             super.onStart(scopeFromStartToStop)
 
+            scopeFromStartToStop.launch {
+                targetIdFlow.collectLatest {
+                    dispatch(Msg.SetGraphTargetId(it))
+                }
+            }
             scopeFromStartToStop.launch {
                 workspaceSession.graphEco.connectionsFlow
                     .map {
@@ -96,11 +145,15 @@ internal class DialogGraphStoreFactory(
             scopeFromStartToStop.launch {
                 combine(
                     workspaceSession.graphEco.nodes,
-                    workspaceSession.graphEco.connectionsFlow
-                ) { nodes, connections ->
-                    val filteredNodes = if (startTargetId != null) {
-                        val masterConnections = connections[startTargetId] ?: listOf()
-                        nodes.filter { it.id == startTargetId || masterConnections.contains(it.id) }
+                    workspaceSession.graphEco.connectionsFlow,
+                    targetIdFlow
+                ) { nodes, connections, targetId ->
+                    val filteredNodes = if (targetId != null) {
+//                        val masterConnections = connections[targetId] ?: listOf()
+//                        nodes.filter { it.id == targetId || masterConnections.contains(it.id) }
+//                        findAllConnected(startId = targetId,connections=connections)
+                        val connectedIds = findAllConnected(targetId, connections)
+                        nodes.filter { it.id in connectedIds }
                     } else
                         nodes
                     var coordinates: Map<String, Offset>? = null
@@ -165,13 +218,14 @@ internal class DialogGraphStoreFactory(
     private object ReducerImpl : Reducer<State, Msg> {
         override fun State.reduce(msg: Msg): State {
             return when (msg) {
-                is Msg.SetConnections -> copy(connections = msg.value)
-                is Msg.SetCoordinates -> copy(coordinates = msg.value)
-                is Msg.SetNodes -> copy(graphNodes = msg.value)
-                is Msg.SetVelocities -> copy(velocities = msg.value)
-                is Msg.SetZoom -> copy(zoom = msg.value)
-                is Msg.SetIsShowContent -> copy(isShowContent = msg.value)
-                is Msg.SetCurrentPage -> copy(currentPage = msg.value)
+                is SetConnections -> copy(connections = msg.value)
+                is SetCoordinates -> copy(coordinates = msg.value)
+                is SetNodes -> copy(graphNodes = msg.value)
+                is SetVelocities -> copy(velocities = msg.value)
+                is SetZoom -> copy(zoom = msg.value)
+                is SetIsShowContent -> copy(isShowContent = msg.value)
+                is SetCurrentPage -> copy(currentPage = msg.value)
+                is SetGraphTargetId -> copy(graphTargetId = msg.value)
             }
         }
     }

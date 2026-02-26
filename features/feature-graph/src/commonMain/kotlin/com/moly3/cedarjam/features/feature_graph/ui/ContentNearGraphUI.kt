@@ -10,7 +10,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -19,22 +18,18 @@ import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import com.arkivanov.decompose.router.slot.ChildSlot
 import com.arkivanov.decompose.value.Value
-import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalHazeState
-import com.moly3.cedarjam.core.ui.compositions.LocalHazeStyle
 import com.moly3.cedarjam.core.ui.func.navigationBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.uikit.NeumorphicShape
 import com.moly3.cedarjam.features.feature_graph.IDialogGraphComponent
-import dev.chrisbanes.haze.HazeDefaults
-import dev.chrisbanes.haze.HazeStyle
-import dev.chrisbanes.haze.HazeTint
+import com.moly3.cedarjam.features.feature_graph.model.GraphTabState
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
 
 @Composable
 fun ContentNearGraphUI(
+    state: GraphTabState,
     mainContent: @Composable BoxScope.() -> Unit,
-    connectionsCount: Int,
     dialogSlot: Value<ChildSlot<*, IDialogGraphComponent>>,
     setIsShowGraph: (Boolean) -> Unit,
     optionsAlignment: Alignment = Alignment.BottomEnd
@@ -44,10 +39,11 @@ fun ContentNearGraphUI(
         Box(Modifier.fillMaxSize().hazeSource(hazeState)) {
             mainContent()
         }
-        CompositionLocalProvider(LocalHazeState provides hazeState){
+        CompositionLocalProvider(LocalHazeState provides hazeState) {
             val dialogSlot by dialogSlot.subscribeAsState()
             dialogSlot.child?.instance?.also {
                 DialogGraphUI(
+                    graphTabState = state,
                     modifier = Modifier.background(Color.Black.copy(alpha = 0.4f)),
                     component = it
                 )

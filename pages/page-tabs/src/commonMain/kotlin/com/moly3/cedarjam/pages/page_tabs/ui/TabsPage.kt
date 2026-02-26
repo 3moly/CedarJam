@@ -120,7 +120,7 @@ fun TabsPageContent(
             animation = stackAnimation()
         ) {
             when (val instance = it.instance) {
-                is TabsComponent.Child.Tab -> TabPage(component = instance.component)
+                is TabsComponent.Child.Tab -> TabPage(tabComponent = instance.component)
             }
         }
         if (!isLastTab) {

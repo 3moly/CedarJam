@@ -55,7 +55,6 @@ internal class CollectionRowStoreFactory(
     private val storeFactory: StoreFactory,
     private val lifecycle: Lifecycle,
     private val pageInput: CollectionRowPageInput,
-    private val setIsShowGraph: (Boolean) -> Unit,
     private val openWorkspaceSettings: (Boolean) -> Unit
 ) : KoinComponent {
     private val fileManagerService: FileManagerService by lazy {
@@ -101,15 +100,6 @@ internal class CollectionRowStoreFactory(
         override fun onStart(scopeFromStartToStop: CoroutineScope) {
             super.onStart(scopeFromStartToStop)
 
-            val graphNodeTagId = pageInput.rowId.getCollectionRowGraphId()
-
-            scopeFromStartToStop.launch {
-                workspaceSession
-                    .getConnectionPresentations(graphNodeTagId)
-                    .collectLatest {
-                        dispatch(CollectionRowStore.Msg.SetConnectionsCount(it.size))
-                    }
-            }
             scopeFromStartToStop.launch {
                 workspaceSession.workspaceEnvStateFlow
                     .collectLatest {
@@ -136,9 +126,6 @@ internal class CollectionRowStoreFactory(
 
         override fun executeIntent(intent: Intent) {
             when (intent) {
-                is Intent.SetIsShowGraph -> {
-                    setIsShowGraph(intent.value)
-                }
 
                 Intent.ImportPdf -> {
                     scope.launch {

@@ -9,9 +9,8 @@ import com.moly3.cedarjam.features.feature_graph.func.setIsShowGraphDialog
 import com.moly3.cedarjam.core.domain.model.navigation.input.TagPageInput
 import com.moly3.cedarjam.ui.pages.tag.store.TagStoreFactory
 import com.moly3.cedarjam.core.ui.model.PageNameData
-import com.moly3.cedarjam.core.domain.model.getTagGraphId
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
-import com.moly3.cedarjam.features.feature_graph.model.GraphDialog
+import com.moly3.cedarjam.features.feature_graph.model.GraphDialogInput
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.StateFlow
 
@@ -35,7 +34,7 @@ class TagComponentImpl(
 
     init {
         if (data.isOpenGraphDialog && !graphDialogScope.isGraphDialogInited()) {
-            graphDialogScope.setIsShowGraphDialog(target = GraphDialog.Tag(data.id), isShow = true)
+            graphDialogScope.setIsShowGraphDialog(target = GraphDialogInput.Tag(data.id), isShow = true)
         }
     }
 
@@ -45,12 +44,6 @@ class TagComponentImpl(
             storeFactory = storeFactory,
             lifecycle = lifecycle,
             pageData = data,
-            setIsShowGraph = {
-                graphDialogScope.setIsShowGraphDialog(
-                    target = GraphDialog.Tag(data.id),
-                    isShow = it
-                )
-            },
             openWorkspaceSettings = openWorkspaceSettings
         ).create()
     }
@@ -59,5 +52,12 @@ class TagComponentImpl(
     override val state: StateFlow<State> = store.stateFlow
     override fun onIntent(intent: Intent) {
         store.accept(intent)
+    }
+
+    override fun setIsShowGraph(isShowMenu: Boolean) {
+        graphDialogScope.setIsShowGraphDialog(
+            target = GraphDialogInput.Tag(data.id),
+            isShow = isShowMenu
+        )
     }
 }

@@ -7,7 +7,6 @@ import com.moly3.cedarjam.core.domain.model.TagLinkDTO
 import com.moly3.cedarjam.core.domain.model.request.CreateAnnotationRequest
 
 sealed interface Intent {
-    data class SetIsShowGraph(val value: Boolean) : Intent
     data class PageBack(val file: FileType.PDF) : Intent
     data class PageNext(val file: FileType.PDF) : Intent
     data class ToPage(val file: FileType.PDF, val page: Int) : Intent

@@ -22,6 +22,9 @@ import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.func.getPageTypeIcon
 import com.moly3.cedarjam.core.ui.func.isCompactUI
 import com.moly3.cedarjam.core.ui.model.CJText
+import com.moly3.cedarjam.features.feature_graph.IDialogGraphContainer
+import com.moly3.cedarjam.features.feature_graph.model.GraphTabState
+import com.moly3.cedarjam.features.feature_graph.ui.ContentNearGraphUI
 import com.moly3.cedarjam.pages.page_collection.ui.CollectionPage
 import com.moly3.cedarjam.pages.page_collection_row.ui.CollectionRowPage
 import com.moly3.cedarjam.pages.page_file.ui.FilePage
@@ -40,9 +43,9 @@ import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalDecomposeApi::class, ExperimentalTime::class)
 @Composable
-fun TabPage(component: TabComponent) {
-    val tabNameState by component.nameFlow.collectAsState(null)
-    val state by component.state.collectAsState()
+fun TabPage(tabComponent: TabComponent) {
+    val tabNameState by tabComponent.nameFlow.collectAsState(null)
+    val state by tabComponent.state.collectAsState()
 
     //TODO: Cannot use rememberTextFieldState() in wasmJs because it relies on rememberSaveable,
     // which is not supported during state restoration. Using a plain TextFieldState instead.
@@ -67,7 +70,7 @@ fun TabPage(component: TabComponent) {
         textNameState.setTextAndPlaceCursorAtEnd(rawText)
     }
     LaunchedEffect(Unit) {
-        component.labels.collectLatest { label ->
+        tabComponent.labels.collectLatest { label ->
             when (label) {
                 is Label.ReturnOriginalName -> {
                     println("ReturnOriginalName ${label.oldName}")
@@ -84,7 +87,7 @@ fun TabPage(component: TabComponent) {
                 is CJText.Raw -> name.text
                 is CJText.Res -> "-- will not change"
             }
-            component.onIntent(
+            tabComponent.onIntent(
                 Intent.Rename(
                     oldName = oldName,
                     newName = newName,
@@ -110,28 +113,60 @@ fun TabPage(component: TabComponent) {
                     onRename()
                 },
                 onBack = {
-                    component.onIntent(Intent.Back)
+                    tabComponent.onIntent(Intent.Back)
                 },
                 onForward = {
-                    component.onIntent(Intent.Forward)
+                    tabComponent.onIntent(Intent.Forward)
                 }
             )
         }
         Box(Modifier.fillMaxWidth().weight(1f)) {
-            val stack by component.children.subscribeAsState()
+            val stack by tabComponent.children.subscribeAsState()
             ChildStack(
                 stack = stack,
                 modifier = Modifier.fillMaxSize(),
                 animation = stackAnimation()
             ) {
-                when (val instance = it.instance) {
-                    is TabComponent.Child.Home -> HomePage(component = instance.component)
-                    is TabComponent.Child.Graph -> GraphPage(component = instance.component)
-                    is TabComponent.Child.File -> FilePage(component = instance.component)
-                    is TabComponent.Child.CollectionRow -> CollectionRowPage(component = instance.component)
-                    is TabComponent.Child.Collection -> CollectionPage(component = instance.component)
-                    is TabComponent.Child.Tags -> TagsPage(component = instance.component)
-                    is TabComponent.Child.Tag -> TagPage(component = instance.component)
+                val component = it.instance.component
+                if (component is IDialogGraphContainer) {
+                    val graphTabState = remember(state.canGoBack,state.canGoBack){
+                        GraphTabState(
+                            canGoBack = state.canGoBack,
+                            canGoForward = state.canGoForward,
+                            goBack = {
+                                tabComponent.onIntent(Intent.Back)
+                            },
+                            goForward = {
+                                tabComponent.onIntent(Intent.Forward)
+                            }
+                        )
+                    }
+                    ContentNearGraphUI(
+                        state = graphTabState,
+                        mainContent = {
+                            when (val instance = it.instance) {
+                                is TabComponent.Child.Home -> HomePage(component = instance.component)
+                                is TabComponent.Child.Graph -> GraphPage(component = instance.component)
+                                is TabComponent.Child.File -> FilePage(component = instance.component)
+                                is TabComponent.Child.CollectionRow -> CollectionRowPage(component = instance.component)
+                                is TabComponent.Child.Collection -> CollectionPage(component = instance.component)
+                                is TabComponent.Child.Tags -> TagsPage(component = instance.component)
+                                is TabComponent.Child.Tag -> TagPage(component = instance.component)
+                            }
+                        },
+                        dialogSlot = component.dialogSlot,
+                        setIsShowGraph = { component.setIsShowGraph(it) }
+                    )
+                } else {
+                    when (val instance = it.instance) {
+                        is TabComponent.Child.Home -> HomePage(component = instance.component)
+                        is TabComponent.Child.Graph -> GraphPage(component = instance.component)
+                        is TabComponent.Child.File -> FilePage(component = instance.component)
+                        is TabComponent.Child.CollectionRow -> CollectionRowPage(component = instance.component)
+                        is TabComponent.Child.Collection -> CollectionPage(component = instance.component)
+                        is TabComponent.Child.Tags -> TagsPage(component = instance.component)
+                        is TabComponent.Child.Tag -> TagPage(component = instance.component)
+                    }
                 }
             }
         }

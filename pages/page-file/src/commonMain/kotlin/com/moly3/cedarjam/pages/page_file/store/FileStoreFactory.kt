@@ -55,7 +55,6 @@ internal class FileStoreFactory(
     private val data: FilePageInput,
     private val openMenu: (Boolean) -> Unit,
     private val workspaceSession: WorkspaceSession,
-    private val setIsShowGraph: (Long, Boolean) -> Unit,
     private val showCanvasDialog: (FileTreeNode.File) -> Unit
 ) : KoinComponent {
 
@@ -117,19 +116,6 @@ internal class FileStoreFactory(
         override fun onStart(scopeFromStartToStop: CoroutineScope) {
             super.onStart(scopeFromStartToStop)
 
-            scopeFromStartToStop.launch {
-                foundNodeFlow.collectLatest {
-                    val fileNodeId = it?.getGraphId()
-                    if (fileNodeId != null) {
-                        workspaceSession
-                            .getConnectionPresentations(fileNodeId)
-                            .collectLatest {
-                                dispatch(FileStore.Msg.SetConnectionsCount(it.size))
-                            }
-                    }
-
-                }
-            }
             val workspaceEnv = workspaceSession.workspaceEnvStateFlow.value
             scopeFromStartToStop.launch {
                 combine(
@@ -223,9 +209,6 @@ internal class FileStoreFactory(
 
         override fun executeIntent(intent: Intent) {
             when (intent) {
-                is Intent.SetIsShowGraph -> {
-                    setIsShowGraph(data.timestamp, intent.value)
-                }
 
                 is Intent.ChangeTextNode -> {
                     scope.launch {

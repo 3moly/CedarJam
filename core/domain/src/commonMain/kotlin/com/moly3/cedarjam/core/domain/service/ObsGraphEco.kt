@@ -408,13 +408,9 @@ class ObsGraphEco(
             }
         }
         for(item in annotations){
-            val fullPath = pathWrapper(
-                workspace.fullpath,
-                item.dataPath
-            ).toString()
             setConnects(
                 item.getGraphId(),
-                listOf(fullPath.getFileTreeNodeGraphId())
+                listOf(item.dataPath.getFileTreeNodeGraphId())
             )
         }
         for (item in rows) {
@@ -423,14 +419,9 @@ class ObsGraphEco(
                 listOf(item.collectionId.getCollectionGraphId())
             )
             if (!item.fileRelativePath.isNullOrEmpty()) {
-                val fullPath = pathWrapper(
-                    workspace.fullpath,
-                    item.fileRelativePath
-
-                ).toString()
                 setConnects(
                     item.getGraphId(),
-                    listOf(fullPath.getFileTreeNodeGraphId())
+                    listOf(item.fileRelativePath.getFileTreeNodeGraphId())
                 )
             }
         }
@@ -445,14 +436,9 @@ class ObsGraphEco(
 
             when (val data = tagLink.data) {
                 is TagLinkDtoData.FileNode -> {
-                    val fullPath = pathWrapper(
-                        workspace.fullpath,
-                        data.relativePath
-                    ).toString()
-
                     setConnects(
                         tagGraphId,
-                        listOf(fullPath.getFileTreeNodeGraphId())
+                        listOf(  data.relativePath.getFileTreeNodeGraphId())
                     )
                 }
             }

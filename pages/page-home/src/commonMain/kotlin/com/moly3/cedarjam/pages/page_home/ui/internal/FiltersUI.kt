@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
-import com.moly3.cedarjam.core.domain.model.CollectionViewType
 import com.moly3.cedarjam.core.ui.uikit.ButtSnapType
 import com.moly3.cedarjam.core.ui.uikit.CJButtSnap
 import vectors.Data
@@ -21,7 +20,7 @@ internal fun FiltersUI(
         CJButtSnap(
             painter = rememberVectorPainter(Data),
             isSelected = value == TimeMachineFilterType.All,
-            buttType = ButtSnapType.Left
+            buttType = ButtSnapType.Start
         ) {
             onSelect(TimeMachineFilterType.All)
         }

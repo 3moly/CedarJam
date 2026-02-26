@@ -9,7 +9,7 @@ import com.moly3.cedarjam.core.domain.model.navigation.input.CollectionRowPageIn
 import com.moly3.cedarjam.pages.page_collection_row.store.CollectionRowStoreFactory
 import com.moly3.cedarjam.core.ui.model.PageNameData
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
-import com.moly3.cedarjam.features.feature_graph.model.GraphDialog
+import com.moly3.cedarjam.features.feature_graph.model.GraphDialogInput
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.StateFlow
 
@@ -30,12 +30,6 @@ class CollectionRowComponentImpl(
             pageInput = data,
             workspaceSession = workspaceSession,
             openWorkspaceSettings = openWorkspaceSettings,
-            setIsShowGraph = {
-                graphDialogScope.setIsShowGraphDialog(
-                    target = GraphDialog.Row(data.rowId),
-                    isShow = it
-                )
-            }
         ).create()
     }
 
@@ -53,4 +47,11 @@ class CollectionRowComponentImpl(
         )
     }
     override val dialogSlot = graphDialogScope.slot
+
+    override fun setIsShowGraph(isShowMenu: Boolean) {
+        graphDialogScope.setIsShowGraphDialog(
+            target = GraphDialogInput.Row(data.rowId),
+            isShow = isShowMenu
+        )
+    }
 }

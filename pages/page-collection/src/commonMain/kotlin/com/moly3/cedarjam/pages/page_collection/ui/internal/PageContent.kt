@@ -177,7 +177,7 @@ internal fun PageContent(
                         CJButtSnap(
                             painter = rememberVectorPainter(Data),
                             isSelected = state.collection.viewType == CollectionViewType.DataGrid,
-                            buttType = ButtSnapType.Left
+                            buttType = ButtSnapType.Start
                         ) {
                             onIntent(Intent.ChangeViewType(CollectionViewType.DataGrid))
                         }
@@ -205,7 +205,7 @@ internal fun PageContent(
                         CJButtSnap(
                             painter = rememberVectorPainter(Data),
                             isSelected = state.collection.viewType == CollectionViewType.Japan,
-                            buttType = ButtSnapType.Right
+                            buttType = ButtSnapType.End
                         ) {
                             onIntent(Intent.ChangeViewType(CollectionViewType.Japan))
                         }

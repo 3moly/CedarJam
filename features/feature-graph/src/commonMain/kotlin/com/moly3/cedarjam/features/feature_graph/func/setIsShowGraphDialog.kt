@@ -4,10 +4,10 @@ import com.arkivanov.decompose.router.slot.activate
 import com.moly3.cedarjam.features.feature_graph.Intent
 import com.moly3.cedarjam.features.feature_graph.model.DialogConfig
 import com.moly3.cedarjam.features.feature_graph.model.DialogScope
-import com.moly3.cedarjam.features.feature_graph.model.GraphDialog
+import com.moly3.cedarjam.features.feature_graph.model.GraphDialogInput
 
 fun DialogScope.setIsShowGraphDialog(
-    target: GraphDialog?,
+    target: GraphDialogInput,
     isShow: Boolean
 ) {
     navigation.activate(DialogConfig(target = target))

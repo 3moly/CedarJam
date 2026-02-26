@@ -1,30 +1,24 @@
 package com.moly3.cedarjam.features.feature_graph.model
 
-import com.moly3.cedarjam.core.domain.model.getCollectionRowGraphId
-import com.moly3.cedarjam.core.domain.model.getTagGraphId
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class DialogConfig(
-    val target: GraphDialog?
+    val target: GraphDialogInput
 )
 
 @Serializable
-sealed class GraphDialog {
+sealed class GraphDialogInput {
     @Serializable
-    data class Tag(val id: Long) : GraphDialog()
+    @SerialName("tag")
+    data class Tag(val id: Long) : GraphDialogInput()
 
     @Serializable
-    data class Row(val id: Long) : GraphDialog()
+    @SerialName("row")
+    data class Row(val id: Long) : GraphDialogInput()
 
     @Serializable
-    data class File(val timestamp: Long) : GraphDialog()
-}
-
-fun GraphDialog.toGraphId(): String {
-    return when (this) {
-        is GraphDialog.Tag -> this.id.getTagGraphId()
-        is GraphDialog.Row -> this.id.getCollectionRowGraphId()
-        is GraphDialog.File -> "TODO" //TODO
-    }
+    @SerialName("file")
+    data class File(val timestamp: Long) : GraphDialogInput()
 }

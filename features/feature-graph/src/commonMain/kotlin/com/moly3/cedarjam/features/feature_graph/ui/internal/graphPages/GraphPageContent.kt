@@ -28,8 +28,7 @@ import com.moly3.dataviz.core.graph.model.GraphViewSettings
 import com.moly3.dataviz.graph.ui.Graph
 
 @Composable
-internal fun GraphPage(
-    targetId: String?,
+internal fun GraphPageContent(
     state: State,
     onIntent: (Intent) -> Unit
 ) {
@@ -51,7 +50,7 @@ internal fun GraphPage(
             onZoomChange = {
                 onIntent(Intent.SetZoom(it.coerceIn(0.5f, 3f)))
             },
-            watchNodeId = targetId,
+            watchNodeId = state.graphTargetId,
             userPosition = centerGlobalPosition.value,
             onCentralGlobalPosition = {
                 centerGlobalPosition.value = -it

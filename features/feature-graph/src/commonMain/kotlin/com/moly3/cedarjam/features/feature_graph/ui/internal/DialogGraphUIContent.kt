@@ -10,52 +10,38 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.unit.dp
-import com.moly3.cedarjam.core.domain.io
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalHazeState
-import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
 import com.moly3.cedarjam.core.ui.uikit.ButtSnapType
 import com.moly3.cedarjam.core.ui.uikit.CJButtSnap
-import com.moly3.cedarjam.core.ui.uikit.CJSlider
 import com.moly3.cedarjam.core.ui.uikit.CJText
 import com.moly3.cedarjam.core.ui.uikit.FileMenuContent
 import com.moly3.cedarjam.core.ui.uikit.NeumorphicShape
 import com.moly3.cedarjam.features.feature_graph.Intent
 import com.moly3.cedarjam.features.feature_graph.State
 import com.moly3.cedarjam.features.feature_graph.model.GraphPage
-import com.moly3.cedarjam.features.feature_graph.ui.internal.graphPages.GraphPage
-import com.moly3.dataviz.core.graph.model.GraphViewSettings
-import com.moly3.dataviz.graph.ui.Graph
+import com.moly3.cedarjam.features.feature_graph.model.GraphTabState
+import com.moly3.cedarjam.features.feature_graph.ui.internal.graphPages.GraphPageContent
 import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.hazeEffect
-import dev.chrisbanes.haze.rememberHazeState
 import vectors.DummySquareSmall
 
 @Composable
 internal fun DialogGraphUIContent(
     modifier: Modifier,
-    targetId: String?,
+    graphTabState: GraphTabState,
     state: State,
     onIntent: (Intent) -> Unit
 ) {
-
     val backgroundSecondary = LocalAppTheme.current.colors.backgroundSecondary
     val hazeStyle = remember(backgroundSecondary) {
         HazeStyle(
@@ -66,6 +52,7 @@ internal fun DialogGraphUIContent(
         )
     }
     FileMenuContent(
+        state = graphTabState,
         modifier = Modifier
             .safeDrawingPadding()
             .fillMaxSize(),
@@ -73,10 +60,7 @@ internal fun DialogGraphUIContent(
             .clip(RoundedCornerShape(16.dp))
             .hazeEffect(LocalHazeState.current, hazeStyle),
         isOpenedMenu = state.isShowContent,
-        openWorkspaceSettings = {
-            onIntent(Intent.OpenWorkspaceSettings)
-            // onIntent(com.moly3.cedarjam.pages.page_collection.Intent.OpenWorkspaceSettings)
-        },
+        openWorkspaceSettings = { onIntent(Intent.OpenWorkspaceSettings) },
         onClick = {
             //isPressed = !isPressed
         },
@@ -114,8 +98,7 @@ internal fun DialogGraphUIContent(
 
                     GraphPage.Annotations -> {}
 
-                    GraphPage.Graph -> GraphPage(
-                        targetId = targetId,
+                    GraphPage.Graph -> GraphPageContent(
                         state = state,
                         onIntent = onIntent
                     )
@@ -126,7 +109,7 @@ internal fun DialogGraphUIContent(
             Row(modifier = Modifier.padding(vertical = 8.dp)) {
                 CJButtSnap(
                     painter = rememberVectorPainter(vectors.BarLeft),
-                    buttType = ButtSnapType.Left,
+                    buttType = ButtSnapType.Start,
                     isSelected = state.currentPage == GraphPage.General,
                 ) {
                     onIntent(Intent.SetCurrentPage(GraphPage.General))
@@ -141,7 +124,7 @@ internal fun DialogGraphUIContent(
                 }
                 CJButtSnap(
                     painter = rememberVectorPainter(vectors.NetworkNode),
-                    buttType = ButtSnapType.Right,
+                    buttType = ButtSnapType.End,
                     isSelected = state.currentPage == GraphPage.Graph,
                 ) {
                     onIntent(Intent.SetCurrentPage(GraphPage.Graph))

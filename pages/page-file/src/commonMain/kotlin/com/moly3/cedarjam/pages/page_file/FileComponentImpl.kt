@@ -16,7 +16,7 @@ import com.moly3.cedarjam.features.feature_canvas.func.canvasDialogScopeFactory
 import com.moly3.cedarjam.features.feature_canvas.func.setIsShowGraphDialog
 import com.moly3.cedarjam.features.feature_graph.func.graphDialogScopeFactory
 import com.moly3.cedarjam.features.feature_graph.func.setIsShowGraphDialog
-import com.moly3.cedarjam.features.feature_graph.model.GraphDialog
+import com.moly3.cedarjam.features.feature_graph.model.GraphDialogInput
 import com.moly3.cedarjam.pages.page_file.store.FileStoreFactory
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -45,7 +45,7 @@ class FileComponentImpl(
     private val canvasDialogScope by lazy {
         canvasDialogScopeFactory(workspaceSession, storeFactory)
     }
-    override val dialogGraphSlot = graphDialogScope.slot
+    override val dialogSlot = graphDialogScope.slot
     override val dialogCanvasSlot = canvasDialogScope.slot
 
     override val appEnvironment: IAppEnvironment by inject()
@@ -62,12 +62,6 @@ class FileComponentImpl(
             data = data,
             openMenu = openMenu,
             workspaceSession = workspaceSession,
-            setIsShowGraph = { timestamp, value ->
-                graphDialogScope.setIsShowGraphDialog(
-                    target = GraphDialog.File(timestamp),
-                    isShow = value
-                )
-            },
             showCanvasDialog = { file ->
                 canvasDialogScope.setIsShowGraphDialog(file, isShow = true)
             }
@@ -77,5 +71,12 @@ class FileComponentImpl(
     override val state: StateFlow<State> = store.stateFlow
     override fun onIntent(intent: Intent) {
         store.accept(intent)
+    }
+
+    override fun setIsShowGraph(isShowMenu: Boolean) {
+        graphDialogScope.setIsShowGraphDialog(
+            target = GraphDialogInput.File(data.timestamp),
+            isShow = isShowMenu
+        )
     }
 }

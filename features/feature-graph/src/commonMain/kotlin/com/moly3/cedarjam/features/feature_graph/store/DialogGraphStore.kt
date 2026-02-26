@@ -19,5 +19,6 @@ internal interface DialogGraphStore : Store<Intent, State, Unit> {
         data class SetZoom(val value: Float) : Msg
         data class SetIsShowContent(val value: Boolean) : Msg
         data class SetCurrentPage(val value: GraphPage) : Msg
+        data class SetGraphTargetId(val value: String?) : Msg
     }
 }

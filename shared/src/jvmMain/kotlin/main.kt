@@ -1,7 +1,5 @@
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.window.application
 import co.touchlab.kermit.Logger
@@ -15,22 +13,17 @@ import com.badoo.reaktive.coroutinesinterop.asScheduler
 import com.badoo.reaktive.scheduler.overrideSchedulers
 import com.moly3.cedarjam.core.domain.DefaultJson
 import com.moly3.cedarjam.core.domain.model.AndroidApplicationContext
-import com.moly3.cedarjam.core.ui.compositions.LocalIsRelease
 import com.moly3.cedarjam.di.initApp
-import com.moly3.cedarjam.logger.DecomposeLogger
-import com.moly3.cedarjam.logger.DecomposeLogger.walk
 import com.moly3.cedarjam.navigation.Root
 import com.moly3.cedarjam.navigation.createRootComponentSafe
 import dev.datlag.kcef.KCEF
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.filesDir
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.json.encodeToStream
 import java.io.File
-
 
 @OptIn(ExperimentalSerializationApi::class)
 fun SerializableContainer.writeToFile(file: File) {
@@ -62,7 +55,7 @@ fun main() {
 
     DecomposeSettings.update {
         DecomposeSettings.settings.copy(
-            duplicateConfigurationsEnabled = false,
+            duplicateConfigurationsEnabled = true,
             onDecomposeError = {
                 Logger.e { "Decompose error: ${it}" }
             })
@@ -93,13 +86,14 @@ fun main() {
                 saveState()
             },
             onErrorInit = {
-                //File(SAVED_STATE_FILE_NAME).delete()
+                saveFile.delete()
                 stateKeeper =
-                    StateKeeperDispatcher(File(SAVED_STATE_FILE_NAME).readSerializableContainer())
+                    StateKeeperDispatcher(saveFile.readSerializableContainer())
                 stateKeeper
             }
         )
     }
+
     Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
         val errorMessage = "💥 Uncaught exception in thread ${thread.name}: ${throwable.message}"
         root.messageService.sendMessage(throwable.toString())
@@ -115,8 +109,6 @@ fun main() {
 //            }
 //        }
         System.setProperty("apple.awt.application.name", "CedarJam")
-
-
 
         JewelDesktop(
             root = root,
