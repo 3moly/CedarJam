@@ -67,7 +67,6 @@ job("build linux arm64") {
                 docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 
                 echo "1. Creating ARM64 container..."
-                # Using --cidfile avoids bash syntax errors with multiline commands
                 docker create --cidfile container_id.txt \
                     --platform linux/arm64 \
                     -e SYNC_SERVER_URL \
@@ -77,10 +76,10 @@ job("build linux arm64") {
                     eclipse-temurin:21 \
                     bash -c "apt update && apt install -y dpkg-dev fakeroot rpm libfuse2 libglib2.0-0 && chmod +x gradlew && ./gradlew :shared:packageReleaseDistributionForCurrentOS"
 
-                # Read the ID from the file
-                CONTAINER_ID=${'$'}{'$'}(cat container_id.txt)
+                # Completely avoid parentheses using bash 'read'
+                read CONTAINER_ID < container_id.txt
 
-                echo "2. Copying source code to the container..."
+                echo "2. Copying source code to container: ${'$'}{'$'}CONTAINER_ID"
                 docker cp . "${'$'}{'$'}CONTAINER_ID":/workspace
 
                 echo "3. Running the build inside the container..."
