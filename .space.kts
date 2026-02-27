@@ -49,8 +49,8 @@ job("build linux arm64") {
             }
         }
     }
-
     container(image = "ubuntu:22.04") {
+        workingDir = "/mnt/space/work"
 
         env["SYNC_SERVER_URL"] = "{{ project:CEDAR_SYNC_SERVER_URL }}"
         env["SYNC_SERVER_TOKEN"] = "{{ project:CEDAR_SYNC_SERVER_TOKEN }}"
@@ -94,8 +94,5 @@ job("build linux arm64") {
             remotePath = "cedarjam/build.zip"
             onStatus = OnStatus.SUCCESS
         }
-//        artifacts {
-//            +"shared/build/compose/binaries/**/*"
-//        }
     }
 }
