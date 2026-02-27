@@ -59,11 +59,8 @@ job("build linux arm64") {
             interpreter = "/bin/bash"
             content = """
                 set -e
-                
-                apt-get update
-                apt-get install -y curl docker.io qemu-user-static binfmt-support
 
-                # Enable ARM64 emulation
+                # Enable ARM64 emulation natively on the runner
                 docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 
                 echo "1. Creating ARM64 container..."
@@ -76,7 +73,6 @@ job("build linux arm64") {
                     eclipse-temurin:21 \
                     bash -c "apt update && apt install -y dpkg-dev fakeroot rpm libfuse2 libglib2.0-0 && chmod +x gradlew && ./gradlew :shared:packageReleaseDistributionForCurrentOS"
 
-                # Completely avoid parentheses using bash 'read'
                 read CONTAINER_ID < container_id.txt
 
                 echo "2. Copying source code to container: ${'$'}{'$'}CONTAINER_ID"
