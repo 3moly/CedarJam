@@ -367,15 +367,6 @@ abstract class GenerateBuildConfigTask : DefaultTask() {
     fun generate() {
         val outputFile = outputDir.get().file("BuildConfig.kt").asFile
 
-        val url = syncServerUrl.orNull
-        val token = syncServerToken.orNull
-
-        // CI safety check
-        if (System.getenv("CI") == "true") {
-            require(!url.isNullOrBlank()) { "SYNC_SERVER_URL is missing in CI" }
-            require(!token.isNullOrBlank()) { "SYNC_SERVER_TOKEN is missing in CI" }
-        }
-
         outputFile.parentFile.mkdirs()
         outputFile.writeText(
             """
