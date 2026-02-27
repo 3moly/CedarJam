@@ -1,0 +1,44 @@
+name: Build Linux ARM64
+
+on:
+  push:
+    branches: [ linuxarm64 ]
+  pull_request:
+    branches: [ linuxarm64 ]
+  workflow_dispatch:
+
+jobs:
+  linux_arm64_build:
+    name: Build Linux ARM64 (Docker cross-build)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build ARM64 distribution
+        run: |
+          docker run --rm \
+            --platform linux/arm64 \
+            -v ${{ github.workspace }}:/workspace \
+            -w /workspace \
+            eclipse-temurin:21 \
+            bash -c "
+              apt update &&
+              apt install -y dpkg-dev fakeroot rpm libfuse2 libglib2.0-0 &&
+              chmod +x gradlew &&
+              ./gradlew :shared:packageReleaseDistributionForCurrentOS
+            "
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-linux-arm64
+          path: shared/build/compose/binaries/**/*
