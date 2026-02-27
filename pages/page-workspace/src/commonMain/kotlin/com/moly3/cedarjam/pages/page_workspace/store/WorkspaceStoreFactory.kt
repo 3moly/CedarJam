@@ -866,6 +866,7 @@ internal class WorkspaceStoreFactory(
                 is Intent.SelectActiveTabs -> dispatch(SetActiveTab(intent.index))
                 Intent.CreateWorkspace -> {
                     scope.launch {
+                        workspaceSession.workspaceEnvStateFlow.value.createDatabaseFiles()
                         workspaceSession.workspaceEnvStateFlow.value.createDatabase()
                     }
                 }

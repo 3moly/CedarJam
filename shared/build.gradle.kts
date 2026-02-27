@@ -299,12 +299,21 @@ compose {
                     TargetFormat.Exe,
                     TargetFormat.Deb
                 )
+
                 packageName = "CedarJam"
                 packageVersion = "1.0.0"
 
+                linux {
+                    packageName = "CedarJam"
+                    packageVersion = "1.0.0"
+                    iconFile.set(project.file("../docs/media/cone.png"))
+                }
                 macOS {
                     dockName = "CedarJam"
                     iconFile.set(project.file("../docs/media/AppIcon.icns"))
+                }
+                windows {
+                    //todo iconFile.set(project.file("../docs/media/AppIcon.ico"))
                 }
 
 //                appResourcesRootDir = layout.projectDirectory.dir("src/desktopMain/assets")
@@ -331,19 +340,24 @@ val myIsRelease = localProperties.getProperty("cedarjam.is_release") ?: ""
 
 
 // Use environment variables on CI, fallback to local.properties otherwise
-val syncServerUrlProvider = if (System.getenv("CI") == "true") {
+
+fun isCI(): Boolean {
+    return providers.environmentVariable("CI").isPresent
+}
+
+val syncServerUrlProvider = if (isCI()) {
     providers.environmentVariable("SYNC_SERVER_URL")
 } else {
     providers.provider { mySyncServerUrl }
 }
 
-val syncServerTokenProvider = if (System.getenv("CI") == "true") {
+val syncServerTokenProvider = if (isCI()) {
     providers.environmentVariable("SYNC_SERVER_TOKEN")
 } else {
     providers.provider { mySyncServerToken }
 }
 
-val isReleaseProvider = if (System.getenv("CI") == "true") {
+val isReleaseProvider = if (isCI()) {
     providers.environmentVariable("IS_RELEASE").map { it.toBoolean() }
 } else {
     providers.provider { myIsRelease.toBoolean() }
@@ -366,6 +380,12 @@ abstract class GenerateBuildConfigTask : DefaultTask() {
     @TaskAction
     fun generate() {
         val outputFile = outputDir.get().file("BuildConfig.kt").asFile
+
+        println("CI = ${System.getenv("CI")}")
+
+        println("SYNC_SERVER_URL = ${syncServerUrl.get()}")
+        println("SYNC_SERVER_TOKEN = ${syncServerToken.get()}")
+        println("IS_RELEASE = ${syncJustToken.get()}")
 
         outputFile.parentFile.mkdirs()
         outputFile.writeText(
