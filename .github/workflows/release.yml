@@ -13,6 +13,18 @@ jobs:
     runs-on: [self-hosted, linux]
 
     steps:
+      - name: Create BuildConfig manually
+        run: |
+          mkdir -p shared/build/generated/source/buildConfig/commonMain/kotlin
+          cat << 'EOF' > shared/build/generated/source/buildConfig/commonMain/kotlin/BuildConfig.kt
+          package com.moly3.core_domain
+
+          object BuildConfig {
+              const val SyncServerUrl = "https://example.com"
+              const val SyncServerToken = "TOKEN_VALUE"
+              const val IsRelease = true
+          }
+          EOF
       - name: Checkout repository
         uses: actions/checkout@v4
 
