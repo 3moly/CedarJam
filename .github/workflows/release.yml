@@ -1,4 +1,4 @@
-name: Build Desktop Distribution (Ubuntu Self-Hosted)
+name: Build Desktop Distribution (Ubuntu Self-Hosted 2)
 
 on:
   push:
