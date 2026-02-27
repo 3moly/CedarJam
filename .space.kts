@@ -48,11 +48,6 @@ job("build linux arm64") {
                 +"linuxarm64"
             }
         }
-        gitPullRequest {
-            anyBranchMatching {
-                +"linuxarm64"
-            }
-        }
     }
 
     container(image = "ubuntu:22.04") {
