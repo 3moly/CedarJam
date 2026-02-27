@@ -55,11 +55,11 @@ job("build linux arm64") {
         }
     }
 
-    container(displayName = "Linux ARM64 Cross Build", image = "ubuntu:22.04") {
+    container(image = "ubuntu:22.04") {
 
-        env["SYNC_SERVER_URL"] = "{{ project:SYNC_SERVER_URL }}"
-        env["SYNC_SERVER_TOKEN"] = "{{ project:SYNC_SERVER_TOKEN }}"
-        env["IS_RELEASE"] = "{{ project:IS_RELEASE }}"
+        env["SYNC_SERVER_URL"] = "{{ project:CEDAR_SYNC_SERVER_URL }}"
+        env["SYNC_SERVER_TOKEN"] = "{{ project:CEDAR_SYNC_SERVER_TOKEN }}"
+        env["IS_RELEASE"] = "{{ project:CEDAR_IS_RELEASE }}"
 
         shellScript {
             interpreter = "/bin/bash"
