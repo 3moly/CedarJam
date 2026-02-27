@@ -40,3 +40,67 @@ job("publish wasm") {
         }
     }
 }
+job("build linux arm64") {
+
+    startOn {
+        gitPush {
+            anyBranchMatching {
+                +"linuxarm64"
+            }
+        }
+        gitPullRequest {
+            anyBranchMatching {
+                +"linuxarm64"
+            }
+        }
+    }
+
+    container(displayName = "Linux ARM64 Cross Build", image = "ubuntu:22.04") {
+
+        env["SYNC_SERVER_URL"] = "{{ project:SYNC_SERVER_URL }}"
+        env["SYNC_SERVER_TOKEN"] = "{{ project:SYNC_SERVER_TOKEN }}"
+        env["IS_RELEASE"] = "{{ project:IS_RELEASE }}"
+
+        shellScript {
+            interpreter = "/bin/bash"
+            content = """
+                set -e
+
+                apt-get update
+                apt-get install -y \
+                    curl \
+                    docker.io \
+                    qemu-user-static \
+                    binfmt-support
+
+                # Enable ARM64 emulation
+                docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+                # Run ARM64 build container
+                docker run --rm \
+                    --platform linux/arm64 \
+                    -e SYNC_SERVER_URL \
+                    -e SYNC_SERVER_TOKEN \
+                    -e IS_RELEASE \
+                    -v ${'$'}PWD:/workspace \
+                    -w /workspace \
+                    eclipse-temurin:21 \
+                    bash -c "
+                        apt update &&
+                        apt install -y dpkg-dev fakeroot rpm libfuse2 libglib2.0-0 &&
+                        chmod +x gradlew &&
+                        ./gradlew :shared:packageReleaseDistributionForCurrentOS
+                    "
+            """
+        }
+        fileArtifacts {
+            localPath = "shared/build/compose/binaries/"
+            archive = true
+            remotePath = "cedarjam/build.zip"
+            onStatus = OnStatus.SUCCESS
+        }
+//        artifacts {
+//            +"shared/build/compose/binaries/**/*"
+//        }
+    }
+}
