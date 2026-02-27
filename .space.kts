@@ -49,7 +49,7 @@ job("build linux arm64") {
             }
         }
     }
-    container(image = "ubuntu:22.04") {
+    host {
 
         env["SYNC_SERVER_URL"] = "{{ project:CEDAR_SYNC_SERVER_URL }}"
         env["SYNC_SERVER_TOKEN"] = "{{ project:CEDAR_SYNC_SERVER_TOKEN }}"
@@ -60,7 +60,7 @@ job("build linux arm64") {
             content = """
                 set -e
 
-                # Enable ARM64 emulation natively on the runner
+                # Enable ARM64 emulation natively on the Space runner VM
                 docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 
                 echo "1. Creating ARM64 container..."
