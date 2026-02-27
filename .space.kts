@@ -50,7 +50,6 @@ job("build linux arm64") {
         }
     }
     container(image = "ubuntu:22.04") {
-        workingDir = "/mnt/space/work"
 
         env["SYNC_SERVER_URL"] = "{{ project:CEDAR_SYNC_SERVER_URL }}"
         env["SYNC_SERVER_TOKEN"] = "{{ project:CEDAR_SYNC_SERVER_TOKEN }}"
@@ -60,7 +59,9 @@ job("build linux arm64") {
             interpreter = "/bin/bash"
             content = """
                 set -e
-
+                
+                cd /mnt/space/work 
+                
                 apt-get update
                 apt-get install -y \
                     curl \
