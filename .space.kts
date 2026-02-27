@@ -60,7 +60,7 @@ job("build linux arm64") {
             content = """
                 set -e
                 
-                cd /mnt/space/work 
+                # Removed 'cd /mnt/space/work' - Space automatically starts in your repo's root directory!
                 
                 apt-get update
                 apt-get install -y \
