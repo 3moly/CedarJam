@@ -60,33 +60,37 @@ job("build linux arm64") {
             content = """
                 set -e
                 
-                # Removed 'cd /mnt/space/work' - Space automatically starts in your repo's root directory!
-                
                 apt-get update
-                apt-get install -y \
-                    curl \
-                    docker.io \
-                    qemu-user-static \
-                    binfmt-support
+                apt-get install -y curl docker.io qemu-user-static binfmt-support
 
                 # Enable ARM64 emulation
                 docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 
-                # Run ARM64 build container
-                docker run --rm \
+                echo "1. Creating ARM64 container..."
+                # We use 'create' instead of 'run' so we can copy files into it before starting
+                CONTAINER_ID=${'$'}{'$'}(docker create \
                     --platform linux/arm64 \
                     -e SYNC_SERVER_URL \
                     -e SYNC_SERVER_TOKEN \
                     -e IS_RELEASE \
-                    -v ${'$'}PWD:/workspace \
                     -w /workspace \
                     eclipse-temurin:21 \
-                    bash -c "
-                        apt update &&
-                        apt install -y dpkg-dev fakeroot rpm libfuse2 libglib2.0-0 &&
-                        chmod +x gradlew &&
-                        ./gradlew :shared:packageReleaseDistributionForCurrentOS
-                    "
+                    bash -c "apt update && apt install -y dpkg-dev fakeroot rpm libfuse2 libglib2.0-0 && chmod +x gradlew && ./gradlew :shared:packageReleaseDistributionForCurrentOS")
+
+                echo "2. Copying source code to the container..."
+                docker cp . ${'$'}{'$'}CONTAINER_ID:/workspace
+
+                echo "3. Running the build inside the container..."
+                # Start the container and attach (-a) so we see the Gradle logs in Space
+                docker start -a ${'$'}{'$'}CONTAINER_ID
+
+                echo "4. Extracting the build artifacts..."
+                # Re-create the path on the host runner so the fileArtifacts step finds it
+                mkdir -p shared/build/compose/binaries/
+                docker cp ${'$'}{'$'}CONTAINER_ID:/workspace/shared/build/compose/binaries/. shared/build/compose/binaries/
+                
+                # Cleanup
+                docker rm ${'$'}{'$'}CONTAINER_ID
             """
         }
         fileArtifacts {
