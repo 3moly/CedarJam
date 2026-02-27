@@ -329,6 +329,26 @@ val mySyncServerUrl = localProperties.getProperty("cedarjam_server.url") ?: ""
 val mySyncServerToken = localProperties.getProperty("cedarjam_server.token") ?: ""
 val myIsRelease = localProperties.getProperty("cedarjam.is_release") ?: ""
 
+
+// Use environment variables on CI, fallback to local.properties otherwise
+val syncServerUrlProvider = if (System.getenv("CI") == "true") {
+    providers.environmentVariable("SYNC_SERVER_URL")
+} else {
+    providers.provider { mySyncServerUrl }
+}
+
+val syncServerTokenProvider = if (System.getenv("CI") == "true") {
+    providers.environmentVariable("SYNC_SERVER_TOKEN")
+} else {
+    providers.provider { mySyncServerToken }
+}
+
+val isReleaseProvider = if (System.getenv("CI") == "true") {
+    providers.environmentVariable("IS_RELEASE").map { it.toBoolean() }
+} else {
+    providers.provider { myIsRelease.toBoolean() }
+}
+
 // Register cache-safe task
 abstract class GenerateBuildConfigTask : DefaultTask() {
     @get:Input
@@ -372,9 +392,9 @@ abstract class GenerateBuildConfigTask : DefaultTask() {
 }
 
 val generateBuildConfig by tasks.registering(GenerateBuildConfigTask::class) {
-    syncServerUrl.set(mySyncServerUrl)
-    syncServerToken.set(mySyncServerToken)
-    syncJustToken.set(myIsRelease)
+    syncServerUrl.set(syncServerUrlProvider)
+    syncServerToken.set(syncServerTokenProvider)
+    syncJustToken.set(providers.provider { isReleaseProvider.get().toString() })
     outputDir.set(layout.buildDirectory.dir("generated/source/buildConfig/commonMain/kotlin"))
 }
 
