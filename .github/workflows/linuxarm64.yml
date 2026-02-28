@@ -37,7 +37,6 @@ jobs:
           java-version: '21'
           cache: gradle
           token: ${{ secrets.GITHUB_TOKEN }}
-          fetch-depth: 0
 
       - name: Cache Gradle Dependencies
         uses: actions/cache@v4
@@ -77,8 +76,23 @@ jobs:
       - name: Release Gradle daemon
         run: ./gradlew -stop
 
-      - name: Upload artifacts
+      - name: Upload Windows EXE
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-windows-exe
+          path: desktopApp/build/compose/binaries/main-release/exe/**
+
+      - name: Upload Linux artifacts
+        if: runner.os == 'Linux'
         uses: actions/upload-artifact@v4
         with:
           name: desktop-${{ matrix.name }}
           path: desktopApp/build/compose/binaries/**
+
+      - name: Upload macOS DMG
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-${{ matrix.name }}
+          path: desktopApp/build/compose/binaries/main-release/dmg/**
