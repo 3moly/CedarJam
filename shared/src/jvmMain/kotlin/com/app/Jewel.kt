@@ -94,7 +94,7 @@ fun ApplicationScope.JewelDesktop(
 
                     val modifierPadding = when (DesktopPlatform.Current) {
                         DesktopPlatform.Linux -> Modifier
-                        DesktopPlatform.Windows -> Modifier.padding(end = padding * 2)
+                        DesktopPlatform.Windows -> Modifier.padding(end = 144.dp)
 
                         DesktopPlatform.MacOS -> Modifier.padding(start = padding * 2)
                         DesktopPlatform.Unknown -> Modifier
@@ -115,7 +115,7 @@ fun ApplicationScope.JewelDesktop(
                         isFullscreen = isFullScreen,
                         modifier = modifierPadding,
                         isFirstCut = isStartCut,
-                        endControlsWidth = endControlsWidth,
+                        endControlsWidth = 0.dp,
                         controlsWidthToCut = padding * 2f
                     )
                 }
