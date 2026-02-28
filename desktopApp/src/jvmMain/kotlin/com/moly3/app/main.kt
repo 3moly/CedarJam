@@ -6,6 +6,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.window.application
 import co.touchlab.kermit.Logger
+import com.app.SimpleDesktop
 import com.arkivanov.decompose.DecomposeSettings
 import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.essenty.backhandler.BackDispatcher
@@ -107,11 +108,6 @@ fun main() {
     }
 
     application {
-//        LaunchedEffect(Unit){
-//            launch {
-//                this.walk(root)
-//            }
-//        }
         System.setProperty("apple.awt.application.name", "CedarJam")
 
         JewelDesktop(
@@ -119,15 +115,6 @@ fun main() {
             lifecycle = lifecycle,
             backDispatcher = backDispatcher
         )
-//        val trayState = rememberTrayState()
-//        Tray(
-//            icon = rememberVectorPainter(Tag),
-//            state = trayState,
-//            menu = {
-//                Item("Quit App", onClick = ::exitApplication)
-//            }
-//        )
-
 
         DisposableEffect(Unit) {
             onDispose {

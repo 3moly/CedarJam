@@ -8,8 +8,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -73,11 +71,11 @@ private data class SlashCommand(
 )
 
 private val slashCommands = listOf(
-    SlashCommand("Text", "Plain paragraph", Icons.Default.Notes, BlockType.Paragraph),
-    SlashCommand("Heading 1", "Large section title", Icons.Default.Title, BlockType.H1),
-    SlashCommand("Heading 2", "Medium section title", Icons.Default.Title, BlockType.H2),
-    SlashCommand("Heading 3", "Small section title", Icons.Default.Title, BlockType.H3),
-    SlashCommand("Image", "Embed an image", Icons.Default.Image, BlockType.Image),
+    SlashCommand("Text", "Plain paragraph", vectors.Note, BlockType.Paragraph),
+    SlashCommand("Heading 1", "Large section title", vectors.Note, BlockType.H1),
+    SlashCommand("Heading 2", "Medium section title", vectors.Note, BlockType.H2),
+    SlashCommand("Heading 3", "Small section title", vectors.Note, BlockType.H3),
+    SlashCommand("Image", "Embed an image",vectors.Note, BlockType.Image),
 )
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -791,7 +789,7 @@ private fun DragHandle(
 
     Box {
         Icon(
-            imageVector = Icons.Default.Menu,
+            imageVector = vectors.Note,
             contentDescription = "Block options",
             tint = if (isDragging) Color(0xFF2383E2) else Color(0xFF999999),
             modifier = Modifier
@@ -857,11 +855,11 @@ private fun BlockOptionsMenu(
         )
 
         listOf(
-            Triple(Icons.Default.Notes, "Text", BlockType.Paragraph),
-            Triple(Icons.Default.Title, "Heading 1", BlockType.H1),
-            Triple(Icons.Default.Title, "Heading 2", BlockType.H2),
-            Triple(Icons.Default.Title, "Heading 3", BlockType.H3),
-            Triple(Icons.Default.Image, "Image", BlockType.Image),
+            Triple(vectors.Note, "Text", BlockType.Paragraph),
+            Triple(vectors.Note, "Heading 1", BlockType.H1),
+            Triple(vectors.Note, "Heading 2", BlockType.H2),
+            Triple(vectors.Note, "Heading 3", BlockType.H3),
+            Triple(vectors.Note, "Image", BlockType.Image),
         ).forEach { (icon, label, type) ->
             val isCurrent = block.type == type
             DropdownMenuItem(
@@ -882,7 +880,7 @@ private fun BlockOptionsMenu(
                 },
                 trailingIcon = {
                     if (isCurrent) Icon(
-                        Icons.Default.Check, contentDescription = null,
+                        vectors.Note, contentDescription = null,
                         modifier = Modifier.size(14.dp), tint = Color(0xFF2383E2)
                     )
                 },
@@ -908,7 +906,7 @@ private fun BlockOptionsMenu(
         DropdownMenuItem(
             leadingIcon = {
                 Icon(
-                    Icons.Default.Add, contentDescription = null,
+                    vectors.Note, contentDescription = null,
                     modifier = Modifier.size(16.dp), tint = Color(0xFF555555)
                 )
             },
@@ -929,7 +927,7 @@ private fun BlockOptionsMenu(
         DropdownMenuItem(
             leadingIcon = {
                 Icon(
-                    Icons.Default.ContentCopy, contentDescription = null,
+                    vectors.Note, contentDescription = null,
                     modifier = Modifier.size(16.dp), tint = Color(0xFF555555)
                 )
             },
@@ -950,7 +948,7 @@ private fun BlockOptionsMenu(
         DropdownMenuItem(
             leadingIcon = {
                 Icon(
-                    Icons.Default.Delete, contentDescription = null,
+                    vectors.Note, contentDescription = null,
                     modifier = Modifier.size(16.dp), tint = Color(0xFFE53935)
                 )
             },
@@ -995,14 +993,14 @@ private fun SelectionToolbar(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(2.dp)
         ) {
-            ToolbarButton(Icons.Default.Close, "Clear", onClearSelection)
+            ToolbarButton(vectors.Note, "Clear", onClearSelection)
             ToolbarDivider()
-            ToolbarButton(Icons.Default.Delete, "Delete", onDelete)
-            ToolbarButton(Icons.Default.ContentCopy, "Copy", onCopy)
-            ToolbarButton(Icons.Default.ContentPaste, "Paste", onPaste)
+            ToolbarButton(vectors.Note, "Delete", onDelete)
+            ToolbarButton(vectors.Note, "Copy", onCopy)
+            ToolbarButton(vectors.Note, "Paste", onPaste)
             ToolbarDivider()
             Box {
-                ToolbarButton(Icons.Default.TextFields, "Type") { showTypeMenu = true }
+                ToolbarButton(vectors.Note, "Type") { showTypeMenu = true }
                 DropdownMenu(expanded = showTypeMenu, onDismissRequest = { showTypeMenu = false }) {
                     listOf(
                         "Paragraph" to BlockType.Paragraph,
