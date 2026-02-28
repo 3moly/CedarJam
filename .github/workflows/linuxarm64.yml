@@ -64,6 +64,8 @@ jobs:
           SYNC_SERVER_TOKEN: ${{ secrets.SYNC_SERVER_TOKEN }}
           IS_RELEASE: ${{ secrets.IS_RELEASE }}
         run: ./gradlew :desktopApp:packageReleaseDistributionForCurrentOS
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload jpackage logs on failure
         if: failure()
