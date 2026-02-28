@@ -11,9 +11,21 @@ jobs:
   matrix_build:
     name: Build on GitHub Hosted Runners
     runs-on: ${{ matrix.os }}
+
     strategy:
       matrix:
-        os: [ ubuntu-latest, windows-latest, macos-latest, "ubuntu-24.04-arm" ]
+        include:
+          - os: ubuntu-latest
+            name: ubuntu-x64
+
+          - os: ubuntu-24.04-arm
+            name: ubuntu-arm64
+
+          - os: windows-latest
+            name: windows-x64
+
+          - os: macos-latest
+            name: macos-arm64
 
     steps:
       - uses: actions/checkout@v4
@@ -31,7 +43,7 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: ${{ matrix.os }}-gradle
+          key: ${{ matrix.name }}-gradle
           enableCrossOsArchive: true
 
       - name: Grant execute permission for gradlew
@@ -42,12 +54,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libfuse2
-          sudo apt-get install -y \
-            fakeroot \
-            dpkg-dev \
-            rpm \
-            binutils
+          sudo apt-get install -y libfuse2 fakeroot dpkg-dev rpm binutils
 
       - name: Build Release Distribution
         env:
@@ -55,21 +62,20 @@ jobs:
           SYNC_SERVER_TOKEN: ${{ secrets.SYNC_SERVER_TOKEN }}
           IS_RELEASE: ${{ secrets.IS_RELEASE }}
         run: ./gradlew :desktopApp:packageReleaseDistributionForCurrentOS
+
       - name: Upload jpackage logs on failure
-        uses: actions/upload-artifact@v4
         if: failure()
+        uses: actions/upload-artifact@v4
         with:
-          name: jpackage-logs-${{ matrix.os-name || runner.os }}
+          name: jpackage-logs-${{ matrix.name }}
           path: desktopApp/build/compose/logs/**/*.txt
           retention-days: 5
 
-      - name: Release Gradle to unlock cache files
-        shell: bash
-        run: |
-          ./gradlew -stop
+      - name: Release Gradle daemon
+        run: ./gradlew -stop
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: desktop-${{ matrix.os-name }}-${{ runner.os }}
-          path: desktopApp/build/compose/binaries/**/*
+          name: desktop-${{ matrix.name }}
+          path: desktopApp/build/compose/binaries/**
