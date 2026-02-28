@@ -54,6 +54,13 @@ jobs:
           SYNC_SERVER_TOKEN: ${{ secrets.SYNC_SERVER_TOKEN }}
           IS_RELEASE: ${{ secrets.IS_RELEASE }}
         run: ./gradlew :desktopApp:packageReleaseDistributionForCurrentOS
+      - name: Upload jpackage logs on failure
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: jpackage-logs-${{ matrix.os-name || runner.os }}
+          path: desktopApp/build/compose/logs/**/*.txt
+          retention-days: 5
 
       - name: Release Gradle to unlock cache files
         shell: bash
