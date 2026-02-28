@@ -103,6 +103,7 @@ compose {
     }
     desktop {
         application {
+
             //javaHome = "/Users/new07/Library/Java/JavaVirtualMachines/jbr-21.0.10/Contents/Home"
             buildTypes.release.proguard {
                 isEnabled = false
@@ -112,7 +113,7 @@ compose {
                 configurationFiles.from("compose-desktop.pro")
             }
 
-            mainClass = "MainKt"
+            mainClass = "com.moly3.app.MainKt"
 
             jvmArgs("--add-opens=java.desktop/com.apple.eawt.event=ALL-UNNAMED")
             jvmArgs("--add-opens", "java.desktop/sun.awt=ALL-UNNAMED")
