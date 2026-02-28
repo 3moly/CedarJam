@@ -71,5 +71,5 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: desktop-${{ runner.os }}
+          name: desktop-${{ matrix.os-name }}-${{ runner.os }}
           path: desktopApp/build/compose/binaries/**/*
