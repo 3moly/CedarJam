@@ -129,7 +129,7 @@ compose {
             args("-XDignore.symbol.file --add-exports java.desktop/com.apple.eawt.event=ALL-UNNAMED")
 
             nativeDistributions {
-                packageVersion = "1.0.0"
+                packageVersion = "1.0.1"
 //                appResourcesRootDir.set(file("appResources"))
                 //appName = "CedarJam"
 
