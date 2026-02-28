@@ -13,11 +13,15 @@ plugins {
     alias(libs.plugins.serialization)
     alias(libs.plugins.composeHotReload)
     kotlin("native.cocoapods")
+
 }
 
 
 kotlin {
-    jvmToolchain(21)
+    jvmToolchain {
+        languageVersion.set(JavaLanguageVersion.of(21))
+        vendor.set(JvmVendorSpec.JETBRAINS)
+    }
     compilerOptions {
         freeCompilerArgs.add("-opt-in=kotlin.uuid.ExperimentalUuidApi")
     }
@@ -211,7 +215,7 @@ kotlin {
         jvmMain.dependencies {
 
 
-            implementation(libs.desktop)
+//            implementation(libs.desktop)
             implementation(compose.desktop.currentOs)
             implementation(libs.coil.network.jvm)
             implementation(libs.shared.core.coroutines.swing)
@@ -235,6 +239,18 @@ kotlin {
             implementation(libs.robolectric)
             implementation(libs.android.videoplayer.contextprovider)
         }
+        linuxX64Main.dependencies{
+            implementation("org.jetbrains.compose.desktop:desktop-jvm-linux-x64:1.10.1")
+        }
+        macosX64Main.dependencies {
+            implementation("org.jetbrains.compose.desktop:desktop-jvm-macos-x64:1.10.1")
+        }
+        macosArm64Main.dependencies {
+            implementation("org.jetbrains.compose.desktop:desktop-jvm-macos-arm64:1.10.1")
+        }
+        mingwX64Main.dependencies{
+            implementation("org.jetbrains.compose.desktop:desktop-jvm-windows-x64:1.10.1")
+        }
     }
 }
 
@@ -242,86 +258,21 @@ dependencies {
     commonMainApi(libs.decompose)
     commonMainApi(libs.essenty.keeper)
     commonMainApi(libs.essenty.lifecycle)
+
+    // Use the configurations created by the Conveyor plugin to tell Gradle/Conveyor where to find the artifacts for each platform.
+//    linuxAmd64(compose.desktop.linux_x64)
+//    macAmd64(compose.desktop.macos_x64)
+//    macAarch64(compose.desktop.macos_arm64)
+//    windowsAmd64(compose.desktop.windows_x64)
 }
 
+//configurations.all {
+//    attributes {
+//        attribute(Attribute.of("ui", String::class.java), "awt")
+//    }
+//}
 
-compose {
-    resources {
-        publicResClass = false
-        generateResClass = auto
-    }
-    desktop {
-        application {
-            //javaHome = "/Users/new07/Library/Java/JavaVirtualMachines/jbr-21.0.10/Contents/Home"
-            buildTypes.release.proguard {
-                isEnabled = false
-                optimize = false
-                obfuscate = false
-                version.set("7.8.2")
-                configurationFiles.from("compose-desktop.pro")
-            }
 
-            mainClass = "MainKt"
-
-            jvmArgs("--add-opens=java.desktop/com.apple.eawt.event=ALL-UNNAMED")
-            jvmArgs("--add-opens", "java.desktop/sun.awt=ALL-UNNAMED")
-            jvmArgs(
-                "--add-opens",
-                "java.desktop/java.awt.peer=ALL-UNNAMED"
-            ) // recommended but not necessary
-
-            if (System.getProperty("os.name").contains("Mac")) {
-                jvmArgs("--add-opens", "java.desktop/sun.lwawt=ALL-UNNAMED")
-                jvmArgs("--add-opens", "java.desktop/sun.lwawt.macosx=ALL-UNNAMED")
-            }
-            args("-XDignore.symbol.file --add-exports java.desktop/com.apple.eawt.event=ALL-UNNAMED")
-
-            nativeDistributions {
-//                appResourcesRootDir.set(file("appResources"))
-                //appName = "CedarJam"
-
-                // https://github.com/JetBrains/compose-multiplatform/blob/master/tutorials/Native_distributions_and_local_execution/README.md
-                modules(
-                    "java.compiler",
-                    "java.instrument",
-                    "java.management",
-                    "java.rmi",
-                    "jdk.unsupported",
-                    "java.naming",
-                    "java.base",
-                    "java.desktop",
-                    "java.logging",
-                    "java.sql",
-                )
-                targetFormats(
-                    TargetFormat.Dmg,
-                    TargetFormat.Msi,
-                    TargetFormat.Exe,
-                    TargetFormat.Deb
-                )
-
-                packageName = "CedarJam"
-                packageVersion = "1.0.0"
-
-                linux {
-                    packageName = "CedarJam"
-                    packageVersion = "1.0.0"
-                    iconFile.set(project.file("../docs/media/cone.png"))
-                }
-                macOS {
-                    dockName = "CedarJam"
-                    iconFile.set(project.file("../docs/media/AppIcon.icns"))
-                }
-                windows {
-                    //todo iconFile.set(project.file("../docs/media/AppIcon.ico"))
-                }
-
-//                appResourcesRootDir = layout.projectDirectory.dir("src/desktopMain/assets")
-//                jvmArgs += "-splash:${'$'}APPDIR/resources/splash.png"
-            }
-        }
-    }
-}
 
 
 //tasks.withType<JavaExec> {

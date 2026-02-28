@@ -31,3 +31,4 @@ moko-resources-generated.js
 *.podspec
 *.zip
 /gradle/gradle-daemon-jvm.properties
+/output/
