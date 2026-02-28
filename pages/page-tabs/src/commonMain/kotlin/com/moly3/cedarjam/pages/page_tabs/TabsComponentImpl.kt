@@ -20,6 +20,7 @@ import com.moly3.cedarjam.pages.page_tabs.TabsComponentImpl.Config.Tab
 import com.moly3.cedarjam.core.ui.model.PageNameData
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
 import com.moly3.cedarjam.navigation.NavigationParent
+import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -102,7 +103,7 @@ class TabsComponentImpl(
                     index = index,
                     nameFlow = it.instance.component.nameFlow
                 )
-            })
+            }.sortedBy { d -> d.index }.toPersistentList())
     }.stateIn(
         scope = coroutineScope,
         started = SharingStarted.Lazily,

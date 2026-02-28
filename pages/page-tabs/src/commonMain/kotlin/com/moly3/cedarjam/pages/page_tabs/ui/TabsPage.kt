@@ -51,7 +51,7 @@ fun TabsPage(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(modifier = Modifier.weight(1f).horizontalScroll(rememberScrollState())) {
-            for (item in state.tabs.sortedBy { d -> d.index }) {
+            for (item in state.tabs) {
                 val name by item.nameFlow.collectAsState(null)
                 val isSelected = item.index == state.currentTabIndex
                 val pageIcon = remember(name) {
@@ -111,12 +111,9 @@ fun TabsPageContent(
 ) {
     Box(modifier = modifier) {
         val stack by component.children.subscribeAsState()
-//        val twin = remember(stack) {
-//            TwinStack(stack)
-//        }
         ChildStack(
             stack = stack,
-            modifier = Modifier.fillMaxSize(),
+            modifier = modifier.fillMaxSize(),
             animation = stackAnimation()
         ) {
             when (val instance = it.instance) {
@@ -143,14 +140,3 @@ fun TabsPageContent(
         }
     }
 }
-
-//@Immutable
-//data class TwinStack(
-//    val stack: ChildStack<*, TabsComponent.Child>
-//)
-
-//@OptIn(ExperimentalDecomposeApi::class)
-//@Composable
-//internal fun TwinChildren(stack: TwinStack) {
-//
-//}

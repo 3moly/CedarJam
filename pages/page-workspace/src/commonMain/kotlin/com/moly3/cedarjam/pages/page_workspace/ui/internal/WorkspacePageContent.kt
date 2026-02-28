@@ -262,10 +262,10 @@ internal fun WorkspacePageContent(
                         val toolbarState = LocalJvmToolbarState.current
                         Column(
                             Modifier.fillMaxSize()
-                                .let{
-                                    if(isCompactUI()){
+                                .let {
+                                    if (isCompactUI()) {
                                         it
-                                    }else{
+                                    } else {
                                         it.statusBarsPaddingCJ()
                                             .consumeWindowToolbarPaddingCJ()
                                     }
@@ -301,7 +301,9 @@ internal fun WorkspacePageContent(
                                     ) {
                                         for ((index, item) in items.items.withIndex()) {
                                             val tabWeight =
-                                                state.tabSizes[item.instance.index] ?: 1f
+                                                remember(state.tabSizes, item.instance.index) {
+                                                    state.tabSizes[item.instance.index] ?: 1f
+                                                }
 
                                             val isLastTab = index == items.items.lastIndex
                                             val updatedConfiguration by rememberUpdatedState(

@@ -3,21 +3,19 @@ package com.moly3.cedarjam.core.domain.func
 
 const val hiddenDirectory: String = "moly3"
 const val ignoredDsStoreFile: String = ".DS_Store"
-const val ignoredFont: String = "${hiddenDirectory}/default.otf"
-const val ignoredImportArchive: String = "${hiddenDirectory}/import.zip"
-const val ignoredExportArchive: String = "${hiddenDirectory}/export.zip"
-const val ignoredExportShareArchive: String = "${hiddenDirectory}/exportShare.zip"
+val ignoredFont: String = pathWrapper(hiddenDirectory, "default.otf").pathString
+val ignoredImportArchive: String = pathWrapper(hiddenDirectory, "import.zip").pathString
+val ignoredExportArchive: String = pathWrapper(hiddenDirectory, "export.zip").pathString
+val ignoredExportShareArchive: String = pathWrapper(hiddenDirectory, "exportShare.zip").pathString
 const val sqlDatabaseName = "sqlite"
 const val indexSqlDatabaseName = "indexes"
-const val imgCache = "img_cache"
-const val ignoreIndexSqlDatabaseName: String = "${hiddenDirectory}/$indexSqlDatabaseName.db"
-const val ignoredDbShm: String = "${hiddenDirectory}/$sqlDatabaseName.db-shm"
-const val ignoredDbWal: String = "${hiddenDirectory}/$sqlDatabaseName.db-wal"
-const val ignoredDbJournal: String = "${hiddenDirectory}/$sqlDatabaseName.db-journal"
-//const val ignoredImgCacheJournal: String = "${hiddenDirectory}/$imgCache/journal"
+const val imgCache = "image_cache"
+val ignoreIndexSqlDatabaseName: String = pathWrapper(hiddenDirectory, "$indexSqlDatabaseName.db").pathString
+val ignoredDbShm: String = pathWrapper(hiddenDirectory, "$sqlDatabaseName.db-shm").pathString
+val ignoredDbWal: String = pathWrapper(hiddenDirectory, "$sqlDatabaseName.db-wal").pathString
+val ignoredDbJournal: String = pathWrapper(hiddenDirectory, "$sqlDatabaseName.db-journal").pathString
 
 val ignoreByRelativePath = listOf(
-//    ignoredFont,
     ignoredImportArchive,
     ignoredExportArchive,
     ignoredExportShareArchive,
@@ -28,7 +26,7 @@ val ignoreByRelativePath = listOf(
 )
 
 val ignoreSearchByRelativePath = listOf(
-    "${hiddenDirectory}/$sqlDatabaseName.db",
-    "${hiddenDirectory}/workspace_settings.json",
-    "${hiddenDirectory}/image_cache",
+    pathWrapper(hiddenDirectory, "$sqlDatabaseName.db").pathString,
+    pathWrapper(hiddenDirectory, "workspace_settings.json").pathString,
+    pathWrapper(hiddenDirectory, imgCache).pathString,
 )

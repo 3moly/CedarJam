@@ -10,7 +10,6 @@ data class JvmToolbarState(
     val isFullscreen: Boolean,
     val modifier: Modifier,
     val isFirstCut: Boolean,
-    val endControlsWidth: Dp,
     val controlsWidthToCut: Dp
 ) {
     companion object {
@@ -18,7 +17,6 @@ data class JvmToolbarState(
             isFullscreen = true,
             modifier = Modifier,
             isFirstCut = true,
-            endControlsWidth = 0.dp,
             controlsWidthToCut = 0.dp
         )
     }
