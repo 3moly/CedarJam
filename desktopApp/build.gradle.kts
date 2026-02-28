@@ -157,7 +157,7 @@ compose {
 
 
                 linux {
-                    packageName = "CedarJam"
+                    packageName = "cedarjam"
                     iconFile.set(project.file("../docs/media/cone.png"))
                 }
                 macOS {
