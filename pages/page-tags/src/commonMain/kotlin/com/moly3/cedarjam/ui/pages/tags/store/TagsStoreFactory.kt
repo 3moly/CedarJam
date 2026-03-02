@@ -99,7 +99,7 @@ internal class TagsStoreFactory(
                                 CreateTagToTagRequest(
                                     tagId = result.firstTag.id,
                                     tag2Id = result.secondTag.id,
-                                    modifiedTime = nowInMs()
+                                    createdTime = nowInMs()
                                 )
                             )
                         }

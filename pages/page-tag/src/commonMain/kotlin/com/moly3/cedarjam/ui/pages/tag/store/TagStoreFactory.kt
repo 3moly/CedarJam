@@ -14,7 +14,6 @@ import com.moly3.cedarjam.core.domain.func.nowInMs
 import com.moly3.cedarjam.core.ui.model.PageNameData
 import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.domain.model.bind
-import com.moly3.cedarjam.core.domain.model.getTagGraphId
 import com.moly3.cedarjam.core.domain.model.node.ObsidianGraphPresentation
 import com.moly3.cedarjam.core.domain.model.node.toGraphData
 import com.moly3.cedarjam.core.domain.model.request.CreateTagToTagRequest
@@ -24,11 +23,9 @@ import com.moly3.cedarjam.core.domain.usecase.IOpenNodeDataUseCase
 import com.moly3.cedarjam.core.ui.model.CJText
 import com.moly3.cedarjam.navigation.Navigator
 import com.moly3.cedarjam.navigation.mapper.toRoute
-import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -108,7 +105,7 @@ internal class TagStoreFactory(
                                 CreateTagToTagRequest(
                                     tagId = pageData.id,
                                     tag2Id = tag.id,
-                                    modifiedTime = nowInMs()
+                                    createdTime = nowInMs()
                                 )
                             )
                         }

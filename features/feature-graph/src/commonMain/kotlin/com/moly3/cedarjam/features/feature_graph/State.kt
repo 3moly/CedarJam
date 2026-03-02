@@ -2,6 +2,8 @@ package com.moly3.cedarjam.features.feature_graph
 
 import androidx.compose.ui.geometry.Offset
 import com.moly3.cedarjam.core.domain.model.AnnotationDTO
+import com.moly3.cedarjam.core.domain.model.CollectionRowDTO
+import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.ObsidianGraphNode
 import com.moly3.cedarjam.core.domain.model.OffsetData
 import com.moly3.cedarjam.core.domain.model.TagDTO
@@ -22,12 +24,15 @@ data class State(
     val graphTargetId: String? = null,
     val currentPage: GraphPage = GraphPage.General,
     val tagsState: UIState<ImmutableList<TagDTO>, Unit> = UIState.Loading,
+    val filesState: UIState<ImmutableList<FileTreeNode>, Unit> = UIState.Loading,
+    val rowsState: UIState<ImmutableList<CollectionRowDTO>, Unit> = UIState.Loading,
     val annotationsState: UIState<ImmutableList<AnnotationDTO>, Unit> = UIState.Loading,
     val graphNodes: ImmutableList<ObsidianGraphNode> = persistentListOf(),
     val connections: ImmutableMap<String, ImmutableList<String>> = persistentMapOf(),
     val coordinates: ImmutableMap<String, Offset> = persistentMapOf(),
     val velocities: ImmutableMap<String, Offset> = persistentMapOf(),
-    val zoom: Float = 1f
+    val zoom: Float = 1f,
+    val isShowNestedConnections: Boolean = false
 ) {
     @Serializable
     data class SaveableState(
@@ -36,7 +41,8 @@ data class State(
         val zoom: Float,
         val graphNodes: List<ObsidianGraphNode>,
         val connections: Map<String, List<String>>,
-        val coordinates: Map<String, OffsetData>
+        val coordinates: Map<String, OffsetData>,
+        val isShowNestedConnections: Boolean
     )
 
     companion object {
@@ -52,6 +58,7 @@ data class State(
                     .mapValues { it.value.mapToOffset() }
                     .toPersistentMap(),
                 currentPage = currentPage,
+                isShowNestedConnections = isShowNestedConnections
             )
         }
 
@@ -64,7 +71,8 @@ data class State(
                     .mapValues { d -> d.value.mapToOffsetData() }
                     .toPersistentMap(),
                 isShowContent = isShowContent,
-                currentPage = currentPage
+                currentPage = currentPage,
+                isShowNestedConnections = isShowNestedConnections
             )
         }
     }

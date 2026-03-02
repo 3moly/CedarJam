@@ -22,11 +22,28 @@ sealed class UIState<out T, out E> {
     fun getOrDefault(default: @UnsafeVariance T): T =
         (this as? Success)?.data ?: default
 
+    inline fun <R, NewE> map(onError: (E) -> NewE, mapper: (T) -> R): UIState<R, NewE> =
+        when (this) {
+            is Loading -> Loading
+            is Error -> Error(onError(error))
+            is Success -> Success(mapper(data))
+        }
+
     inline fun <R> map(mapper: (T) -> R): UIState<R, E> = when (this) {
         is Loading -> Loading
         is Error -> Error(error)
         is Success -> Success(mapper(data))
     }
+
+    inline fun <R, NewE> mapState(
+        onError: (E) -> NewE,
+        mapper: (T) -> UIState<R, @UnsafeVariance NewE>
+    ): UIState<R, NewE> =
+        when (this) {
+            is Loading -> Loading
+            is Error -> Error(onError(error))
+            is Success -> mapper(data)
+        }
 
     inline fun <R> mapState(mapper: (T) -> UIState<R, @UnsafeVariance E>): UIState<R, E> =
         when (this) {

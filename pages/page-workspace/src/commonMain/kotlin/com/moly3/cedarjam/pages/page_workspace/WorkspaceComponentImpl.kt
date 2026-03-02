@@ -166,6 +166,7 @@ class WorkspaceComponentImpl(
             val activeIndexFlow = state
                 .map { it.activeTabsIndex }
                 .distinctUntilChanged()
+
             combine(
                 _children.stateFlow,
                 activeIndexFlow

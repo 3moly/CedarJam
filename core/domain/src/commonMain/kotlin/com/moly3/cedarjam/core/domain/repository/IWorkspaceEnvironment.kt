@@ -108,7 +108,7 @@ interface IWorkspaceEnvironment {
         localNodes: List<FileTreeNode>
     ): ResultWrapper<Unit, String>
 
-    fun syncAllIndexes(): ResultWrapper<Unit, String>
+    fun syncAllIndexes(specificIndexes: List<IndexFileDto> = listOf()): ResultWrapper<Unit, String>
 
     fun syncDirtyFiles(list: List<IndexFileDto>): ResultWrapper<Unit, String>
     fun deleteIndexFiles(list: List<String>): ResultWrapper<Unit, String>

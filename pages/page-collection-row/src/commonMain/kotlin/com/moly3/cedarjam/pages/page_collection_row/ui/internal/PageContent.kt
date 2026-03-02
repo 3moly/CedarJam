@@ -43,7 +43,6 @@ import com.moly3.cedarjam.core.ui.func.getPdfImage
 import com.moly3.cedarjam.core.ui.uikit.CJButton
 import com.moly3.cedarjam.core.ui.uikit.CJText
 import com.moly3.cedarjam.core.ui.uikit.CJTextField
-import com.moly3.cedarjam.core.ui.uikit.JustMenuContent
 import com.moly3.cedarjam.core.ui.uikit.magmaTextFieldMinTextSize
 import com.moly3.cedarjam.pages.page_collection_row.Intent
 import com.moly3.cedarjam.pages.page_collection_row.State
@@ -233,25 +232,4 @@ internal fun PageContent(state: State, onIntent: (Intent) -> Unit) {
             }
         }
     }
-    JustMenuContent {
-        onIntent(Intent.OpenWorkspaceSettings)
-    }
-//    FileMenuContent(
-//        modifier = Modifier.safeDrawingPadding().fillMaxSize(),
-//        borderModifier = Modifier
-//            .clip(RoundedCornerShape(16.dp))
-//            .hazeEffect(hazeState, hazeStyle),
-//        annotationsCount = 0,
-//        isIOSwitchPressed = isIOPressed,
-//        isOpenedMenu = isPressed,
-//        openWorkspaceSettings = {
-//            onIntent(Intent.OpenWorkspaceSettings)
-//        },
-//        onIOClick = {
-//            isIOPressed = !isIOPressed
-//        },
-//        onClick = {
-//            isPressed = !isPressed
-//        }
-//    )
 }

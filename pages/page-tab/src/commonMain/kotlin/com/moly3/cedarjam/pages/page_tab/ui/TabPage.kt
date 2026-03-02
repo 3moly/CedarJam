@@ -11,17 +11,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.extensions.compose.experimental.stack.ChildStack
 import com.arkivanov.decompose.extensions.compose.experimental.stack.animation.stackAnimation
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
-import com.moly3.cedarjam.core.domain.func.formatEpochMillis
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.func.getPageTypeIcon
 import com.moly3.cedarjam.core.ui.func.isCompactUI
 import com.moly3.cedarjam.core.ui.model.CJText
+import com.moly3.cedarjam.core.ui.uikit.JustMenuContent
 import com.moly3.cedarjam.features.feature_graph.IDialogGraphContainer
 import com.moly3.cedarjam.features.feature_graph.model.GraphTabState
 import com.moly3.cedarjam.features.feature_graph.ui.ContentNearGraphUI
@@ -53,9 +55,6 @@ fun TabPage(tabComponent: TabComponent) {
 
     val tabNameIcon = remember(tabNameState) {
         tabNameState?.pageType?.getPageTypeIcon()
-    }
-    val timeText = remember(tabNameState) {
-        tabNameState?.modifiedTime?.formatEpochMillis(isShowTime = true) ?: ""
     }
     val isEditEnabled = remember(tabNameState) {
         tabNameState?.isEditEnabled() ?: false
@@ -107,7 +106,6 @@ fun TabPage(tabComponent: TabComponent) {
                 canGoBack = state.canGoBack,
                 canGoForward = state.canGoForward,
                 textNameState = textNameState,
-                timeText = timeText,
                 isEditEnabled = isEditEnabled,
                 onRename = {
                     onRename()
@@ -129,46 +127,46 @@ fun TabPage(tabComponent: TabComponent) {
             ) {
                 val component = it.instance.component
                 if (component is IDialogGraphContainer) {
-                    val graphTabState = remember(state.canGoBack,state.canGoBack){
-                        GraphTabState(
-                            canGoBack = state.canGoBack,
-                            canGoForward = state.canGoForward,
-                            goBack = {
-                                tabComponent.onIntent(Intent.Back)
-                            },
-                            goForward = {
-                                tabComponent.onIntent(Intent.Forward)
-                            }
-                        )
-                    }
                     ContentNearGraphUI(
-                        state = graphTabState,
+                        pageNameData = tabNameState,
                         mainContent = {
-                            when (val instance = it.instance) {
-                                is TabComponent.Child.Home -> HomePage(component = instance.component)
-                                is TabComponent.Child.Graph -> GraphPage(component = instance.component)
-                                is TabComponent.Child.File -> FilePage(component = instance.component)
-                                is TabComponent.Child.CollectionRow -> CollectionRowPage(component = instance.component)
-                                is TabComponent.Child.Collection -> CollectionPage(component = instance.component)
-                                is TabComponent.Child.Tags -> TagsPage(component = instance.component)
-                                is TabComponent.Child.Tag -> TagPage(component = instance.component)
-                            }
+                            it.instance.Content()
                         },
                         dialogSlot = component.dialogSlot,
                         setIsShowGraph = { component.setIsShowGraph(it) }
                     )
                 } else {
-                    when (val instance = it.instance) {
-                        is TabComponent.Child.Home -> HomePage(component = instance.component)
-                        is TabComponent.Child.Graph -> GraphPage(component = instance.component)
-                        is TabComponent.Child.File -> FilePage(component = instance.component)
-                        is TabComponent.Child.CollectionRow -> CollectionRowPage(component = instance.component)
-                        is TabComponent.Child.Collection -> CollectionPage(component = instance.component)
-                        is TabComponent.Child.Tags -> TagsPage(component = instance.component)
-                        is TabComponent.Child.Tag -> TagPage(component = instance.component)
-                    }
+                    it.instance.Content()
                 }
             }
         }
+    }
+    if (isCompactUI()) {
+        JustMenuContent(
+            modifier = Modifier,
+            goBack = {
+                tabComponent.onIntent(Intent.Back)
+            },
+            goForward = {
+                tabComponent.onIntent(Intent.Forward)
+            },
+            canGoBack = state.canGoBack,
+            canGoForward = state.canGoForward,
+            openWorkspaceSettings = {
+                tabComponent.onIntent(Intent.OpenWorkspaceSettings)
+            })
+    }
+}
+
+@Composable
+fun TabComponent.Child.Content() {
+    when (val instance = this) {
+        is TabComponent.Child.Home -> HomePage(component = instance.component)
+        is TabComponent.Child.Graph -> GraphPage(component = instance.component)
+        is TabComponent.Child.File -> FilePage(component = instance.component)
+        is TabComponent.Child.CollectionRow -> CollectionRowPage(component = instance.component)
+        is TabComponent.Child.Collection -> CollectionPage(component = instance.component)
+        is TabComponent.Child.Tags -> TagsPage(component = instance.component)
+        is TabComponent.Child.Tag -> TagPage(component = instance.component)
     }
 }

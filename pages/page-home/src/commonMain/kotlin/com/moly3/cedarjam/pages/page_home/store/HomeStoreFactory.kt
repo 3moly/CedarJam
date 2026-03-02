@@ -305,7 +305,7 @@ internal class HomeStoreFactory(
 
         override fun executeAction(action: Unit) {
             super.executeAction(action)
-            lifecycle.subToLog("HomeStoreState ${workspaceSession.workspaceEnvStateFlow.value.getWorkspace().name}")
+//            lifecycle.subToLog("HomeStoreState ${workspaceSession.workspaceEnvStateFlow.value.getWorkspace().name}")
         }
 
         @OptIn(ExperimentalCoroutinesApi::class)
@@ -313,14 +313,6 @@ internal class HomeStoreFactory(
             super.onStart(scopeFromStartToStop)
             _searchTextState.value = state().searchTextFieldValue.text
 
-//            lifecycle.doOnResume {
-//                try {
-//                    val allNodes =
-//                        workspaceSession.workspaceEnvStateFlow.value.getNodes(null).getAll(true)
-//                    dispatch(Msg.SetAllNodesState(UIState.Success(allNodes.toPersistentList())))
-//                } catch (exc: Exception) {
-//                }
-//            }
             scopeFromStartToStop.launch {
                 combine(
                     collectionsFlow,
@@ -403,9 +395,9 @@ internal class HomeStoreFactory(
                 }
 
                 is Intent.SetSearchText -> {
+                    dispatch(HomeStore.Msg.SetSearchTextFieldValue(intent.value))
                     scope.launch {
                         _searchTextState.emit(intent.value.text)
-                        dispatch(HomeStore.Msg.SetSearchTextFieldValue(intent.value))
                     }
                 }
             }

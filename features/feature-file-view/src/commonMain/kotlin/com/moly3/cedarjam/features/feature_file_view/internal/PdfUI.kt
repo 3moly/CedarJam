@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
@@ -66,8 +67,10 @@ import com.moly3.cedarjam.core.domain.model.request.CreateAnnotationRequest
 import com.moly3.cedarjam.core.ui.service.MacTrackpadGestureService
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
+import com.moly3.cedarjam.core.ui.compositions.LocalUIConfig
 import com.moly3.cedarjam.core.ui.func.blendMode
 import com.moly3.cedarjam.core.ui.func.darker
+import com.moly3.cedarjam.core.ui.func.isCompactUI
 import com.moly3.cedarjam.core.ui.func.navigationBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.onPointerEvent
 import com.moly3.cedarjam.core.ui.uikit.CJButton
@@ -143,16 +146,6 @@ internal fun PdfUI(
         } else
             false
     }
-    val hazeState = rememberHazeState(blurEnabled = false)
-    val primaryColor = LocalAppTheme.current.colors.backgroundPrimary.darker()
-    val hazeStyle = remember(primaryColor) {
-        HazeStyle(
-            backgroundColor = primaryColor,
-            tints = listOf(HazeTint(primaryColor.copy(0.5f))),
-            blurRadius = 4.dp,
-            noiseFactor = HazeDefaults.noiseFactor
-        )
-    }
     var isMouseCaptured by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(isMouseCaptured) {
@@ -189,15 +182,13 @@ internal fun PdfUI(
                 })
                 .focusRequester(focusRequester)
         ) {
-            val zoomState: ZoomState = rememberZoomState()
-            val liquidState: LiquidState = rememberLiquidState()
             if (documentState != null) {
                 var painter by remember { mutableStateOf<Painter?>(null) }
                 Row(Modifier.fillMaxSize()) {
                     when (getPlatform()) {
                         Platform.Android,
                         Platform.Jvm,
-                            Platform.Ios,
+                        Platform.Ios,
                         Platform.Wasm -> {
                             val isEnableAnnotation = remember { mutableStateOf(false) }
                             val isEnableAnnotationUpdated by rememberUpdatedState(isEnableAnnotation.value)
@@ -221,10 +212,7 @@ internal fun PdfUI(
 //                                        modifier = Modifier.padding(16.dp).background(Color.Black).align(Alignment.Center)
 //                                    )
                                     CJZoomableViewLayout(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .hazeSource(hazeState)
-                                            .liquefiable(liquidState),
+                                        modifier = Modifier.fillMaxSize(),
                                         isEnable = !isEnableAnnotation.value,
                                         macTrackpadGestureService = macTrackpadGestureService
                                     ) {
@@ -264,35 +252,69 @@ internal fun PdfUI(
                                                     .onGloballyPositioned {
                                                         pdfPageSize.value = it.size
                                                     }
-                                                    .let{
-                                                        if(isEnableAnnotationUpdated){
-                                                            it   .pointerInput(Unit) {
+                                                    .let {
+                                                        if (isEnableAnnotationUpdated) {
+                                                            it.pointerInput(Unit) {
                                                                 detectDragGestures(
                                                                     onDragStart = {
                                                                         if (isEnableAnnotationUpdated) {
-                                                                            startedDragging.value = it
+                                                                            startedDragging.value =
+                                                                                it
                                                                         }
                                                                     },
                                                                     onDragEnd = {
                                                                         if (isEnableAnnotationUpdated) {
-                                                                            val start = startedDragging.value
-                                                                            val end = endDragging.value
+                                                                            val start =
+                                                                                startedDragging.value
+                                                                            val end =
+                                                                                endDragging.value
 
-                                                                            val pdf = pdfPageSize.value
+                                                                            val pdf =
+                                                                                pdfPageSize.value
                                                                             if (start != null && end != null && pdf != null) {
 
-                                                                                val pdfWidth = pdf.width.toFloat()
-                                                                                val pdfHeight = pdf.height.toFloat()
+                                                                                val pdfWidth =
+                                                                                    pdf.width.toFloat()
+                                                                                val pdfHeight =
+                                                                                    pdf.height.toFloat()
 
-                                                                                val left = minOf(start.x, end.x)
-                                                                                val top = minOf(start.y, end.y)
-                                                                                val right = maxOf(start.x, end.x)
-                                                                                val bottom = maxOf(start.y, end.y)
+                                                                                val left = minOf(
+                                                                                    start.x,
+                                                                                    end.x
+                                                                                )
+                                                                                val top = minOf(
+                                                                                    start.y,
+                                                                                    end.y
+                                                                                )
+                                                                                val right = maxOf(
+                                                                                    start.x,
+                                                                                    end.x
+                                                                                )
+                                                                                val bottom = maxOf(
+                                                                                    start.y,
+                                                                                    end.y
+                                                                                )
 
-                                                                                val x1 = (left / pdfWidth).coerceIn(0f, 1f)
-                                                                                val y1 = (top / pdfHeight).coerceIn(0f, 1f)
-                                                                                val width = ((right - left) / pdfWidth).coerceIn(0f, 1f)
-                                                                                val height = ((bottom - top) / pdfHeight).coerceIn(0f, 1f)
+                                                                                val x1 =
+                                                                                    (left / pdfWidth).coerceIn(
+                                                                                        0f,
+                                                                                        1f
+                                                                                    )
+                                                                                val y1 =
+                                                                                    (top / pdfHeight).coerceIn(
+                                                                                        0f,
+                                                                                        1f
+                                                                                    )
+                                                                                val width =
+                                                                                    ((right - left) / pdfWidth).coerceIn(
+                                                                                        0f,
+                                                                                        1f
+                                                                                    )
+                                                                                val height =
+                                                                                    ((bottom - top) / pdfHeight).coerceIn(
+                                                                                        0f,
+                                                                                        1f
+                                                                                    )
 
                                                                                 onAddAnnotation(
                                                                                     CreateAnnotationRequest(
@@ -308,7 +330,8 @@ internal fun PdfUI(
                                                                                 )
                                                                             }
                                                                             endDragging.value = null
-                                                                            startedDragging.value = null
+                                                                            startedDragging.value =
+                                                                                null
                                                                         }
                                                                     },
                                                                     onDragCancel = {
@@ -324,7 +347,7 @@ internal fun PdfUI(
                                                                     }
                                                                 )
                                                             }
-                                                        }else{
+                                                        } else {
                                                             it
                                                         }
                                                     }
@@ -333,11 +356,14 @@ internal fun PdfUI(
                                         }
                                     }
                                     NeumorphicShape(
-                                        modifier = Modifier.align(Alignment.BottomEnd)
-                                            .padding(end = 80.dp, bottom = 8.dp)
-                                            .navigationBarsPaddingCJ(),
+                                        modifier = Modifier
+                                            .align(Alignment.BottomEnd)
+                                            .padding(end = 16.dp, bottom = (LocalUIConfig.current.fabCircleSize.value+16).dp)
+                                            .navigationBarsPaddingCJ()
+                                            .size(LocalUIConfig.current.fabCircleSize),
                                         isPressed = isEnableAnnotation.value,
-                                        painter = rememberVectorPainter(TrashEmpty)
+                                        accentColor = LocalAppTheme.current.primaryColor,
+                                        painter = rememberVectorPainter(vectors.Note)
                                     ) {
                                         isEnableAnnotation.value = !isEnableAnnotation.value
                                     }
@@ -350,9 +376,9 @@ internal fun PdfUI(
 
                         Platform.Ios -> {
                             CJPdf(
-                                Modifier.fillMaxSize().liquefiable(liquidState),
+                                Modifier.fillMaxSize(),
                                 currentPage = currentPage,
-                                pdf = documentState!!,
+                                pdf = documentState,
                                 annotations = annotations,
                                 filePath = fileType.fileNode.getFullPath(),
                                 onAddAnnotation = onAddAnnotation,
@@ -361,9 +387,13 @@ internal fun PdfUI(
                         }
                     }
                 }
+                val paddingAdd = if (isCompactUI()) {
+                    50.dp
+                } else 0.dp
                 Row(
                     modifier = Modifier
-                        .padding(bottom = 32.dp)
+                        .padding(bottom = paddingAdd)
+                        .navigationBarsPaddingCJ()
                         .align(Alignment.BottomCenter)
                         .clip(RoundedCornerShape(16.dp))
                         .background(
@@ -372,14 +402,6 @@ internal fun PdfUI(
                         )
                         //.hazeEffect(state = hazeState, style = hazeStyle)
                         .border(volumedBorderStroke, shape = RoundedCornerShape(16.dp))
-                        .liquid(liquidState) {
-                            this.frost = 1.dp
-                            refraction = 0.15f
-                            edge = 0.05f
-                            curve = 0.4f
-                            saturation = 0.5f
-                            dispersion = 1f
-                        }
                         .padding(8.dp),
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -424,11 +446,11 @@ internal fun PdfUI(
                         color = Color.White
                     )
                     CJText(
-                        text = "of", Modifier.blendMode(BlendMode.Difference),
+                        text = "-", Modifier.blendMode(BlendMode.Difference),
                         color = Color.White
                     )
                     CJText(
-                        text = documentState?.getNumberOfPages().toString(),
+                        text = documentState.getNumberOfPages().toString(),
                         Modifier.blendMode(BlendMode.Difference),
                         color = Color.White
                     )
@@ -458,84 +480,6 @@ internal fun PdfUI(
             } else {
                 CJCircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             }
-//            Row(
-//                modifier = Modifier.align(Alignment.BottomEnd).background(Color.Black)
-//                    .padding(8.dp),
-//                horizontalArrangement = Arrangement.spacedBy(8.dp)
-//            ) {
-//                Box(
-//                    modifier = Modifier.background(Color.Black)
-//                        .flatClickable {
-//                            //      currentPage = currentPage,
-//                            //                                pdf = documentState!!,
-//                            //                                annotations = annotations,
-//                            //                                filePath = fileType.fileNode.getFullPath(),
-//                            onAddAnnotation(
-//                                CreateAnnotationRequest(
-//                                    dataPath = fileType.fileNode.getFullPath(),
-//                                    dataPoint = (currentPage - 1).toDouble(),
-//                                    description = "-",
-//                                    x = 0.5f,
-//                                    y = 0.5f,
-//                                    width = 0.1f,
-//                                    height = 0.1f,
-//                                )
-//                            )
-//                        }
-//                ) {
-//                    CJText(text = "annotate")
-//                }
-//                Box(
-//                    modifier = Modifier.background(Color.Black)
-//                        .flatClickable {
-//                            isShowAnnotations.value = !isShowAnnotations.value
-//                        }
-//                ) {
-//                    CJText(text = "annotations: ${annotations.size}")
-//                }
-//            }
-
-        }
-
-        Row(
-            modifier = Modifier.fillMaxHeight()
-                .background(LocalAppTheme.current.colors.backgroundPrimary)
-        ) {
-            AnimatedVisibility(isShowAnnotations.value) {
-                Column(
-                    modifier = Modifier.width(200.dp).fillMaxHeight().verticalScroll(
-                        rememberScrollState()
-                    )
-                ) {
-                    for (item in annotations) {
-                        Box(
-                            modifier = Modifier
-                                .padding(4.dp)
-                                .fillMaxWidth()
-                                .heightIn(max = 150.dp)
-                                .border(1.dp, Color.White)
-                                .padding(8.dp)
-                        ) {
-                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                if (!item.description.isEmpty()) {
-                                    CJText("Примеч: ${item.description}", maxLines = 3)
-                                }
-                                Row {
-                                    CJButton(text = "go to ${item.dataPoint}") {
-                                        toPage(item.dataPoint.toInt() + 1)
-                                    }
-                                    Box(Modifier.weight(1f))
-                                    CJButton(text = "remove") {
-                                        onDeleteAnnotation(item)
-                                    }
-                                }
-
-                            }
-                        }
-                    }
-                }
-            }
         }
     }
-
 }

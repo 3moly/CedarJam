@@ -75,8 +75,7 @@ interface ISqlStorage {
         localNodes: List<FileTreeNode>
     ): ResultWrapper<Unit, String>
 
-    fun syncAllFiles(): ResultWrapper<Unit, String>
-
+    fun syncAllFiles(specificIndexes: List<IndexFileDto>): ResultWrapper<Unit, String>
 
     fun syncDirtyFiles(list: List<IndexFileDto>): ResultWrapper<Unit, String>
 

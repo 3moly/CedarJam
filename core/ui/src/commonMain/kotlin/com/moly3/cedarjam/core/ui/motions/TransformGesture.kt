@@ -243,18 +243,9 @@ suspend fun PointerInputScope.detectPointerTransformGestures(
                         }
                     }
                 }
-                // Detect pinch-to-zoom
-                val pointers = event.changes
-                    .filter { it.pressed } // Only consider currently pressed pointers
-
-                if (pointers.size >= 2) {
-                    Logger.d("pointers: 2222")
-                }
             }
         }
     }
-
-    var countGesturesEnd = 0
 
     awaitEachGesture {
         var rotation = 0f
@@ -266,7 +257,6 @@ suspend fun PointerInputScope.detectPointerTransformGestures(
 
         var gestureStarted = false
 
-        Logger.d("changes list: ")
         // Wait for at least one pointer to press down, and set first contact position
         val down: PointerInputChange = awaitFirstDown(
             requireUnconsumed = false,
@@ -376,8 +366,6 @@ suspend fun PointerInputScope.detectPointerTransformGestures(
         } else {
             onGestureCancel()
         }
-        countGesturesEnd++
-        Logger.d("count_gestures_end: ${countGesturesEnd}")
 
         // Enhanced click detection with double-click support
         if (!pastTouchSlop && !pointer.isConsumed && !pointer.pressed) {

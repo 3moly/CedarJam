@@ -17,7 +17,6 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import com.moly3.cedarjam.core.domain.model.CollectionViewType
-import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.func.navigationBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.func.wstatusBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.uikit.ButtSnapType
@@ -25,12 +24,8 @@ import com.moly3.cedarjam.core.ui.uikit.CJButtSnap
 import com.moly3.cedarjam.core.ui.uikit.CJButton
 import com.moly3.cedarjam.core.ui.uikit.CJText
 import com.moly3.cedarjam.core.ui.uikit.CJTextField
-import com.moly3.cedarjam.core.ui.uikit.JustMenuContent
 import com.moly3.cedarjam.pages.page_collection.Intent
 import com.moly3.cedarjam.pages.page_collection.State
-import dev.chrisbanes.haze.HazeDefaults
-import dev.chrisbanes.haze.HazeStyle
-import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.coroutines.FlowPreview
@@ -42,19 +37,8 @@ internal fun PageContent(
     state: State,
     onIntent: (Intent) -> Unit
 ) {
-    var isPressed by remember { mutableStateOf(false) }
-    var isIOPressed by remember { mutableStateOf(false) }
-
-    val appTheme = LocalAppTheme.current
     val hazeState = rememberHazeState(blurEnabled = true)
-    val hazeStyle = remember(appTheme) {
-        HazeStyle(
-            backgroundColor = appTheme.colors.backgroundSecondary.copy(alpha = 0.8f),
-            tints = listOf(HazeTint(appTheme.colors.backgroundSecondary.copy(0.5f))),
-            blurRadius = 16.dp,
-            noiseFactor = HazeDefaults.noiseFactor
-        )
-    }
+
     Column(modifier = Modifier.wstatusBarsPaddingCJ().navigationBarsPaddingCJ().fillMaxSize().hazeSource(hazeState)) {
         Column(modifier = Modifier.fillMaxWidth().weight(1f)) {
             if (state.collection != null) {
@@ -228,26 +212,4 @@ internal fun PageContent(
             }
         }
     }
-    JustMenuContent {
-        onIntent(Intent.OpenWorkspaceSettings)
-    }
-//    FileMenuContent(
-//        modifier = Modifier.safeDrawingPadding().fillMaxSize(),
-//        borderModifier = Modifier
-//            .clip(RoundedCornerShape(16.dp))
-//            .hazeEffect(hazeState, hazeStyle)
-//        ,
-//        annotationsCount = 0,
-//        isIOSwitchPressed = isIOPressed,
-//        isOpenedMenu = isPressed,
-//        openWorkspaceSettings = {
-//            onIntent(Intent.OpenWorkspaceSettings)
-//        },
-//        onIOClick = {
-//            isIOPressed = !isIOPressed
-//        },
-//        onClick = {
-//            isPressed = !isPressed
-//        }
-//    )
 }

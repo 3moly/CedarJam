@@ -1,6 +1,5 @@
 package com.moly3.cedarjam.core.data
 
-import co.touchlab.kermit.Logger
 import com.moly3.cedarjam.core.net.IRemoteSyncRepository
 import com.moly3.cedarjam.core.domain.DefaultJson
 import com.moly3.cedarjam.core.domain.func.doNothing
@@ -67,12 +66,9 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
 import kotlin.collections.listOf
 import kotlin.collections.map
 import kotlin.collections.set
-import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
 class WorkspaceEnvironment(
@@ -284,11 +280,6 @@ class WorkspaceEnvironment(
         return sqlStorage
             .getCollectionRows(collectionId = collectionId)
             .map {
-                Logger.w {
-                    "${collectionId} rows: mapping to dto ${
-                        Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-                    }"
-                }
                 it.map { d -> d.toDTO() }
             }
             .flowOn(io)
@@ -347,7 +338,7 @@ class WorkspaceEnvironment(
             .map {
                 it.map {
                     TagAnnotationDTO(
-                        id=it.id,
+                        id = it.id,
                         tagId = it.tagId,
                         annotationId = it.annotationId
                     )
@@ -854,8 +845,8 @@ class WorkspaceEnvironment(
         )
     }
 
-    override fun syncAllIndexes(): ResultWrapper<Unit, String> {
-        return sqlStorage.syncAllFiles()
+    override fun syncAllIndexes(specificIndexes: List<IndexFileDto>): ResultWrapper<Unit, String> {
+        return sqlStorage.syncAllFiles(specificIndexes = specificIndexes)
     }
 
     override fun setFilesAsSynced(

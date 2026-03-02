@@ -15,13 +15,14 @@ fun getFileNodeFromPath(
     nodes: List<FileTreeNode>? = null,
     fileSize: Long
 ): FileTreeNode {
+    val getOtherFileMeta = getOtherFileMeta(filePath.toString())
+
     val fullName = filePath.name
     val relativePath = filePath
         .toString()
         .relativeTo(workspaceFullPath)
         .removePrefix("/")
         .removeSuffix(filePath.name)
-//    val parentFullPath = filePath.parent?.toString() ?: ""
     val isLastDotExists = fullName.last() == '.'
 
     val splited = fullName.split(".")
@@ -31,7 +32,6 @@ fun getFileNodeFromPath(
         shortName = fullName
         fileExtension = ""
     }
-    val getOtherFileMeta = getOtherFileMeta(filePath.toString())
 
     val file = if (isDirectory) {
         FileTreeNode.Directory(

@@ -10,6 +10,7 @@ import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.moly3.cedarjam.core.domain.func.hiddenDirectory
 import com.moly3.cedarjam.core.domain.func.normalizeText
 import com.moly3.cedarjam.core.domain.func.pathWrapper
+import com.moly3.cedarjam.core.domain.func.shareScope
 import com.moly3.cedarjam.core.domain.io
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.FileTreeNode.Companion.getAllFilesByExtension
@@ -43,6 +44,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -61,19 +63,20 @@ internal class FileStoreFactory(
     private val fileManagerService: FileManagerService by lazy {
         workspaceSession.fileManagerService
     }
+    private val scope: CoroutineScope by inject()
     private val navigator: Navigator by inject()
     private val imageTransform: IImageTransform by inject()
     private val filesRepository: IFilesRepository by inject()
 
     private val foundNodeFlow = combine(
-        workspaceSession.workspaceEnvStateFlow.value.getFileNodesFlow(),
+        workspaceSession.filesFlow,
         fileManagerService.fileNodeState
     ) { files, timestamp ->
         val keyVal = timestamp.states[data.timestamp]
         val nodes = files.getOrDefault(listOf()).getAllFilesByExtension(null)
         val found = nodes.firstOrNull { d -> d.getRelativePath() == keyVal?.fileNodeRelativePath }
         found
-    }
+    }.distinctUntilChangedBy { file -> file?.getRelativePath() }.shareScope(scope = scope)
 
     fun create(stateKeeper: StateKeeper): FileStore = object : FileStore,
         Store<Intent, State, Unit> by storeFactory.create(
@@ -103,7 +106,7 @@ internal class FileStoreFactory(
             } else {
                 null
             }
-        }
+        }.shareScope(scope = scope)
     }.also {
         stateKeeper.register(key = "FileStore", strategy = State.SaveableState.serializer()) {
             it.state.toSaveable()
@@ -125,7 +128,9 @@ internal class FileStoreFactory(
                     if (node != null) {
                         val nodePath = node.getRelativePath()
                         annotations
-                            .filter { d -> d.dataPath.normalizeText() == nodePath.normalizeText() }
+                            .filter { d ->
+                                d.dataPath.normalizeText() == nodePath.normalizeText()
+                            }
                             .toPersistentList()
                     } else {
                         persistentListOf()

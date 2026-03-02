@@ -1,6 +1,7 @@
 package com.moly3.cedarjam.core.domain.model
 
 import com.moly3.cedarjam.core.domain.func.hiddenDirectory
+import com.moly3.cedarjam.core.domain.func.normalizeText
 import com.moly3.cedarjam.core.domain.func.pathWrapper
 import kotlinx.io.files.Path
 import kotlinx.serialization.Serializable
@@ -81,11 +82,11 @@ sealed class FileTreeNode {
         }
 
         override fun getRelativePath(): String {
-            return pathWrapper(parentRelativePath, getFullName()).pathString
+            return pathWrapper(parentRelativePath, getFullName()).pathString.normalizeText()
         }
 
         override fun getFullPath(): String {
-            return pathWrapper(workspaceFullPath, parentRelativePath, getFullName()).pathString
+            return pathWrapper(workspaceFullPath, parentRelativePath, getFullName()).pathString.normalizeText()
         }
     }
 

@@ -2,20 +2,33 @@ package com.moly3.cedarjam.core.storage.func
 
 import com.moly3.cedarjam.core.domain.model.FileItem
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
+import com.moly3.cedarjam.core.domain.model.IndexFileDto
 import com.moly3.cedarjam.core.domain.model.SyncStatus
 import com.moly3.cedarjam.indexdb.IndexDatabase
 
 fun syncAllFiles(
-    dbHelper: IndexDatabase
+    dbHelper: IndexDatabase,
+    specificIndexes: List<IndexFileDto> = listOf()
 ) {
     dbHelper.indexFileQueries.transaction {
-        val dbQueries = dbHelper.indexFileQueries.selectAll().executeAsList()
-        dbHelper.indexFileQueries.transaction {
-            for (item in dbQueries) {
-                dbHelper.indexFileQueries.updateStatus(
-                    relativePath = item.relativePath,
-                    serverSyncStatus = SyncStatus.SYNCED.code
-                )
+        if (specificIndexes.isNotEmpty()) {
+            dbHelper.indexFileQueries.transaction {
+                for (item in specificIndexes) {
+                    dbHelper.indexFileQueries.updateStatus(
+                        relativePath = item.relativePath,
+                        serverSyncStatus = SyncStatus.SYNCED.code
+                    )
+                }
+            }
+        } else {
+            val dbQueries = dbHelper.indexFileQueries.selectAll().executeAsList()
+            dbHelper.indexFileQueries.transaction {
+                for (item in dbQueries) {
+                    dbHelper.indexFileQueries.updateStatus(
+                        relativePath = item.relativePath,
+                        serverSyncStatus = SyncStatus.SYNCED.code
+                    )
+                }
             }
         }
     }

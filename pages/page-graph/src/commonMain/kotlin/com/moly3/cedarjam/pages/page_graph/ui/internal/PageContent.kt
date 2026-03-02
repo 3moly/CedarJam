@@ -30,7 +30,6 @@ import com.moly3.cedarjam.core.ui.onPointerEvent
 import com.moly3.cedarjam.core.ui.uikit.CJButtonIcon
 import com.moly3.cedarjam.core.ui.uikit.CJSlider
 import com.moly3.cedarjam.core.ui.uikit.CJText
-import com.moly3.cedarjam.core.ui.uikit.JustMenuContent
 import vectors.SettingsFuture
 import com.moly3.dataviz.graph.ui.Graph
 import kotlin.time.ExperimentalTime
@@ -320,8 +319,5 @@ internal fun PageContent(state: State, onIntent: (Intent) -> Unit) {
                 }
             }
         }
-    }
-    JustMenuContent {
-        onIntent(Intent.OpenWorkspaceSettings)
     }
 }

@@ -1,15 +1,16 @@
 package com.moly3.cedarjam.core.domain.usecase
 
 import co.touchlab.kermit.Logger
+import com.moly3.cedarjam.core.domain.func.doNothing
 import com.moly3.cedarjam.core.domain.func.isMoreThan
 import com.moly3.cedarjam.core.domain.func.normalizeText
 import com.moly3.cedarjam.core.domain.func.pathWrapper
 import com.moly3.cedarjam.core.domain.io
-import com.moly3.cedarjam.core.domain.model.FileTreeNode.Companion.getAll
 import com.moly3.cedarjam.core.domain.model.FileItem
 import com.moly3.cedarjam.core.domain.model.FileMetadata
 import com.moly3.cedarjam.core.domain.model.FileName
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
+import com.moly3.cedarjam.core.domain.model.FileTreeNode.Companion.getAll
 import com.moly3.cedarjam.core.domain.model.IndexFileDto
 import com.moly3.cedarjam.core.domain.model.ResultRaise
 import com.moly3.cedarjam.core.domain.model.ResultWrapper
@@ -23,8 +24,6 @@ import com.moly3.cedarjam.core.domain.repository.IFilesRepository
 import com.moly3.cedarjam.core.domain.repository.IWorkspaceEnvironment
 import com.moly3.cedarjam.core.domain.repository.getTempFileNode
 import com.moly3.cedarjam.core.domain.service.AlertService
-import io.github.vinceglb.filekit.FileKit
-import io.github.vinceglb.filekit.projectDir
 import kotlinx.collections.immutable.toPersistentMap
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -59,6 +58,7 @@ class SyncUseCase(
     }
 
     sealed class SyncResult {
+        data class MarkSyncLocal(val local: IndexFileDto) : SyncResult()
         data class Upload(val reason: String, val local: IndexFileDto) : SyncResult()
         data class Download(val reason: String, val server: FileItem) : SyncResult()
         data class None(val reason: String) : SyncResult()
@@ -110,13 +110,21 @@ class SyncUseCase(
                     server
                 )
 
-                local.serverSyncStatus != SyncStatus.SYNCED && hashMismatch || !local.isDirectory && localNewer && hashMismatch -> {
-                    val reason = when {
-                        local.serverSyncStatus != SyncStatus.SYNCED -> "Local status: ${local.serverSyncStatus}"
-                        localNewer -> "Local is newer ($diffMs)"
-                        else -> "Hash mismatch"
+                local.serverSyncStatus != SyncStatus.SYNCED -> {
+                    if (localNewer && !hashMismatch) {
+                        SyncResult.MarkSyncLocal(local)
+                    } else {
+                        if (hashMismatch || !local.isDirectory && localNewer && hashMismatch) {
+                            val reason = when {
+                                local.serverSyncStatus != SyncStatus.SYNCED -> "Local status: ${local.serverSyncStatus}"
+                                localNewer -> "Local is newer ($diffMs)"
+                                else -> "Hash mismatch"
+                            }
+                            SyncResult.Upload(reason, local)
+                        } else {
+                            SyncResult.None("Files are identical")
+                        }
                     }
-                    SyncResult.Upload(reason, local)
                 }
 
                 else -> SyncResult.None("Files are identical")
@@ -128,7 +136,7 @@ class SyncUseCase(
 
     override suspend fun getStatus(workspace: IWorkspaceEnvironment): ResultWrapper<GetSyncStatus, String> {
         return withContext(io) {
-            resultBlock(onError = {""}) {
+            resultBlock(onError = { "" }) {
                 val serverFiles = bind(workspace.getServerFiles()).files
                 val diskNodes =
                     workspace.getNodes(null).firstOrNull()?.getChildrenOrNull()?.getAll()
@@ -141,17 +149,20 @@ class SyncUseCase(
 
                 val toDownload = mutableMapOf<String, String>()
                 val toUpload = mutableMapOf<String, String>()
+                val indexFilesToMarkSync = mutableListOf<IndexFileDto>()
 
                 allPaths.forEach { path ->
                     val local = indexMap[path]
                     val server = serverMap[path]
-                    val determAction = determineAction(local, server)
-                    when (determAction) {
+                    when (val determAction = determineAction(local, server)) {
                         is SyncResult.Download -> toDownload[path] = determAction.reason
                         is SyncResult.None -> Unit
                         is SyncResult.Upload -> toUpload[path] = determAction.reason
+                        is SyncResult.MarkSyncLocal -> indexFilesToMarkSync.add(determAction.local)
                     }
                 }
+
+                workspace.syncAllIndexes(indexFilesToMarkSync)
 
                 GetSyncStatus(
                     toDownload = toDownload.toPersistentMap(),
@@ -326,7 +337,7 @@ class SyncUseCase(
                 "zip"
             )
         )
-        return resultBlock(onError = {""}) {
+        return resultBlock(onError = { "" }) {
             try {
                 val serverFiles = bind(workspaceEnv.getServerFiles()).files
                 val diskNodesInitial =
@@ -389,6 +400,8 @@ class SyncUseCase(
                                     filesToPackInZip.add(determAction.local)
                                 }
                             }
+
+                            is SyncResult.MarkSyncLocal -> doNothing()
                         }
                     }
                 }
@@ -421,7 +434,8 @@ class SyncUseCase(
                     emitChannel("upload to server ${index}/${chunks.size}", 4)
                 }
                 val myDeletedPaths = filesToUploadMeta
-                    .filter { it.isDeleted }.map { it.relativePath }
+                    .filter { it.isDeleted }
+                    .map { it.relativePath }
                 if (myDeletedPaths.isNotEmpty()) {
                     workspaceEnv.deleteIndexFiles(myDeletedPaths)
                 }

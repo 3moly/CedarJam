@@ -54,7 +54,7 @@ fun initApp(
     isRelease: Boolean = BuildConfig.IsRelease,
     isTest: Boolean = false
 ) {
-    if (isRelease && false) {
+    if (isRelease) {
         Logger.setLogWriters(listOf())
         Logger.setMinSeverity(Severity.Assert)
     } else {
@@ -90,7 +90,9 @@ fun initApp(
         single<IJvmBrowserService> { getJvmBrowserService() }
         single<MacTrackpadGestureService> { MacTrackpadGestureService() }
         single<Navigator> { navigator }
-        single<CoroutineScope> { scope }
+        factory<CoroutineScope> {
+            CoroutineScope(SupervisorJob() + Dispatchers.Main)
+        }
         single { Json { isLenient = true; ignoreUnknownKeys = true; explicitNulls = false } }
 
         single<IFilesRepository> {

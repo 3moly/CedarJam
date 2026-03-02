@@ -1,10 +1,16 @@
 package com.moly3.cedarjam.features.feature_settings.child.general.ui.internal
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -14,6 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
@@ -86,6 +93,29 @@ internal fun SettingsGeneralUIContent(
                 ) {
                     onIntent(Intent.SetLanguage(it.code))
                 }
+            }
+            SelectOption(
+                modifier = Modifier,
+                text = "Primary color",
+                isShowBorder = true
+            ) {
+                val color = LocalAppTheme.current.primaryColor
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .size(30.dp)
+                        .clip(RoundedCornerShape(30.dp))
+                        .background(
+                            color = color,
+                            shape = RoundedCornerShape(30.dp)
+                        )
+                        .border(
+                            1.dp,
+                            color = LocalAppTheme.current.colors.divide,
+                            shape = RoundedCornerShape(40.dp)
+                        )
+                        .clickable { onIntent(Intent.ChangePrimaryColor(color)) }
+                )
             }
             SelectOption(
                 modifier = Modifier,

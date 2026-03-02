@@ -1,6 +1,7 @@
 package com.moly3.cedarjam.features.feature_settings.child.general
 
 import com.arkivanov.decompose.ComponentContext
+import com.moly3.cedarjam.core.domain.dialog.DialogColorPickerService
 import com.moly3.cedarjam.core.domain.func.hiddenDirectory
 import com.moly3.cedarjam.core.domain.func.pathWrapper
 import com.moly3.cedarjam.core.domain.io
@@ -30,6 +31,7 @@ class SettingsGeneralComponent(
 
     private val coroutineScope: CoroutineScope by inject()
     private val systemFilesManager: IFilesRepository by inject()
+    private val dialogColorPickerService: DialogColorPickerService by inject()
     override val settingsState = workspaceSession.getSettingsFlow()
 
     private fun setSettings(newSettings: WorkspaceSettings) {
@@ -43,6 +45,18 @@ class SettingsGeneralComponent(
 
     override fun onIntent(intent: Intent) {
         when (intent) {
+            is Intent.ChangePrimaryColor -> {
+                coroutineScope.launch {
+                    val newColor = dialogColorPickerService.open(intent.color)
+                    if (newColor != null) {
+                        val state = workspaceSession.getSettingsFlow().value
+                        setSettings(
+                            state.copy(theme = state.theme.copy(primaryColor = newColor))
+                        )
+                    }
+                }
+            }
+
             Intent.Back -> back()
             Intent.Close -> close()
             Intent.UploadFont -> coroutineScope.launch(io) {

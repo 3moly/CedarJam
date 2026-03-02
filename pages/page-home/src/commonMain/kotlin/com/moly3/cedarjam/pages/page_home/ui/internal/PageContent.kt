@@ -13,13 +13,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.moly3.cedarjam.core.ui.func.navigationBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.func.wstatusBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.uikit.CJSearchTextField
-import com.moly3.cedarjam.core.ui.uikit.JustMenuContent
 import com.moly3.cedarjam.core.ui.uikit.UIStateContentNoBox
 import com.moly3.cedarjam.pages.page_home.Intent
 import com.moly3.cedarjam.pages.page_home.State
@@ -83,7 +83,17 @@ internal fun PageContent(
                             when (it) {
                                 is TimeMachine.Annotation -> state.filterType == TimeMachineFilterType.Annotation
                                 is TimeMachine.Collection -> state.filterType == TimeMachineFilterType.Row
-                                is TimeMachine.FileNode -> state.filterType == TimeMachineFilterType.Text
+                                is TimeMachine.FileNode -> {
+
+                                    when (it.file.name.extension) {
+                                        "md", "txt" -> state.filterType == TimeMachineFilterType.Text
+                                        "pdf" -> state.filterType == TimeMachineFilterType.Pdf
+                                        "png", "jpeg", "gif", "wbep", "jpg" -> state.filterType == TimeMachineFilterType.Image
+                                        "canvas" -> state.filterType == TimeMachineFilterType.Canvas
+                                        else -> false
+                                    }
+                                }
+
                                 is TimeMachine.Row -> state.filterType == TimeMachineFilterType.Row
                                 is TimeMachine.Tag -> state.filterType == TimeMachineFilterType.Tag
                             }
@@ -125,8 +135,5 @@ internal fun PageContent(
                 }
             }
         }
-    }
-    JustMenuContent {
-        onIntent(Intent.OpenWorkspaceSettings)
     }
 }

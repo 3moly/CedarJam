@@ -1,5 +1,6 @@
 package com.moly3.cedarjam.pages.page_home.ui.internal
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -21,6 +23,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -69,7 +72,19 @@ internal fun TimeMachineItem(
                     }
 
                     is TimeMachine.Collection -> {
-                        CJText(text = "Collection")
+                        Column(
+                            modifier = Modifier.align(Alignment.Center).padding(horizontal = 16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Image(
+                                painter = rememberVectorPainter(vectors.Data),
+                                contentDescription = null,
+                                modifier=Modifier.height(75.dp),
+                                contentScale = ContentScale.FillHeight
+                            )
+                            CJText(text = item.collection.name)
+                        }
                     }
 
                     is TimeMachine.FileNode -> {
@@ -82,9 +97,13 @@ internal fun TimeMachineItem(
                                 )
                                 if (pdfImg != null) {
                                     AsyncImage(
+                                        modifier = Modifier
+                                            .padding(top = 16.dp)
+                                            .align(Alignment.TopCenter)
+                                            .width(75.dp),
                                         model = pdfImg,
                                         contentDescription = null,
-                                        contentScale = ContentScale.Crop
+                                        contentScale = ContentScale.FillWidth
                                     )
                                 }
                             }
@@ -139,9 +158,10 @@ internal fun TimeMachineItem(
                             val pdfImg = rememberPdfImage(workspaceFullPath, ful)
                             if (pdfImg != null) {
                                 AsyncImage(
+                                    modifier = Modifier.align(Alignment.TopCenter).width(75.dp),
                                     model = pdfImg,
                                     contentDescription = null,
-                                    contentScale = ContentScale.Crop
+                                    contentScale = ContentScale.FillWidth
                                 )
                             }
                         } else {

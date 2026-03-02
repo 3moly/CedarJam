@@ -10,4 +10,6 @@ sealed class Intent {
         val newName: String,
         val pageType: PageNameData.PageType
     ) : Intent()
+    data object OpenWorkspaceSettings : Intent()
+
 }

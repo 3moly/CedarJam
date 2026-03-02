@@ -20,8 +20,10 @@ import androidx.compose.ui.unit.dp
 import com.moly3.cedarjam.core.domain.io
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
+import com.moly3.cedarjam.core.ui.uikit.CJIOSwitch
 import com.moly3.cedarjam.core.ui.uikit.CJSlider
 import com.moly3.cedarjam.core.ui.uikit.CJText
+import com.moly3.cedarjam.core.ui.uikit.NeumorphicShape
 import com.moly3.cedarjam.features.feature_graph.Intent
 import com.moly3.cedarjam.features.feature_graph.State
 import com.moly3.dataviz.core.graph.model.GraphViewSettings
@@ -84,6 +86,12 @@ internal fun GraphPageContent(
                 },
                 valueRange = 0.5f..3f
             )
+            CJIOSwitch(
+                height = 36,
+                isPressed = state.isShowNestedConnections
+            ) {
+                onIntent(Intent.SetIsShowNestedConnections(!state.isShowNestedConnections))
+            }
         }
     }
 }

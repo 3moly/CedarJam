@@ -7,6 +7,9 @@ import com.arkivanov.mvikotlin.core.store.Reducer
 import com.arkivanov.mvikotlin.core.store.SimpleBootstrapper
 import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
+import com.moly3.cedarjam.core.domain.dialog.DialogSelectTagService
+import com.moly3.cedarjam.core.domain.func.doNothing
+import com.moly3.cedarjam.core.domain.func.nowInMs
 import com.moly3.cedarjam.features.feature_graph.Intent
 import com.moly3.cedarjam.features.feature_graph.State
 import com.moly3.cedarjam.features.feature_graph.State.Companion.fromSaveable
@@ -16,11 +19,16 @@ import com.moly3.cedarjam.features.feature_graph.store.DialogGraphStore.Msg.*
 import com.moly3.cedarjam.navigation.BaseExecutor
 import com.moly3.cedarjam.navigation.consumeOrDefault
 import com.moly3.cedarjam.core.domain.io
+import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.domain.model.bind
 import com.moly3.cedarjam.core.domain.model.getCollectionRowGraphId
 import com.moly3.cedarjam.core.domain.model.getFileTreeNodeGraphId
+import com.moly3.cedarjam.core.domain.model.getGraphId
 import com.moly3.cedarjam.core.domain.model.getTagGraphId
 import com.moly3.cedarjam.core.domain.model.placeNodesCircular
+import com.moly3.cedarjam.core.domain.model.request.CreateTagCollectionRowRequest
+import com.moly3.cedarjam.core.domain.model.request.CreateTagLinkRequest
+import com.moly3.cedarjam.core.domain.model.request.CreateTagToTagRequest
 import com.moly3.cedarjam.core.domain.model.resultBlock
 import com.moly3.cedarjam.core.domain.service.FileManagerService
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
@@ -33,6 +41,7 @@ import kotlinx.collections.immutable.toPersistentList
 import kotlinx.collections.immutable.toPersistentMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
@@ -55,6 +64,7 @@ internal class DialogGraphStoreFactory(
     private val openNodeDataUseCase: IOpenNodeDataUseCase by inject {
         parametersOf(workspaceSession.fileManagerService)
     }
+    private val selectTagService: DialogSelectTagService by inject()
 
     fun create(stateKeeper: StateKeeper): DialogGraphStore = object : DialogGraphStore,
         Store<Intent, State, Unit> by storeFactory.create(
@@ -80,6 +90,9 @@ internal class DialogGraphStoreFactory(
     private inner class ExecutorImpl :
         BaseExecutor<Intent, Unit, State, Msg, Unit>(lifecycle) {
 
+        private val _isShowNestedConnectionsStateFlow = MutableStateFlow(false)
+
+
         private val targetIdFlow = workspaceSession.fileManagerService.fileNodeState.map {
             when (targetInput) {
                 is GraphDialogInput.File -> {
@@ -94,6 +107,55 @@ internal class DialogGraphStoreFactory(
                 is GraphDialogInput.Row -> targetInput.id.getCollectionRowGraphId()
                 is GraphDialogInput.Tag -> targetInput.id.getTagGraphId()
             }
+        }
+
+        private val connectionsFlow = combine(
+            workspaceSession.graphEco.connectionsFlow,
+            targetIdFlow
+        ) { connections, targetId ->
+            connections[targetId]?.associateBy { it } ?: mapOf()
+        }
+
+        private val connectedTags = combine(
+            connectionsFlow,
+            workspaceSession.tagsFlow
+        ) { connections, tags ->
+            val filteredTags = tags.filter {
+                connections[it.getGraphId()] != null
+            }
+            UIState.Success(filteredTags.toPersistentList())
+        }
+
+        private val connectedFiles = combine(
+            connectionsFlow,
+            workspaceSession.allFiles
+        ) { connections, filesState ->
+            filesState.map(onError = {}) {
+                it.filter {
+                    val graphId = it.getGraphId()
+                    connections[graphId] != null
+                }.toPersistentList()
+            }
+        }
+
+        private val connectedRows = combine(
+            connectionsFlow,
+            workspaceSession.collectionRowsFlow
+        ) { connections, rows ->
+            val filtered = rows.filter {
+                connections[it.getGraphId()] != null
+            }
+            UIState.Success(filtered.toPersistentList())
+        }
+
+        private val connectedAnnotations = combine(
+            connectionsFlow,
+            workspaceSession.annotationsFlow
+        ) { connections, annotations ->
+            val filtered = annotations.filter {
+                connections[it.getGraphId()] != null
+            }
+            UIState.Success(filtered.toPersistentList())
         }
 
         fun findAllConnected(
@@ -124,10 +186,39 @@ internal class DialogGraphStoreFactory(
         override fun onStart(scopeFromStartToStop: CoroutineScope) {
             super.onStart(scopeFromStartToStop)
 
+            _isShowNestedConnectionsStateFlow.value = state().isShowNestedConnections
             scopeFromStartToStop.launch {
                 targetIdFlow.collectLatest {
                     dispatch(Msg.SetGraphTargetId(it))
                 }
+            }
+            scopeFromStartToStop.launch {
+                connectedTags
+                    .flowOn(io)
+                    .collectLatest {
+                        dispatch(Msg.SetTagsState(it))
+                    }
+            }
+            scopeFromStartToStop.launch {
+                connectedRows
+                    .flowOn(io)
+                    .collectLatest {
+                        dispatch(Msg.SetRowsState(it))
+                    }
+            }
+            scopeFromStartToStop.launch {
+                connectedFiles
+                    .flowOn(io)
+                    .collectLatest {
+                        dispatch(Msg.SetFilesState(it))
+                    }
+            }
+            scopeFromStartToStop.launch {
+                connectedAnnotations
+                    .flowOn(io)
+                    .collectLatest {
+                        dispatch(Msg.SetAnnotationsState(it))
+                    }
             }
             scopeFromStartToStop.launch {
                 workspaceSession.graphEco.connectionsFlow
@@ -142,18 +233,22 @@ internal class DialogGraphStoreFactory(
                         dispatch(Msg.SetConnections(it))
                     }
             }
+
             scopeFromStartToStop.launch {
                 combine(
                     workspaceSession.graphEco.nodes,
                     workspaceSession.graphEco.connectionsFlow,
-                    targetIdFlow
-                ) { nodes, connections, targetId ->
+                    targetIdFlow,
+                    _isShowNestedConnectionsStateFlow
+                ) { nodes, connections, targetId, isShowNested ->
                     val filteredNodes = if (targetId != null) {
-//                        val masterConnections = connections[targetId] ?: listOf()
-//                        nodes.filter { it.id == targetId || masterConnections.contains(it.id) }
-//                        findAllConnected(startId = targetId,connections=connections)
-                        val connectedIds = findAllConnected(targetId, connections)
-                        nodes.filter { it.id in connectedIds }
+                        if (isShowNested) {
+                            val connectedIds = findAllConnected(targetId, connections)
+                            nodes.filter { it.id in connectedIds }
+                        } else {
+                            val masterConnections = connections[targetId] ?: listOf()
+                            nodes.filter { it.id == targetId || masterConnections.contains(it.id) }
+                        }
                     } else
                         nodes
                     var coordinates: Map<String, Offset>? = null
@@ -190,6 +285,56 @@ internal class DialogGraphStoreFactory(
                     dispatch(SetCoordinates(intent.value.toPersistentMap()))
                 }
 
+                is Intent.AddTag -> {
+                    scope.launch {
+                        val tag = selectTagService.open(Unit)
+                        val workspaceEnv = workspaceSession.workspaceEnvStateFlow.value
+                        val fileManagerService = workspaceSession.fileManagerService
+                        if (tag != null) {
+                            when (targetInput) {
+                                is GraphDialogInput.File -> {
+                                    val fileRelativePath =
+                                        fileManagerService.getFileNodeByTimestamp(timestamp = targetInput.timestamp)
+                                    if (fileRelativePath != null) {
+                                        workspaceEnv.createTagLink(
+                                            CreateTagLinkRequest(
+                                                relativePath = fileRelativePath,
+                                                tagId = tag.id
+                                            )
+                                        )
+                                    } else {
+                                        doNothing()
+                                    }
+                                }
+
+                                is GraphDialogInput.Row -> {
+                                    workspaceEnv.createTagCollectionRow(
+                                        CreateTagCollectionRowRequest(
+                                            tagId = tag.id,
+                                            rowId = targetInput.id,
+                                            createdTime = nowInMs()
+                                        )
+                                    )
+                                }
+
+                                is GraphDialogInput.Tag -> {
+                                    if (tag.id != targetInput.id) {
+                                        workspaceEnv.createTagToTag(
+                                            CreateTagToTagRequest(
+                                                tagId = targetInput.id,
+                                                tag2Id = tag.id,
+                                                createdTime = nowInMs()
+                                            )
+                                        )
+                                    } else {
+                                        doNothing()
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 is Intent.SetVelocities -> {
                     dispatch(SetVelocities(intent.value.toPersistentMap()))
                 }
@@ -201,6 +346,13 @@ internal class DialogGraphStoreFactory(
                 Intent.Close -> dispatch(SetIsShowContent(false))
                 is Intent.SetIsShowContent -> {
                     dispatch(SetIsShowContent(intent.value))
+                }
+
+                is Intent.SetIsShowNestedConnections -> {
+                    scope.launch {
+                        _isShowNestedConnectionsStateFlow.emit(intent.value)
+                        dispatch(Msg.SetIsShowNestedConnections(intent.value))
+                    }
                 }
 
                 is Intent.OpenNode -> {
@@ -226,6 +378,11 @@ internal class DialogGraphStoreFactory(
                 is SetIsShowContent -> copy(isShowContent = msg.value)
                 is SetCurrentPage -> copy(currentPage = msg.value)
                 is SetGraphTargetId -> copy(graphTargetId = msg.value)
+                is SetIsShowNestedConnections -> copy(isShowNestedConnections = msg.value)
+                is SetTagsState -> copy(tagsState = msg.value)
+                is SetAnnotationsState -> copy(annotationsState = msg.value)
+                is SetFilesState -> copy(filesState = msg.value)
+                is SetRowsState -> copy(rowsState = msg.value)
             }
         }
     }

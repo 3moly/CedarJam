@@ -51,10 +51,10 @@ fun ObsidianGraphPresentation.toGraphData(): ObsidianGraphData {
 }
 
 fun List<ObsidianGraphData>.toPresentation(
-    tags: List<TagDTO>,
-    collections: List<CollectionDTO>,
-    rows: List<CollectionRowDTO>,
-    files: List<FileTreeNode>
+    tags: List<TagDTO> = listOf(),
+    collections: List<CollectionDTO> = listOf(),
+    rows: List<CollectionRowDTO> = listOf(),
+    files: List<FileTreeNode> = listOf()
 ): List<ObsidianGraphPresentation> {
     return this.map {
         when (val data = it) {

@@ -30,7 +30,6 @@ internal fun TabControlsContent(
     canGoBack: Boolean,
     canGoForward: Boolean,
     textNameState: TextFieldState,
-    timeText: String,
     isEditEnabled: Boolean,
     onRename: () -> Unit,
     onBack: () -> Unit,
@@ -38,7 +37,7 @@ internal fun TabControlsContent(
 ) {
     Box(Modifier.padding(vertical = 6.dp, horizontal = 12.dp).fillMaxWidth()) {
         ConstraintLayout(modifier = Modifier.fillMaxWidth()) {
-            val (preText, text) = createRefs()
+            val (text) = createRefs()
             CJTextField2(
                 modifier = Modifier
                     .widthIn(min = 100.dp)
@@ -57,14 +56,6 @@ internal fun TabControlsContent(
                 onDone = { onRename() },
                 onLostFocus = { onRename() },
                 enabled = isEditEnabled
-            )
-            CJText(
-                modifier = Modifier.Companion.constrainAs(preText) {
-                    top.linkTo(parent.top)
-                    bottom.linkTo(parent.bottom)
-                    end.linkTo(parent.end, 8.dp)
-                },
-                text = timeText
             )
         }
         Row(

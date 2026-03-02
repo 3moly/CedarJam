@@ -4,11 +4,13 @@ import androidx.compose.runtime.Stable
 import co.touchlab.kermit.Logger
 import com.moly3.cedarjam.core.domain.func.hiddenDirectory
 import com.moly3.cedarjam.core.domain.func.nowInMs
+import com.moly3.cedarjam.core.domain.func.shareScope
 import com.moly3.cedarjam.core.domain.model.AnnotationDTO
 import com.moly3.cedarjam.core.domain.model.CollectionDTO
 import com.moly3.cedarjam.core.domain.model.CollectionRowDTO
 import com.moly3.cedarjam.core.domain.model.FileName
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
+import com.moly3.cedarjam.core.domain.model.FileTreeNode.Companion.getAll
 import com.moly3.cedarjam.core.domain.model.FileTreeNode.Companion.hideHiddenDirectory
 import com.moly3.cedarjam.core.domain.model.IndexFileDto
 import com.moly3.cedarjam.core.domain.model.ResultWrapper
@@ -31,6 +33,8 @@ import com.moly3.cedarjam.core.domain.repository.IWorkspaceEnvironment
 import com.moly3.cedarjam.core.domain.repository.IWorkspaceEnvironment.Companion.getHiddenDirectory
 import com.moly3.cedarjam.core.domain.usecase.ISyncUseCase
 import com.moly3.cedarjam.core.domain.usecase.SyncStatus2
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -83,12 +87,14 @@ class WorkspaceSession(
             workspaceEnv.getFileNodesFlow()
         }.onStart { emit(UIState.Loading) }
 
+    val allFiles: Flow<UIState<List<FileTreeNode>, String>> = filesFlow.map {
+        it.map{
+            it.getAll().toPersistentList()
+        }
+    }
+
     fun <T> Flow<T>.shareScope(): Flow<T> {
-        return this.shareIn(
-            scope = scope,
-            started = SharingStarted.Lazily,
-            replay = 1
-        )
+        return this.shareScope(scope)
     }
 
     val collectionsFlow: Flow<List<CollectionDTO>> =

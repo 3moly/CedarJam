@@ -60,7 +60,7 @@ internal fun BoxScope.TimeMachineAnnotation(
         )
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             CJText(text = "Annotation:")
-            CJText(text = "page: ${item.annotation.dataPoint.toInt()}")
+            CJText(text = "page: ${(item.annotation.dataPoint + 1).toInt()}")
         }
     }
 }

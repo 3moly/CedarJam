@@ -112,7 +112,7 @@ class TagsTest : AppEnvironmentTest() {
             CreateTagToTagRequest(
                 tagId = createdTagResult.value,
                 tag2Id = createdTag2Result.value,
-                modifiedTime = nowInMs()
+                createdTime = nowInMs()
             )
         )
         tagToTagResult.shouldBeSuccess()

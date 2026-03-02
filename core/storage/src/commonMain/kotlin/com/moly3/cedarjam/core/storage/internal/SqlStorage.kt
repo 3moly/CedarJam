@@ -64,8 +64,6 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
-import kotlinx.io.files.Path
-import kotlinx.io.files.SystemFileSystem
 import kotlin.collections.listOf
 import kotlin.time.ExperimentalTime
 
@@ -143,7 +141,7 @@ internal class SqlStorage(
         dbPath: String,
         schema: SqlSchema<QueryResult.Value<Unit>>
     ): ResultWrapper<SqlDriver, DatabaseError> {
-        return resultBlock<SqlDriver, DatabaseError>(onError = { DatabaseError.Error("")}) {
+        return resultBlock<SqlDriver, DatabaseError>(onError = { DatabaseError.Error("") }) {
             val dbPath = systemFilesManager.toAbsoluteAppPath(pathWrapper(dbPath)).pathString
             ensure(systemFilesManager.isNodeExists(dbPath)) { DatabaseError.NotExist }
             Logger.w { " ALERT" }
@@ -509,10 +507,10 @@ internal class SqlStorage(
         }
     }
 
-    override fun syncAllFiles(): ResultWrapper<Unit, String> {
+    override fun syncAllFiles(specificIndexes: List<IndexFileDto>): ResultWrapper<Unit, String> {
         return runQueryOrThrowIndex { db ->
             resultBlock {
-                syncAllFiles(dbHelper = db)
+                syncAllFiles(dbHelper = db, specificIndexes = specificIndexes)
             }
         }
     }
@@ -586,7 +584,7 @@ internal class SqlStorage(
     override fun createAnnotation(annotation: Annotation): ResultWrapper<Long, String> {
         return runQueryOrThrow { db ->
             resultBlock {
-                db.annotationQueries.transactionWithResult(){
+                db.annotationQueries.transactionWithResult() {
                     db.annotationQueries.insertNew(annotation)
                     db.annotationQueries.lastInsertId().executeAsOne()
                 }
@@ -708,7 +706,7 @@ internal class SqlStorage(
                             id = 1L,
                             firstTagId = request.tagId,
                             secondTagId = request.tag2Id,
-                            createdTime = request.modifiedTime
+                            createdTime = request.createdTime
                         )
                     )
                     val tagId = db.tagToTagQueries.lastInsertId().executeAsOneOrNull()

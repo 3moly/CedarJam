@@ -8,10 +8,13 @@ sealed class GraphPage {
     data object General : GraphPage()
 
     @Serializable
-    data object Tags : GraphPage()
+    data object Annotations : GraphPage()
 
     @Serializable
-    data object Annotations : GraphPage()
+    data object Rows : GraphPage()
+
+    @Serializable
+    data object Files : GraphPage()
 
     @Serializable
     data object Graph : GraphPage()

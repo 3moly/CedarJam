@@ -1,4 +1,4 @@
-package com.moly3.cedarjam.core.ui.uikit
+package com.moly3.cedarjam.features.feature_graph.ui.internal
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -33,6 +33,10 @@ import com.moly3.cedarjam.core.ui.func.isCompactUI
 import com.moly3.cedarjam.core.ui.func.navigationBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.func.statusBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.func.windowToolbarPaddingCJ
+import com.moly3.cedarjam.core.ui.uikit.CJApplicationTheme
+import com.moly3.cedarjam.core.ui.uikit.JustMenuContent
+import com.moly3.cedarjam.core.ui.uikit.NeumorphicShape
+import com.moly3.cedarjam.core.ui.uikit.TabNavButts
 import com.moly3.cedarjam.features.feature_graph.model.GraphTabState
 import vectors.BarLeft
 import vectors.DummySquareSmall
@@ -40,7 +44,6 @@ import vectors.DummySquareSmall
 @Composable
 fun FileMenuContent(
     modifier: Modifier,
-    state: GraphTabState,
     borderModifier: Modifier = Modifier,
     isOpenedMenu: Boolean,
     openWorkspaceSettings: () -> Unit = {},
@@ -91,22 +94,6 @@ fun FileMenuContent(
                             )
                         }
                         Box(Modifier.weight(1f))
-                        CJButtSnap(
-                            modifier = Modifier,
-                            painter = rememberVectorPainter(vectors.ArrowLeft),
-                            isSelected = !state.canGoBack,
-                            buttType = ButtSnapType.Start
-                        ) {
-                            state.goBack()
-                        }
-                        CJButtSnap(
-                            modifier = Modifier,
-                            painter = rememberVectorPainter(vectors.ArrowRight),
-                            isSelected = !state.canGoForward,
-                            buttType = ButtSnapType.End
-                        ) {
-                            state.goForward()
-                        }
                         Box(Modifier.weight(1f))
                         Box(Modifier.size(LocalUIConfig.current.fabCircleSize))
                     }
@@ -122,12 +109,6 @@ fun FileMenuContent(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalAlignment = Alignment.End
         ) {
-//            CJIOSwitch(
-//                height = (LocalUIConfig.current.fabCircleSize.value / 2f).toInt(),
-//                isPressed = isIOSwitchPressed,
-//                onClick = {
-//                    onIOClick()
-//                })
             NeumorphicShape(
                 modifier = Modifier.size(LocalUIConfig.current.fabCircleSize),
                 isPressed = isOpenedMenu,
@@ -138,6 +119,8 @@ fun FileMenuContent(
         }
     }
 }
+
+
 
 
 @Preview(widthDp = 275)
@@ -152,14 +135,19 @@ fun FidgetPoppinPreviewLight() {
             contentAlignment = Alignment.Center
         ) {
             FileMenuContent(
-                state = GraphTabState(false,true,{},{}),
                 modifier = Modifier.fillMaxSize(),
                 isOpenedMenu = isPressed,
                 onClick = {
                     isPressed = !isPressed
                 }
             )
-            JustMenuContent(modifier = Modifier, openWorkspaceSettings = {})
+            JustMenuContent(
+                modifier = Modifier,
+                canGoForward = true,
+                canGoBack = false,
+                goBack = {},
+                goForward = {},
+                openWorkspaceSettings = {})
         }
     }
 }
@@ -177,7 +165,6 @@ fun FidgetPoppinPreview2() {
             var isPressed by remember { mutableStateOf(false) }
             FileMenuContent(
                 modifier = Modifier.fillMaxSize(),
-                state = GraphTabState(false,true,{},{}),
                 isOpenedMenu = isPressed,
                 onClick = {
                     isPressed = !isPressed
