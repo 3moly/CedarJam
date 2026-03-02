@@ -152,6 +152,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
 
+
             implementation(projects.core.domain)
             implementation(projects.core.storage)
             implementation(projects.core.net)

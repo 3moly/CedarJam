@@ -13,6 +13,7 @@ sqlDelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }
 
 # helpers
 composeHotReload = { id = "org.jetbrains.compose.hot-reload", version.ref = "compose-hot-reload" }
+kotlinxBenchmark = { id = "org.jetbrains.kotlinx.benchmark", version.ref = "kotlinxBenchmark" }
 #stability-analyzer = { id = "com.github.skydoves.compose.stability.analyzer", version = "0.6.3" }
 modulegraph-mermaid = { id = "dev.iurysouza.modulegraph", version.ref = "mermaid" }
 android-kotlin-multiplatform-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
@@ -23,11 +24,13 @@ baselineprofile = { id = "androidx.baselineprofile", version.ref = "baselineprof
 
 [versions]
 
+kotlinxBenchmark = "0.4.16"
 # primary
 agp = "9.0.1"
 kotlin = "2.3.10"
 
 compose = "1.10.1"
+kotlinxBenchmarkRuntime = "0.4.16"
 liquid = "1.1.1"
 localina = "1.0.0-alpha3"
 material3 = "1.9.0"
@@ -110,6 +113,7 @@ compose-ui-tooling = { module = "org.jetbrains.compose.ui:ui-tooling", version.r
 
 desktop = { module = "org.jetbrains.compose.desktop:desktop", version.ref = "compose" }
 kmp-io = { module = "io.github.skolson:kmp-io", version.ref = "kmpIoVersion" }
+kotlinx-benchmark-runtime = { module = "org.jetbrains.kotlinx:kotlinx-benchmark-runtime", version.ref = "kotlinxBenchmarkRuntime" }
 lazytable = { module = "io.github.oleksandrbalan:lazytable", version.ref = "lazytable" }
 
 liquid = { module = "io.github.fletchmckee.liquid:liquid", version.ref = "liquid" }

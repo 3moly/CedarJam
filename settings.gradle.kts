@@ -52,3 +52,4 @@ include(
     ":pages:page-workspace",
 )
 include(":desktopApp")
+include(":benchmark")

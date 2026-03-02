@@ -20,6 +20,7 @@ import com.moly3.cedarjam.core.storage.json.canvas.CanvasDataParser
 import com.moly3.cedarjam.core.domain.model.canvas.CanvasDataWithErrors
 import com.moly3.cedarjam.core.domain.service.IFileHasher
 import com.moly3.cedarjam.core.storage.func.calculateFileHash
+import com.moly3.cedarjam.core.storage.func.getFiles2
 import com.moly3.cedarjam.core.storage.func.setLastWriteTimeUtc
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.filesDir
