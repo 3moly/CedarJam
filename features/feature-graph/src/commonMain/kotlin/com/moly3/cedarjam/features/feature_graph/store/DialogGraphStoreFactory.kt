@@ -7,6 +7,7 @@ import com.arkivanov.mvikotlin.core.store.Reducer
 import com.arkivanov.mvikotlin.core.store.SimpleBootstrapper
 import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
+import com.moly3.cedarjam.core.domain.dialog.DialogDeleteService
 import com.moly3.cedarjam.core.domain.dialog.DialogSelectTagService
 import com.moly3.cedarjam.core.domain.func.doNothing
 import com.moly3.cedarjam.core.domain.func.nowInMs
@@ -30,7 +31,6 @@ import com.moly3.cedarjam.core.domain.model.request.CreateTagCollectionRowReques
 import com.moly3.cedarjam.core.domain.model.request.CreateTagLinkRequest
 import com.moly3.cedarjam.core.domain.model.request.CreateTagToTagRequest
 import com.moly3.cedarjam.core.domain.model.resultBlock
-import com.moly3.cedarjam.core.domain.service.FileManagerService
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
 import com.moly3.cedarjam.core.domain.usecase.IOpenNodeDataUseCase
 import com.moly3.cedarjam.features.feature_graph.model.GraphDialogInput
@@ -57,10 +57,12 @@ internal class DialogGraphStoreFactory(
     private val storeFactory: StoreFactory,
     private val lifecycle: Lifecycle,
     private val targetInput: GraphDialogInput,
-    private val openWorkspaceSettings: (Boolean) -> Unit
+    private val openWorkspaceSettings: (Boolean) -> Unit,
+    private val openPdfPage: (Int) -> Unit
 ) : KoinComponent {
 
     private val navigator: Navigator by inject()
+    private val deleteService: DialogDeleteService by inject()
     private val openNodeDataUseCase: IOpenNodeDataUseCase by inject {
         parametersOf(workspaceSession.fileManagerService)
     }
@@ -277,12 +279,31 @@ internal class DialogGraphStoreFactory(
                     openWorkspaceSettings(true)
                 }
 
-                is Intent.SetCurrentPage -> {
-                    dispatch(Msg.SetCurrentPage(intent.page))
+                is Intent.SetCurrentTabPage -> {
+                    dispatch(SetCurrentPage(intent.page))
                 }
 
                 is Intent.SetCoordinates -> {
                     dispatch(SetCoordinates(intent.value.toPersistentMap()))
+                }
+
+                is Intent.RemoveAnnotation -> {
+                    val workspaceEnv = workspaceSession.workspaceEnvStateFlow.value
+                    scope.launch {
+                        val result = deleteService.open(Unit)
+                        if (result) {
+                            workspaceEnv.deleteAnnotation(id = intent.id)
+                        }
+                    }
+                }
+
+                is Intent.OpenPdfPage -> {
+                    dispatch(SetIsShowContent(false))
+                    openPdfPage(intent.page)
+                }
+
+                is Intent.AnnotationsScrollState -> {
+                    dispatch(Msg.SetAnnotationsScrollState(intent.value))
                 }
 
                 is Intent.AddTag -> {
@@ -351,7 +372,7 @@ internal class DialogGraphStoreFactory(
                 is Intent.SetIsShowNestedConnections -> {
                     scope.launch {
                         _isShowNestedConnectionsStateFlow.emit(intent.value)
-                        dispatch(Msg.SetIsShowNestedConnections(intent.value))
+                        dispatch(SetIsShowNestedConnections(intent.value))
                     }
                 }
 
@@ -362,6 +383,10 @@ internal class DialogGraphStoreFactory(
                             navigator.navigate(bind(result).toRoute())
                         }
                     }
+                }
+
+                is Intent.OpenTimeMachine -> {
+
                 }
             }
         }
@@ -383,6 +408,7 @@ internal class DialogGraphStoreFactory(
                 is SetAnnotationsState -> copy(annotationsState = msg.value)
                 is SetFilesState -> copy(filesState = msg.value)
                 is SetRowsState -> copy(rowsState = msg.value)
+                is SetAnnotationsScrollState -> copy(annotationsScrollState = msg.value)
             }
         }
     }

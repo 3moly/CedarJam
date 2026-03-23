@@ -27,6 +27,7 @@ internal interface DialogGraphStore : Store<Intent, State, Unit> {
         data class SetConnections(val value: ImmutableMap<String, ImmutableList<String>>) : Msg
         data class SetZoom(val value: Float) : Msg
         data class SetIsShowContent(val value: Boolean) : Msg
+        data class SetAnnotationsScrollState(val value: Int) : Msg
         data class SetCurrentPage(val value: GraphPage) : Msg
         data class SetGraphTargetId(val value: String?) : Msg
         data class SetIsShowNestedConnections(val value: Boolean) : Msg

@@ -14,6 +14,7 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.test.swipeUp
 import com.moly3.cedarjam.core.ui.uikit.LazyFlowRow
+import com.moly3.lazyFlow.func.items
 import com.moly3.lazyFlow.ui.LazyFlow
 import com.moly3.lazyflow.core.model.FlowItemSize
 import com.moly3.lazyflow.core.model.FlowOrientation
@@ -33,16 +34,15 @@ class LazyFlowRowPerformanceTest {
         val initialRenderTime = measureTime {
             setContent {
                 LazyFlow(
-                    items = items,
                     orientation = FlowOrientation.Row,
-                    key = { it },
-                    itemSize = { FlowItemSize(widthPx = 200, heightPx = 100) },
                     modifier = Modifier
                         .fillMaxSize()
                         .testTag("BenchmarkFlowRow")
-                ) { item ->
-                    Box(modifier = Modifier.background(Color.LightGray)) {
-                        Text(item)
+                ) {
+                    items(items = items) { item ->
+                        Box(modifier = Modifier.background(Color.LightGray)) {
+                            Text(item)
+                        }
                     }
                 }
             }
@@ -83,16 +83,16 @@ class LazyFlowRowPerformanceTest {
         val initialRenderTimeV1 = measureTime {
             setContent {
                 LazyFlow(
-                    items = items,
                     orientation = FlowOrientation.Row,
-                    key = { it },
-                    itemSize = { FlowItemSize(widthPx = 200, heightPx = 100) },
+//                    itemSize = { FlowItemSize(widthPx = 200, heightPx = 100) },
                     modifier = Modifier
                         .fillMaxSize()
                         .testTag("BenchmarkFlowRow")
-                ) { item ->
-                    Box(modifier = Modifier.background(Color.LightGray)) {
-                        Text(item)
+                ) {
+                    items(items){item->
+                        Box(modifier = Modifier.background(Color.LightGray)) {
+                            Text(item)
+                        }
                     }
                 }
             }
@@ -118,7 +118,7 @@ class LazyFlowRowPerformanceTest {
                         .fillMaxSize()
                         .testTag("BenchmarkFlowRow")
                 ) {
-                    for(item in items){
+                    for (item in items) {
                         Box(modifier = Modifier.background(Color.LightGray)) {
                             Text(item)
                         }

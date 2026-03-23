@@ -3,6 +3,7 @@ package com.moly3.cedarjam.features.feature_canvas
 import androidx.compose.ui.geometry.Offset
 import com.moly3.cedarjam.core.domain.model.canvas.ShapeImpl
 import com.moly3.dataviz.core.whiteboard.model.ShapeConnection
+import com.moly3.dataviz.core.whiteboard.model.StylusPath
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.serialization.Serializable
@@ -14,6 +15,7 @@ data class State(
     val userCoordinate: Offset = Offset.Zero,
     val shapes: ImmutableList<ShapeImpl> = persistentListOf(),
     val connections: ImmutableList<ShapeConnection<Long>> = persistentListOf(),
+    val drawing: ImmutableList<StylusPath> = persistentListOf(),
 ) {
     @Serializable
     data class SaveableState(

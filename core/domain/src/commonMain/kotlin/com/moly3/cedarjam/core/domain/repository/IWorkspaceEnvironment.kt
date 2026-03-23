@@ -68,6 +68,7 @@ interface IWorkspaceEnvironment {
     fun getCollectionsFlow(): Flow<List<CollectionDTO>>
     fun getCollectionFlow(collectionId: Long): Flow<CollectionDTO?>
     fun getCollectionRowsFlow(collectionId: Long?): Flow<List<CollectionRowDTO>>
+    fun getCollectionRowsFlowByFileRelativePath(relativePath: String): Flow<List<CollectionRowDTO>>
     fun getCollectionRowFlow(rowId: Long): Flow<CollectionRowDTO?>
     fun getIndexFilesFlow(): Flow<List<IndexFileDto>>
     fun getIndexFiles(): List<IndexFileDto>

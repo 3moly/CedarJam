@@ -3,8 +3,10 @@ package com.moly3.cedarjam.features.feature_settings.child.general.ui.internal
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -184,28 +186,44 @@ internal fun SettingsGeneralUIContent(
                 text = "Density",
                 isShowBorder = true
             ) {
-                CJSlider(
-                    modifier = Modifier.width(100.dp).align(Alignment.CenterEnd),
-                    value = localDensityState.value,
-                    valueRange = 0.75f..3f,
-                    onValueChange = {
-                        localDensityState.value = it
-                    }
-                )
+                Row(
+                    modifier = Modifier.align(Alignment.CenterEnd),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    CJText(text = localDensityState.value.toString())
+                    CJSlider(
+                        modifier = Modifier.width(200.dp),
+                        value = localDensityState.value,
+                        valueRange = 0.5f..1.5f,
+                        step = 5,
+                        onValueChange = {
+                            localDensityState.value = it
+                        }
+                    )
+                }
             }
             SelectOption(
                 modifier = Modifier,
                 text = "Font scale",
                 isShowBorder = true
             ) {
-                CJSlider(
-                    modifier = Modifier.width(100.dp).align(Alignment.CenterEnd),
-                    value = localFontScaleState.value,
-                    valueRange = 0.75f..3f,
-                    onValueChange = {
-                        localFontScaleState.value = it
-                    }
-                )
+                Row(
+                    modifier = Modifier.align(Alignment.CenterEnd),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    CJText(text = localFontScaleState.value.toString())
+                    CJSlider(
+                        modifier = Modifier.width(200.dp),
+                        value = localFontScaleState.value,
+                        valueRange = 0.5f..1.5f,
+                        step = 5,
+                        onValueChange = {
+                            localFontScaleState.value = it
+                        }
+                    )
+                }
             }
             LaunchedEffect(Unit) {
                 snapshotFlow {

@@ -12,10 +12,9 @@ plugins {
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.serialization)
     alias(libs.plugins.composeHotReload)
+    alias(libs.plugins.stability.analyzer)
     kotlin("native.cocoapods")
-
 }
-
 
 kotlin {
     jvmToolchain {
@@ -36,85 +35,25 @@ kotlin {
     }
     applyDefaultHierarchyTemplate()
     android {
-        namespace = "com.moly3.cedarjam"
-        compileSdk = 36
-//        defaultConfig {
-//            minSdk = 26
-//        }
-//        buildFeatures.compose = true
-//        compileOptions {
-//            sourceCompatibility = JavaVersion.VERSION_17
-//            targetCompatibility = JavaVersion.VERSION_17
-//        }
-//        defaultConfig {
-//            minSdk = 26
-//        }
-//        buildFeatures.compose = true
-//        compileOptions {
-//            sourceCompatibility = JavaVersion.VERSION_17
-//            targetCompatibility = JavaVersion.VERSION_17
-//        }
-//        testOptions {
-//            unitTests {
-//                isIncludeAndroidResources = true
-//            }
-//        }
-    }
-//    androidTarget()
-//    androidTarget {
-//
-//    }
-//    android{
-//
-//    }
-//    androidLibrary {
-////        withHostTest {
-////            isIncludeAndroidResources = true
-////        }
-////        withJava()
-////        withHostTest {
-////            isIncludeAndroidResources = true
-////        }
-//
-//        // Opt-in to enable and configure device-side (instrumented) tests
-////        withDeviceTest {
-////            instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-////            execution = "HOST"
-////        }
-//
-////        sourceSets["androidTest"].java.srcDirs("src/androidUnitTest/kotlin")
-//
-//        namespace = "com.moly3.cedarjam"
-//        compileSdk = libs.versions.android.compileSdk.get().toInt()
-//        minSdk = libs.versions.android.minSdk.get().toInt()
-//        compilerOptions {
-//            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
-//        }
-//        androidResources {
-//            enable = true
-//        }
 //        withDeviceTest {
 //            instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 //            execution = "HOST"
 //        }
-//        defaultConfig {
-//            minSdk = 26
-//        }
-//        buildFeatures.compose = true
-//        compileOptions {
-//            sourceCompatibility = JavaVersion.VERSION_17
-//            targetCompatibility = JavaVersion.VERSION_17
-//        }
+        withHostTest {
+            isIncludeAndroidResources = true
+        }
 //        testOptions {
 //            unitTests {
 //                isIncludeAndroidResources = true
 //            }
 //        }
-//    }
+        namespace = "com.moly3.cedarjam"
+        compileSdk = 36
+    }
     jvm()
     iosArm64()
     iosSimulatorArm64()
-    
+
 
     cocoapods {
         summary = "Some description for the Shared Module"
@@ -214,6 +153,12 @@ kotlin {
         }
         jvmMain.dependencies {
 
+            implementation(libs.ktor.cio)
+            implementation(libs.ktor)
+            implementation(libs.ktor.serialization)
+            implementation(libs.ktor.contentnegotiation)
+            implementation(libs.ktor.logging)
+            implementation(libs.ktor.json)
 
 //            implementation(libs.desktop)
             implementation(compose.desktop.currentOs)
@@ -229,7 +174,7 @@ kotlin {
 
         }
         androidMain.dependencies {
-
+            implementation(libs.robolectric)
         }
         iosMain.dependencies {
 //            implementation(libs.compose.remote.layout.iosarm64)
@@ -239,7 +184,11 @@ kotlin {
             implementation(libs.robolectric)
             implementation(libs.android.videoplayer.contextprovider)
         }
-        linuxX64Main.dependencies{
+        androidInstrumentedTest.dependencies {
+            implementation(libs.robolectric)
+            implementation(libs.android.videoplayer.contextprovider)
+        }
+        linuxX64Main.dependencies {
             implementation("org.jetbrains.compose.desktop:desktop-jvm-linux-x64:1.10.1")
         }
         macosX64Main.dependencies {
@@ -248,7 +197,7 @@ kotlin {
         macosArm64Main.dependencies {
             implementation("org.jetbrains.compose.desktop:desktop-jvm-macos-arm64:1.10.1")
         }
-        mingwX64Main.dependencies{
+        mingwX64Main.dependencies {
             implementation("org.jetbrains.compose.desktop:desktop-jvm-windows-x64:1.10.1")
         }
     }
@@ -271,8 +220,6 @@ dependencies {
 //        attribute(Attribute.of("ui", String::class.java), "awt")
 //    }
 //}
-
-
 
 
 //tasks.withType<JavaExec> {

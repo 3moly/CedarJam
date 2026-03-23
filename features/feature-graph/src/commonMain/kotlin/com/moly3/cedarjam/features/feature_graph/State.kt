@@ -32,7 +32,8 @@ data class State(
     val coordinates: ImmutableMap<String, Offset> = persistentMapOf(),
     val velocities: ImmutableMap<String, Offset> = persistentMapOf(),
     val zoom: Float = 1f,
-    val isShowNestedConnections: Boolean = false
+    val isShowNestedConnections: Boolean = false,
+    val annotationsScrollState: Int = 0
 ) {
     @Serializable
     data class SaveableState(

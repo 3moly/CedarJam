@@ -12,5 +12,6 @@ data class AnnotationDTO(
     val y: Float,
     val width: Float,
     val height: Float,
-    val modifiedTime: Long
+    val modifiedTime: Long,
+    val rowId: Long?
 )

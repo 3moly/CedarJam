@@ -411,8 +411,6 @@ internal class SqlStorage(
             it?.dataCollectionQueries
                 ?.selectById(id = id)
                 ?.mapFlowAsOneOrNull() ?: flowOf(null)
-//                ?.asFlow()
-//                ?.mapToOneOrNull(mapContext) ?: flowOf(null)
         }
     }
 
@@ -421,8 +419,6 @@ internal class SqlStorage(
             it?.tagCollectionRowQueries
                 ?.selectAll()
                 ?.mapFlowList() ?: flowOf(listOf())
-//                ?.asFlow()
-//                ?.mapToList(mapContext) ?: flowOf(listOf())
         }
     }
 
@@ -436,8 +432,18 @@ internal class SqlStorage(
                     db.dataCollectionRowQueries.selectAll()
 
                 prepare.mapFlowList()
-//                prepare.asFlow()
-//                    .mapToList(mapContext)
+            } else {
+                flowOf(listOf())
+            }
+        }
+    }
+
+    override fun getCollectionRowsByFileRelativePath(relativePath: String): Flow<List<DataCollectionRow>> {
+        return dbFlow.flatMapLatest { db ->
+            if (db != null) {
+                val prepare = db.dataCollectionRowQueries
+                    .selectByFileRelativePath(relativePath)
+                prepare.mapFlowList()
             } else {
                 flowOf(listOf())
             }
@@ -455,8 +461,6 @@ internal class SqlStorage(
                     }
                 }
                 ?.mapFlowAsOneLong() ?: flowOf(0L)
-//                ?.asFlow()
-//                ?.mapToOne(mapContext) ?: flowOf(0)
         }
     }
 

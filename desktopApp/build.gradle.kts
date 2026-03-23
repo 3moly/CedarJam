@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.serialization)
     alias(libs.plugins.composeHotReload)
     id("dev.hydraulic.conveyor") version "1.13"
+    alias(libs.plugins.stability.analyzer)
 }
 
 version = "1.0"

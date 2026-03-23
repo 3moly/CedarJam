@@ -15,7 +15,8 @@ class DialogGraphComponentImpl(
     componentContext: ComponentContext,
     storeFactory: StoreFactory,
     private val startTargetId: GraphDialogInput,
-    private val openWorkspaceSettings: (Boolean) -> Unit
+    private val openWorkspaceSettings: (Boolean) -> Unit,
+    private val openPdfPage: (Int) -> Unit
 ) : IDialogGraphComponent,
     ComponentContext by componentContext {
 
@@ -25,7 +26,8 @@ class DialogGraphComponentImpl(
             lifecycle = lifecycle,
             workspaceSession = workspaceSession,
             targetInput = startTargetId,
-            openWorkspaceSettings = openWorkspaceSettings
+            openWorkspaceSettings = openWorkspaceSettings,
+            openPdfPage = openPdfPage
         ).create(stateKeeper = stateKeeper)
     }
 

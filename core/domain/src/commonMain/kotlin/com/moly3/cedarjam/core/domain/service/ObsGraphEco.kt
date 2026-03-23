@@ -407,11 +407,17 @@ class ObsGraphEco(
                 )
             }
         }
-        for(item in annotations){
+        for (item in annotations) {
+            val keys = mutableListOf<String>()
+            keys.add(item.dataPath.getFileTreeNodeGraphId())
+            if (item.rowId != null) {
+                keys.add(item.rowId.getCollectionRowGraphId())
+            }
             setConnects(
                 item.getGraphId(),
-                listOf(item.dataPath.getFileTreeNodeGraphId())
+                keys
             )
+
         }
         for (item in rows) {
             setConnects(
@@ -438,7 +444,7 @@ class ObsGraphEco(
                 is TagLinkDtoData.FileNode -> {
                     setConnects(
                         tagGraphId,
-                        listOf(  data.relativePath.getFileTreeNodeGraphId())
+                        listOf(data.relativePath.getFileTreeNodeGraphId())
                     )
                 }
             }

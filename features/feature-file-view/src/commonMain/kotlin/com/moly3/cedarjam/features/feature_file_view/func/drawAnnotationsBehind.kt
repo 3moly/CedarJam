@@ -62,7 +62,7 @@ fun Modifier.drawAnnotationsBehind(
         this.drawContent()
         val size = this.size
 
-        annotations.filter { d -> d.dataPoint.toInt() == currentPage - 1 }
+        annotations.filter { d -> d.dataPoint.toInt() == currentPage }
             .forEach { annotation ->
 
                 val rect = annotation.toPx(

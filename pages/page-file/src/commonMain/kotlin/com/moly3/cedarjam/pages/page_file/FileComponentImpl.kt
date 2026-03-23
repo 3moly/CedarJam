@@ -4,6 +4,7 @@ import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.arkivanov.mvikotlin.extensions.coroutines.stateFlow
 import com.moly3.cedarjam.core.domain.dialog.DialogColorPickerService
+import com.moly3.cedarjam.core.domain.model.FileType
 import com.moly3.cedarjam.core.ui.model.PageNameData
 import com.moly3.cedarjam.core.domain.model.navigation.input.FilePageInput
 import com.moly3.cedarjam.core.domain.repository.IAppEnvironment
@@ -34,12 +35,20 @@ class FileComponentImpl(
 ) : FileComponent,
     ComponentContext by componentContext,
     KoinComponent {
-//
+
     private val graphDialogScope by lazy {
         graphDialogScopeFactory(
             workspaceSession = workspaceSession,
             storeFactory = storeFactory,
-            openWorkspaceSettings = openMenu
+            openWorkspaceSettings = openMenu,
+            openPdfPage = {
+                val state = store.state.fileType
+                if (state is FileType.PDF) {
+                    store.accept(Intent.ToPage(state, it))
+                } else {
+                    
+                }
+            }
         )
     }
     private val canvasDialogScope by lazy {

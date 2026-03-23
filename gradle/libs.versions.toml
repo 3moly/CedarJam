@@ -1,8 +1,6 @@
 [plugins]
 
 androidApplication = { id = "com.android.application", version.ref = "agp" }
-androidLibrary = { id = "com.android.library", version.ref = "agp" }
-kotlinAndroid = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlinCocoapods = { id = "org.jetbrains.kotlin.native.cocoapods", version.ref = "kotlin" }
 compose = { id = "org.jetbrains.compose", version.ref = "compose" }
@@ -20,57 +18,58 @@ android-kotlin-multiplatform-library = { id = "com.android.kotlin.multiplatform.
 android-lint = { id = "com.android.lint", version.ref = "agp" }
 android-test = { id = "com.android.test", version.ref = "agp" }
 baselineprofile = { id = "androidx.baselineprofile", version.ref = "baselineprofile" }
+stability-analyzer = { id = "com.github.skydoves.compose.stability.analyzer", version = "0.7.0" }
 
 
 [versions]
 
 kotlinxBenchmark = "0.4.16"
 # primary
-agp = "9.0.1"
+agp = "9.1.0"
 kotlin = "2.3.10"
 
-compose = "1.10.1"
+compose = "1.10.3"
 kotlinxBenchmarkRuntime = "0.4.16"
 liquid = "1.1.1"
-localina = "1.0.0-alpha3"
+localina = "1.0.0-beta2"
 material3 = "1.9.0"
 
 materialIconsExtended = "1.7.3"
-mediampAll = "0.1.2"
-okio = "3.16.4"
+mediampAll = "0.1.6"
+okio = "3.17.0"
 pdfmpCompose = "1.0.9"
 serialization = "1.10.0"
 datetime = "0.7.1"
 coroutines = "1.10.2"
-decompose = "3.5.0-beta01"
+decompose = "3.5.0"
 mvi = "4.3.0"
 essenty = "2.5.0"
-koin = "4.1.1"
+koin = "4.2.0"
 kotlinx-immutable-list = "0.4.0"
 # io/database
-ktor = "3.4.0"
-sqldelight = "2.2.1"
+ktor = "3.4.1"
+sqldelight = "2.3.2"
 key-value-settings = "1.3.0"
 kotlinx-io-core = "0.9.0"
 filekit-core = "0.13.0"
 kmpIoVersion = "0.3.0"
 # compose/ui
 coil = "3.4.0"
-constraintlayoutComposeMultiplatform = "0.6.1"
+constraintlayoutComposeMultiplatform = "0.7.0"
 lazytable = "1.10.0"
-lazyflow = "0.1.6"
+lazyflow = "0.1.10"
 hypnoticcanvas = "0.4.1"
 colorpicker-compose = "1.1.3"
 
 video-player = "0.8.7"
 jewelDecoratedWindow = "0.34.0-253.31033.149"
-compose-data-viz = "0.1.9"
+compose-data-viz = "0.1.11"
 dnd = "0.4.0"
 webview = "2.0.3"
-moko-resources = "0.26.0"
+moko-resources = "0.26.1"
 # pdf
 icepdf = "7.3.2"
-pdfbox = "3.0.6"
+pdfbox = "3.0.7"
 composePdf = "1.2.0"
 jaiImageioJpeg2000 = "1.4.0"
 # secondary
@@ -79,7 +78,7 @@ haze = "1.7.2"
 compose-hot-reload = "1.0.0"
 kotestProperty = "6.1.3"
 reaktive = "2.4.0"
-shared-logger-kermit = "2.0.8"
+shared-logger-kermit = "2.1.0"
 zoomimageComposeCoil3 = "1.4.0"
 
 # android
@@ -88,7 +87,7 @@ android-compileSdk = "36"
 android-minSdk = "26"
 android-targetSdk = "36"
 androidcontextprovider = "1.0.1"
-androidx-activity-compose = "1.12.4"
+androidx-activity-compose = "1.13.0"
 mermaid = "0.13.0"
 junit = "1.3.0"
 espressoCore = "3.7.0"
@@ -96,7 +95,6 @@ uiautomator = "2.3.0"
 benchmarkMacroJunit4 = "1.4.1"
 baselineprofile = "1.4.1"
 profileinstaller = "1.4.1"
-kotlinStdlib = "2.3.10"
 runner = "1.7.0"
 core = "1.7.0"
 
@@ -218,7 +216,7 @@ androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-co
 androidx-uiautomator = { group = "androidx.test.uiautomator", name = "uiautomator", version.ref = "uiautomator" }
 androidx-benchmark-macro-junit4 = { group = "androidx.benchmark", name = "benchmark-macro-junit4", version.ref = "benchmarkMacroJunit4" }
 androidx-profileinstaller = { group = "androidx.profileinstaller", name = "profileinstaller", version.ref = "profileinstaller" }
-kotlin-stdlib = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", version.ref = "kotlinStdlib" }
+kotlin-stdlib = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", version.ref = "kotlin" }
 androidx-runner = { group = "androidx.test", name = "runner", version.ref = "runner" }
 androidx-core = { group = "androidx.test", name = "core", version.ref = "core" }
 

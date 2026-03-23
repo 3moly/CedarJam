@@ -338,7 +338,7 @@ actual fun CJPdf(
                     onAddAnnotation(
                         CreateAnnotationRequest(
                             dataPath = filePath,
-                            dataPoint = it.pageIndex.toDouble(),
+                            dataPoint = (it.pageIndex + 1).toDouble(),
                             description = it.text ?: "-",
                             x = it.rect.x,
                             y = it.rect.y,

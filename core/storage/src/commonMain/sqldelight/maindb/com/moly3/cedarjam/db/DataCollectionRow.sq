@@ -36,6 +36,11 @@ SELECT *
 FROM DataCollectionRow
 WHERE collectionId = :id;
 
+selectByFileRelativePath:
+SELECT *
+FROM DataCollectionRow
+WHERE fileRelativePath = :fileRelativePath;
+
 getPaginatedItemsByCollectionId:
 SELECT *
 FROM DataCollectionRow

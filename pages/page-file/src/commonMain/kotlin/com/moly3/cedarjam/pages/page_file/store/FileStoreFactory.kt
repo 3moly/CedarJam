@@ -24,6 +24,7 @@ import com.moly3.cedarjam.core.domain.model.request.UpdateRowsByPdf
 import com.moly3.cedarjam.core.domain.model.toGetFileType
 import com.moly3.cedarjam.core.domain.repository.IAppEnvironment
 import com.moly3.cedarjam.core.domain.repository.IFilesRepository
+import com.moly3.cedarjam.core.domain.repository.getCollectionRows
 import com.moly3.cedarjam.core.domain.service.FileManagerService
 import com.moly3.cedarjam.core.domain.service.IImageTransform
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
@@ -46,6 +47,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
@@ -146,8 +148,6 @@ internal class FileStoreFactory(
                     }
                 }
             }
-
-
             scopeFromStartToStop.launch {
                 workspaceEnv.getTagFilesFlow().collectLatest {
                     dispatch(FileStore.Msg.SetTagLinks(it.toPersistentList()))
@@ -273,16 +273,22 @@ internal class FileStoreFactory(
                 is Intent.AddAnnotation -> {
                     val fileRelativePath = state().relativePath
                     scope.launch(io) {
+                        val workspaceEnv = workspaceSession.workspaceEnvStateFlow.value
+                        val connectedRows =
+                            workspaceEnv.getCollectionRowsFlowByFileRelativePath(relativePath = fileRelativePath)
+                                .firstOrNull()
+
                         val annotationRequest = intent.value.copy(dataPath = fileRelativePath)
 
-                        val workspaceEnv = workspaceSession.workspaceEnvStateFlow.value
                         val fullPath = pathWrapper(
                             workspaceEnv.getWorkspace().absolutePath,
                             fileRelativePath
                         ).pathString
 
-
-                        val result = workspaceEnv.createAnnotation(annotationRequest)
+                        //TODO if connectedRows > 1, ask user to choose
+                        val rowId = connectedRows?.firstOrNull()?.id
+                        val result =
+                            workspaceEnv.createAnnotation(annotationRequest.copy(rowId = rowId))
                         when (result) {
                             is ResultWrapper.Error -> {
                                 Logger.w { "annotation adding error: ${result.error}" }
@@ -298,7 +304,7 @@ internal class FileStoreFactory(
                                 try {
                                     val image = imageTransform.getPdfImage(
                                         path = fullPath,
-                                        page = annotationRequest.dataPoint.toInt(),
+                                        page = (annotationRequest.dataPoint.toInt() - 1),
                                         density = intent.density
                                     )
                                     val cropped = imageTransform.cropNormalized(

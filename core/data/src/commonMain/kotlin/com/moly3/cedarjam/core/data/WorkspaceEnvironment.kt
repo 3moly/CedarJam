@@ -275,10 +275,18 @@ class WorkspaceEnvironment(
         )
     }
 
-    @OptIn(ExperimentalTime::class)
     override fun getCollectionRowsFlow(collectionId: Long?): Flow<List<CollectionRowDTO>> {
         return sqlStorage
             .getCollectionRows(collectionId = collectionId)
+            .map {
+                it.map { d -> d.toDTO() }
+            }
+            .flowOn(io)
+    }
+
+    override fun getCollectionRowsFlowByFileRelativePath(relativePath: String): Flow<List<CollectionRowDTO>> {
+        return sqlStorage
+            .getCollectionRowsByFileRelativePath(relativePath = relativePath)
             .map {
                 it.map { d -> d.toDTO() }
             }
@@ -304,7 +312,8 @@ class WorkspaceEnvironment(
                     y = it.posY.toFloat(),
                     width = it.width.toFloat(),
                     height = it.height.toFloat(),
-                    modifiedTime = it.modifiedTime
+                    modifiedTime = it.modifiedTime,
+                    rowId = it.rowId
                 )
             }
         }.flowOn(io)

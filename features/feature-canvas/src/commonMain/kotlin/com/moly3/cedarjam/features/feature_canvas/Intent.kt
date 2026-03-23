@@ -5,8 +5,10 @@ import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.canvas.ShapeImpl
 import com.moly3.cedarjam.core.domain.model.node.ObsidianGraphData
 import com.moly3.dataviz.core.whiteboard.model.ShapeConnection
+import com.moly3.dataviz.core.whiteboard.model.StylusPath
 
 sealed interface Intent {
+    data class AddDrawingPath(val drawingPath: StylusPath) : Intent
     data class MoveShape(val index: Int, val position: Offset) : Intent
     data class DeleteShape(val shape: ShapeImpl) : Intent
     data class ChangeShape(val shape: ShapeImpl) : Intent

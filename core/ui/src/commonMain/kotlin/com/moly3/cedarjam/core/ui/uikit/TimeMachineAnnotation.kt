@@ -1,13 +1,10 @@
 package com.moly3.cedarjam.pages.page_home.ui.internal
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -15,9 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
@@ -25,15 +20,15 @@ import com.moly3.cedarjam.core.domain.func.hiddenDirectory
 import com.moly3.cedarjam.core.domain.func.nowInMs
 import com.moly3.cedarjam.core.domain.func.pathWrapper
 import com.moly3.cedarjam.core.domain.model.AnnotationDTO
-import com.moly3.cedarjam.core.ui.model.CJText
+import com.moly3.cedarjam.core.domain.model.TimeMachine
+import com.moly3.cedarjam.core.ui.func.dpSize
 import com.moly3.cedarjam.core.ui.uikit.AppThemePreview
 import com.moly3.cedarjam.core.ui.uikit.CJText
+import com.moly3.cedarjam.core.ui.uikit.TimeMachineItem
 import vectors.TrashEmpty
-import com.moly3.cedarjam.pages.page_home.func.dpSize
-import com.moly3.cedarjam.pages.page_home.model.TimeMachine
 
 @Composable
-internal fun BoxScope.TimeMachineAnnotation(
+internal fun TimeMachineAnnotation(
     workspaceFullPath: String,
     item: TimeMachine.Annotation
 ) {
@@ -61,6 +56,9 @@ internal fun BoxScope.TimeMachineAnnotation(
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             CJText(text = "Annotation:")
             CJText(text = "page: ${(item.annotation.dataPoint + 1).toInt()}")
+            if (item.annotation.rowId != null) {
+                CJText(text = "rowId: ${item.annotation.rowId}")
+            }
         }
     }
 }
@@ -79,7 +77,8 @@ fun TimeMachineAnnotationPreview() {
                 y = 0f,
                 width = 0.2f,
                 height = 0.2f,
-                modifiedTime = nowInMs()
+                modifiedTime = nowInMs(),
+                rowId = 1
             ),
             modifiedTime = nowInMs()
         )
@@ -88,7 +87,7 @@ fun TimeMachineAnnotationPreview() {
                 modifier = Modifier,
                 workspaceFullPath = "",
                 item = timeMachine,
-                onIntent = {}
+                onClick = {}
             )
         }
     }

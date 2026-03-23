@@ -12,7 +12,8 @@ import com.moly3.cedarjam.features.feature_graph.model.DialogScope
 fun ComponentContext.graphDialogScopeFactory(
     workspaceSession: WorkspaceSession,
     storeFactory: StoreFactory,
-    openWorkspaceSettings: (Boolean) -> Unit
+    openWorkspaceSettings: (Boolean) -> Unit,
+    openPdfPage: (Int) -> Unit = {}
 ): DialogScope {
     val dialogNavigation = SlotNavigation<DialogConfig>()
     val slot = childSlot(
@@ -26,7 +27,8 @@ fun ComponentContext.graphDialogScopeFactory(
                 componentContext = context,
                 storeFactory = storeFactory,
                 startTargetId = config.target,
-                openWorkspaceSettings = openWorkspaceSettings
+                openWorkspaceSettings = openWorkspaceSettings,
+                openPdfPage = openPdfPage
             )
         }
     )

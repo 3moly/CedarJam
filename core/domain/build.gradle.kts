@@ -4,7 +4,6 @@ import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
-//    alias(libs.plugins.androidApplication)
     alias(libs.plugins.android.kotlin.multiplatform.library)
     alias(libs.plugins.serialization)
     alias(libs.plugins.compose)

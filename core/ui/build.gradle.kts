@@ -52,21 +52,16 @@ kotlin {
             implementation(libs.kotlin.test)
         }
         jvmMain.dependencies {
-//            api(libs.jewel.decorated.window)
             implementation(libs.pdfbox)
 
         }
         androidMain.dependencies {
             implementation(libs.compose.ui.tooling)
-//            implementation("com.shakster:gifkt-compose-android:0.3.1")
         }
         iosMain.dependencies {
 
         }
     }
-}
-dependencies {
-//    api(libs.compose.ui.tooling)
 }
 compose.resources {
     publicResClass = true

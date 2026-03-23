@@ -1,6 +1,7 @@
-package com.moly3.cedarjam.pages.page_home.ui.internal
+package com.moly3.cedarjam.core.ui.uikit
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,27 +27,35 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.moly3.cedarjam.core.domain.func.pathWrapper
 import com.moly3.cedarjam.core.domain.model.FileTypeExt
+import com.moly3.cedarjam.core.domain.model.TimeMachine
 import com.moly3.cedarjam.core.domain.model.toFileType
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
+import com.moly3.cedarjam.core.ui.func.dpSize
+import com.moly3.cedarjam.core.ui.func.navigationBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.func.rememberPdfImage
-import com.moly3.cedarjam.core.ui.uikit.CJText
-import com.moly3.cedarjam.core.ui.uikit.NeumorphicShadowConfig
-import com.moly3.cedarjam.core.ui.uikit.NeumorphicShape
-import com.moly3.cedarjam.pages.page_home.Intent
-import com.moly3.cedarjam.pages.page_home.model.TimeMachine
+import com.moly3.cedarjam.pages.page_home.ui.internal.TimeMachineAnnotation
+import com.moly3.lazyFlow.func.items
+import com.moly3.lazyFlow.model.FlowItemSizeMode
+import com.moly3.lazyFlow.ui.LazyFlow
+import com.moly3.lazyflow.core.model.FlowOrientation
+import vectors.Data
 
 @Composable
-internal fun TimeMachineItem(
+fun TimeMachineItem(
     modifier: Modifier,
     workspaceFullPath: String,
     item: TimeMachine,
-    onIntent: (Intent) -> Unit
+    onClick: () -> Unit
 ) {
     NeumorphicShape(
         modifier = modifier,
@@ -78,9 +88,9 @@ internal fun TimeMachineItem(
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Image(
-                                painter = rememberVectorPainter(vectors.Data),
+                                painter = rememberVectorPainter(Data),
                                 contentDescription = null,
-                                modifier=Modifier.height(75.dp),
+                                modifier = Modifier.height(75.dp),
                                 contentScale = ContentScale.FillHeight
                             )
                             CJText(text = item.collection.name)
@@ -210,6 +220,58 @@ internal fun TimeMachineItem(
                 }
             }
         }) {
-        onIntent(Intent.OpenTimeMachine(item))
+        onClick()
+    }
+}
+
+@Composable
+fun TimeMachineList(
+    modifier: Modifier = Modifier,
+    afterScrollModifier: Modifier = Modifier,
+    workspaceFullPath: String,
+    scrollState: ScrollState,
+    list: List<TimeMachine>,
+    onClick: (TimeMachine) -> Unit
+) {
+    val density = LocalDensity.current
+    val size1 = remember(density) {
+        DpSize(150.dp, 150.dp)
+    }
+    val size2 = remember(density) {
+        DpSize(250.dp, 150.dp)
+    }
+    val rowSize = remember { mutableStateOf(IntSize.Zero) }
+
+    LazyFlow(
+        modifier = modifier.fillMaxSize(),
+        scrollState = scrollState,
+        afterScrollModifier = afterScrollModifier
+            .onGloballyPositioned({
+                rowSize.value = it.size
+            }),
+        orientation = FlowOrientation.Row,
+        horizontalGap = 8.dp,
+        verticalGap = 8.dp
+    ) {
+        items(items = list, key = { it }, itemSize = {
+            val dpSize = when (it) {
+                is TimeMachine.Annotation -> size2
+                is TimeMachine.Collection -> size1
+                is TimeMachine.FileNode -> size1
+                is TimeMachine.Row -> size1
+                is TimeMachine.Tag -> size2
+            }
+            FlowItemSizeMode.Exact(dpSize)
+        }) {
+            val modifier = Modifier.size(it.dpSize())
+            TimeMachineItem(
+                modifier = modifier,
+                item = it,
+                workspaceFullPath = workspaceFullPath,
+                onClick = {
+                    onClick(it)
+                }
+            )
+        }
     }
 }

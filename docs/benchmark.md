@@ -1,4 +1,9 @@
-[instructions for macos & memory consumption benchmark]
+### [instructions for macos & memory consumption benchmark]
+# pre-step
+pip install jupyterlab
+
+### run in benchmark/
+jupyter notebook
 # step 1
 ### run ./gradlew :benchmark:jvmBenchmarkJar
 it will generate "benchmark/build/benchmarks/jvm/jars/benchmark-jvm-jmh-JMH.jar"

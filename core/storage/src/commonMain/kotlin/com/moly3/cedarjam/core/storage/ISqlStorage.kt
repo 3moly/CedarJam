@@ -51,6 +51,7 @@ interface ISqlStorage {
     fun getCollection(id: Long): Flow<DataCollection?>
     fun getTagCollectionRows(): Flow<List<TagCollectionRow>>
     fun getCollectionRows(collectionId: Long?): Flow<List<DataCollectionRow>>
+    fun getCollectionRowsByFileRelativePath(relativePath: String): Flow<List<DataCollectionRow>>
     fun getCollectionRowsCount(collectionId: Long?): Flow<Long>
     fun getCollectionRowsPaginated(
         offset: Long,

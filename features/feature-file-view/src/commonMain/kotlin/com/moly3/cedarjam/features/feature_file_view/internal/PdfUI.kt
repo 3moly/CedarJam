@@ -320,7 +320,7 @@ internal fun PdfUI(
                                                                                     CreateAnnotationRequest(
                                                                                         dataPath = fileType.fileNode.getFullPath(),
                                                                                         description = "",
-                                                                                        dataPoint = (currentPage - 1).toDouble(),
+                                                                                        dataPoint = (currentPage).toDouble(),
                                                                                         x = x1,
                                                                                         y = y1,       // PDF-space y (bottom origin)
                                                                                         width = width,

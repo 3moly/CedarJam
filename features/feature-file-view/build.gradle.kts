@@ -43,9 +43,10 @@ kotlin {
             }
         }
         jvmMain.dependencies {
-            implementation(libs.compose.pdf)
+            implementation(libs.pdfbox)
+//            implementation(libs.compose.pdf)
             implementation(libs.icepdf.core)
-//            implementation(libs.pdfbox)
+////            implementation(libs.pdfbox)
             implementation(libs.jai.imageio.jpeg2000)
 
         }

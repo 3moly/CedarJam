@@ -14,9 +14,11 @@ import com.moly3.cedarjam.core.domain.model.CollectionDTO
 import com.moly3.cedarjam.core.domain.model.CollectionRowDTO
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.FileTreeNode.Companion.getAllFilesByExtension
+import com.moly3.cedarjam.core.domain.model.LineMatch
 import com.moly3.cedarjam.core.domain.model.NavigateToFile
 import com.moly3.cedarjam.core.domain.model.ResultWrapper
 import com.moly3.cedarjam.core.domain.model.TagDTO
+import com.moly3.cedarjam.core.domain.model.TimeMachine
 import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.domain.model.bind
 import com.moly3.cedarjam.core.domain.model.navigation.input.CollectionPageInput
@@ -42,8 +44,6 @@ import com.moly3.cedarjam.pages.page_home.Intent
 import com.moly3.cedarjam.pages.page_home.State
 import com.moly3.cedarjam.pages.page_home.State.Companion.fromSaveable
 import com.moly3.cedarjam.pages.page_home.State.Companion.toSaveable
-import com.moly3.cedarjam.pages.page_home.model.LineMatch
-import com.moly3.cedarjam.pages.page_home.model.TimeMachine
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.CoroutineScope

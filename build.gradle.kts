@@ -1,11 +1,8 @@
 import dev.iurysouza.modulegraph.ModuleType
 import dev.iurysouza.modulegraph.Theme
-import java.util.Properties
 
 plugins {
     alias(libs.plugins.androidApplication).apply(false)
-    alias(libs.plugins.androidLibrary).apply(false)
-    alias(libs.plugins.kotlinAndroid).apply(false)
     alias(libs.plugins.kotlinCocoapods).apply(false)
     alias(libs.plugins.compose.compiler).apply(false)
     alias(libs.plugins.kotlinMultiplatform) apply false
@@ -14,12 +11,10 @@ plugins {
     alias(libs.plugins.composeHotReload).apply(false)
     alias(libs.plugins.compose).apply(false)
     alias(libs.plugins.serialization).apply(false)
-//    alias(libs.plugins.stability.analyzer).apply(false)
+    alias(libs.plugins.stability.analyzer).apply(false)
     alias(libs.plugins.modulegraph.mermaid)
     alias(libs.plugins.android.kotlin.multiplatform.library).apply(false)
     alias(libs.plugins.android.lint) apply false
-//    alias(libs.plugins.android.test) apply false
-//    alias(libs.plugins.baselineprofile).apply(false)
 }
 
 buildscript {

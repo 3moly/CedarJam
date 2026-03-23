@@ -1,7 +1,7 @@
 package com.moly3.cedarjam.pages.page_home
 
 import androidx.compose.ui.text.input.TextFieldValue
-import com.moly3.cedarjam.pages.page_home.model.TimeMachine
+import com.moly3.cedarjam.core.domain.model.TimeMachine
 import com.moly3.cedarjam.pages.page_home.model.TimeMachineFilterType
 
 sealed interface Intent {

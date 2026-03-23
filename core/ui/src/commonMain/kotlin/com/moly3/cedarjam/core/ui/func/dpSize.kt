@@ -1,8 +1,8 @@
-package com.moly3.cedarjam.pages.page_home.func
+package com.moly3.cedarjam.core.ui.func
 
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import com.moly3.cedarjam.pages.page_home.model.TimeMachine
+import com.moly3.cedarjam.core.domain.model.TimeMachine
 
 fun TimeMachine.dpSize(): DpSize {
     return when (this) {

@@ -22,6 +22,7 @@ import coil3.memory.MemoryCache
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalImageLoader
+import com.moly3.cedarjam.core.ui.compositions.LocalWorkspacePath
 import com.moly3.cedarjam.core.ui.func.imePaddingCJ
 import com.moly3.cedarjam.core.ui.uikit.CJWorkspaceTheme
 import com.moly3.cedarjam.features.feature_settings.ui.DialogSettingsUI
@@ -54,7 +55,8 @@ fun WorkspacePage(component: WorkspaceComponent) {
         imageLoader
     }
     CompositionLocalProvider(
-        LocalImageLoader provides imageLoader
+        LocalImageLoader provides imageLoader,
+        LocalWorkspacePath provides (state.activeWorkspace?.absolutePath ?: "")
     ) {
         CJWorkspaceTheme(settings = state.settings, file = state.workspaceFont) {
             Box(
