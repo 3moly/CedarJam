@@ -19,8 +19,7 @@ import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.uikit.AppThemePreview
 import com.moly3.cedarjam.core.ui.uikit.CJText
 import com.moly3.cedarjam.core.ui.uikit.NeumorphicShape
-import vectors.DotsHorizontal
-import vectors.TrashEmpty
+import vector.DotsHorizontal
 import com.moly3.cedarjam.pages.page_select_workspace.Intent
 
 @Composable

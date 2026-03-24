@@ -27,7 +27,7 @@ import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.coroutines.FlowPreview
-import vectors.SquareHelp
+import vector.SquareHelp
 
 @OptIn(FlowPreview::class)
 @Composable
@@ -35,17 +35,6 @@ internal fun PageContent(
     state: State,
     onIntent: (Intent) -> Unit
 ) {
-
-    val appTheme = LocalAppTheme.current
-    val hazeState = rememberHazeState(blurEnabled = true)
-    val hazeStyle = remember(appTheme) {
-        HazeStyle(
-            backgroundColor = appTheme.colors.backgroundSecondary.copy(alpha = 0.8f),
-            tints = listOf(HazeTint(appTheme.colors.backgroundSecondary.copy(0.5f))),
-            blurRadius = 16.dp,
-            noiseFactor = HazeDefaults.noiseFactor
-        )
-    }
     when (state.tagState) {
         is UIState.Error<*> -> {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

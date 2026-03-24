@@ -19,7 +19,7 @@ import com.moly3.cedarjam.core.ui.func.rememberPdfImage
 import com.moly3.cedarjam.core.ui.uikit.CJIcon
 import com.moly3.cedarjam.core.ui.uikit.CJText
 import com.moly3.cedarjam.core.ui.uikit.Header
-import vectors.ArrowRight
+import vector.ArrowRight
 
 fun imgHeader(
     workspace: WorkspacePresentation?,

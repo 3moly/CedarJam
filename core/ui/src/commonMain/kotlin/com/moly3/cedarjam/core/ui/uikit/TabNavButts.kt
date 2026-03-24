@@ -13,14 +13,14 @@ fun TabNavButts(
 ) {
     CJButtSnap(
         modifier = Modifier,
-        painter = rememberVectorPainter(vectors.ArrowLeft),
+        painter = rememberVectorPainter(vector.ArrowLeft),
         isSelected = !canGoBack,
         buttType = ButtSnapType.Start,
         onClick = goBack
     )
     CJButtSnap(
         modifier = Modifier,
-        painter = rememberVectorPainter(vectors.ArrowRight),
+        painter = rememberVectorPainter(vector.ArrowRight),
         isSelected = !canGoForward,
         buttType = ButtSnapType.End,
         onClick = goForward

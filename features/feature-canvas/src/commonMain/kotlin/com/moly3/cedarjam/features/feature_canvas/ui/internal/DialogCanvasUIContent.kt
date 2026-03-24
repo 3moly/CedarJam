@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -56,16 +55,14 @@ import com.moly3.cedarjam.core.ui.compositions.LocalDragAndDrop
 import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
 import com.moly3.cedarjam.core.ui.func.navigationBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.func.pageControlsPadding
-import com.moly3.cedarjam.core.ui.func.wstatusBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.model.FileTreeItemPresentation
 import com.moly3.cedarjam.core.ui.uikit.CJText
 import com.moly3.cedarjam.core.ui.uikit.CJTextField
-import vectors.Add
-import vectors.TrashCan
+import vector.Add
+import vector.TrashCan
 import com.moly3.cedarjam.features.feature_canvas.Intent
 import com.moly3.cedarjam.features.feature_canvas.State
 import com.moly3.cedarjam.features.feature_canvas.ui.shader.UmlShader
-import com.moly3.dataviz.core.whiteboard.func.calculateBounds
 import com.moly3.dataviz.whiteboard.func.absoluteOffset
 import com.moly3.dataviz.core.whiteboard.model.Action
 import com.moly3.dataviz.core.whiteboard.model.ShapeConnection
@@ -247,37 +244,51 @@ internal fun DialogCanvasUIContent(
                                     data.value.calculateBounds()
                                 }
                                 val pathData = data.value
+                                val bitmap = ImageBitmap(
+                                    bounds.size.width.toInt().coerceAtLeast(1),
+                                    bounds.size.height.toInt().coerceAtLeast(1)
+                                )
+                                val canvas = Canvas(bitmap)
+                                val path = Path()
 
-                                val drawingBitmap = remember(pathData, bounds) {
-                                    val bitmap = ImageBitmap(
-                                        bounds.size.width.toInt(),
-                                        bounds.size.height.toInt()
-                                    )
-                                    val canvas = Canvas(bitmap)
-                                    val paint = Paint().apply {
-                                        color = pathData.color
-                                        strokeWidth =
-                                            pathData.points.firstOrNull()?.strokeWidth ?: 5f
-                                        style = PaintingStyle.Stroke
-                                        strokeCap = StrokeCap.Round
-                                        strokeJoin = StrokeJoin.Round
-                                    }
+                                val paint = Paint().apply {
+                                    color = pathData.color
+                                    style = PaintingStyle.Stroke
+                                    strokeCap = StrokeCap.Round
+                                    strokeJoin = StrokeJoin.Round
+                                    isAntiAlias = true // Essential for smooth ink
+                                }
 
-                                    val composePath = Path().apply {
-                                        if (pathData.points.isNotEmpty()) {
-                                            moveTo(
-                                                pathData.points.first().x,
-                                                pathData.points.first().y
-                                            )
-                                            pathData.points.forEach { lineTo(it.x, it.y) }
+                                val points = pathData.points
+                                if (points.size > 1) {
+                                    path.moveTo(points[0].x, points[0].y)
+
+                                    for (i in 1 until points.size) {
+                                        val p1 = points[i - 1]
+                                        val p2 = points[i]
+
+                                        // Calculate dynamic stroke width based on pressure
+                                        paint.strokeWidth = ((p1.strokeWidth * p1.pressure) + (p2.strokeWidth * p2.pressure)) / 2f
+
+                                        // Quadratic Bezier for smoothing
+                                        val midX = (p1.x + p2.x) / 2f
+                                        val midY = (p1.y + p2.y) / 2f
+
+                                        if (i == 1) {
+                                            path.lineTo(midX, midY)
+                                        } else {
+                                            path.quadraticTo(p1.x, p1.y, midX, midY)
                                         }
-                                    }
 
-                                    canvas.drawPath(composePath, paint)
-                                    bitmap
+                                        // Note: Canvas.drawPath uses a single strokeWidth.
+                                        // For variable width within one stroke, we draw segment by segment:
+                                        canvas.drawPath(path, paint)
+                                        path.reset()
+                                        path.moveTo(midX, midY)
+                                    }
                                 }
                                 Image(
-                                    bitmap = drawingBitmap,
+                                    bitmap = bitmap,
                                     contentDescription = null,
                                     modifier = Modifier.fillMaxSize(),
                                     contentScale = ContentScale.FillBounds // This ensures it scales with the Box

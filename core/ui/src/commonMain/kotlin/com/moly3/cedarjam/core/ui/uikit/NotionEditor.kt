@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.*
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.zIndex
+import vector.collection.Note
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -71,11 +72,11 @@ private data class SlashCommand(
 )
 
 private val slashCommands = listOf(
-    SlashCommand("Text", "Plain paragraph", vectors.Note, BlockType.Paragraph),
-    SlashCommand("Heading 1", "Large section title", vectors.Note, BlockType.H1),
-    SlashCommand("Heading 2", "Medium section title", vectors.Note, BlockType.H2),
-    SlashCommand("Heading 3", "Small section title", vectors.Note, BlockType.H3),
-    SlashCommand("Image", "Embed an image",vectors.Note, BlockType.Image),
+    SlashCommand("Text", "Plain paragraph", Note, BlockType.Paragraph),
+    SlashCommand("Heading 1", "Large section title", Note, BlockType.H1),
+    SlashCommand("Heading 2", "Medium section title", Note, BlockType.H2),
+    SlashCommand("Heading 3", "Small section title", Note, BlockType.H3),
+    SlashCommand("Image", "Embed an image", Note, BlockType.Image),
 )
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -789,7 +790,7 @@ private fun DragHandle(
 
     Box {
         Icon(
-            imageVector = vectors.Note,
+            imageVector = Note,
             contentDescription = "Block options",
             tint = if (isDragging) Color(0xFF2383E2) else Color(0xFF999999),
             modifier = Modifier
@@ -855,11 +856,11 @@ private fun BlockOptionsMenu(
         )
 
         listOf(
-            Triple(vectors.Note, "Text", BlockType.Paragraph),
-            Triple(vectors.Note, "Heading 1", BlockType.H1),
-            Triple(vectors.Note, "Heading 2", BlockType.H2),
-            Triple(vectors.Note, "Heading 3", BlockType.H3),
-            Triple(vectors.Note, "Image", BlockType.Image),
+            Triple(Note, "Text", BlockType.Paragraph),
+            Triple(Note, "Heading 1", BlockType.H1),
+            Triple(Note, "Heading 2", BlockType.H2),
+            Triple(Note, "Heading 3", BlockType.H3),
+            Triple(Note, "Image", BlockType.Image),
         ).forEach { (icon, label, type) ->
             val isCurrent = block.type == type
             DropdownMenuItem(
@@ -880,7 +881,7 @@ private fun BlockOptionsMenu(
                 },
                 trailingIcon = {
                     if (isCurrent) Icon(
-                        vectors.Note, contentDescription = null,
+                        Note, contentDescription = null,
                         modifier = Modifier.size(14.dp), tint = Color(0xFF2383E2)
                     )
                 },
@@ -906,7 +907,7 @@ private fun BlockOptionsMenu(
         DropdownMenuItem(
             leadingIcon = {
                 Icon(
-                    vectors.Note, contentDescription = null,
+                    Note, contentDescription = null,
                     modifier = Modifier.size(16.dp), tint = Color(0xFF555555)
                 )
             },
@@ -927,7 +928,7 @@ private fun BlockOptionsMenu(
         DropdownMenuItem(
             leadingIcon = {
                 Icon(
-                    vectors.Note, contentDescription = null,
+                    Note, contentDescription = null,
                     modifier = Modifier.size(16.dp), tint = Color(0xFF555555)
                 )
             },
@@ -948,7 +949,7 @@ private fun BlockOptionsMenu(
         DropdownMenuItem(
             leadingIcon = {
                 Icon(
-                    vectors.Note, contentDescription = null,
+                    Note, contentDescription = null,
                     modifier = Modifier.size(16.dp), tint = Color(0xFFE53935)
                 )
             },
@@ -993,14 +994,14 @@ private fun SelectionToolbar(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(2.dp)
         ) {
-            ToolbarButton(vectors.Note, "Clear", onClearSelection)
+            ToolbarButton(Note, "Clear", onClearSelection)
             ToolbarDivider()
-            ToolbarButton(vectors.Note, "Delete", onDelete)
-            ToolbarButton(vectors.Note, "Copy", onCopy)
-            ToolbarButton(vectors.Note, "Paste", onPaste)
+            ToolbarButton(Note, "Delete", onDelete)
+            ToolbarButton(Note, "Copy", onCopy)
+            ToolbarButton(Note, "Paste", onPaste)
             ToolbarDivider()
             Box {
-                ToolbarButton(vectors.Note, "Type") { showTypeMenu = true }
+                ToolbarButton(Note, "Type") { showTypeMenu = true }
                 DropdownMenu(expanded = showTypeMenu, onDismissRequest = { showTypeMenu = false }) {
                     listOf(
                         "Paragraph" to BlockType.Paragraph,

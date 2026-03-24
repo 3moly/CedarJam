@@ -26,7 +26,6 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.rememberAsyncImagePainter
-import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalImageLoader
 import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
 import com.moly3.cedarjam.core.ui.uikit.CJText
@@ -122,7 +121,7 @@ fun FlowerCard(
             ) {
                 Image(
                     modifier = Modifier.size(12.dp),
-                    painter = rememberVectorPainter(vectors.Settings),
+                    painter = rememberVectorPainter(vector.Settings),
                     contentDescription = null,
                     colorFilter = ColorFilter.tint(Color.Green)
                 )

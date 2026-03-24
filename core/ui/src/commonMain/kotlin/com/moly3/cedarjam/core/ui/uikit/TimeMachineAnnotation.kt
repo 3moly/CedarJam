@@ -25,7 +25,7 @@ import com.moly3.cedarjam.core.ui.func.dpSize
 import com.moly3.cedarjam.core.ui.uikit.AppThemePreview
 import com.moly3.cedarjam.core.ui.uikit.CJText
 import com.moly3.cedarjam.core.ui.uikit.TimeMachineItem
-import vectors.TrashEmpty
+import vector.TrashEmpty
 
 @Composable
 internal fun TimeMachineAnnotation(

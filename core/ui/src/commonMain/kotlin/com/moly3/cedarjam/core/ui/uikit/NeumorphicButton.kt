@@ -8,9 +8,11 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -45,7 +47,7 @@ import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.func.flatClickable
 import com.moly3.cedarjam.core.ui.func.lighter
 import com.moly3.cedarjam.core.ui.service.KVibrator
-import vectors.Tag
+import vector.Tag
 
 data class NeumorphicShadowConfig(
     val lightShadowAlpha: Float = 0.6f,
@@ -76,7 +78,7 @@ fun NeumorphicShape(
     accentColor: Color = LocalAppTheme.current.colors.backgroundPrimary.lighter(0.5f),
     isPressed: Boolean = false,
     buttonShape: Shape = CircleShape,
-    strength: Float = 1f,
+    strength: Float = 0f,
     isShowBigGradient: Boolean = true,
     shadowConfig: NeumorphicShadowConfig = NeumorphicShadowConfig(),
     painter: Painter? = null,
@@ -169,6 +171,32 @@ fun NeumorphicShape(
                 )
             }
         }
+    }
+}
+
+@Preview
+@Composable
+fun fidgetpreview(){
+    AppThemePreview(isFullscreen = false, isDark = false){
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            NeumorphicShape(
+                modifier = Modifier.padding(16.dp).size(60.dp),
+                isPressed = false,
+                strength = 0f,
+                accentColor = Color(0xFFFF4200),
+                painter = rememberVectorPainter(Tag),
+                unpressedIconColor = Color.White
+            )
+            NeumorphicShape(
+                modifier = Modifier.padding(16.dp).size(60.dp),
+                isPressed = false,
+                strength = 5f,
+                accentColor = Color(0xFFFF4200),
+                painter = rememberVectorPainter(Tag),
+                unpressedIconColor = Color.White
+            )
+        }
+
     }
 }
 

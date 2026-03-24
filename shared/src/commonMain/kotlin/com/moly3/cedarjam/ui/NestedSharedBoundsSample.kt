@@ -27,9 +27,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.unit.dp
-import vectors.BarLeft
-import vectors.FolderAdd
-import vectors.TrashEmpty
+import vector.BarLeft
+import vector.FolderAdd
+import vector.TrashEmpty
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable

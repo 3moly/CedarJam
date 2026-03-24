@@ -59,7 +59,7 @@ fun ContentNearGraphUI(
                     .align(optionsAlignment)
                     .size(LocalUIConfig.current.fabCircleSize),
                 isPressed = isGraphDialogOpened,
-                painter = rememberVectorPainter(vectors.NetworkNode)
+                painter = rememberVectorPainter(vector.NetworkNode)
             ) {
                 setIsShowGraph(!isGraphDialogOpened)
             }

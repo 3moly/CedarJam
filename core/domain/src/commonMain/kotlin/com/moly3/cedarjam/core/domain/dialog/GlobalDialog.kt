@@ -37,6 +37,11 @@ abstract class GlobalDialog<Input, Result>(
         }
     }
 
+    fun openImmediate(inputData: Input) {
+        _inputDataState.value = (DialogState.Opened(inputData))
+    }
+
+
     suspend fun open(inputData: Input): Result {
         _inputDataState.emit(DialogState.Opened(inputData))
         return suspendCoroutine { continuation ->

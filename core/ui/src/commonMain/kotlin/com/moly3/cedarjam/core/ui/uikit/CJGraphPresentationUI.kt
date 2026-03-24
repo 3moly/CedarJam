@@ -12,7 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.moly3.cedarjam.core.domain.model.node.ObsidianGraphPresentation
-import vectors.TrashEmpty
+import vector.TrashEmpty
 import com.moly3.cedarjam.core.ui.volumedBorderStroke
 
 @Composable

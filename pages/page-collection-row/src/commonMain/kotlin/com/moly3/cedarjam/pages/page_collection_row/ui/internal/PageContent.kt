@@ -27,6 +27,8 @@ import com.moly3.cedarjam.core.domain.model.CollectionRowDTO
 import com.moly3.cedarjam.core.domain.model.CollectionViewType
 import com.moly3.cedarjam.core.ui.func.isCompactUI
 import com.moly3.cedarjam.core.ui.func.rememberPdfBitmap
+import com.moly3.cedarjam.core.ui.func.statusBarsPaddingCJ
+import com.moly3.cedarjam.core.ui.func.wstatusBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.uikit.AppThemePreview
 import com.moly3.cedarjam.pages.page_collection_row.Intent
 import com.moly3.cedarjam.pages.page_collection_row.State
@@ -39,7 +41,7 @@ internal fun PageContent(state: State, onIntent: (Intent) -> Unit) {
     fun updateRow(row: CollectionRowDTO) {
         onIntent(Intent.Update(row))
     }
-    Box(Modifier.fillMaxSize()) {
+    Box(Modifier.wstatusBarsPaddingCJ().fillMaxSize()) {
         if (state.collectionRow != null) {
             val row = state.collectionRow
             val imgBitmap = rememberPdfBitmap(state.collectionRow.fileRelativePath)
@@ -100,9 +102,9 @@ internal fun PageContent(state: State, onIntent: (Intent) -> Unit) {
                                 placeholder = "file path",
                                 value = state.collectionRow.fileRelativePath ?: ""
                             )
-                            if (state.collection?.viewType == CollectionViewType.PDF) {
-
-                            }
+//                            if (state.collection?.viewType == CollectionViewType.PDF) {
+//
+//                            }
                             if (state.collection?.viewType == CollectionViewType.Word) {
                                 TextPropertyField(
                                     placeholder = "translation",
@@ -137,7 +139,7 @@ private fun PageContentPreview() {
                 collection = CollectionDTO(
                     id = 1,
                     name = "japanese words",
-                    viewType = CollectionViewType.Anime,
+                    viewType = CollectionViewType.Word,
                     createdTime = 0,
                     modifiedTime = 0
                 ),

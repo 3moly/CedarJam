@@ -36,10 +36,8 @@ import com.moly3.cedarjam.core.ui.func.windowToolbarPaddingCJ
 import com.moly3.cedarjam.core.ui.uikit.CJApplicationTheme
 import com.moly3.cedarjam.core.ui.uikit.JustMenuContent
 import com.moly3.cedarjam.core.ui.uikit.NeumorphicShape
-import com.moly3.cedarjam.core.ui.uikit.TabNavButts
-import com.moly3.cedarjam.features.feature_graph.model.GraphTabState
-import vectors.BarLeft
-import vectors.DummySquareSmall
+import vector.BarLeft
+import vector.DummySquareSmall
 
 @Composable
 fun FileMenuContent(

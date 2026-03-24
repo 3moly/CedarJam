@@ -2,10 +2,10 @@ package com.moly3.cedarjam.core.ui.func
 
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.moly3.cedarjam.core.ui.model.PageNameData
-import vectors.Data
-import vectors.House
-import vectors.Note
-import vectors.Tag
+import vector.Data
+import vector.House
+import vector.collection.Note
+import vector.Tag
 
 fun PageNameData.PageType?.getPageTypeIcon(): ImageVector? {
     return when (this) {

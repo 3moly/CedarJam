@@ -4,6 +4,7 @@ import com.moly3.cedarjam.core.domain.dialog.DialogAddCollectionRowService
 import com.moly3.cedarjam.core.domain.dialog.DialogColorPickerService
 import com.moly3.cedarjam.core.domain.dialog.DialogCreateWorkspaceService
 import com.moly3.cedarjam.core.domain.dialog.DialogDeleteService
+import com.moly3.cedarjam.core.domain.dialog.DialogSelectOptionsService
 import com.moly3.cedarjam.core.domain.dialog.DialogSelectTagService
 import com.moly3.cedarjam.core.domain.dialog.DialogSelectWorkspaceService
 import com.moly3.cedarjam.core.domain.dialog.DialogTagToTagService
@@ -15,6 +16,7 @@ fun initDialogs() = module {
     single<DialogDeleteService> { DialogDeleteService() }
     single<DialogCreateWorkspaceService> { DialogCreateWorkspaceService() }
     single<DialogAddCollectionRowService> { DialogAddCollectionRowService() }
+    single<DialogSelectOptionsService> { DialogSelectOptionsService() }
     single<DialogColorPickerService> { DialogColorPickerService() }
     single<DialogSelectWorkspaceService> { DialogSelectWorkspaceService() }
 }

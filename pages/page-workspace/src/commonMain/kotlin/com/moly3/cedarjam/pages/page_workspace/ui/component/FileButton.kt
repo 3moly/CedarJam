@@ -52,9 +52,9 @@ import com.moly3.cedarjam.core.ui.compositions.LocalHazeState
 import com.moly3.cedarjam.core.ui.compositions.LocalHazeStyle
 import com.moly3.cedarjam.core.ui.onPointerEvent
 import com.moly3.cedarjam.core.ui.uikit.CJText
-import vectors.ChevronDownDuo
-import vectors.FileAdd
-import vectors.FolderAdd
+import vector.ChevronDownDuo
+import vector.FileAdd
+import vector.FolderAdd
 import com.moly3.cedarjam.core.ui.volumedBorderStroke
 import dev.chrisbanes.haze.hazeEffect
 

@@ -18,11 +18,9 @@ import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
 import com.moly3.cedarjam.core.ui.uikit.CJIcon
-import com.moly3.cedarjam.core.ui.uikit.CJText
 import com.moly3.cedarjam.core.ui.uikit.CJTextField2
-import vectors.ArrowLeft
-import vectors.ArrowRight
-import com.moly3.cedarjam.pages.page_tab.Intent
+import vector.ArrowLeft
+import vector.ArrowRight
 
 @Composable
 internal fun TabControlsContent(

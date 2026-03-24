@@ -1,6 +1,5 @@
 package com.moly3.cedarjam.features.feature_file_view.internal
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -8,20 +7,15 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -55,8 +49,6 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import com.github.panpf.zoomimage.compose.ZoomState
-import com.github.panpf.zoomimage.compose.rememberZoomState
 import com.moly3.cedarjam.core.domain.func.getPlatform
 import com.moly3.cedarjam.features.feature_file_view.getObsPdfDocument
 import com.moly3.cedarjam.core.domain.io
@@ -69,34 +61,22 @@ import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
 import com.moly3.cedarjam.core.ui.compositions.LocalUIConfig
 import com.moly3.cedarjam.core.ui.func.blendMode
-import com.moly3.cedarjam.core.ui.func.darker
-import com.moly3.cedarjam.core.ui.func.isCompactUI
 import com.moly3.cedarjam.core.ui.func.navigationBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.func.pageControlsPadding
 import com.moly3.cedarjam.core.ui.onPointerEvent
-import com.moly3.cedarjam.core.ui.uikit.CJButton
 import com.moly3.cedarjam.core.ui.uikit.CJCircularProgressIndicator
 import com.moly3.cedarjam.core.ui.uikit.CJText
 import com.moly3.cedarjam.core.ui.uikit.CJTextField
 import com.moly3.cedarjam.core.ui.uikit.CJZoomableViewLayout
 import com.moly3.cedarjam.core.ui.uikit.CJIcon
 import com.moly3.cedarjam.core.ui.uikit.NeumorphicShape
-import vectors.ArrowLeft
-import vectors.ArrowRight
-import vectors.TrashEmpty
+import vector.ArrowLeft
+import vector.ArrowRight
 import com.moly3.cedarjam.core.ui.volumedBorderStroke
 import com.moly3.cedarjam.features.feature_file_view.func.drawAnnotationsBehind
-import dev.chrisbanes.haze.HazeDefaults
-import dev.chrisbanes.haze.HazeStyle
-import dev.chrisbanes.haze.HazeTint
-import dev.chrisbanes.haze.hazeSource
-import dev.chrisbanes.haze.rememberHazeState
-import io.github.fletchmckee.liquid.LiquidState
-import io.github.fletchmckee.liquid.liquefiable
-import io.github.fletchmckee.liquid.liquid
-import io.github.fletchmckee.liquid.rememberLiquidState
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.coroutines.launch
+import vector.collection.Note
 
 
 fun AnnotationDTO.toPx(
@@ -364,7 +344,7 @@ internal fun PdfUI(
                                             .size(LocalUIConfig.current.fabCircleSize),
                                         isPressed = isEnableAnnotation.value,
                                         accentColor = LocalAppTheme.current.primaryColor,
-                                        painter = rememberVectorPainter(vectors.Note)
+                                        painter = rememberVectorPainter(Note)
                                     ) {
                                         isEnableAnnotation.value = !isEnableAnnotation.value
                                     }

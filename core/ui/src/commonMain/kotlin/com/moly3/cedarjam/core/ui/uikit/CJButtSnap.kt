@@ -54,12 +54,12 @@ fun ButtSnapPreview() {
     AppThemePreview {
         Row {
             CJButtSnap(
-                painter = rememberVectorPainter(vectors.BarLeft),
+                painter = rememberVectorPainter(vector.BarLeft),
                 isSelected = false,
                 buttType = ButtSnapType.Start
             ) {}
             CJButtSnap(
-                painter = rememberVectorPainter(vectors.NetworkNode),
+                painter = rememberVectorPainter(vector.NetworkNode),
                 isSelected = true,
                 buttType = ButtSnapType.Center
             ) {}
@@ -75,7 +75,7 @@ fun ButtSnapPreview() {
                 buttType = ButtSnapType.Center
             ) {}
             CJButtSnap(
-                painter = rememberVectorPainter(vectors.Tag),
+                painter = rememberVectorPainter(vector.Tag),
                 isSelected = false,
                 buttType = ButtSnapType.End
             ) {}

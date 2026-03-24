@@ -19,6 +19,6 @@ fun isCompactUI(): Boolean {
 @Composable
 fun pageControlsPadding(): Dp {
     return if (isCompactUI()) {
-        40.dp
+        50.dp
     } else 0.dp
 }

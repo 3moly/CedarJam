@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
@@ -41,14 +42,13 @@ import com.moly3.cedarjam.core.domain.model.TimeMachine
 import com.moly3.cedarjam.core.domain.model.toFileType
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.func.dpSize
-import com.moly3.cedarjam.core.ui.func.navigationBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.func.rememberPdfImage
 import com.moly3.cedarjam.pages.page_home.ui.internal.TimeMachineAnnotation
 import com.moly3.lazyFlow.func.items
 import com.moly3.lazyFlow.model.FlowItemSizeMode
 import com.moly3.lazyFlow.ui.LazyFlow
 import com.moly3.lazyflow.core.model.FlowOrientation
-import vectors.Data
+import vector.Data
 
 @Composable
 fun TimeMachineItem(
@@ -91,7 +91,8 @@ fun TimeMachineItem(
                                 painter = rememberVectorPainter(Data),
                                 contentDescription = null,
                                 modifier = Modifier.height(75.dp),
-                                contentScale = ContentScale.FillHeight
+                                contentScale = ContentScale.FillHeight,
+                                colorFilter = ColorFilter.tint(LocalAppTheme.current.colors.icon)
                             )
                             CJText(text = item.collection.name)
                         }

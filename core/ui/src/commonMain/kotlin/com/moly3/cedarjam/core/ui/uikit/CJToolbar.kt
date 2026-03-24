@@ -13,8 +13,8 @@ import androidx.compose.ui.unit.dp
 import com.moly3.cedarjam.core.ui.ToolbarHeight
 import com.moly3.cedarjam.core.ui.compositions.LocalJvmToolbarState
 import com.moly3.cedarjam.core.ui.func.drawUnder
-import vectors.CloseSM
-import vectors.Left2
+import vector.CloseSM
+import vector.Left2
 
 @Composable
 fun CJToolbar(title: String?, onBack: (() -> Unit)? = null, onClose: () -> Unit) {

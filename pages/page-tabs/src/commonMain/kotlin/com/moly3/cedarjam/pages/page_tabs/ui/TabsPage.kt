@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
@@ -30,8 +31,8 @@ import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.func.getPageTypeIcon
 import com.moly3.cedarjam.core.ui.model.CJText
 import com.moly3.cedarjam.core.ui.uikit.CJIcon
-import vectors.Add
-import vectors.AddRow
+import vector.Add
+import vector.tab.AddRow
 import org.jetbrains.compose.resources.stringResource
 
 @OptIn(ExperimentalDecomposeApi::class)
@@ -50,14 +51,17 @@ fun TabsPage(
         horizontalArrangement = Arrangement.spacedBy(0.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(modifier = Modifier.weight(1f).horizontalScroll(rememberScrollState())) {
+        Row(
+            modifier = Modifier.weight(1f).horizontalScroll(rememberScrollState()),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             for (item in state.tabs) {
                 val name by item.nameFlow.collectAsState(null)
                 val isSelected = item.index == state.currentTabIndex
                 val pageIcon = remember(name) {
                     name?.pageType?.getPageTypeIcon()
                 }
-                val rawText = when(val name = name?.name){
+                val rawText = when (val name = name?.name) {
                     is CJText.Raw -> name.text
                     is CJText.Res -> stringResource(name.res)
                     null -> ""
@@ -82,7 +86,7 @@ fun TabsPage(
                 )
             }
             CJIcon(
-                modifier = Modifier,
+                modifier = Modifier.padding(start = 8.dp),
                 painter = rememberVectorPainter(Add),
                 isEnabled = true,
                 onClick = {
@@ -91,7 +95,7 @@ fun TabsPage(
         }
         if (isLastTab) {
             CJIcon(
-                modifier = Modifier,
+                modifier = Modifier.padding(end = 8.dp),
                 painter = rememberVectorPainter(AddRow),
                 isEnabled = true,
                 onClick = {

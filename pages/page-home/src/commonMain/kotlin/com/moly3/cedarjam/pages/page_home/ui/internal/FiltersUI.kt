@@ -6,9 +6,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import com.moly3.cedarjam.core.ui.uikit.ButtSnapType
 import com.moly3.cedarjam.core.ui.uikit.CJButtSnap
-import vectors.Data
-import vectors.Tag
+import vector.Tag
 import com.moly3.cedarjam.pages.page_home.model.TimeMachineFilterType
+import vector.collection.File05
+import vector.collection.FileAttach01
+import vector.collection.Note
 
 @Composable
 internal fun FiltersUI(
@@ -18,28 +20,28 @@ internal fun FiltersUI(
 ) {
     Row(modifier = modifier) {
         CJButtSnap(
-            painter = rememberVectorPainter(vectors.Home03),
+            painter = rememberVectorPainter(vector.Home03),
             isSelected = value == TimeMachineFilterType.All,
             buttType = ButtSnapType.Start
         ) {
             onSelect(TimeMachineFilterType.All)
         }
         CJButtSnap(
-            painter = rememberVectorPainter(vectors.Note),
+            painter = rememberVectorPainter(Note),
             isSelected = value == TimeMachineFilterType.Text,
             buttType = ButtSnapType.Center
         ) {
             onSelect(TimeMachineFilterType.Text)
         }
         CJButtSnap(
-            painter = rememberVectorPainter(vectors.Image02),
+            painter = rememberVectorPainter(vector.Image02),
             isSelected = value == TimeMachineFilterType.Image,
             buttType = ButtSnapType.Center
         ) {
             onSelect(TimeMachineFilterType.Image)
         }
         CJButtSnap(
-            painter = rememberVectorPainter(vectors.Dataflow03),
+            painter = rememberVectorPainter(vector.Dataflow03),
             isSelected = value == TimeMachineFilterType.Canvas,
             buttType = ButtSnapType.Center
         ) {
@@ -53,21 +55,21 @@ internal fun FiltersUI(
             onSelect(TimeMachineFilterType.Tag)
         }
         CJButtSnap(
-            painter = rememberVectorPainter(vectors.Data),
+            painter = rememberVectorPainter(vector.Data),
             isSelected = value == TimeMachineFilterType.Row,
             buttType = ButtSnapType.Center
         ) {
             onSelect(TimeMachineFilterType.Row)
         }
         CJButtSnap(
-            painter = rememberVectorPainter(vectors.File05),
+            painter = rememberVectorPainter(File05),
             isSelected = value == TimeMachineFilterType.Pdf,
             buttType = ButtSnapType.Center
         ) {
             onSelect(TimeMachineFilterType.Pdf)
         }
         CJButtSnap(
-            painter = rememberVectorPainter(vectors.FileAttach01),
+            painter = rememberVectorPainter(FileAttach01),
             isSelected = value == TimeMachineFilterType.Annotation,
             buttType = ButtSnapType.End
         ) {

@@ -63,9 +63,9 @@ import dev.chrisbanes.haze.hazeEffect
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toPersistentList
 import org.jetbrains.compose.resources.stringResource
-import vectors.BarLeft
-import vectors.DotsHorizontal
-import vectors.NetworkNode
+import vector.BarLeft
+import vector.NetworkNode
+import vector.collection.Note
 
 @Composable
 internal fun DialogGraphUIContent(
@@ -181,7 +181,7 @@ internal fun DialogGraphUIContent(
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
                                             Image(
-                                                painter = rememberVectorPainter(vectors.Add),
+                                                painter = rememberVectorPainter(vector.Add),
                                                 contentDescription = null,
                                                 colorFilter = ColorFilter.tint(color)
                                             )
@@ -250,7 +250,7 @@ internal fun DialogGraphUIContent(
                                                     }
                                                     NeumorphicShape(
                                                         modifier = Modifier.size(40.dp),
-                                                        painter = rememberVectorPainter(vectors.TrashEmpty),
+                                                        painter = rememberVectorPainter(vector.TrashEmpty),
                                                     ) {
                                                         onIntent(Intent.RemoveAnnotation(item.id))
                                                     }
@@ -341,7 +341,7 @@ internal fun DialogGraphUIContent(
                                 modifier = Modifier,
                                 count = it.size,
                                 color = color,
-                                image = vectors.Note
+                                image = Note
                             )
                         }
                     }
@@ -359,7 +359,7 @@ internal fun DialogGraphUIContent(
                                     modifier = Modifier,
                                     count = it.size,
                                     color = color,
-                                    image = vectors.Data
+                                    image = vector.Data
                                 )
                             }
                         }
@@ -377,7 +377,7 @@ internal fun DialogGraphUIContent(
                                 modifier = Modifier,
                                 count = it.size,
                                 color = color,
-                                image = vectors.FileAdd
+                                image = vector.FileAdd
                             )
                         }
                     }

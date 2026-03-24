@@ -31,7 +31,7 @@ import com.moly3.cedarjam.core.ui.uikit.CJButtonIcon
 import com.moly3.cedarjam.core.ui.uikit.CJSlider
 import com.moly3.cedarjam.core.ui.uikit.CJText
 import com.moly3.dataviz.graph.ui.Graph
-import vectors.Settings
+import vector.Settings
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class)

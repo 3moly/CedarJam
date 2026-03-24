@@ -15,7 +15,7 @@ import com.moly3.cedarjam.core.ui.compositions.LocalUIConfig
 import com.moly3.cedarjam.core.ui.func.navigationBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.func.statusBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.func.windowToolbarPaddingCJ
-import vectors.BarLeft
+import vector.BarLeft
 
 @Composable
 fun JustMenuContent(

@@ -1,3 +1,4 @@
+import co.touchlab.kermit.Logger
 import java.awt.Container
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
@@ -54,6 +55,7 @@ fun addMagnifyListener(p: Container, onMagnifyValue: (Double) -> Unit) {
                     )
                     .invoke(gu, p, mh)
             } catch (e: Exception) {
+                Logger.e { e.toString() }
                 //e.printStackTrace()
             }
         }

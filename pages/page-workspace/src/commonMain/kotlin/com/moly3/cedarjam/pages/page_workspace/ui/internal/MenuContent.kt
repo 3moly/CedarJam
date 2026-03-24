@@ -31,15 +31,16 @@ import com.moly3.cedarjam.core.ui.compositions.LocalHazeStyle
 import com.moly3.cedarjam.core.ui.compositions.LocalUIConfig
 import com.moly3.cedarjam.core.ui.func.isCompactUI
 import com.moly3.cedarjam.core.ui.func.navigationBarsPaddingCJ
-import com.moly3.cedarjam.core.ui.func.rememberWindowSize
 import com.moly3.cedarjam.core.ui.func.wstatusBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.model.FileTreeItemPresentation
 import com.moly3.cedarjam.core.ui.uikit.NeumorphicShape
-import vectors.Settings
+import vector.Settings
 import com.moly3.cedarjam.navigation.ui.BarLeft
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.hazeSource
+import vector.theme.Moon
+import vector.theme.Sun
 
 @Composable
 internal fun MenuContent(
@@ -148,7 +149,7 @@ internal fun MenuContent(
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             NeumorphicShape(
                                 modifier = Modifier.size(LocalUIConfig.current.fabCircleSize),
-                                painter = rememberVectorPainter(if (isDark) vectors.Moon else vectors.Sun)
+                                painter = rememberVectorPainter(if (isDark) Moon else Sun)
                             ) {
                                 onIntent(Intent.SetIsDark(!isDark))
                             }

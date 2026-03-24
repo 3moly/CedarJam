@@ -14,7 +14,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.input.pointer.*
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.*
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -24,6 +23,7 @@ import androidx.compose.ui.unit.*
 import com.moly3.cedarjam.core.domain.func.nowInMs
 import com.moly3.cedarjam.core.ui.onPointerEvent
 import kotlinx.coroutines.launch
+import vector.collection.Note
 import kotlin.uuid.Uuid
 
 // ─────────────────────────────────────────────────────────────
@@ -271,7 +271,7 @@ fun ObsidianEditor() {
                                 .padding(horizontal = 24.dp, vertical = 6.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(vectors.Note, null, tint = AccentPurple, modifier = Modifier.size(16.dp))
+                            Icon(Note, null, tint = AccentPurple, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(8.dp))
                             Text(
                                 "${vm.state.selectedBlockIds.size} block(s) selected · Del to delete · Ctrl+D to duplicate",
@@ -446,16 +446,16 @@ fun EditorToolbar(
         Text("Obsidian Editor", color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
         Spacer(Modifier.weight(1f))
 
-        ToolbarBtn(vectors.Note, "New block", onClick = onAddBlock)
-        ToolbarBtn(vectors.Note, "Command palette (Ctrl+P)", onClick = onCommandPalette)
-        ToolbarBtn(vectors.Note, "Select all (Ctrl+A)", onClick = onSelectAll)
+        ToolbarBtn(Note, "New block", onClick = onAddBlock)
+        ToolbarBtn(Note, "Command palette (Ctrl+P)", onClick = onCommandPalette)
+        ToolbarBtn(Note, "Select all (Ctrl+A)", onClick = onSelectAll)
 
         if (hasSelection) {
             Spacer(Modifier.width(8.dp))
             Divider(Modifier.height(20.dp).width(1.dp), color = BorderColor)
             Spacer(Modifier.width(8.dp))
-            ToolbarBtn(vectors.Note, "Duplicate", onClick = onDuplicate)
-            ToolbarBtn(vectors.Note, "Delete selected", tint = Color(0xFFE57373), onClick = onDeleteSelected)
+            ToolbarBtn(Note, "Duplicate", onClick = onDuplicate)
+            ToolbarBtn(Note, "Delete selected", tint = Color(0xFFE57373), onClick = onDeleteSelected)
         }
     }
 }
@@ -545,14 +545,14 @@ fun EditorBlockRow(
                         .clickable { onClickSelect(true) },
                     contentAlignment = Alignment.Center
                 ) {
-                    if (isSelected) Icon(vectors.Note, null, tint = Color.White, modifier = Modifier.size(10.dp))
+                    if (isSelected) Icon(Note, null, tint = Color.White, modifier = Modifier.size(10.dp))
                 }
 
                 Spacer(Modifier.height(4.dp))
 
                 // Drag handle / type button
                 Icon(
-                    vectors.Note, null,
+                    Note, null,
                     tint = TextMuted, modifier = Modifier.size(14.dp).clickable { onTypeMenuRequest() }
                 )
             }
@@ -571,9 +571,11 @@ fun EditorBlockRow(
         // Right controls (move up/down)
         if (hovered || isSelected) {
             Column(Modifier.padding(start = 4.dp, top = 2.dp)) {
-                Icon(vectors.Note, "Up",
+                Icon(
+                    Note, "Up",
                     tint = TextMuted, modifier = Modifier.size(16.dp).clickable { onMoveUp() })
-                Icon(vectors.Note, "Down",
+                Icon(
+                    Note, "Down",
                     tint = TextMuted, modifier = Modifier.size(16.dp).clickable { onMoveDown() })
             }
         } else {
@@ -722,7 +724,7 @@ fun CheckboxBlock(
                 .clickable { onToggleCheck() },
             contentAlignment = Alignment.Center
         ) {
-            if (block.checked) Icon(vectors.Note, null, tint = Color.White, modifier = Modifier.size(12.dp))
+            if (block.checked) Icon(Note, null, tint = Color.White, modifier = Modifier.size(12.dp))
         }
         Spacer(Modifier.width(10.dp))
         BasicTextField(
@@ -777,7 +779,7 @@ fun ImageBlock(block: EditorBlock) {
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(vectors.Note, null, tint = TextMuted, modifier = Modifier.size(48.dp))
+            Icon(Note, null, tint = TextMuted, modifier = Modifier.size(48.dp))
             Spacer(Modifier.height(8.dp))
             Text(block.imageName ?: "Image", color = TextSecondary, fontSize = 13.sp)
             Text("Click to open • Drag to reposition", color = TextMuted, fontSize = 11.sp)
@@ -794,17 +796,17 @@ data class BlockTypeEntry(val type: BlockType, val label: String, val icon: andr
 @Composable
 fun BlockTypePicker(onDismiss: () -> Unit, onSelect: (BlockType) -> Unit) {
     val entries = listOf(
-        BlockTypeEntry(BlockType.PARAGRAPH,    "Paragraph",    vectors.Note,       "p"),
-        BlockTypeEntry(BlockType.HEADING1,     "Heading 1",    vectors.Note,            "h1"),
-        BlockTypeEntry(BlockType.HEADING2,     "Heading 2",    vectors.Note,            "h2"),
-        BlockTypeEntry(BlockType.HEADING3,     "Heading 3",    vectors.Note,            "h3"),
-        BlockTypeEntry(BlockType.BULLET_LIST,  "Bullet List",  vectors.Note,             "ul"),
-        BlockTypeEntry(BlockType.ORDERED_LIST, "Numbered List",vectors.Note,"ol"),
-        BlockTypeEntry(BlockType.CHECKBOX,     "Checkbox",     vectors.Note,         "[]"),
-        BlockTypeEntry(BlockType.QUOTE,        "Quote",        vectors.Note,      ">"),
-        BlockTypeEntry(BlockType.CODE_BLOCK,   "Code Block",   vectors.Note,             "```"),
-        BlockTypeEntry(BlockType.IMAGE,        "Image",        vectors.Note,            "img"),
-        BlockTypeEntry(BlockType.DIVIDER,      "Divider",      vectors.Note,   "---"),
+        BlockTypeEntry(BlockType.PARAGRAPH,    "Paragraph", Note,       "p"),
+        BlockTypeEntry(BlockType.HEADING1,     "Heading 1", Note,            "h1"),
+        BlockTypeEntry(BlockType.HEADING2,     "Heading 2", Note,            "h2"),
+        BlockTypeEntry(BlockType.HEADING3,     "Heading 3", Note,            "h3"),
+        BlockTypeEntry(BlockType.BULLET_LIST,  "Bullet List", Note,             "ul"),
+        BlockTypeEntry(BlockType.ORDERED_LIST, "Numbered List", Note,"ol"),
+        BlockTypeEntry(BlockType.CHECKBOX,     "Checkbox", Note,         "[]"),
+        BlockTypeEntry(BlockType.QUOTE,        "Quote", Note,      ">"),
+        BlockTypeEntry(BlockType.CODE_BLOCK,   "Code Block", Note,             "```"),
+        BlockTypeEntry(BlockType.IMAGE,        "Image", Note,            "img"),
+        BlockTypeEntry(BlockType.DIVIDER,      "Divider", Note,   "---"),
     )
 
     Box(Modifier.fillMaxSize().background(Color.Black.copy(0.6f)).clickable(
@@ -870,7 +872,7 @@ fun CommandPalette(
                     Modifier.fillMaxWidth().padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(vectors.Note, null, tint = TextMuted, modifier = Modifier.size(20.dp))
+                    Icon(Note, null, tint = TextMuted, modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(12.dp))
                     BasicTextField(
                         value = query,
@@ -902,11 +904,11 @@ fun CommandPalette(
                             ) {
                                 val (icon, color) = when (block.type) {
                                     BlockType.HEADING1, BlockType.HEADING2, BlockType.HEADING3 ->
-                                        vectors.Note to AccentPurple
-                                    BlockType.CHECKBOX -> vectors.Note to AccentGreen
-                                    BlockType.IMAGE -> vectors.Note to Color(0xFF64B5F6)
-                                    BlockType.QUOTE -> vectors.Note to Color(0xFFFFB74D)
-                                    else -> vectors.Note to TextSecondary
+                                        Note to AccentPurple
+                                    BlockType.CHECKBOX -> Note to AccentGreen
+                                    BlockType.IMAGE -> Note to Color(0xFF64B5F6)
+                                    BlockType.QUOTE -> Note to Color(0xFFFFB74D)
+                                    else -> Note to TextSecondary
                                 }
                                 Icon(icon, null, tint = color, modifier = Modifier.size(16.dp))
                                 Spacer(Modifier.width(12.dp))

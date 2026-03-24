@@ -3,6 +3,7 @@ package com.moly3.cedarjam.core.ui.uikit
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.ModalBottomSheetProperties
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -43,11 +44,13 @@ fun <Input, Result> CJDialogGeneric(
                 sheetState = state.sheetState,
                 sheetMaxWidth = 400.dp,
                 containerColor = appTheme.colors.backgroundSecondary,
+                properties = ModalBottomSheetProperties(),
                 onDismissRequest = {
                     scope.launch {
                         dialog.setResult(dialog.closeValue)
                     }
-                }
+                },
+                dragHandle = null
             ) {
                 Column {
                     state.sheetContent.value(this)
