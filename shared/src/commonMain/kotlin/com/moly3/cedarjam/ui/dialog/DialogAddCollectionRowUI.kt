@@ -52,6 +52,7 @@ fun DialogAddCollectionRowUI(dialog: DialogAddCollectionRowService) {
                                     collectionId = 0L,
                                     createdTime = 0L,
                                     modifiedTime = 0L,
+                                    points = 0L
                                 )
                             )
                         }

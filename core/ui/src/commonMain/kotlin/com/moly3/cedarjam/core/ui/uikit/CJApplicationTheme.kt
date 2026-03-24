@@ -27,6 +27,7 @@ import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalIsRelease
 import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
 import com.moly3.cedarjam.core.ui.compositions.LocalUIConfig
+import com.moly3.cedarjam.core.ui.compositions.LocalWorkspacePath
 import com.moly3.cedarjam.core.ui.compositions.UIConfig
 import io.github.sudarshanmhasrup.localina.api.LocalinaApp
 
@@ -86,17 +87,19 @@ fun AppThemePreview(
     CJApplicationTheme(
         appSettings = AppSettings(AppThemeData.Default.copy(colors = colors))
     ) {
-        Box(
-            Modifier.let {
-                if (isFullscreen)
-                    it.fillMaxSize()
-                else {
-                    it
-                }
-            },
-            contentAlignment = Alignment.Center
-        ) {
-            content()
+        CompositionLocalProvider(LocalWorkspacePath provides "") {
+            Box(
+                Modifier.let {
+                    if (isFullscreen)
+                        it.fillMaxSize()
+                    else {
+                        it
+                    }
+                }.background(LocalAppTheme.current.colors.backgroundPrimary),
+                contentAlignment = Alignment.Center
+            ) {
+                content()
+            }
         }
     }
 }

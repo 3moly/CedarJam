@@ -1,8 +1,10 @@
 package com.moly3.cedarjam.core.domain.model
 
+import androidx.compose.runtime.Stable
 import kotlinx.serialization.Serializable
 
 @Serializable
+@Stable
 data class CollectionDTO(
     val id: Long,
     val name: String,

@@ -12,28 +12,21 @@ kotlin {
         namespace = "com.moly3.cedarjam.pages.page_workspace"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         minSdk = libs.versions.android.minSdk.get().toInt()
-//        defaultConfig {
-//
-//        }
-//        buildFeatures.compose = true
-//        compileOptions {
-//            sourceCompatibility = JavaVersion.VERSION_17
-//            targetCompatibility = JavaVersion.VERSION_17
-//        }
     }
     jvm()
 
     listOf(iosArm64(), iosSimulatorArm64())
     sourceSets {
         commonMain.dependencies {
-            //TODO remove
-//            implementation(projects.core.storage)
-
             implementation(projects.core.domain)
             implementation(projects.core.navigation)
             implementation(projects.core.ui)
-            implementation(projects.pages.pageTabs)
+            implementation(projects.core.coordinator)
+
+
             implementation(projects.features.featureSettings)
+
+            implementation(projects.pages.pageTabs)
 
             implementation(libs.filekit.core)
             implementation(libs.filekit.dialogs)

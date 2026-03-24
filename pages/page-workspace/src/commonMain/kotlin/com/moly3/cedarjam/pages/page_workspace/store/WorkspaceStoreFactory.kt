@@ -10,6 +10,7 @@ import com.arkivanov.mvikotlin.core.store.Reducer
 import com.arkivanov.mvikotlin.core.store.SimpleBootstrapper
 import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
+import com.moly3.cedarjam.core.coordinator.SetIsDarkCoordinator
 import com.moly3.cedarjam.navigation.BaseExecutor
 import com.moly3.cedarjam.navigation.Navigator
 import com.moly3.cedarjam.navigation.Route
@@ -118,6 +119,7 @@ internal class WorkspaceStoreFactory(
     private val onSettingsOpen: () -> Unit
 ) : KoinComponent {
 
+    private val setIsDarkCoordinator: SetIsDarkCoordinator by inject()
     private val alertService: AlertService by inject()
     private val filesRepo: IFilesRepository by inject()
     private val syncUseCase: ISyncUseCase by inject()
@@ -484,11 +486,12 @@ internal class WorkspaceStoreFactory(
         private suspend fun exportNodeAndShare(node: FileTreeNode) {
             val workspaceEnv = workspaceSession.workspaceEnvStateFlow.value
             val workspacePath = workspaceEnv.getWorkspace().absolutePath
-            val node = when(node){
+            val node = when (node) {
                 is FileTreeNode.Directory -> filesRepo.getNodes(
                     workspacePath,
                     node.getFullPath()
                 )
+
                 is FileTreeNode.File -> listOf(node)
             }
             val exportFile = workspaceEnv.getTempFileNode(FileName("exportShare", "zip"))
@@ -863,6 +866,15 @@ internal class WorkspaceStoreFactory(
                     onSettingsOpen()
                 }
 
+                is Intent.SetIsDark -> {
+                    scope.launch {
+                        setIsDarkCoordinator.invoke(
+                            workspaceSession = workspaceSession,
+                            isDark = intent.isDark
+                        )
+                    }
+                }
+
                 is Intent.SelectActiveTabs -> dispatch(SetActiveTab(intent.index))
                 Intent.CreateWorkspace -> {
                     scope.launch {
@@ -934,9 +946,10 @@ internal class WorkspaceStoreFactory(
                         FileTreeItemPresentation.FileTreeItemPresentationData.Collections,
                         FileTreeItemPresentation.FileTreeItemPresentationData.Tags,
                         is FileTreeItemPresentation.FileTreeItemPresentationData.Directory -> false
+
                         else -> true
                     }
-                    if(intent.isCloseMenu && isClose){
+                    if (intent.isCloseMenu && isClose) {
                         dispatch(WorkspaceStore.Msg.SetIsFullMenu(false))
                     }
                     when (val data = intent.value.data) {

@@ -1,5 +1,6 @@
 package com.moly3.cedarjam.core.ui.uikit
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.runtime.Composable
@@ -41,7 +43,7 @@ fun <T> CJDataTable(
     data: List<T>
 ) {
     val maxColumnWidthsState = remember(data, headers) { mutableStateMapOf<Int, Float>() }
-    Column(modifier = modifier) {
+    Column(modifier = modifier.horizontalScroll(rememberScrollState())) {
         if (isFixedHeader) {
             DataRow(
                 modifier = Modifier.fillMaxWidth().widthIn(min = 10.dp),

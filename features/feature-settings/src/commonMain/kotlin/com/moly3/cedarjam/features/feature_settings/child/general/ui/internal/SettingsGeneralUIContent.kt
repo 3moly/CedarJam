@@ -150,15 +150,10 @@ internal fun SettingsGeneralUIContent(
                             lightKey -> ColorsType.Light
                             else -> ColorsType.Dark
                         }
-                        val colors = if (switch == ColorsType.Dark) {
-                            AppColorsData.Dark
-                        } else {
-                            AppColorsData.Light
-                        }
+
                         onIntent(
                             Intent.SetTheme(
-                                colorsType = switch,
-                                colors = colors
+                                isDark = switch == ColorsType.Dark
                             )
                         )
                     }

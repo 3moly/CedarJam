@@ -18,6 +18,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import com.moly3.cedarjam.core.domain.model.CollectionViewType
 import com.moly3.cedarjam.core.ui.func.navigationBarsPaddingCJ
+import com.moly3.cedarjam.core.ui.func.pageControlsPadding
 import com.moly3.cedarjam.core.ui.func.wstatusBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.uikit.ButtSnapType
 import com.moly3.cedarjam.core.ui.uikit.CJButtSnap
@@ -25,6 +26,7 @@ import com.moly3.cedarjam.core.ui.uikit.CJButton
 import com.moly3.cedarjam.core.ui.uikit.CJText
 import com.moly3.cedarjam.core.ui.uikit.CJTextField
 import com.moly3.cedarjam.pages.page_collection.Intent
+import com.moly3.cedarjam.pages.page_collection.Intent.*
 import com.moly3.cedarjam.pages.page_collection.State
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
@@ -39,39 +41,44 @@ internal fun PageContent(
 ) {
     val hazeState = rememberHazeState(blurEnabled = true)
 
-    Column(modifier = Modifier.wstatusBarsPaddingCJ().navigationBarsPaddingCJ().fillMaxSize().hazeSource(hazeState)) {
+    Column(
+        modifier = Modifier.wstatusBarsPaddingCJ().navigationBarsPaddingCJ().fillMaxSize()
+            .hazeSource(hazeState)
+    ) {
         Column(modifier = Modifier.fillMaxWidth().weight(1f)) {
             if (state.collection != null) {
                 when (state.collection.viewType) {
+                    CollectionViewType.Word,
                     CollectionViewType.DataGrid -> {
                         CollectionDataGrid(
                             modifier = Modifier,
+                            collection = state.collection,
                             workspace = state.workspace,
                             rows = state.rows,
                             tags = state.tags,
                             tagCollectionRows = state.tagCollectionRows,
                             openRow = {
                                 onIntent(
-                                    Intent.OpenCollectionRow(
+                                    OpenCollectionRow(
                                         collectionId = it.collectionId,
                                         it.id
                                     )
                                 )
                             },
                             renameRow = { row, name ->
-                                onIntent(Intent.RenameCollectionRow(row, name))
+                                onIntent(RenameCollectionRow(row, name))
                             },
                             addTag = {
-                                onIntent(Intent.AddCollectionRowTag(it))
+                                onIntent(AddCollectionRowTag(it))
                             },
                             deleteRow = {
-                                onIntent(Intent.DeleteCollectionRow(it.id))
+                                onIntent(DeleteCollectionRow(it.id))
                             },
                             onSetDocument = { file, row ->
-                                onIntent(Intent.SetDocumentToRow(row, file))
+                                onIntent(SetDocumentToRow(row, file))
                             },
                             openDocument = {
-                                onIntent(Intent.OpenDocument(it))
+                                onIntent(OpenDocument(it))
                             }
                         )
                     }
@@ -85,11 +92,11 @@ internal fun PageContent(
                             workspace = state.workspace,
                             webLink = true,
                             openWebLink = {
-                                onIntent(Intent.OpenWebLink(it))
+                                onIntent(OpenWebLink(it))
                             },
                             openRow = { row ->
                                 onIntent(
-                                    Intent.OpenCollectionRow(
+                                    OpenCollectionRow(
                                         collectionId = row.collectionId,
                                         row.id
                                     )
@@ -107,7 +114,7 @@ internal fun PageContent(
                             youtubeLink = false,
                             webLink = false,
                             openRow = { row ->
-                                onIntent(Intent.OpenCollectionRow(row.collectionId, row.id))
+                                onIntent(OpenCollectionRow(row.collectionId, row.id))
                             }
                         )
                     }
@@ -125,10 +132,12 @@ internal fun PageContent(
                             workspace = state.workspace,
                             webLink = false,
                             openRow = { row ->
-                                onIntent(Intent.OpenCollectionRow(row.collectionId, row.id))
+                                onIntent(OpenCollectionRow(row.collectionId, row.id))
                             }
                         )
                     }
+
+
                 }
             }
         }
@@ -147,7 +156,7 @@ internal fun PageContent(
             }
         }
         Row(
-            modifier = Modifier.padding(4.dp),
+            modifier = Modifier.padding(4.dp).padding(bottom = pageControlsPadding()),
             verticalAlignment = Alignment.CenterVertically
         ) {
             var rowTextState by remember { mutableStateOf(TextFieldValue()) }
@@ -193,6 +202,13 @@ internal fun PageContent(
                         ) {
                             onIntent(Intent.ChangeViewType(CollectionViewType.Japan))
                         }
+                        CJButtSnap(
+                            painter = rememberVectorPainter(Data),
+                            isSelected = state.collection.viewType == CollectionViewType.Word,
+                            buttType = ButtSnapType.End
+                        ) {
+                            onIntent(Intent.ChangeViewType(CollectionViewType.Word))
+                        }
                     }
                 }
 
@@ -209,7 +225,19 @@ internal fun PageContent(
                     onIntent(Intent.CreateCollectionRow(rowTextState.text))
                     rowTextState = TextFieldValue("")
                 }
+                when (state.collection?.viewType) {
+                    CollectionViewType.Word -> {
+                        CJButton(
+                            text = "import to anki"
+                        ) {
+                            onIntent(Intent.ImportToAnki)
+                        }
+                    }
+
+                    else -> {}
+                }
             }
+
         }
     }
 }

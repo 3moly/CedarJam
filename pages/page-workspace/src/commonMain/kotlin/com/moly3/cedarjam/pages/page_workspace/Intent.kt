@@ -11,6 +11,7 @@ import kotlinx.collections.immutable.ImmutableSet
 sealed interface Intent {
     data class SetIsFullMenu(val value: Boolean) : Intent
     data object OpenSettings : Intent
+    data class SetIsDark(val isDark: Boolean) : Intent
     data class SetCursorPosition(val offset: Offset) : Intent
     data class SetLockedMenuUnder(val value: LockedMenuData?) : Intent
     data class SetMenuUnder(val tab: Int?) : Intent
@@ -39,7 +40,9 @@ sealed interface Intent {
 
     data class SelectActiveTabs(val index: Int) : Intent
     data class SetPageName(val value: PageNameWorkspace) : Intent
-    data class OnFileTreeClick(val value: FileTreeItemPresentation,val isCloseMenu: Boolean) : Intent
+    data class OnFileTreeClick(val value: FileTreeItemPresentation, val isCloseMenu: Boolean) :
+        Intent
+
     data class SetOpenedDirectories(val value: ImmutableSet<String>) : Intent
     data class CreateFile(val directory: FileTreeItemPresentation) : Intent
     data class Rename(val directory: FileTreeItemPresentation, val newName: String) : Intent

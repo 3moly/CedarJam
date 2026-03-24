@@ -659,7 +659,8 @@ internal class SqlStorage(
                             translation = request.translation,
                             exampleSentence = request.exampleSentence,
                             pronunciation = request.pronunciation,
-                            isCompleted = if (request.isCompleted) 1L else 0L
+                            isCompleted = if (request.isCompleted) 1L else 0L,
+                            points = 0
                         )
                     )
                     db.dataCollectionRowQueries.lastInsertId().executeAsOne()

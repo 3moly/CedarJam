@@ -30,8 +30,8 @@ import com.moly3.cedarjam.core.ui.onPointerEvent
 import com.moly3.cedarjam.core.ui.uikit.CJButtonIcon
 import com.moly3.cedarjam.core.ui.uikit.CJSlider
 import com.moly3.cedarjam.core.ui.uikit.CJText
-import vectors.SettingsFuture
 import com.moly3.dataviz.graph.ui.Graph
+import vectors.Settings
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class)
@@ -100,7 +100,7 @@ internal fun PageContent(state: State, onIntent: (Intent) -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 horizontalAlignment = Alignment.End
             ) {
-                CJButtonIcon(imageVector = SettingsFuture, onClick = {
+                CJButtonIcon(imageVector = Settings, onClick = {
                     onIntent(Intent.SetIsShowSettings(!state.isShowSettings))
                 })
                 AnimatedVisibility(state.isShowSettings) {

@@ -162,7 +162,7 @@ class SyncUseCase(
                     }
                 }
 
-                workspace.syncAllIndexes(indexFilesToMarkSync)
+                //workspace.syncAllIndexes(indexFilesToMarkSync)
 
                 GetSyncStatus(
                     toDownload = toDownload.toPersistentMap(),
@@ -374,6 +374,9 @@ class SyncUseCase(
                         val server = serverMap[path]
 
                         val determAction = determineAction(local, server)
+                        if (local?.relativePath == "moly3/sqlite.db") {
+                            val msg = "" + determAction
+                        }
                         when (determAction) {
                             is SyncResult.Download -> {
                                 filesToDownloadPaths[path] = determAction.server
@@ -401,7 +404,9 @@ class SyncUseCase(
                                 }
                             }
 
-                            is SyncResult.MarkSyncLocal -> doNothing()
+                            is SyncResult.MarkSyncLocal -> {
+                                doNothing()
+                            }
                         }
                     }
                 }
@@ -411,6 +416,11 @@ class SyncUseCase(
 //                    ensure(filesToPackInZip.isEmpty()) { "no files need to upload when workspace is new: ${filesToPackInZip}" }
                     val isDeleteToUpload = filesToUploadMeta.filter { d -> d.isDeleted }
                     ensure(isDeleteToUpload.isEmpty()) { "no files need to delete in server when workspace is new: ${isDeleteToUpload}" }
+                }
+                Logger.e {
+                    "to zip: ${
+                        filesToPackInZip.map { d -> d.relativePath }.joinToString { it }
+                    }"
                 }
                 val chunks =
                     buildSyncChunks(filesToPackInZip, filesToDownloadPaths.map { d -> d.value })

@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActionScope
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextFieldDecorator
 import androidx.compose.foundation.text.input.TextFieldLineLimits
@@ -55,16 +57,22 @@ import com.moly3.cedarjam.core.ui.shader.NewMagma
 @Composable
 fun CJTextField(
     modifier: Modifier = Modifier,
+    readOnly: Boolean = false,
     singleLine: Boolean = true,
     value: TextFieldValue,
+    imeAction: ImeAction = ImeAction.Unspecified,
+    onAnyAction: KeyboardActionScope.() -> Unit = {},
     onValueChanged: (TextFieldValue) -> Unit
 ) {
     BasicTextField(
         modifier = modifier,
         value = value,
+        readOnly = readOnly,
         textStyle = LocalTextStyle.current,
         onValueChange = onValueChanged,
         singleLine = singleLine,
+        keyboardActions = KeyboardActions(onAnyAction),
+        keyboardOptions = KeyboardOptions(imeAction = imeAction),
         decorationBox = {
             Box(
                 modifier = Modifier.background(LocalAppTheme.current.colors.backgroundPrimary)

@@ -102,12 +102,6 @@ internal class CollectionRowStoreFactory(
 
             scopeFromStartToStop.launch {
                 workspaceSession.workspaceEnvStateFlow
-                    .collectLatest {
-                        dispatch(CollectionRowStore.Msg.SetWorkspace(it.getWorkspace()))
-                    }
-            }
-            scopeFromStartToStop.launch {
-                workspaceSession.workspaceEnvStateFlow
                     .flatMapLatest {
                         it.getCollectionRowFlow(rowId = pageInput.rowId)
                     }.collectLatest {
@@ -126,6 +120,18 @@ internal class CollectionRowStoreFactory(
 
         override fun executeIntent(intent: Intent) {
             when (intent) {
+                is Intent.SetWebLink -> {
+                    val workspaceEnv = workspaceSession.workspaceEnvStateFlow.value
+                    val row = state().collectionRow ?: return
+
+                    val copiedRow = row.copy(
+                        webLink = intent.value,
+                        modifiedTime = nowInMs()
+                    )
+                    workspaceEnv.updateCollectionRow(
+                        copiedRow.mapToUpdateRequest()
+                    )
+                }
 
                 Intent.ImportPdf -> {
                     scope.launch {
@@ -184,7 +190,8 @@ internal class CollectionRowStoreFactory(
                         }
                     }
                 }
-                is Intent.OpenWorkspaceSettings->{
+
+                is Intent.OpenWorkspaceSettings -> {
                     openWorkspaceSettings(true)
                 }
 
@@ -239,8 +246,6 @@ internal class CollectionRowStoreFactory(
             return when (msg) {
                 is CollectionRowStore.Msg.SetCollectionRow -> copy(collectionRow = msg.value)
                 is CollectionRowStore.Msg.SetCollection -> copy(collection = msg.value)
-                is CollectionRowStore.Msg.SetWorkspace -> copy(workspace = msg.value)
-                is CollectionRowStore.Msg.SetConnectionsCount -> copy(connectionsCount = msg.value)
             }
         }
     }

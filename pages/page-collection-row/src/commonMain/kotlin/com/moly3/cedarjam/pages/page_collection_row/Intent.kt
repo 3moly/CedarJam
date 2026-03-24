@@ -4,6 +4,7 @@ import com.moly3.cedarjam.core.domain.model.CollectionRowDTO
 
 sealed interface Intent {
     data object ImportPdf : Intent
+    data class SetWebLink(val value: String) : Intent
     data class Update(val collRow: CollectionRowDTO) : Intent
 
     data class OpenNodeData(val data: Any) : Intent

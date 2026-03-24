@@ -13,8 +13,6 @@ internal interface CollectionRowStore : Store<Intent, State, Unit> {
     val nameStateFlow: StateFlow<PageNameData?>
 
     sealed interface Msg {
-        data class SetConnectionsCount(val value: Int) : Msg
-        data class SetWorkspace(val value: WorkspacePresentation?) : Msg
         data class SetCollection(val value: CollectionDTO?) : Msg
         data class SetCollectionRow(val value: CollectionRowDTO?) : Msg
     }

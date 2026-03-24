@@ -4,11 +4,14 @@ import co.touchlab.kermit.CommonWriter
 import co.touchlab.kermit.Logger
 import co.touchlab.kermit.Severity
 import com.arkivanov.essenty.statekeeper.StateKeeper
+import com.moly3.cedarjam.core.coordinator.di.coordinator
+import com.moly3.cedarjam.core.data.AnkiEnvironment
 import com.moly3.cedarjam.core.data.AppEnvironment
 import com.moly3.cedarjam.core.data.FilesRepository
 import com.moly3.cedarjam.core.data.WorkspaceEnvironment
 import com.moly3.cedarjam.core.domain.model.AndroidApplicationContext
 import com.moly3.cedarjam.core.domain.model.WorkspaceInput
+import com.moly3.cedarjam.core.domain.repository.IAnkiEnvironment
 import com.moly3.cedarjam.core.domain.repository.IAppEnvironment
 import com.moly3.cedarjam.core.domain.repository.IFilesRepository
 import com.moly3.cedarjam.core.domain.repository.IWorkspaceEnvironment
@@ -64,6 +67,7 @@ fun initApp(
     val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     val navigator = NavigatorImpl(scope)
     val koinModule = module {
+        single<IAnkiEnvironment> { AnkiEnvironment() }
         single<IImageTransform> { ImageTransform() }
         single<AlertService> { AlertService() }
         factory<INavigateToFileUseCase> { params ->
@@ -192,6 +196,7 @@ fun initApp(
             koinModule,
             net(baseUrl = BuildConfig.SyncServerUrl, token = BuildConfig.SyncServerToken),
             db(isTest = isTest),
+            coordinator(),
             initDialogs()
         )
     }

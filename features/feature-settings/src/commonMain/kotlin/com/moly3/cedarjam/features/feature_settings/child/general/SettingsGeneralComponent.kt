@@ -5,6 +5,8 @@ import com.moly3.cedarjam.core.domain.dialog.DialogColorPickerService
 import com.moly3.cedarjam.core.domain.func.hiddenDirectory
 import com.moly3.cedarjam.core.domain.func.pathWrapper
 import com.moly3.cedarjam.core.domain.io
+import com.moly3.cedarjam.core.domain.model.AppColorsData
+import com.moly3.cedarjam.core.domain.model.ColorsType
 import com.moly3.cedarjam.core.domain.model.FileName
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.settings.WorkspaceSettings
@@ -103,12 +105,18 @@ class SettingsGeneralComponent(
             }
 
             is Intent.SetTheme -> {
+
+                val colors = if (intent.isDark) {
+                    AppColorsData.Dark
+                } else {
+                    AppColorsData.Light
+                }
                 val state = workspaceSession.getSettingsFlow().value
                 setSettings(
                     state.copy(
                         theme = state.theme.copy(
-                            colorsType = intent.colorsType,
-                            colors = intent.colors
+                            colorsType = if (intent.isDark) ColorsType.Dark else ColorsType.Light,
+                            colors = colors
                         )
                     )
                 )

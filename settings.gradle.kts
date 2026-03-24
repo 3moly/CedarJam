@@ -53,3 +53,4 @@ include(
 )
 include(":desktopApp")
 include(":benchmark")
+include(":core:coordinator")

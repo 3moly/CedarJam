@@ -55,6 +55,7 @@ import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalDragAndDrop
 import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
 import com.moly3.cedarjam.core.ui.func.navigationBarsPaddingCJ
+import com.moly3.cedarjam.core.ui.func.pageControlsPadding
 import com.moly3.cedarjam.core.ui.func.wstatusBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.model.FileTreeItemPresentation
 import com.moly3.cedarjam.core.ui.uikit.CJText
@@ -112,6 +113,7 @@ internal fun DialogCanvasUIContent(
             val dragAndDropState = LocalDragAndDrop.current
             val isDraggable = remember { mutableStateOf(false) }
             Whiteboard(
+                minShapeSize = 0f,
                 modifier = Modifier.dropTarget(
                     key = "targetKey:",
                     state = dragAndDropState,
@@ -210,6 +212,7 @@ internal fun DialogCanvasUIContent(
                     }
                 },
                 onDrawBlock = { shapeState ->
+                    val isDrawing = shapeState.shape.data is ShapeData.Drawing
                     val borderCoef by animateFloatAsState(
                         if (shapeState.isSelected) 3f else 1f
                     )
@@ -220,6 +223,7 @@ internal fun DialogCanvasUIContent(
 //                        (shapeState.shape.backgroundColor
 //                            ?: Color.Black).copy(alpha = 0.3f) // Dark semi-transparent
                     }
+
                     Box(
                         shapeState.modifier
                             .let {
@@ -229,22 +233,31 @@ internal fun DialogCanvasUIContent(
                                     it
                             }
                             .fillMaxSize()
-                            .background(bgColor)
-                            .border((1f * state.zoom * borderCoef).dp, Color.White)
+                            .let {
+                                if (isDrawing)
+                                    it
+                                else
+                                    it.background(bgColor)
+                                        .border((1f * state.zoom * borderCoef).dp, Color.White)
+                            }
                     ) {
                         when (val data = shapeState.shape.data) {
                             is ShapeData.Drawing -> {
-                                val bounds = remember(data.value){
+                                val bounds = remember(data.value) {
                                     data.value.calculateBounds()
                                 }
                                 val pathData = data.value
 
-                                val drawingBitmap = remember(pathData,bounds) {
-                                    val bitmap = ImageBitmap(bounds.size.width.toInt(), bounds.size.height.toInt())
+                                val drawingBitmap = remember(pathData, bounds) {
+                                    val bitmap = ImageBitmap(
+                                        bounds.size.width.toInt(),
+                                        bounds.size.height.toInt()
+                                    )
                                     val canvas = Canvas(bitmap)
                                     val paint = Paint().apply {
                                         color = pathData.color
-                                        strokeWidth = pathData.points.firstOrNull()?.strokeWidth ?: 5f
+                                        strokeWidth =
+                                            pathData.points.firstOrNull()?.strokeWidth ?: 5f
                                         style = PaintingStyle.Stroke
                                         strokeCap = StrokeCap.Round
                                         strokeJoin = StrokeJoin.Round
@@ -252,7 +265,10 @@ internal fun DialogCanvasUIContent(
 
                                     val composePath = Path().apply {
                                         if (pathData.points.isNotEmpty()) {
-                                            moveTo(pathData.points.first().x, pathData.points.first().y)
+                                            moveTo(
+                                                pathData.points.first().x,
+                                                pathData.points.first().y
+                                            )
                                             pathData.points.forEach { lineTo(it.x, it.y) }
                                         }
                                     }
@@ -371,8 +387,11 @@ internal fun DialogCanvasUIContent(
             if (isDraggable.value) {
                 Box(Modifier.fillMaxSize().background(Color.Gray.copy(alpha = 0.4f)))
             }
+            val paddingAdd = pageControlsPadding()
             Row(
-                modifier = Modifier.padding(bottom = 8.dp).navigationBarsPaddingCJ()
+                modifier = Modifier
+                    .padding(bottom = 8.dp + paddingAdd)
+                    .navigationBarsPaddingCJ()
                     .align(Alignment.BottomCenter),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {

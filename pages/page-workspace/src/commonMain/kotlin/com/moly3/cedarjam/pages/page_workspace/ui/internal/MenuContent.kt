@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.unit.dp
 import com.mohamedrejeb.compose.dnd.DragAndDropState
+import com.moly3.cedarjam.core.domain.model.ColorsType
 import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.pages.page_workspace.Intent
 import com.moly3.cedarjam.pages.page_workspace.State
@@ -143,11 +144,20 @@ internal fun MenuContent(
                             toDownload = toDownload,
                             toUpload = toUpload
                         )
-                        NeumorphicShape(
-                            modifier = Modifier.size(LocalUIConfig.current.fabCircleSize),
-                            painter = rememberVectorPainter(Settings)
-                        ) {
-                            onIntent(Intent.OpenSettings)
+                        val isDark = LocalAppTheme.current.currentTheme == ColorsType.Dark
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            NeumorphicShape(
+                                modifier = Modifier.size(LocalUIConfig.current.fabCircleSize),
+                                painter = rememberVectorPainter(if (isDark) vectors.Moon else vectors.Sun)
+                            ) {
+                                onIntent(Intent.SetIsDark(!isDark))
+                            }
+                            NeumorphicShape(
+                                modifier = Modifier.size(LocalUIConfig.current.fabCircleSize),
+                                painter = rememberVectorPainter(Settings)
+                            ) {
+                                onIntent(Intent.OpenSettings)
+                            }
                         }
                     }
                 }

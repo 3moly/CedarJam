@@ -271,7 +271,8 @@ class WorkspaceEnvironment(
             progressMax = this.progressMax,
             isCompleted = this.isCompleted == 1L,
             createdTime = this.createdTime,
-            modifiedTime = this.modifiedTime
+            modifiedTime = this.modifiedTime,
+            points = this.points ?: 0L
         )
     }
 

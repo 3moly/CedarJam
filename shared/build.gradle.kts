@@ -98,6 +98,7 @@ kotlin {
             implementation(projects.core.ui)
             implementation(projects.core.navigation)
             implementation(projects.core.data)
+            implementation(projects.core.coordinator)
 
             implementation(projects.pages.pageWorkspace)
             implementation(projects.pages.pageSelectWorkspace)

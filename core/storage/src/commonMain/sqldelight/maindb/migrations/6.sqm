@@ -1,0 +1,1 @@
+ALTER TABLE DataCollectionRow ADD COLUMN points INTEGER DEFAULT 0;

@@ -15,11 +15,11 @@ import com.moly3.cedarjam.pages.page_collection.Label
 import com.moly3.cedarjam.pages.page_collection.State
 import com.moly3.cedarjam.core.domain.dialog.DialogSelectTagService
 import com.moly3.cedarjam.core.ui.func.getPdfResult
-import com.moly3.cedarjam.core.domain.func.getRelativePath
 import com.moly3.cedarjam.core.ui.model.PageNameData
 import com.moly3.cedarjam.core.domain.func.nowInMs
 import com.moly3.cedarjam.core.domain.io
 import com.moly3.cedarjam.core.domain.model.NavigateToFile
+import com.moly3.cedarjam.core.domain.model.anki.AnkiNote
 import com.moly3.cedarjam.core.domain.model.bind
 import com.moly3.cedarjam.core.domain.model.navigation.input.FilePageInput
 import com.moly3.cedarjam.core.domain.model.request.CreateCollectionRowRequest
@@ -29,6 +29,8 @@ import com.moly3.cedarjam.core.domain.model.request.RenameDataCollectionRowReque
 import com.moly3.cedarjam.core.domain.model.request.UpdateDataCollectionRequest
 import com.moly3.cedarjam.core.domain.model.request.mapToUpdateRequest
 import com.moly3.cedarjam.core.domain.model.resultBlock
+import com.moly3.cedarjam.core.domain.repository.IAnkiEnvironment
+import com.moly3.cedarjam.core.domain.repository.getCollectionRows
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
 import com.moly3.cedarjam.core.domain.service.IUtilsService
 import com.moly3.cedarjam.core.domain.usecase.INavigateToFileUseCase
@@ -71,6 +73,7 @@ internal class CollectionStoreFactory(
     private val utilsService: IUtilsService by inject()
     private val dialogSelectTagService: DialogSelectTagService by inject()
     private val navigator: Navigator by inject()
+    private val ankiEnv: IAnkiEnvironment by inject()
     private val navigateToFileUseCase: INavigateToFileUseCase by inject {
         parametersOf(workspaceSession.fileManagerService)
     }
@@ -238,21 +241,46 @@ internal class CollectionStoreFactory(
                     }
                 }
 
-                is Intent.Generate -> {
+                is Intent.ImportToAnki -> {
                     scope.launch {
                         val workspaceEnv = workspaceSession.workspaceEnvStateFlow.value
-                        val name = "rowwww"
-                        for (item in 0 until 500000) {
-                            workspaceEnv.createCollectionRow(
-                                CreateCollectionRowRequest(
-                                    name = "$name$item",
-                                    collectionId = pageData.collectionId,
-                                    createdTime = nowInMs()
-                                )
+
+                        val collectionName = state().collection?.name ?: return@launch
+                        val deckName = "CedarJam::${collectionName}"
+                        val rows =
+                            workspaceEnv.getCollectionRows(collectionId = pageData.collectionId)
+                        val ankiNotes = rows.distinctBy { d -> d.name }.map {
+                            AnkiNote(
+                                id = null,
+                                deckName = deckName,
+                                modelName = "CedarJam-basic-source",
+                                fields = mapOf(
+                                    "Front" to it.name,
+                                    "Back" to it.translation.toString(),
+                                    "Source" to "Kotlin Documentation"
+                                ),
+                                tags = listOf("kotlin", "programming")
                             )
                         }
+                        ankiEnv.importNotes(deckName = deckName, notes = ankiNotes)
                     }
                 }
+
+//                is Intent.Generate -> {
+//                    scope.launch {
+//                        val workspaceEnv = workspaceSession.workspaceEnvStateFlow.value
+//                        val name = "rowwww"
+//                        for (item in 0 until 500000) {
+//                            workspaceEnv.createCollectionRow(
+//                                CreateCollectionRowRequest(
+//                                    name = "$name$item",
+//                                    collectionId = pageData.collectionId,
+//                                    createdTime = nowInMs()
+//                                )
+//                            )
+//                        }
+//                    }
+//                }
 
 //                is Intent.AddCollectionRow -> {
 //                    scope.launch {

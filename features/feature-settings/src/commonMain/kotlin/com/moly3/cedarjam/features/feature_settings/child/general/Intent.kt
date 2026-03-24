@@ -11,5 +11,7 @@ sealed interface Intent {
     data object UploadFont : Intent
     data class SetLanguage(val code: String) : Intent
     data class SetDensity(val density: Float, val fontScale: Float) : Intent
-    data class SetTheme(val colorsType: ColorsType, val colors: AppColorsData) : Intent
+    data class SetTheme(
+        val isDark: Boolean
+    ) : Intent
 }

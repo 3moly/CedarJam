@@ -5,7 +5,8 @@ enum class CollectionViewType(val num: Long) {
     Youtube(1),
     PDF(2),
     Anime(3),
-    Japan(4)
+    Japan(4),
+    Word(5),
 }
 
 fun Long?.toCollectionViewType(): CollectionViewType {
@@ -15,6 +16,7 @@ fun Long?.toCollectionViewType(): CollectionViewType {
         CollectionViewType.PDF.num -> CollectionViewType.PDF
         CollectionViewType.Anime.num -> CollectionViewType.Anime
         CollectionViewType.Japan.num -> CollectionViewType.Japan
+        CollectionViewType.Word.num -> CollectionViewType.Word
         else -> CollectionViewType.DataGrid
     }
 }

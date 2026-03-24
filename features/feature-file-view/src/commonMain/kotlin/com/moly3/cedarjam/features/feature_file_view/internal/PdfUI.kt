@@ -72,6 +72,7 @@ import com.moly3.cedarjam.core.ui.func.blendMode
 import com.moly3.cedarjam.core.ui.func.darker
 import com.moly3.cedarjam.core.ui.func.isCompactUI
 import com.moly3.cedarjam.core.ui.func.navigationBarsPaddingCJ
+import com.moly3.cedarjam.core.ui.func.pageControlsPadding
 import com.moly3.cedarjam.core.ui.onPointerEvent
 import com.moly3.cedarjam.core.ui.uikit.CJButton
 import com.moly3.cedarjam.core.ui.uikit.CJCircularProgressIndicator
@@ -387,9 +388,7 @@ internal fun PdfUI(
                         }
                     }
                 }
-                val paddingAdd = if (isCompactUI()) {
-                    50.dp
-                } else 0.dp
+                val paddingAdd = pageControlsPadding()
                 Row(
                     modifier = Modifier
                         .padding(bottom = paddingAdd)

@@ -8,7 +8,7 @@ sealed interface Intent {
     data class RenameCollection(val newName: String) : Intent
     data class ChangeViewType(val viewType: CollectionViewType) : Intent
     data class CreateCollectionRow(val name: String) : Intent
-    data object Generate : Intent
+    data object ImportToAnki : Intent
     data object PreviousPage : Intent
     data object NextPage : Intent
     data class OpenCollectionRow(val collectionId: Long, val rowId: Long) : Intent
