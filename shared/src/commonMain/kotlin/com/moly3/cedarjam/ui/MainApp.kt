@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventType
@@ -28,6 +29,7 @@ import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalHazeState
 import com.moly3.cedarjam.core.ui.compositions.LocalVideoPlayer
+import com.moly3.cedarjam.core.ui.dialog.DialogRegistry
 import com.moly3.cedarjam.core.ui.onPointerEvent
 import com.moly3.cedarjam.core.ui.uikit.CJApplicationTheme
 import com.moly3.cedarjam.core.ui.uikit.CJButton
@@ -117,7 +119,7 @@ fun MainApp(root: Root) {
                         }
                     }
                 }
-                DialogDeleteUI(root.dialogDeleteService)
+//                DialogDeleteUI(root.dialogDeleteService)
                 DialogAddCollectionRowUI(root.dialogAddCollectionRowService)
                 DialogCreateWorkspaceService(root.dialogCreateWorkspaceService)
                 DialogSelectWorkspaceUI(
@@ -125,7 +127,7 @@ fun MainApp(root: Root) {
                     dialogCreate = root.dialogCreateWorkspaceService,
                     root.dialogSelectWorkspaceService
                 )
-                DialogColorPickerUI(dialog = root.dialogColorPickerService)
+//                DialogColorPickerUI(dialog = root.dialogColorPickerService)
 
                 Box(Modifier.fillMaxSize()) {
                     SuccessSnackbarComponent(
@@ -135,6 +137,31 @@ fun MainApp(root: Root) {
                 AppComposableWidgetHideKeyboard()
                 TopAlertServiceUI(root.alertService)
 
+                val registry = remember {
+                    DialogRegistry().apply {
+                        register(root.dialogColorPickerService) { dialog, input ->
+                            DialogColorPickerUI(
+                                dialog,
+                                input
+                            )
+                        }
+                        register(root.dialogDeleteService) { dialog, input ->
+                            DialogDeleteUI(
+                                dialog,
+                                root.dialogColorPickerService
+                            )
+                        }
+//                        register(root.dialogAddCollectionRowService) { DialogAddCollectionRowUI(it) }
+
+//                        // Even complex ones with dependencies
+//                        register(root.dialogSelectWorkspaceService) {
+//                            DialogSelectWorkspaceUI(root.appEnvironment, root.dialogCreateWorkspaceService, it)
+//                        }
+                    }
+                }
+
+                // 2. Just call the Host once
+                registry.Host()
 
                 when (val sync = syncStatus) {
                     is UIState.Error,

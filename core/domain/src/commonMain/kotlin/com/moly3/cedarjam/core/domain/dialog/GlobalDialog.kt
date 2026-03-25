@@ -14,11 +14,14 @@ abstract class GlobalDialog<Input, Result>(
 ) {
 
     private var _continuation: Continuation<Result>? = null
+
+    private var pendingResult: Result? = null
+
     private val _inputDataState =
         MutableStateFlow<DialogState<Input>>(DialogState.Hidden())
     val inputData: StateFlow<DialogState<Input>> = _inputDataState
     val isEnabledFlow: Flow<Boolean> = _inputDataState.map {
-        it is DialogState.Opened
+        it is DialogState.Opened || it is DialogState.Closing
     }
 
     fun isOpened(): Boolean {
@@ -29,12 +32,30 @@ abstract class GlobalDialog<Input, Result>(
         setResult(closeValue)
     }
 
+    // This is what actually cleans up the continuation
     suspend fun setResult(data: Result) {
         _inputDataState.emit(DialogState.Hidden())
-        if (_continuation != null) {
-            _continuation?.resume(data)
-            _continuation = null
+        _continuation?.resume(data)
+        _continuation = null
+    }
+
+    suspend fun requestClose(data: Result) {
+        val inputData = _inputDataState.value
+        if (inputData is DialogState.Opened) {
+            this.pendingResult = data
+            _inputDataState.emit(DialogState.Closing(data = inputData.data))
         }
+    }
+
+    suspend fun confirmHidden() {
+        // Use the saved pendingResult or the default closeValue
+        val result = pendingResult ?: closeValue
+        _inputDataState.emit(DialogState.Hidden())
+
+        // Resume the 'open()' call that is currently suspended
+        _continuation?.resume(result)
+        _continuation = null
+        pendingResult = null
     }
 
     fun openImmediate(inputData: Input) {

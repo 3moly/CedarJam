@@ -21,56 +21,54 @@ import com.github.skydoves.colorpicker.compose.ColorEnvelope
 import com.github.skydoves.colorpicker.compose.HsvColorPicker
 import com.github.skydoves.colorpicker.compose.rememberColorPickerController
 import com.moly3.cedarjam.core.domain.dialog.DialogColorPickerService
+import com.moly3.cedarjam.core.domain.dialog.GlobalDialog
 import com.moly3.cedarjam.core.ui.uikit.CJDialogGeneric
 import com.moly3.cedarjam.core.ui.uikit.CJButton2
 import com.moly3.cedarjam.core.ui.uikit.CJText
 import kotlinx.coroutines.launch
 
 @Composable
-fun DialogColorPickerUI(dialog: DialogColorPickerService) {
+fun DialogColorPickerUI(dialog: GlobalDialog<Color?, Color?>, data: Color?) {
     val scope = rememberCoroutineScope()
-    CJDialogGeneric(dialog = dialog) { data ->
+    val controller = rememberColorPickerController()
+    val colorState = remember { mutableStateOf<Color?>(null) }
 
-        val controller = rememberColorPickerController()
-        val colorState = remember { mutableStateOf<Color?>(null) }
-
-        LaunchedEffect(Unit) {
-            if (data != null) {
-                controller.selectByColor(data, true)
-            }
+    LaunchedEffect(Unit) {
+        if (data != null) {
+            controller.selectByColor(data, true)
         }
-        Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
-            Column {
-                CJText("select color")
-                HsvColorPicker(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(1f)
-                        .padding(10.dp),
-                    controller = controller,
-                    onColorChanged = { colorEnvelope: ColorEnvelope ->
-                        // do something
-                        colorState.value = colorEnvelope.color
-                    }
-                )
-                BrightnessSlider(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 10.dp)
-                        .height(35.dp),
-                    controller = controller,
-                )
-                Box(Modifier.fillMaxWidth().height(8.dp).background(controller.selectedColor.value))
-                CJButton2(onClick = {
-                    if (colorState.value != null) {
-                        scope.launch {
-                            dialog.setResult(colorState.value)
-                        }
-                    }
-
-                }) {
-                    CJText("Create")
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
+        Column {
+            CJText("select color")
+            HsvColorPicker(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1f)
+                    .padding(10.dp),
+                controller = controller,
+                onColorChanged = { colorEnvelope: ColorEnvelope ->
+                    // do something
+                    colorState.value = colorEnvelope.color
                 }
+            )
+            BrightnessSlider(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 10.dp)
+                    .height(35.dp),
+                controller = controller,
+            )
+            Box(Modifier.fillMaxWidth().height(8.dp).background(controller.selectedColor.value))
+            CJButton2(onClick = {
+                if (colorState.value != null) {
+                    scope.launch {
+                        dialog.setResult(colorState.value)
+                    }
+                }
+
+            }) {
+                CJText("Create")
             }
         }
     }

@@ -20,7 +20,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.moly3.cedarjam.core.domain.dialog.DialogColorPickerService
 import com.moly3.cedarjam.core.domain.dialog.DialogDeleteService
+import com.moly3.cedarjam.core.domain.dialog.GlobalDialog
 import com.moly3.cedarjam.core.ui.uikit.AppThemePreview
 import com.moly3.cedarjam.core.ui.uikit.CJDialogGeneric
 import com.moly3.cedarjam.core.ui.uikit.CJButton
@@ -28,51 +30,53 @@ import com.moly3.cedarjam.core.ui.uikit.CJText
 import kotlinx.coroutines.launch
 
 @Composable
-fun DialogDeleteUI(dialog: DialogDeleteService) {
-    CJDialogGeneric(dialog = dialog) {
-        val scope = rememberCoroutineScope()
-        val leftButton = remember { FocusRequester() }
-        val rightButton = remember { FocusRequester() }
-        LaunchedEffect(Unit){
-            rightButton.requestFocus()
-        }
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
+fun DialogDeleteUI(
+    dialog: GlobalDialog<Unit, Boolean>,
+    dialogColorPickerService: DialogColorPickerService
+) {
+    val scope = rememberCoroutineScope()
+    val leftButton = remember { FocusRequester() }
+    val rightButton = remember { FocusRequester() }
+    LaunchedEffect(Unit) {
+        rightButton.requestFocus()
+    }
+    Column(
+        modifier = Modifier.padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(24.dp)
+    ) {
+        CJText(text = "Delete this item?", fontSize = 24.sp)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            CJText(text = "Delete this item?", fontSize = 24.sp)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                CJButton(
-                    modifier = Modifier
-                        .height(32.dp)
-                        .focusRequester(leftButton)
-                        .focusProperties {
-                            right = rightButton
-                        },
-                    text = "Delete",
-                    backColor = Color(0xFFFE4345),
-                    onClick = {
-                        scope.launch {
-                            dialog.setResult(true)
-                        }
-                    })
-                CJButton(
-                    modifier = Modifier
-                        .height(32.dp)
-                        .focusRequester(rightButton)
-                        .focusProperties {
-                            left = leftButton
-                        },
-                    text = "Cancel",
-                    onClick = {
-                        scope.launch {
-                            dialog.setResult(false)
-                        }
-                    })
-            }
+            CJButton(
+                modifier = Modifier
+                    .height(32.dp)
+                    .focusRequester(leftButton)
+                    .focusProperties {
+                        right = rightButton
+                    },
+                text = "Delete",
+                backColor = Color(0xFFFE4345),
+                onClick = {
+                    scope.launch {
+                        dialog.setResult(true)
+                    }
+                })
+            CJButton(
+                modifier = Modifier
+                    .height(32.dp)
+                    .focusRequester(rightButton)
+                    .focusProperties {
+                        left = leftButton
+                    },
+                text = "Cancel",
+                onClick = {
+                    scope.launch {
+                        dialogColorPickerService.open(null)
+                        dialog.requestClose(false)
+                    }
+                })
         }
     }
 }
@@ -85,6 +89,6 @@ fun DialogDeleteUIPreview() {
 
         dialog.openImmediate(Unit)
 
-        DialogDeleteUI(dialog = dialog)
+//        DialogDeleteUI(dialog = dialog)
     }
 }
