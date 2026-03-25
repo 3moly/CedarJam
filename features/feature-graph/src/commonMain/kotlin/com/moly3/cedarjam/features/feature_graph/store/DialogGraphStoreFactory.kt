@@ -308,7 +308,7 @@ internal class DialogGraphStoreFactory(
 
                 is Intent.AddTag -> {
                     scope.launch {
-                        val tag = selectTagService.open(Unit)
+                        val tag = selectTagService.open(workspaceSession)
                         val workspaceEnv = workspaceSession.workspaceEnvStateFlow.value
                         val fileManagerService = workspaceSession.fileManagerService
                         if (tag != null) {

@@ -4,4 +4,5 @@ import androidx.compose.runtime.Stable
 import androidx.compose.ui.graphics.Color
 
 @Stable
-class DialogColorPickerService: GlobalDialog<Color?, Color?>(closeValue = null)
+class DialogColorPickerService(register: IDialogRegister) :
+    GlobalDialog<Color?, Color?>(closeValue = null, register = register)

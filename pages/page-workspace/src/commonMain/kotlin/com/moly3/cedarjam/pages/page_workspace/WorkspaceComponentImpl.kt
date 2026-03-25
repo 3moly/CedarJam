@@ -70,8 +70,6 @@ class WorkspaceComponentImpl(
             context.stateKeeper
         )
     }
-    override val dialogSelectTagService: DialogSelectTagService by inject()
-    override val dialogTagToTagService: DialogTagToTagService by inject()
 
     private val settingsDialogScope by lazy {
         settingsDialogScopeFactory(storeFactory = storeFactory, workspaceSession)

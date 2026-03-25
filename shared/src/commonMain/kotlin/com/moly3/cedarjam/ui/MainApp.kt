@@ -12,6 +12,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.isBackPressed
 import androidx.compose.ui.input.pointer.isForwardPressed
@@ -24,6 +25,9 @@ import com.moly3.cedarjam.core.domain.dialog.DialogColorPickerService
 import com.moly3.cedarjam.core.domain.dialog.DialogCreateWorkspaceService
 import com.moly3.cedarjam.core.domain.dialog.DialogDeleteService
 import com.moly3.cedarjam.core.domain.dialog.DialogSelectOptionsService
+import com.moly3.cedarjam.core.domain.dialog.DialogSelectTagService
+import com.moly3.cedarjam.core.domain.dialog.DialogTagToTagService
+import com.moly3.cedarjam.core.domain.dialog.model.DialogSelectOptionsServiceInput
 import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalVideoPlayer
@@ -35,6 +39,8 @@ import com.moly3.cedarjam.navigation.Root
 import com.moly3.cedarjam.navigation.Route
 import com.moly3.cedarjam.pages.page_select_workspace.ui.SelectWorkspacePage
 import com.moly3.cedarjam.pages.page_workspace.ui.WorkspacePage
+import com.moly3.cedarjam.pages.page_workspace.ui.dialog.DialogSelectTagUI
+import com.moly3.cedarjam.pages.page_workspace.ui.dialog.DialogTagToTagUI
 import com.moly3.cedarjam.ui.app.AppComposableWidgetHideKeyboard
 import com.moly3.cedarjam.ui.dialog.DialogColorPickerUI
 import com.moly3.cedarjam.ui.dialog.DialogCreateWorkspaceUI
@@ -80,24 +86,29 @@ fun MainApp(root: Root) {
                 }
                 val registry = remember {
                     val koin = getKoin()
-                    DialogRegistry().apply {
-                        register(koin.get<DialogSelectOptionsService>()) { dialog, input ->
+                    koin.get<DialogRegistry>().apply {
+                        registerUI { dialog: DialogSelectOptionsService, input: DialogSelectOptionsServiceInput ->
                             DialogSelectOptionsUI(dialog, input)
                         }
-                        register(koin.get<DialogCreateWorkspaceService>()) { dialog, input ->
-                            DialogCreateWorkspaceUI(
-                                dialog = dialog
+                        registerUI { dialog: DialogColorPickerService, input: Color? ->
+                            DialogColorPickerUI(dialog, input)
+                        }
+                        registerUI { dialog: DialogCreateWorkspaceService, input: Unit ->
+                            DialogCreateWorkspaceUI(dialog)
+                        }
+                        registerUI { dialog: DialogDeleteService, input: Unit ->
+                            DialogDeleteUI(dialog)
+                        }
+                        registerUI { dialog: DialogSelectTagService, i ->
+                            DialogSelectTagUI(
+                                dialog = dialog,
+                                workspaceSession = i
                             )
                         }
-                        register(koin.get<DialogColorPickerService>()) { dialog, input ->
-                            DialogColorPickerUI(
-                                dialog,
-                                input
-                            )
-                        }
-                        register(koin.get<DialogDeleteService>()) { dialog, input ->
-                            DialogDeleteUI(
-                                dialog,
+                        registerUI { dialog: DialogTagToTagService, i ->
+                            DialogTagToTagUI(
+                                dialog = dialog,
+                                workspaceSession = i
                             )
                         }
                     }

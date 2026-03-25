@@ -7,12 +7,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -69,8 +67,6 @@ import com.moly3.cedarjam.pages.page_workspace.State
 import com.moly3.cedarjam.pages.page_workspace.WorkspaceComponent
 import com.moly3.cedarjam.pages.page_workspace.func.getTab
 import com.moly3.cedarjam.pages.page_workspace.model.LockedMenuData
-import com.moly3.cedarjam.pages.page_workspace.ui.dialog.DialogSelectTagUI
-import com.moly3.cedarjam.pages.page_workspace.ui.dialog.DialogTagToTagUI
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -385,14 +381,6 @@ internal fun WorkspacePageContent(
                     }
                 }
             }
-            DialogTagToTagUI(
-                workspaceSession = component.workspaceSession,
-                dialog = component.dialogTagToTagService
-            )
-            DialogSelectTagUI(
-                dialog = component.dialogSelectTagService,
-                workspaceSession = component.workspaceSession
-            )
         }
     }
 }

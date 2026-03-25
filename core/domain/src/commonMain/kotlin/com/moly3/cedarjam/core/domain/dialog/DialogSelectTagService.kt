@@ -1,8 +1,10 @@
 package com.moly3.cedarjam.core.domain.dialog
 
 import com.moly3.cedarjam.core.domain.model.TagDTO
+import com.moly3.cedarjam.core.domain.service.WorkspaceSession
 
-class DialogSelectTagService : GlobalDialog<Unit, TagDTO?>(
+class DialogSelectTagService(register: IDialogRegister) : GlobalDialog<WorkspaceSession, TagDTO?>(
     isGenericDialog = false,
-    closeValue = null
+    closeValue = null,
+    register = register
 )

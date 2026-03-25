@@ -21,8 +21,6 @@ import kotlinx.coroutines.flow.StateFlow
 interface WorkspaceComponent : NavigationParent {
     val settingsDialogSlot: Value<ChildSlot<*, IDialogSettingsComponent>>
     val filesRepository: IFilesRepository
-    val dialogSelectTagService: DialogSelectTagService
-    val dialogTagToTagService: DialogTagToTagService
     override val children: Value<Children<*, TabsComponent>>
     val workspaceSession: WorkspaceSession
     val state: StateFlow<State>

@@ -389,7 +389,7 @@ internal class CollectionStoreFactory(
                     scope.launch {
                         try {
                             val workspaceEnv = workspaceSession.workspaceEnvStateFlow.value
-                            val tag = dialogSelectTagService.open(Unit)
+                            val tag = dialogSelectTagService.open(workspaceSession)
                             if (tag != null) {
                                 workspaceEnv.createTagCollectionRow(
                                     request = CreateTagCollectionRowRequest(

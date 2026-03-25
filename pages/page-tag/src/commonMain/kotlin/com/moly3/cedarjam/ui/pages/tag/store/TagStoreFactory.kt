@@ -99,7 +99,7 @@ internal class TagStoreFactory(
             when (intent) {
                 Intent.SetNewTag -> {
                     scope.launch {
-                        val tag = selectTagService.open(Unit)
+                        val tag = selectTagService.open(workspaceSession)
                         if (tag != null && tag.id != pageData.id) {
                             workspaceSession.workspaceEnvStateFlow.value.createTagToTag(
                                 CreateTagToTagRequest(

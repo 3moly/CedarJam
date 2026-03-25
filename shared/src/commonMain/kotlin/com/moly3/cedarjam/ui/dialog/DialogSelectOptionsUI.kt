@@ -22,6 +22,7 @@ import com.moly3.cedarjam.core.domain.dialog.DialogDeleteService
 import com.moly3.cedarjam.core.domain.dialog.DialogSelectOptionsService
 import com.moly3.cedarjam.core.domain.dialog.model.DialogSelectOptionsServiceInput
 import com.moly3.cedarjam.core.domain.dialog.model.SelectOption
+import com.moly3.cedarjam.core.ui.dialog.DialogRegistry
 import com.moly3.cedarjam.core.ui.uikit.AppThemePreview
 import com.moly3.cedarjam.core.ui.uikit.CJButton
 import com.moly3.cedarjam.core.ui.uikit.CJDialogGeneric
@@ -57,7 +58,7 @@ fun DialogSelectOptionsUI(
 @Composable
 private fun DialogSelectOptionsUIPreview() {
     AppThemePreview {
-        val dialog = DialogSelectOptionsService()
+        val dialog = DialogSelectOptionsService(DialogRegistry())
 
         val input = DialogSelectOptionsServiceInput(
             options = persistentListOf(

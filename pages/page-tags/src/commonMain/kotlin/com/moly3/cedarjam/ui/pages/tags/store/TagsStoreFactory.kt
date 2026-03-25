@@ -92,7 +92,7 @@ internal class TagsStoreFactory(
 
                 Intent.AddTagToTag -> {
                     scope.launch {
-                        val result = dialogTagToTagService.open(Unit)
+                        val result = dialogTagToTagService.open(workspaceSession)
                         val workspace = workspaceSession.workspaceEnvStateFlow.value
                         if (result != null) {
                             workspace.createTagToTag(

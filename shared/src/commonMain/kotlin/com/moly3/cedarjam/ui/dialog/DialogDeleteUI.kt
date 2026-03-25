@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.sp
 import com.moly3.cedarjam.core.domain.dialog.DialogColorPickerService
 import com.moly3.cedarjam.core.domain.dialog.DialogDeleteService
 import com.moly3.cedarjam.core.domain.dialog.GlobalDialog
+import com.moly3.cedarjam.core.ui.dialog.DialogRegistry
 import com.moly3.cedarjam.core.ui.uikit.AppThemePreview
 import com.moly3.cedarjam.core.ui.uikit.CJButton
 import com.moly3.cedarjam.core.ui.uikit.CJText
@@ -80,7 +81,7 @@ fun DialogDeleteUI(
 @Composable
 fun DialogDeleteUIPreview() {
     AppThemePreview {
-        val dialog = DialogDeleteService()
+        val dialog = DialogDeleteService(DialogRegistry())
 
         dialog.openImmediate(Unit)
 
