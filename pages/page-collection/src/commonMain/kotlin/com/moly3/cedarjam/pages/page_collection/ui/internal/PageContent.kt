@@ -50,7 +50,7 @@ internal fun PageContent(
                 modifier = Modifier.size(32.dp),
                 painter = rememberVectorPainter(DotsHorizontal)
             ) {
-
+                onIntent(Intent.OpenOptions)
             }
         }
         Column(modifier = Modifier.fillMaxWidth().weight(1f)) {

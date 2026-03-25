@@ -2,14 +2,13 @@ package com.moly3.cedarjam.core.ui.uikit
 
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalBottomSheetProperties
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
@@ -18,8 +17,6 @@ import com.moly3.cedarjam.core.domain.dialog.DialogState
 import com.moly3.cedarjam.core.domain.dialog.GlobalDialog
 import com.moly3.cedarjam.core.domain.dialog.getData
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
-import com.moly3.cedarjam.core.ui.func.rememberWindowSize
-import com.moly3.cedarjam.core.ui.model.WindowSize
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -33,7 +30,7 @@ fun <Input, Result> CJDialogGeneric(
     val dialogState by dialog.inputData.collectAsState()
 
     val offsetX = (-60 * stackOffset).dp
-    val animatedOFfset by animateDpAsState(offsetX)
+    val animatedOffset by animateDpAsState(offsetX)
 
     val currentData = dialogState.getData()
 
@@ -57,8 +54,10 @@ fun <Input, Result> CJDialogGeneric(
             val appTheme = LocalAppTheme.current
             ModalBottomSheet(
                 modifier = Modifier
+                    .padding(horizontal = 16.dp)
                     .graphicsLayer {
-                        this.translationX = animatedOFfset.toPx()
+                        this.translationX = animatedOffset.toPx()
+//                        this.translationY = animatedOffset.toPx()
                     },
                 sheetState = state.sheetState,
                 sheetMaxWidth = 400.dp,

@@ -1,7 +1,5 @@
 package com.moly3.cedarjam.ui.dialog
 
-import androidx.compose.foundation.focusGroup
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -24,15 +22,13 @@ import com.moly3.cedarjam.core.domain.dialog.DialogColorPickerService
 import com.moly3.cedarjam.core.domain.dialog.DialogDeleteService
 import com.moly3.cedarjam.core.domain.dialog.GlobalDialog
 import com.moly3.cedarjam.core.ui.uikit.AppThemePreview
-import com.moly3.cedarjam.core.ui.uikit.CJDialogGeneric
 import com.moly3.cedarjam.core.ui.uikit.CJButton
 import com.moly3.cedarjam.core.ui.uikit.CJText
 import kotlinx.coroutines.launch
 
 @Composable
 fun DialogDeleteUI(
-    dialog: GlobalDialog<Unit, Boolean>,
-    dialogColorPickerService: DialogColorPickerService
+    dialog: DialogDeleteService,
 ) {
     val scope = rememberCoroutineScope()
     val leftButton = remember { FocusRequester() }
@@ -73,7 +69,6 @@ fun DialogDeleteUI(
                 text = "Cancel",
                 onClick = {
                     scope.launch {
-                        dialogColorPickerService.open(null)
                         dialog.requestClose(false)
                     }
                 })

@@ -9,30 +9,23 @@ import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.childStack
 import com.arkivanov.decompose.router.stack.childStackWebNavigation
 import com.arkivanov.decompose.router.stack.pushToFront
-import com.arkivanov.decompose.router.stack.replaceAll
 import com.arkivanov.decompose.router.webhistory.WebNavigation
 import com.arkivanov.decompose.value.Value
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.arkivanov.mvikotlin.main.store.DefaultStoreFactory
+import com.moly3.cedarjam.core.domain.model.UIState
+import com.moly3.cedarjam.core.domain.model.WorkspaceInput
+import com.moly3.cedarjam.core.domain.model.settings.AppSettings
+import com.moly3.cedarjam.core.domain.repository.IAppEnvironment
+import com.moly3.cedarjam.core.domain.service.AlertService
+import com.moly3.cedarjam.core.domain.service.IMessageService
+import com.moly3.cedarjam.core.domain.usecase.ISyncUseCase
+import com.moly3.cedarjam.core.domain.usecase.SyncStatusChannel
+import com.moly3.cedarjam.core.ui.service.MacTrackpadGestureService
 import com.moly3.cedarjam.navigation.Root.Child.SelectWorkspace
 import com.moly3.cedarjam.navigation.Root.Child.Workspace
 import com.moly3.cedarjam.pages.page_select_workspace.SelectWorkspaceComponent
 import com.moly3.cedarjam.pages.page_workspace.WorkspaceComponentImpl
-import com.moly3.cedarjam.core.domain.dialog.DialogAddCollectionRowService
-import com.moly3.cedarjam.core.domain.dialog.DialogColorPickerService
-import com.moly3.cedarjam.core.domain.dialog.DialogCreateWorkspaceService
-import com.moly3.cedarjam.core.domain.dialog.DialogDeleteService
-import com.moly3.cedarjam.core.domain.dialog.DialogSelectWorkspaceService
-import com.moly3.cedarjam.core.domain.model.UIState
-import com.moly3.cedarjam.core.domain.model.settings.AppSettings
-import com.moly3.cedarjam.core.domain.model.WorkspaceInput
-import com.moly3.cedarjam.core.domain.repository.IAppEnvironment
-import com.moly3.cedarjam.core.domain.service.AlertService
-import com.moly3.cedarjam.core.ui.service.MacTrackpadGestureService
-import com.moly3.cedarjam.core.domain.service.IMessageService
-import com.moly3.cedarjam.core.domain.usecase.ISyncUseCase
-import com.moly3.cedarjam.core.domain.usecase.SyncStatusChannel
-import com.moly3.cedarjam.core.domain.usecase.SyncUseCase
 import com.moly3.core_domain.BuildConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -64,11 +57,6 @@ class RootComponent(
     private val navigator: NavigatorDispatcher by inject()
     private val coroutineScope: CoroutineScope by inject()
     private val macTrackpadGestureService: MacTrackpadGestureService by inject()
-    override val dialogAddCollectionRowService: DialogAddCollectionRowService by inject()
-    override val dialogColorPickerService: DialogColorPickerService by inject()
-    override val dialogCreateWorkspaceService: DialogCreateWorkspaceService by inject()
-    override val dialogDeleteService: DialogDeleteService by inject()
-    override val dialogSelectWorkspaceService: DialogSelectWorkspaceService by inject()
     override val messageService: IMessageService by inject()
     override val appEnvironment: IAppEnvironment by inject()
     override val appSettingsFlow: StateFlow<AppSettings> = appEnvironment.getAppSettingsFlow()

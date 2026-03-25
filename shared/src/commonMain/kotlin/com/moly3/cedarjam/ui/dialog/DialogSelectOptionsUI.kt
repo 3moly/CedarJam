@@ -30,23 +30,24 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.launch
 
 @Composable
-fun DialogSelectOptionsUI(dialog: DialogSelectOptionsService) {
-    CJDialogGeneric(dialog = dialog) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
-        ) {
+fun DialogSelectOptionsUI(
+    dialog: DialogSelectOptionsService,
+    input: DialogSelectOptionsServiceInput
+) {
+    Column(
+        modifier = Modifier.padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(24.dp)
+    ) {
 //            CJText(text = "Delete this item?", fontSize = 24.sp)
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                for (option in it.options) {
-                    CJButton(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(28.dp),
-                        text = option.text,
-                        onClick = option.onClick
-                    )
-                }
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            for (option in input.options) {
+                CJButton(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(28.dp),
+                    text = option.text,
+                    onClick = option.onClick
+                )
             }
         }
     }
@@ -58,15 +59,16 @@ private fun DialogSelectOptionsUIPreview() {
     AppThemePreview {
         val dialog = DialogSelectOptionsService()
 
-        dialog.openImmediate(
-            DialogSelectOptionsServiceInput(
-                options = persistentListOf(
-                    SelectOption(text = "rename", {}),
-                    SelectOption(text = "change type", {}),
-                )
+        val input = DialogSelectOptionsServiceInput(
+            options = persistentListOf(
+                SelectOption(text = "rename", {}),
+                SelectOption(text = "change type", {}),
             )
         )
+        dialog.openImmediate(
+            input
+        )
 
-        DialogSelectOptionsUI(dialog = dialog)
+        DialogSelectOptionsUI(dialog = dialog, input = input)
     }
 }

@@ -1,15 +1,10 @@
 package com.moly3.cedarjam.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
@@ -25,30 +20,29 @@ import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.extensions.compose.experimental.stack.ChildStack
 import com.arkivanov.decompose.extensions.compose.experimental.stack.animation.stackAnimation
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
+import com.moly3.cedarjam.core.domain.dialog.DialogColorPickerService
+import com.moly3.cedarjam.core.domain.dialog.DialogCreateWorkspaceService
+import com.moly3.cedarjam.core.domain.dialog.DialogDeleteService
+import com.moly3.cedarjam.core.domain.dialog.DialogSelectOptionsService
 import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
-import com.moly3.cedarjam.core.ui.compositions.LocalHazeState
 import com.moly3.cedarjam.core.ui.compositions.LocalVideoPlayer
 import com.moly3.cedarjam.core.ui.dialog.DialogRegistry
 import com.moly3.cedarjam.core.ui.onPointerEvent
 import com.moly3.cedarjam.core.ui.uikit.CJApplicationTheme
-import com.moly3.cedarjam.core.ui.uikit.CJButton
 import com.moly3.cedarjam.core.ui.uikit.NeumorphicShape
 import com.moly3.cedarjam.navigation.Root
 import com.moly3.cedarjam.navigation.Route
 import com.moly3.cedarjam.pages.page_select_workspace.ui.SelectWorkspacePage
 import com.moly3.cedarjam.pages.page_workspace.ui.WorkspacePage
 import com.moly3.cedarjam.ui.app.AppComposableWidgetHideKeyboard
-import com.moly3.cedarjam.ui.dialog.DialogAddCollectionRowUI
 import com.moly3.cedarjam.ui.dialog.DialogColorPickerUI
-import com.moly3.cedarjam.ui.dialog.DialogCreateWorkspaceService
+import com.moly3.cedarjam.ui.dialog.DialogCreateWorkspaceUI
 import com.moly3.cedarjam.ui.dialog.DialogDeleteUI
-import com.moly3.cedarjam.ui.dialog.DialogSelectWorkspaceUI
+import com.moly3.cedarjam.ui.dialog.DialogSelectOptionsUI
 import com.moly3.cedarjam.ui.dialog.SuccessSnackbarComponent
-import dev.chrisbanes.haze.hazeSource
-import dev.chrisbanes.haze.rememberHazeState
-import io.github.kdroidfilter.composemediaplayer.VideoPlayerSurface
 import io.github.kdroidfilter.composemediaplayer.rememberVideoPlayerState
+import org.koin.mp.KoinPlatform.getKoin
 
 @OptIn(ExperimentalDecomposeApi::class)
 @Composable
@@ -57,10 +51,8 @@ fun MainApp(root: Root) {
     val appSettings by root.appSettingsFlow.collectAsState()
     val syncStatus by root.sendingBranchFlow.collectAsState(UIState.Loading)
     CJApplicationTheme(isRelease = root.isRelease, appSettings = appSettings) {
-        val hazeState = rememberHazeState(blurEnabled = false)
         val playerState = rememberVideoPlayerState()
         CompositionLocalProvider(
-            LocalHazeState provides hazeState,
             LocalVideoPlayer provides playerState,
         ) {
             Box(
@@ -71,7 +63,6 @@ fun MainApp(root: Root) {
                 ChildStack(
                     modifier = Modifier
                         .fillMaxSize()
-                        .hazeSource(state = hazeState)
                         .onPointerEvent(PointerEventType.Press) {
                             if (it.buttons.isBackPressed) {
                                 root.onNavigate(Route.Back)
@@ -87,47 +78,32 @@ fun MainApp(root: Root) {
                         is Root.Child.SelectWorkspace -> SelectWorkspacePage(component = instance.component)
                     }
                 }
-                Box(Modifier.fillMaxSize()) {
-                    val player = LocalVideoPlayer.current
-                    if (player.hasMedia) {
-                        Box(
-                            modifier = Modifier
-                                .width(300.dp)
-                                .height(200.dp)
-                                .padding(16.dp)
-                                .align(Alignment.BottomEnd)
-                        ) {
-                            VideoPlayerSurface(
-                                modifier = Modifier
-                                    .align(Alignment.BottomEnd),
-                                playerState = player
+                val registry = remember {
+                    val koin = getKoin()
+                    DialogRegistry().apply {
+                        register(koin.get<DialogSelectOptionsService>()) { dialog, input ->
+                            DialogSelectOptionsUI(dialog, input)
+                        }
+                        register(koin.get<DialogCreateWorkspaceService>()) { dialog, input ->
+                            DialogCreateWorkspaceUI(
+                                dialog = dialog
                             )
-                            Row(
-                                modifier = Modifier.padding(8.dp).align(Alignment.BottomCenter),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                val buttonText = if (player.isPlaying) "stop" else "play"
-                                CJButton(modifier = Modifier, text = buttonText) {
-                                    if (player.isPlaying) {
-                                        player.stop()
-                                    } else {
-                                        player.play()
-                                    }
-                                }
-                            }
+                        }
+                        register(koin.get<DialogColorPickerService>()) { dialog, input ->
+                            DialogColorPickerUI(
+                                dialog,
+                                input
+                            )
+                        }
+                        register(koin.get<DialogDeleteService>()) { dialog, input ->
+                            DialogDeleteUI(
+                                dialog,
+                            )
                         }
                     }
                 }
-//                DialogDeleteUI(root.dialogDeleteService)
-                DialogAddCollectionRowUI(root.dialogAddCollectionRowService)
-                DialogCreateWorkspaceService(root.dialogCreateWorkspaceService)
-                DialogSelectWorkspaceUI(
-                    appEnvironment = root.appEnvironment,
-                    dialogCreate = root.dialogCreateWorkspaceService,
-                    root.dialogSelectWorkspaceService
-                )
-//                DialogColorPickerUI(dialog = root.dialogColorPickerService)
+                registry.Host()
+
 
                 Box(Modifier.fillMaxSize()) {
                     SuccessSnackbarComponent(
@@ -136,33 +112,6 @@ fun MainApp(root: Root) {
                 }
                 AppComposableWidgetHideKeyboard()
                 TopAlertServiceUI(root.alertService)
-
-                val registry = remember {
-                    DialogRegistry().apply {
-                        register(root.dialogColorPickerService) { dialog, input ->
-                            DialogColorPickerUI(
-                                dialog,
-                                input
-                            )
-                        }
-                        register(root.dialogDeleteService) { dialog, input ->
-                            DialogDeleteUI(
-                                dialog,
-                                root.dialogColorPickerService
-                            )
-                        }
-//                        register(root.dialogAddCollectionRowService) { DialogAddCollectionRowUI(it) }
-
-//                        // Even complex ones with dependencies
-//                        register(root.dialogSelectWorkspaceService) {
-//                            DialogSelectWorkspaceUI(root.appEnvironment, root.dialogCreateWorkspaceService, it)
-//                        }
-                    }
-                }
-
-                // 2. Just call the Host once
-                registry.Host()
-
                 when (val sync = syncStatus) {
                     is UIState.Error,
                     UIState.Loading -> {

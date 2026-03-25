@@ -6,27 +6,24 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.remember
-import com.moly3.cedarjam.core.domain.dialog.DialogState
 import com.moly3.cedarjam.core.domain.dialog.GlobalDialog
 import com.moly3.cedarjam.core.ui.uikit.CJDialogGeneric
 
 class DialogRegistry {
-    private val bindings = mutableListOf<DialogUIBinding<*, *>>()
-
-    // This tracks the actual ORDER of opening
+    // Add the extra wildcard for the Service type
+    private val bindings = mutableListOf<DialogUIBinding<*, *, *>>()
     private val activeStack = mutableStateListOf<GlobalDialog<*, *>>()
 
-    fun <Input, Result> register(
-        service: GlobalDialog<Input, Result>,
-        ui: @Composable (GlobalDialog<Input, Result>, Input?) -> Unit
+    // The magic happens here: Service : GlobalDialog<Input, Result>
+    fun <Service : GlobalDialog<Input, Result>, Input, Result> register(
+        service: Service,
+        ui: @Composable (Service, Input) -> Unit
     ) {
         bindings.add(DialogUIBinding(service, ui))
     }
 
     @Composable
     fun Host() {
-        // 1. Sync the activeStack with the service states
         bindings.forEach { binding ->
             val isOpened by binding.service.isEnabledFlow.collectAsState(false)
 
@@ -41,25 +38,27 @@ class DialogRegistry {
             }
         }
 
-        // 2. Render based on the Stack order, not the registration order
         activeStack.forEachIndexed { index, service ->
             val binding = bindings.find { it.service == service } ?: return@forEachIndexed
-
-            // stackOffset: 0 is the newest (top), 1 is the one below it, etc.
             val stackOffset = activeStack.size - 1 - index
 
             key(service) {
+                // Call the helper which recovers the types
                 RenderBinding(binding, stackOffset)
             }
         }
     }
 
     @Composable
-    private fun <I, R> RenderBinding(binding: DialogUIBinding<I, R>, stackOffset: Int) {
+    private fun <S : GlobalDialog<I, R>, I, R> RenderBinding(
+        binding: DialogUIBinding<S, I, R>,
+        stackOffset: Int
+    ) {
         CJDialogGeneric(
             dialog = binding.service,
-            stackOffset = stackOffset // Pass the offset to your UI
+            stackOffset = stackOffset
         ) { input ->
+            // Now 'binding.ui' expects 'S' (the specific Service type)
             binding.ui(binding.service, input)
         }
     }

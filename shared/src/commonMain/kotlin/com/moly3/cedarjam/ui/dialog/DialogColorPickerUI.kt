@@ -28,7 +28,7 @@ import com.moly3.cedarjam.core.ui.uikit.CJText
 import kotlinx.coroutines.launch
 
 @Composable
-fun DialogColorPickerUI(dialog: GlobalDialog<Color?, Color?>, data: Color?) {
+fun DialogColorPickerUI(dialog: DialogColorPickerService, data: Color?) {
     val scope = rememberCoroutineScope()
     val controller = rememberColorPickerController()
     val colorState = remember { mutableStateOf<Color?>(null) }

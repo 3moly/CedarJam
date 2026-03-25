@@ -5,6 +5,8 @@ import com.arkivanov.mvikotlin.core.store.Reducer
 import com.arkivanov.mvikotlin.core.store.SimpleBootstrapper
 import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
+import com.moly3.cedarjam.core.domain.dialog.DialogDeleteService
+import com.moly3.cedarjam.core.domain.dialog.DialogSelectOptionsService
 import com.moly3.cedarjam.navigation.BaseExecutor
 import com.moly3.cedarjam.navigation.Navigator
 import com.moly3.cedarjam.navigation.Route.CollRow
@@ -14,6 +16,8 @@ import com.moly3.cedarjam.pages.page_collection.Intent
 import com.moly3.cedarjam.pages.page_collection.Label
 import com.moly3.cedarjam.pages.page_collection.State
 import com.moly3.cedarjam.core.domain.dialog.DialogSelectTagService
+import com.moly3.cedarjam.core.domain.dialog.model.DialogSelectOptionsServiceInput
+import com.moly3.cedarjam.core.domain.dialog.model.SelectOption
 import com.moly3.cedarjam.core.ui.func.getPdfResult
 import com.moly3.cedarjam.core.ui.model.PageNameData
 import com.moly3.cedarjam.core.domain.func.nowInMs
@@ -37,6 +41,7 @@ import com.moly3.cedarjam.core.domain.usecase.INavigateToFileUseCase
 import com.moly3.cedarjam.core.ui.model.CJText
 import com.moly3.cedarjam.core.ui.model.FileTreeItemPresentation
 import com.moly3.cedarjam.navigation.Route
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -72,6 +77,8 @@ internal class CollectionStoreFactory(
     private val coroutineScope: CoroutineScope by inject()
     private val utilsService: IUtilsService by inject()
     private val dialogSelectTagService: DialogSelectTagService by inject()
+    private val dialogSelectOptionsService: DialogSelectOptionsService by inject()
+    private val dialogDeleteService: DialogDeleteService by inject()
     private val navigator: Navigator by inject()
     private val ankiEnv: IAnkiEnvironment by inject()
     private val navigateToFileUseCase: INavigateToFileUseCase by inject {
@@ -204,6 +211,25 @@ internal class CollectionStoreFactory(
         @OptIn(ExperimentalTime::class)
         override fun executeIntent(intent: Intent) {
             when (intent) {
+                is Intent.OpenOptions -> {
+                    scope.launch {
+                        val result =
+                            dialogSelectOptionsService.open(
+                                DialogSelectOptionsServiceInput(
+                                    options = persistentListOf(
+                                        SelectOption(
+                                            text = "delete",
+                                            onClick = {
+                                                scope.launch {
+                                                    dialogDeleteService.open(Unit)
+                                                }
+                                            }
+                                        )
+                                    )
+                                ))
+                    }
+                }
+
                 is Intent.OpenWorkspaceSettings -> {
                     openWorkspaceSettings(true)
                 }
