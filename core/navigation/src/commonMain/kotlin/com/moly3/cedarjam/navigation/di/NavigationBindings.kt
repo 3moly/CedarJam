@@ -1,6 +1,7 @@
 package com.moly3.cedarjam.navigation.di
 
 import com.moly3.cedarjam.navigation.Navigator
+import com.moly3.cedarjam.navigation.NavigatorCoroutineScope
 import com.moly3.cedarjam.navigation.NavigatorDispatcher
 import com.moly3.cedarjam.navigation.NavigatorImpl
 import dev.zacsweers.metro.AppScope
@@ -9,18 +10,25 @@ import dev.zacsweers.metro.ContributesTo
 import dev.zacsweers.metro.Provides
 import dev.zacsweers.metro.SingleIn
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 
 @ContributesTo(AppScope::class)
 @BindingContainer
 object NavigationBindings {
 
-    // 1. Provide the concrete class as the ONE true Singleton
+    @SingleIn(AppScope::class)
+    @Provides
+    fun provideNavigatorCoroutineScope(): NavigatorCoroutineScope {
+        return NavigatorCoroutineScope(CoroutineScope(SupervisorJob() + Dispatchers.Main))
+    }
+
     @SingleIn(AppScope::class)
     @Provides
     fun provideNavigatorImpl(
-        scope: CoroutineScope
+        navigatorCoroutineScope: NavigatorCoroutineScope
     ): NavigatorImpl {
-        return NavigatorImpl(scope)
+        return NavigatorImpl(navigatorCoroutineScope.scope)
     }
 
     // 2. Map the first interface to the implementation

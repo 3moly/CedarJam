@@ -24,19 +24,20 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
+import com.moly3.cedarjam.navigation.AppGraphServicesLocator
+import kotlinx.coroutines.SupervisorJob
 
 internal class SelectWorkspaceStoreFactory(
     private val storeFactory: StoreFactory,
     private val lifecycle: Lifecycle,
     private val onSelectWorkspace: (WorkspaceInput) -> Unit
-) : KoinComponent {
+) {
 
-    private val appEnvironment: IAppEnvironment by inject()
-    private val dialogCreateWorkspaceService: DialogCreateWorkspaceService by inject()
-    private val coroutineScope: CoroutineScope by inject()
-    private val isd: IMessageService by inject()
+    private val d get() = AppGraphServicesLocator.instance
+    private val appEnvironment: IAppEnvironment get() = d.appEnvironment
+    private val dialogCreateWorkspaceService: DialogCreateWorkspaceService get() = d.dialogCreateWorkspaceService
+    private val coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private val isd: IMessageService get() = d.messageService
 
     fun create(): SelectWorkspaceStore = object : SelectWorkspaceStore,
         Store<Intent, State, Unit> by storeFactory.create(

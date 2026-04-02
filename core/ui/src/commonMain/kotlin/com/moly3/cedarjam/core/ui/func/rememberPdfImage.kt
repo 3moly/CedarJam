@@ -10,14 +10,12 @@ import co.touchlab.kermit.Logger
 import com.moly3.cedarjam.core.domain.func.hiddenDirectory
 import com.moly3.cedarjam.core.domain.func.pathWrapper
 import com.moly3.cedarjam.core.domain.io
-import com.moly3.cedarjam.core.domain.service.IFileHasher
+import com.moly3.cedarjam.core.domain.di.AppServiceLocator
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
-import org.koin.mp.KoinPlatform.getKoin
-
 object PdfPreviewLoader {
 
     private val mutexMap = mutableMapOf<String, Mutex>()
@@ -64,7 +62,7 @@ fun rememberPdfImage(
             return@LaunchedEffect
         }
 
-        val fs = getKoin().get<IFileHasher>()
+        val fs = AppServiceLocator.fileHasher
         launch(io) {
             try {
                 val hash = fs.getFileHash(fullPath)

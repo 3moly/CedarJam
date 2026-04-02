@@ -9,6 +9,7 @@ import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.childStack
 import com.arkivanov.decompose.router.stack.pushToFront
 import com.arkivanov.decompose.value.Value
+import com.arkivanov.essenty.lifecycle.doOnDestroy
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.arkivanov.mvikotlin.main.store.DefaultStoreFactory
 import com.moly3.cedarjam.core.domain.model.UIState
@@ -20,6 +21,8 @@ import com.moly3.cedarjam.core.domain.service.IMessageService
 import com.moly3.cedarjam.core.domain.usecase.ISyncUseCase
 import com.moly3.cedarjam.core.domain.usecase.SyncStatusChannel
 import com.moly3.cedarjam.core.ui.service.MacTrackpadGestureService
+import com.moly3.cedarjam.di.metro.CedarJamGraph
+import com.moly3.cedarjam.di.metro.RootCoroutineScope
 import com.moly3.cedarjam.navigation.Root.Child.SelectWorkspace
 import com.moly3.cedarjam.navigation.Root.Child.Workspace
 import com.moly3.cedarjam.pages.page_select_workspace.SelectWorkspaceComponent
@@ -35,9 +38,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
-import org.koin.core.scope.Scope
 
 @AssistedInject
 class RootComponent(
@@ -45,26 +45,25 @@ class RootComponent(
     @Assisted private val onDestroy: () -> Unit = {},
     private val selectWorkspaceFactory: SelectWorkspaceFactory,
     private val navigator: NavigatorDispatcher,
-    private val coroutineScope: CoroutineScope,
+    private val rootCoroutineScope: RootCoroutineScope,
     private val macTrackpadGestureService: MacTrackpadGestureService,
     override val messageService: IMessageService,
-    override val alertService: AlertService
+    override val alertService: AlertService,
+    override val appEnvironment: IAppEnvironment,
+    private val syncUseCase: ISyncUseCase,
+    private val createWorkspaceSession: CreateWorkspaceSession,
 ) : Root,
     ComponentContext by componentContext,
     IDecomposeScopeComponent,
-    KoinComponent,
     NavigationParent {
 
-    override val scope by componentScope()
+    private val coroutineScope: CoroutineScope = rootCoroutineScope.scope
 
     override val isRelease: Boolean by lazy {
         BuildConfig.IsRelease
     }
     private val storeFactory: StoreFactory = DefaultStoreFactory()
     private val navigation = StackNavigation<Config>()
-    override val appEnvironment: IAppEnvironment by inject()
-    val syncUseCase: ISyncUseCase by inject()
-
     override val appSettingsFlow: StateFlow<AppSettings> = appEnvironment.getAppSettingsFlow()
 
     override val sendingBranchFlow: Flow<UIState<SyncStatusChannel, String>>
@@ -85,7 +84,6 @@ class RootComponent(
                     onSelectWorkspace = {
                         Logger.d("onSelectWorkspace: ${it.name}")
                         try {
-//                            navigation.replaceAll(Config.Workspace(it))
                             navigation.pushToFront(Config.Workspace(it))
                         } catch (exc: Exception) {
                             Logger.d("onSelectWorkspace: ${exc.message}")
@@ -98,7 +96,9 @@ class RootComponent(
                 WorkspaceComponentImpl(
                     workspaceInput = config.workspace,
                     context = componentContext,
-                    storeFactory = storeFactory
+                    storeFactory = storeFactory,
+                    createWorkspaceSession = createWorkspaceSession,
+                    graphDeps = CedarJamGraph.deps,
                 )
             )
         }
@@ -113,6 +113,7 @@ class RootComponent(
     }
 
     init {
+        lifecycle.doOnDestroy { onDestroy() }
         coroutineScope.launch {
             navigator.events.collect {
                 onNavigate(it)
@@ -159,11 +160,6 @@ class RootComponent(
         coroutineScope.launch {
             macTrackpadGestureService.shareValue(value)
         }
-    }
-
-    override fun onScopeClose(scope: Scope) {
-        super.onScopeClose(scope)
-        onDestroy()
     }
 
     @Serializable

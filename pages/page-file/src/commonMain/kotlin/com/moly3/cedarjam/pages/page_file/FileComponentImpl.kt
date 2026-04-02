@@ -22,8 +22,7 @@ import com.moly3.cedarjam.pages.page_file.store.FileStoreFactory
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
+import com.moly3.cedarjam.navigation.AppGraphServicesLocator
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class FileComponentImpl(
@@ -33,8 +32,9 @@ class FileComponentImpl(
     private val data: FilePageInput,
     override val workspaceSession: WorkspaceSession
 ) : FileComponent,
-    ComponentContext by componentContext,
-    KoinComponent {
+    ComponentContext by componentContext {
+
+    private val d get() = AppGraphServicesLocator.instance
 
     private val graphDialogScope by lazy {
         graphDialogScopeFactory(
@@ -57,12 +57,12 @@ class FileComponentImpl(
     override val dialogSlot = graphDialogScope.slot
     override val dialogCanvasSlot = canvasDialogScope.slot
 
-    override val appEnvironment: IAppEnvironment by inject()
-    override val macTrackpadGestureService: MacTrackpadGestureService by inject()
-    override val utilsService: IUtilsService by inject()
-    override val dialogColorPicker: DialogColorPickerService by inject()
-    override val jvmBrowserService: IJvmBrowserService by inject()
-    override val filesRepository: IFilesRepository by inject()
+    override val appEnvironment: IAppEnvironment get() = d.appEnvironment
+    override val macTrackpadGestureService: MacTrackpadGestureService get() = d.macTrackpadGestureService
+    override val utilsService: IUtilsService get() = d.utilsService
+    override val dialogColorPicker: DialogColorPickerService get() = d.dialogColorPickerService
+    override val jvmBrowserService: IJvmBrowserService get() = d.jvmBrowserService
+    override val filesRepository: IFilesRepository get() = d.filesRepository
 
     private val store by lazy {
         FileStoreFactory(

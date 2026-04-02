@@ -18,8 +18,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
+import com.moly3.cedarjam.navigation.AppGraphServicesLocator
 
 internal class SettingsSyncStoreFactory(
     private val storeFactory: StoreFactory,
@@ -27,9 +26,10 @@ internal class SettingsSyncStoreFactory(
     private val workspaceSession: WorkspaceSession,
     private val back: () -> Unit,
     private val close: () -> Unit
-) : KoinComponent {
+) {
 
-    private val syncUseCase: ISyncUseCase by inject()
+    private val d get() = AppGraphServicesLocator.instance
+    private val syncUseCase: ISyncUseCase get() = d.syncUseCase
 
     fun create(): SettingsSyncStore = object : SettingsSyncStore,
         Store<Intent, State, Unit> by storeFactory.create(

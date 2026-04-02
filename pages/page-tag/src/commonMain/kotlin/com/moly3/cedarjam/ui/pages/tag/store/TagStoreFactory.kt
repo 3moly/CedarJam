@@ -21,19 +21,18 @@ import com.moly3.cedarjam.core.domain.model.resultBlock
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
 import com.moly3.cedarjam.core.domain.usecase.IOpenNodeDataUseCase
 import com.moly3.cedarjam.core.ui.model.CJText
+import com.moly3.cedarjam.navigation.AppGraphServicesLocator
 import com.moly3.cedarjam.navigation.Navigator
 import com.moly3.cedarjam.navigation.mapper.toRoute
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
-import org.koin.core.parameter.parametersOf
-
 
 internal class TagStoreFactory(
     private val workspaceSession: WorkspaceSession,
@@ -41,14 +40,14 @@ internal class TagStoreFactory(
     private val lifecycle: Lifecycle,
     private val pageData: TagPageInput,
     private val openWorkspaceSettings: (Boolean) -> Unit
-) : KoinComponent {
+) {
 
-    private val coroutineScope: CoroutineScope by inject()
-    private val selectTagService: DialogSelectTagService by inject()
-    private val openNodeUseCase: IOpenNodeDataUseCase by inject {
-        parametersOf(workspaceSession.fileManagerService)
-    }
-    private val navigator: Navigator by inject()
+    private val d get() = AppGraphServicesLocator.instance
+    private val coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private val selectTagService: DialogSelectTagService get() = d.dialogSelectTagService
+    private val openNodeUseCase: IOpenNodeDataUseCase get() =
+        d.openNodeDataUseCaseFactory(workspaceSession.fileManagerService)
+    private val navigator: Navigator get() = d.navigator
 
     fun create(): TagStore = object : TagStore,
         Store<Intent, State, Unit> by storeFactory.create(

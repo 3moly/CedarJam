@@ -8,31 +8,22 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.ContributesTo
 import dev.zacsweers.metro.Provides
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
+import dev.zacsweers.metro.SingleIn
 
 @ContributesTo(AppScope::class)
 @BindingContainer
 object AppBindings {
 
+    @SingleIn(AppScope::class)
     @Provides
-    fun provideAlertService(): AlertService {
-        return AlertService()
-    }
+    fun provideAlertService(): AlertService = AlertService()
 
+    @SingleIn(AppScope::class)
     @Provides
-    fun provideMacTrackpadGestureService(): MacTrackpadGestureService {
-        return MacTrackpadGestureService()
-    }
+    fun provideMacTrackpadGestureService(): MacTrackpadGestureService =
+        MacTrackpadGestureService()
 
+    @SingleIn(AppScope::class)
     @Provides
-    fun provideSetIsDarkCoordinator(): CoroutineScope {
-        return CoroutineScope(Dispatchers.Main + SupervisorJob())
-    }
-
-    @Provides
-    fun provideMessageService(): IMessageService {
-        return MessageServiceImpl()
-    }
+    fun provideMessageService(): IMessageService = MessageServiceImpl()
 }

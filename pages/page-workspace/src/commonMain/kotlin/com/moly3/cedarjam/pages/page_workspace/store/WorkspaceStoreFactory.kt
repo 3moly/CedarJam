@@ -118,32 +118,29 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
-import org.koin.core.parameter.parametersOf
+import com.moly3.cedarjam.navigation.AppGraphServices
 import com.moly3.cedarjam.core.domain.func.combine as cjCombine
 
 internal class WorkspaceStoreFactory(
     private val storeFactory: StoreFactory,
     private val lifecycle: Lifecycle,
     private val workspaceSession: WorkspaceSession,
-    private val onSettingsOpen: () -> Unit
-) : KoinComponent {
-
-    private val setIsDarkCoordinator: SetIsDarkCoordinator by inject()
-    private val alertService: AlertService by inject()
-    private val filesRepo: IFilesRepository by inject()
-    private val syncUseCase: ISyncUseCase by inject()
-    private val messagerService: IMessageService by inject()
-    private val dialogColorPickerService: DialogColorPickerService by inject()
-    private val dialogDeleteService: DialogDeleteService by inject()
+    private val onSettingsOpen: () -> Unit,
+    private val graphDeps: AppGraphServices,
+) {
+    private val setIsDarkCoordinator: SetIsDarkCoordinator get() = graphDeps.setIsDarkCoordinator
+    private val alertService: AlertService get() = graphDeps.alertService
+    private val filesRepo: IFilesRepository get() = graphDeps.filesRepository
+    private val syncUseCase: ISyncUseCase get() = graphDeps.syncUseCase
+    private val messagerService: IMessageService get() = graphDeps.messageService
+    private val dialogColorPickerService: DialogColorPickerService get() = graphDeps.dialogColorPickerService
+    private val dialogDeleteService: DialogDeleteService get() = graphDeps.dialogDeleteService
     private val fileManagerService: FileManagerService by lazy {
         workspaceSession.fileManagerService
     }
-    private val navigator: Navigator by inject()
-    private val navigateToFileUseCase: INavigateToFileUseCase by inject {
-        parametersOf(fileManagerService)
-    }
+    private val navigator: Navigator get() = graphDeps.navigator
+    private val navigateToFileUseCase: INavigateToFileUseCase
+        get() = graphDeps.navigateToFileUseCaseFactory(fileManagerService)
 
     private var _cursorPosition: Offset? = null
 

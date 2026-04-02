@@ -25,7 +25,6 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation(projects.core.domain)
-                implementation(projects.core.navigation)
 
                 implementation(libs.koin)
                 implementation(libs.coroutines)

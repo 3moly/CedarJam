@@ -47,9 +47,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
-import org.koin.core.parameter.parametersOf
+import com.moly3.cedarjam.navigation.AppGraphServicesLocator
 import kotlin.getValue
 
 internal class DialogGraphStoreFactory(
@@ -59,14 +57,14 @@ internal class DialogGraphStoreFactory(
     private val targetInput: GraphDialogInput,
     private val openWorkspaceSettings: (Boolean) -> Unit,
     private val openPdfPage: (Int) -> Unit
-) : KoinComponent {
+) {
 
-    private val navigator: Navigator by inject()
-    private val deleteService: DialogDeleteService by inject()
-    private val openNodeDataUseCase: IOpenNodeDataUseCase by inject {
-        parametersOf(workspaceSession.fileManagerService)
-    }
-    private val selectTagService: DialogSelectTagService by inject()
+    private val d get() = AppGraphServicesLocator.instance
+    private val navigator: Navigator get() = d.navigator
+    private val deleteService: DialogDeleteService get() = d.dialogDeleteService
+    private val openNodeDataUseCase: IOpenNodeDataUseCase get() =
+        d.openNodeDataUseCaseFactory(workspaceSession.fileManagerService)
+    private val selectTagService: DialogSelectTagService get() = d.dialogSelectTagService
 
     fun create(stateKeeper: StateKeeper): DialogGraphStore = object : DialogGraphStore,
         Store<Intent, State, Unit> by storeFactory.create(

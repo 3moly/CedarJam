@@ -12,7 +12,6 @@ import com.arkivanov.decompose.value.Value
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.moly3.cedarjam.navigation.IDecomposeScopeComponent
 import com.moly3.cedarjam.navigation.Route
-import com.moly3.cedarjam.navigation.componentScope
 import com.moly3.cedarjam.core.domain.model.navigation.input.CollectionPageInput
 import com.moly3.cedarjam.core.domain.model.navigation.input.CollectionRowPageInput
 import com.moly3.cedarjam.core.domain.model.navigation.input.FilePageInput
@@ -50,9 +49,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.serialization.Serializable
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 
 class TabComponentImpl(
     private val workspaceSession: WorkspaceSession,
@@ -60,13 +58,13 @@ class TabComponentImpl(
     storeFactory: StoreFactory,
     private val openMenu: (Boolean) -> Unit,
     private val tabIndex: Int
-) : KoinComponent,
-    ComponentContext by context,
+) : ComponentContext by context,
     IDecomposeScopeComponent,
     TabComponent,
     NavigationParent {
 
-    private val coroutineScope: CoroutineScope by inject()
+    private val coroutineScope: CoroutineScope =
+        CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     val navigation = StackNavigation<Config>()
     private val _stateFlow = MutableStateFlow<State>(State())
@@ -180,8 +178,6 @@ class TabComponentImpl(
             )
         }
     }
-
-    override val scope by componentScope()
 
     override val children: Value<ChildStack<*, TabComponent.Child>>
         get() = _children

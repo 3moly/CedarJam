@@ -42,24 +42,22 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
-import org.koin.core.parameter.parametersOf
+import com.moly3.cedarjam.navigation.AppGraphServicesLocator
 
 internal class GraphStoreFactory(
     private val storeFactory: StoreFactory,
     private val lifecycle: Lifecycle,
     private val workspaceSession: WorkspaceSession,
     private val openWorkspaceSettings: (Boolean) -> Unit
-) : KoinComponent {
+) {
 
-    private val navigator: Navigator by inject()
+    private val d get() = AppGraphServicesLocator.instance
+    private val navigator: Navigator get() = d.navigator
     private val _isMouseCapturedState = MutableStateFlow(false)
-    private val appEnvironment: IAppEnvironment by inject()
-    private val macTrackpadGestureService: MacTrackpadGestureService by inject()
-    private val openNodeDataUseCase: IOpenNodeDataUseCase by inject {
-        parametersOf(workspaceSession.fileManagerService)
-    }
+    private val appEnvironment: IAppEnvironment get() = d.appEnvironment
+    private val macTrackpadGestureService: MacTrackpadGestureService get() = d.macTrackpadGestureService
+    private val openNodeDataUseCase: IOpenNodeDataUseCase get() =
+        d.openNodeDataUseCaseFactory(workspaceSession.fileManagerService)
 
     fun create(stateKeeper: StateKeeper): GraphStore = object : GraphStore,
         Store<Intent, State, Unit> by storeFactory.create(

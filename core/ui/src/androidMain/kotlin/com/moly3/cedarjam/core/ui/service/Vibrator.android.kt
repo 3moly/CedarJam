@@ -7,14 +7,11 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import androidx.annotation.RequiresPermission
-import com.moly3.cedarjam.core.domain.service.AppContextProvider
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
+import com.moly3.cedarjam.core.domain.di.AppServiceLocator
 
+actual object KVibrator {
 
-actual object KVibrator : KoinComponent {
-
-    private val appContextProvider: AppContextProvider by inject()
+    private val appContextProvider get() = AppServiceLocator.appContextProvider
 
     private fun getVibrator(): Vibrator {
         val context = appContextProvider.getApplicationContext() as Context

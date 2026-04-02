@@ -6,7 +6,6 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.window.application
 import co.touchlab.kermit.Logger
-import com.app.di.createDesktopAppGraph
 import com.arkivanov.decompose.DecomposeSettings
 import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.essenty.backhandler.BackDispatcher
@@ -18,6 +17,7 @@ import com.moly3.app.func.readSerializableContainer
 import com.moly3.app.func.writeToFile
 import com.moly3.cedarjam.core.domain.model.AndroidApplicationContext
 import com.moly3.cedarjam.di.initApp
+import com.moly3.cedarjam.di.metro.CedarJamGraph
 import com.moly3.cedarjam.di.metro.createRootComponent
 import com.moly3.cedarjam.navigation.Root
 import com.moly3.cedarjam.navigation.createComponentContext
@@ -67,7 +67,6 @@ fun main() {
     //                saveState()
     //            },
 
-    val appGraph = createDesktopAppGraph()
     val root: Root = runOnUiThread {
         runOnUiThread {
             createRootComponent(
@@ -82,7 +81,7 @@ fun main() {
                         stateKeeper
                     }
                 ),
-                graph = appGraph,
+                graph = CedarJamGraph.instance,
                 onDestroy = {
                     saveState()
                 }

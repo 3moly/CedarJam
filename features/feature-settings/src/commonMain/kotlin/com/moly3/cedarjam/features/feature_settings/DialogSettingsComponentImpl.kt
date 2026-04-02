@@ -18,7 +18,6 @@ import com.moly3.cedarjam.features.feature_settings.child.sync.SettingsSyncCompo
 import com.moly3.cedarjam.features.feature_settings.child.transparent.SettingsTransparentComponent
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.serialization.Serializable
-import org.koin.core.component.KoinComponent
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class DialogSettingsComponentImpl(
@@ -27,7 +26,7 @@ class DialogSettingsComponentImpl(
     private val workspaceSession: WorkspaceSession,
     private val onClose: () -> Unit
 ) : IDialogSettingsComponent,
-    ComponentContext by componentContext, KoinComponent {
+    ComponentContext by componentContext {
 
     private fun child(
         config: Config,

@@ -41,9 +41,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
-import org.koin.core.parameter.parametersOf
+import com.moly3.cedarjam.navigation.AppGraphServicesLocator
 import kotlin.getValue
 import kotlin.math.max
 import kotlin.math.min
@@ -57,15 +55,15 @@ internal class DialogCanvasStoreFactory(
     private val lifecycle: Lifecycle,
     private val file: FileTreeNode.File,
     private val openNode: (ObsidianGraphData) -> Unit
-) : KoinComponent {
+) {
 
-    private val openNodeDataUseCase: IOpenNodeDataUseCase by inject {
-        parametersOf(workspaceSession.fileManagerService)
-    }
+    private val d get() = AppGraphServicesLocator.instance
+    private val openNodeDataUseCase: IOpenNodeDataUseCase get() =
+        d.openNodeDataUseCaseFactory(workspaceSession.fileManagerService)
 
-    private val filesRepository: IFilesRepository by inject()
-    private val navigator: Navigator by inject()
-    private val magnifier: MacTrackpadGestureService by inject()
+    private val filesRepository: IFilesRepository get() = d.filesRepository
+    private val navigator: Navigator get() = d.navigator
+    private val magnifier: MacTrackpadGestureService get() = d.macTrackpadGestureService
 
     fun create(stateKeeper: StateKeeper): DialogCanvasStore = object : DialogCanvasStore,
         Store<Intent, State, Unit> by storeFactory.create(

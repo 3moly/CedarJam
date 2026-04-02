@@ -13,7 +13,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import org.koin.core.component.KoinComponent
 import com.moly3.cedarjam.features.feature_settings.child.storage.Intent
 import com.moly3.cedarjam.features.feature_settings.child.storage.State
 import kotlinx.collections.immutable.toPersistentList
@@ -24,8 +23,7 @@ internal class SettingsStorageStoreFactory(
     private val workspaceSession: WorkspaceSession,
     private val back: () -> Unit,
     private val close: () -> Unit
-) : KoinComponent {
-
+) {
 
     fun create(): SettingsStorageStore = object : SettingsStorageStore,
         Store<Intent, State, Unit> by storeFactory.create(

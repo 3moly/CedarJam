@@ -10,7 +10,6 @@ import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.StateFlow
-import org.koin.core.component.KoinComponent
 
 @AssistedInject
 class SelectWorkspaceComponent(
@@ -18,8 +17,7 @@ class SelectWorkspaceComponent(
     @Assisted storeFactory: StoreFactory, // Provided by DI Graph
     @Assisted private val onSelectWorkspace: (WorkspaceInput) -> Unit
 ) : ISelectWorkspaceComponent,
-    ComponentContext by componentContext,
-    KoinComponent {
+    ComponentContext by componentContext {
 
     private val store by lazy {
         SelectWorkspaceStoreFactory(

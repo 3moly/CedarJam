@@ -44,7 +44,9 @@ import com.moly3.cedarjam.navigation.Route
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -57,9 +59,7 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
-import org.koin.core.parameter.parametersOf
+import com.moly3.cedarjam.navigation.AppGraphServicesLocator
 import kotlin.math.ceil
 import kotlin.time.ExperimentalTime
 
@@ -70,20 +70,21 @@ internal class CollectionStoreFactory(
     private val pageData: CollectionPageInput,
     private val workspaceSession: WorkspaceSession,
     private val openWorkspaceSettings: (Boolean) -> Unit
-) : KoinComponent {
+) {
+    private val d get() = AppGraphServicesLocator.instance
 
     private val currentPageState = MutableStateFlow(0)
     private val pageSizeState = MutableStateFlow(10L)
-    private val coroutineScope: CoroutineScope by inject()
-    private val utilsService: IUtilsService by inject()
-    private val dialogSelectTagService: DialogSelectTagService by inject()
-    private val dialogSelectOptionsService: DialogSelectOptionsService by inject()
-    private val dialogDeleteService: DialogDeleteService by inject()
-    private val navigator: Navigator by inject()
-    private val ankiEnv: IAnkiEnvironment by inject()
-    private val navigateToFileUseCase: INavigateToFileUseCase by inject {
-        parametersOf(workspaceSession.fileManagerService)
-    }
+    private val coroutineScope: CoroutineScope =
+        CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private val utilsService: IUtilsService get() = d.utilsService
+    private val dialogSelectTagService: DialogSelectTagService get() = d.dialogSelectTagService
+    private val dialogSelectOptionsService: DialogSelectOptionsService get() = d.dialogSelectOptionsService
+    private val dialogDeleteService: DialogDeleteService get() = d.dialogDeleteService
+    private val navigator: Navigator get() = d.navigator
+    private val ankiEnv: IAnkiEnvironment get() = d.ankiEnvironment
+    private val navigateToFileUseCase: INavigateToFileUseCase
+        get() = d.navigateToFileUseCaseFactory(workspaceSession.fileManagerService)
 
     fun create(): CollectionStore = object : CollectionStore,
         Store<Intent, State, Label> by storeFactory.create(

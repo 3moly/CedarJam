@@ -50,8 +50,9 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
+import com.moly3.cedarjam.navigation.AppGraphServicesLocator
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 
 internal class FileStoreFactory(
     private val storeFactory: StoreFactory,
@@ -60,15 +61,16 @@ internal class FileStoreFactory(
     private val openMenu: (Boolean) -> Unit,
     private val workspaceSession: WorkspaceSession,
     private val showCanvasDialog: (FileTreeNode.File) -> Unit
-) : KoinComponent {
+) {
 
+    private val d get() = AppGraphServicesLocator.instance
     private val fileManagerService: FileManagerService by lazy {
         workspaceSession.fileManagerService
     }
-    private val scope: CoroutineScope by inject()
-    private val navigator: Navigator by inject()
-    private val imageTransform: IImageTransform by inject()
-    private val filesRepository: IFilesRepository by inject()
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private val navigator: Navigator get() = d.navigator
+    private val imageTransform: IImageTransform get() = d.imageTransform
+    private val filesRepository: IFilesRepository get() = d.filesRepository
 
     private val foundNodeFlow = combine(
         workspaceSession.filesFlow,

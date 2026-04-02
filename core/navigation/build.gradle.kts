@@ -18,13 +18,15 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation(projects.core.domain)
+                implementation(projects.core.coordinator)
+                implementation(projects.core.ui)
 
+                api(libs.essenty.keeper)
                 api(libs.decompose)
                 api(libs.decompose.compose.experimental)
                 api(libs.mvi)
                 api(libs.mvi.coroutines)
                 api(libs.mvi.kotlin)
-                api(libs.koin)
                 api(libs.coroutines)
 
                 implementation(libs.compose.foundation)

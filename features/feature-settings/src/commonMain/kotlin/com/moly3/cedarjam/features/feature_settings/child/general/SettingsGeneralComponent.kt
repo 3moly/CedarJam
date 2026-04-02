@@ -19,8 +19,9 @@ import io.github.vinceglb.filekit.readBytes
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
+import com.moly3.cedarjam.navigation.AppGraphServicesLocator
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SettingsGeneralComponent(
@@ -29,11 +30,12 @@ class SettingsGeneralComponent(
     private val back: () -> Unit,
     private val close: () -> Unit
 ) : ISettingsGeneralComponent,
-    ComponentContext by componentContext, KoinComponent {
+    ComponentContext by componentContext {
 
-    private val coroutineScope: CoroutineScope by inject()
-    private val systemFilesManager: IFilesRepository by inject()
-    private val dialogColorPickerService: DialogColorPickerService by inject()
+    private val d get() = AppGraphServicesLocator.instance
+    private val coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private val systemFilesManager: IFilesRepository get() = d.filesRepository
+    private val dialogColorPickerService: DialogColorPickerService get() = d.dialogColorPickerService
     override val settingsState = workspaceSession.getSettingsFlow()
 
     private fun setSettings(newSettings: WorkspaceSettings) {

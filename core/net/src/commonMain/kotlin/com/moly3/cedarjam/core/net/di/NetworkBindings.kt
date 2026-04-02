@@ -2,6 +2,7 @@ package com.moly3.cedarjam.core.net.di
 
 import co.touchlab.kermit.Logger
 import com.moly3.cedarjam.core.domain.DefaultJson
+import com.moly3.cedarjam.core.domain.SyncServerConfig
 import com.moly3.cedarjam.core.net.IRemoteSyncRepository
 import com.moly3.cedarjam.core.net.RemoteSyncRepository
 import com.moly3.cedarjam.core.net.getHttpClientEngine
@@ -34,7 +35,10 @@ object NetworkBindings {
 
     @SingleIn(AppScope::class)
     @Provides
-    fun provideRemoteSyncRepository(json: Json): IRemoteSyncRepository {
+    fun provideRemoteSyncRepository(
+        json: Json,
+        syncServerConfig: SyncServerConfig,
+    ): IRemoteSyncRepository {
         val httpClient = HttpClient(engine = getHttpClientEngine()) {
             install(HttpTimeout) {
                 requestTimeoutMillis = 120 * 1000
@@ -65,9 +69,9 @@ object NetworkBindings {
         }
         return RemoteSyncRepository(
             httpClient = httpClient,
-            baseUrl = "baseUrl",
+            baseUrl = syncServerConfig.baseUrl,
             json = json,
-            token = "token"
+            token = syncServerConfig.token
         )
     }
 }

@@ -1,0 +1,7 @@
+package com.moly3.cedarjam.navigation
+
+import kotlinx.coroutines.CoroutineScope
+
+/** Single app-wide scope used by [NavigatorImpl]. */
+@JvmInline
+value class NavigatorCoroutineScope(val scope: CoroutineScope)

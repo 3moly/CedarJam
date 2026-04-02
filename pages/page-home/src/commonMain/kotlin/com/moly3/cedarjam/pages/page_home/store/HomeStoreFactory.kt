@@ -31,6 +31,7 @@ import com.moly3.cedarjam.core.domain.service.FileManagerService
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession.Companion.workspaceName
 import com.moly3.cedarjam.core.domain.usecase.INavigateToFileUseCase
+import com.moly3.cedarjam.navigation.AppGraphServicesLocator
 import com.moly3.cedarjam.navigation.BaseExecutor
 import com.moly3.cedarjam.navigation.Navigator
 import com.moly3.cedarjam.navigation.Route
@@ -56,29 +57,26 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.launch
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
-import org.koin.core.parameter.parametersOf
 
 internal class HomeStoreFactory(
     private val workspaceSession: WorkspaceSession,
     private val storeFactory: StoreFactory,
     private val openWorkspaceSettings: (Boolean) -> Unit
-) : KoinComponent {
+) {
 
     init {
         Logger.w { "HomeStoreFactory created ${workspaceSession.workspaceName()}" }
     }
 
+    private val d get() = AppGraphServicesLocator.instance
     private val fileManagerService: FileManagerService by lazy {
         workspaceSession.fileManagerService
     }
-    private val navigator: Navigator by inject()
-    private val filesRepository: IFilesRepository by inject()
+    private val navigator: Navigator get() = d.navigator
+    private val filesRepository: IFilesRepository get() = d.filesRepository
 
-    private val navigateToFileUseCase: INavigateToFileUseCase by inject {
-        parametersOf(fileManagerService)
-    }
+    private val navigateToFileUseCase: INavigateToFileUseCase get() =
+        d.navigateToFileUseCaseFactory(fileManagerService)
 
     fun create(stateKeeper: StateKeeper, lifecycle: Lifecycle): HomeStore = object : HomeStore,
         Store<Intent, State, Unit> by storeFactory.create(

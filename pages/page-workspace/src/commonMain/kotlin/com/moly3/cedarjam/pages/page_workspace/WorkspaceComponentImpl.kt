@@ -15,9 +15,10 @@ import com.arkivanov.decompose.value.Value
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.arkivanov.mvikotlin.extensions.coroutines.labels
 import com.arkivanov.mvikotlin.extensions.coroutines.stateFlow
+import com.moly3.cedarjam.navigation.AppGraphServices
+import com.moly3.cedarjam.navigation.CreateWorkspaceSession
 import com.moly3.cedarjam.navigation.IDecomposeScopeComponent
 import com.moly3.cedarjam.navigation.Route
-import com.moly3.cedarjam.navigation.componentScope
 import com.moly3.cedarjam.navigation.stateFlow
 import com.moly3.cedarjam.pages.page_tabs.TabsComponent
 import com.moly3.cedarjam.pages.page_tabs.TabsComponentImpl
@@ -41,11 +42,8 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.serialization.Serializable
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
-import org.koin.core.parameter.parametersOf
-import org.koin.core.scope.Scope
 
 data class PageNameWorkspace(
     val pageNameData: PageNameData?
@@ -55,20 +53,18 @@ data class PageNameWorkspace(
 class WorkspaceComponentImpl(
     private val workspaceInput: WorkspaceInput,
     context: ComponentContext,
-    storeFactory: StoreFactory
-) : KoinComponent,
-    ComponentContext by context,
+    storeFactory: StoreFactory,
+    private val createWorkspaceSession: CreateWorkspaceSession,
+    private val graphDeps: AppGraphServices,
+) : ComponentContext by context,
     IDecomposeScopeComponent,
     WorkspaceComponent {
 
-    override val scope by componentScope()
-    override val filesRepository: IFilesRepository by inject()
-    private val coroutineScope: CoroutineScope by inject()
-    override val workspaceSession: WorkspaceSession by inject {
-        parametersOf(
-            workspaceInput,
-            context.stateKeeper
-        )
+    override val filesRepository: IFilesRepository get() = graphDeps.filesRepository
+    private val coroutineScope: CoroutineScope =
+        CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    override val workspaceSession: WorkspaceSession by lazy {
+        createWorkspaceSession(workspaceInput, stateKeeper)
     }
 
     private val settingsDialogScope by lazy {
@@ -84,7 +80,8 @@ class WorkspaceComponentImpl(
             workspaceSession = workspaceSession,
             onSettingsOpen = {
                 settingsDialogScope.navigation.activate(DialogConfig)
-            }
+            },
+            graphDeps = graphDeps,
         ).create(stateKeeper = stateKeeper)
     }
 
@@ -202,10 +199,6 @@ class WorkspaceComponentImpl(
             }
 
         }
-    }
-
-    override fun onScopeClose(scope: Scope) {
-        println("destroying workspace -> ${workspaceInput.name} <-")
     }
 
     @OptIn(DelicateDecomposeApi::class)

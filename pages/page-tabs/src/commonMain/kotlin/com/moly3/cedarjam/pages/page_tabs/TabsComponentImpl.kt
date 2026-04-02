@@ -13,7 +13,6 @@ import com.arkivanov.decompose.value.Value
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.moly3.cedarjam.navigation.IDecomposeScopeComponent
 import com.moly3.cedarjam.navigation.Route
-import com.moly3.cedarjam.navigation.componentScope
 import com.moly3.cedarjam.navigation.stateFlow
 import com.moly3.cedarjam.pages.page_tab.TabComponentImpl
 import com.moly3.cedarjam.pages.page_tabs.TabsComponentImpl.Config.Tab
@@ -29,10 +28,9 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class TabsComponentImpl(
@@ -44,15 +42,14 @@ class TabsComponentImpl(
     private val onNewTabs: () -> Unit,
     private val onFileReveal: (PageNameData.PageType) -> Unit,
     override val index: Int
-) : KoinComponent,
-    ComponentContext by context,
+) : ComponentContext by context,
     IDecomposeScopeComponent,
     TabsComponent,
     NavigationParent {
 
-    private val coroutineScope: CoroutineScope by inject()
+    private val coroutineScope: CoroutineScope =
+        CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
-    override val scope by componentScope()
     private val navigation = StackNavigation<Config>()
 
     override val children: Value<ChildStack<*, TabsComponent.Child>>

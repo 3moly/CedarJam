@@ -17,17 +17,17 @@ import com.moly3.cedarjam.core.domain.service.WorkspaceSession
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
+import com.moly3.cedarjam.navigation.AppGraphServicesLocator
 import kotlin.random.Random
 
 internal class TagsStoreFactory(
     private val workspaceSession: WorkspaceSession,
     private val storeFactory: StoreFactory,
     private val lifecycle: Lifecycle
-) : KoinComponent {
+) {
 
-    private val dialogTagToTagService: DialogTagToTagService by inject()
+    private val d get() = AppGraphServicesLocator.instance
+    private val dialogTagToTagService: DialogTagToTagService get() = d.dialogTagToTagService
 
     fun create(stateKeeper: StateKeeper): TagsStore = object : TagsStore,
         Store<Intent, State, Unit> by storeFactory.create(

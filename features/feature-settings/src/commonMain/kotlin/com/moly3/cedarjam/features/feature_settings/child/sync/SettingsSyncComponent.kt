@@ -7,7 +7,6 @@ import com.moly3.cedarjam.core.domain.service.WorkspaceSession
 import com.moly3.cedarjam.features.feature_settings.child.sync.store.SettingsSyncStoreFactory
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.StateFlow
-import org.koin.core.component.KoinComponent
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SettingsSyncComponent(
@@ -17,7 +16,7 @@ class SettingsSyncComponent(
     private val back: () -> Unit,
     private val close: () -> Unit
 ) : ISettingsSyncComponent,
-    ComponentContext by componentContext, KoinComponent {
+    ComponentContext by componentContext {
 
     private val store by lazy {
         SettingsSyncStoreFactory(

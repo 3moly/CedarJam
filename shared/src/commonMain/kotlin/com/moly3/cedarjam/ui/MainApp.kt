@@ -31,7 +31,6 @@ import com.moly3.cedarjam.core.domain.dialog.model.DialogSelectOptionsServiceInp
 import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalVideoPlayer
-import com.moly3.cedarjam.core.ui.dialog.DialogRegistry
 import com.moly3.cedarjam.core.ui.onPointerEvent
 import com.moly3.cedarjam.core.ui.uikit.CJApplicationTheme
 import com.moly3.cedarjam.core.ui.uikit.NeumorphicShape
@@ -47,15 +46,14 @@ import com.moly3.cedarjam.ui.dialog.DialogCreateWorkspaceUI
 import com.moly3.cedarjam.ui.dialog.DialogDeleteUI
 import com.moly3.cedarjam.ui.dialog.DialogSelectOptionsUI
 import com.moly3.cedarjam.ui.dialog.SuccessSnackbarComponent
+import com.moly3.cedarjam.di.metro.CedarJamGraph
 import io.github.kdroidfilter.composemediaplayer.rememberVideoPlayerState
-import org.koin.mp.KoinPlatform.getKoin
 
 @OptIn(ExperimentalDecomposeApi::class)
 @Composable
 fun MainApp(root: Root) {
     val registry = remember {
-        val koin = getKoin()
-        koin.get<DialogRegistry>().apply {
+        CedarJamGraph.deps.dialogRegistry.apply {
             registerUI { dialog: DialogSelectOptionsService, input: DialogSelectOptionsServiceInput ->
                 DialogSelectOptionsUI(dialog, input)
             }

@@ -46,9 +46,9 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
-import org.koin.core.parameter.parametersOf
+import com.moly3.cedarjam.navigation.AppGraphServicesLocator
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 
 internal class CollectionRowStoreFactory(
     private val workspaceSession: WorkspaceSession,
@@ -56,15 +56,15 @@ internal class CollectionRowStoreFactory(
     private val lifecycle: Lifecycle,
     private val pageInput: CollectionRowPageInput,
     private val openWorkspaceSettings: (Boolean) -> Unit
-) : KoinComponent {
+) {
+    private val d get() = AppGraphServicesLocator.instance
     private val fileManagerService: FileManagerService by lazy {
         workspaceSession.fileManagerService
     }
-    private val coroutineScope: CoroutineScope by inject()
-    private val navigator: Navigator by inject()
-    private val navigateToFileUseCase: INavigateToFileUseCase by inject {
-        parametersOf(fileManagerService)
-    }
+    private val coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private val navigator: Navigator get() = d.navigator
+    private val navigateToFileUseCase: INavigateToFileUseCase get() =
+        d.navigateToFileUseCaseFactory(fileManagerService)
 
     fun create(): CollectionRowStore = object : CollectionRowStore,
         Store<Intent, State, Unit> by storeFactory.create(
