@@ -114,7 +114,7 @@ fun initApp(
                 alertService = get(),
                 getWorkspaceEnv = {
                     val filesManager =
-                        FileManagerService(it, FileManagerService.OpenedFiles())
+                        FileManagerService(FileManagerService.OpenedFiles())
                     val workspaceInput: WorkspaceInput = WorkspaceInput(
                         name = it.name,
                         serverName = it.serverName
@@ -168,7 +168,7 @@ fun initApp(
                     } catch (exc: Exception) {
                     }
 
-                    val filesManager = FileManagerService(workspace, openedFiles)
+                    val filesManager = FileManagerService(openedFiles)
                     val workspaceEnv: IWorkspaceEnvironment =
                         get { parametersOf(workspaceInput, filesManager) }
                     stateKeeper.register(

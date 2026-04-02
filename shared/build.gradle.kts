@@ -14,6 +14,7 @@ plugins {
     alias(libs.plugins.composeHotReload)
     alias(libs.plugins.stability.analyzer)
     kotlin("native.cocoapods")
+    alias(libs.plugins.metro)
 }
 
 kotlin {

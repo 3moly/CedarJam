@@ -4,7 +4,7 @@ plugins {
     alias(libs.plugins.serialization)
     alias(libs.plugins.compose)
     alias(libs.plugins.compose.compiler)
-    
+    alias(libs.plugins.metro)
 }
 
 kotlin {

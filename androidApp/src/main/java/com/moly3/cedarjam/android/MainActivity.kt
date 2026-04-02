@@ -13,7 +13,7 @@ import com.arkivanov.essenty.lifecycle.asEssentyLifecycle
 import com.arkivanov.essenty.lifecycle.doOnStop
 import com.arkivanov.essenty.statekeeper.SerializableContainer
 import com.arkivanov.essenty.statekeeper.StateKeeperDispatcher
-import com.moly3.cedarjam.navigation.createRootComponentSafe
+import com.moly3.cedarjam.navigation.createComponentContext
 import com.moly3.cedarjam.ui.MainApp
 import com.moly3.cedarjam.core.domain.DefaultJson
 import io.github.vinceglb.filekit.FileKit
@@ -61,11 +61,10 @@ class MainActivity : ComponentActivity() {
 
 
         val essentyLifecycle = lifecycle.asEssentyLifecycle()
-        val rootComponent = createRootComponentSafe(
+        val rootComponent = createComponentContext(
             lifecycle = essentyLifecycle,
             stateKeeper = stateKeeperDispatcher!!,
             backDispatcher = BackHandler(onBackPressedDispatcher),
-            onDestroy = {},
             onErrorInit = {
                 stateKeeperDispatcher = StateKeeperDispatcher(null)
                 stateKeeperDispatcher!!

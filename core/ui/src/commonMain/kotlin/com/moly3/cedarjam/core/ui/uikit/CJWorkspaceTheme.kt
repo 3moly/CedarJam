@@ -17,22 +17,50 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.sp
 import co.touchlab.kermit.Logger
+import coil3.ImageLoader
+import coil3.compose.LocalPlatformContext
+import coil3.compose.setSingletonImageLoaderFactory
+import coil3.disk.DiskCache
+import coil3.memory.MemoryCache
 import com.moly3.cedarjam.core.domain.io
 import com.moly3.cedarjam.core.domain.model.settings.WorkspaceFont
 import com.moly3.cedarjam.core.domain.model.settings.WorkspaceSettings
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
+import com.moly3.cedarjam.core.ui.compositions.LocalImageLoader
 import com.moly3.cedarjam.core.ui.compositions.LocalSystemDensity
 import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
+import com.moly3.cedarjam.core.ui.compositions.LocalWorkspacePath
 import com.moly3.cedarjam.core.ui.func.changeLanguage
 import com.moly3.cedarjam.core.ui.func.getFontByPath
 import kotlinx.coroutines.launch
+import okio.Path.Companion.toPath
 
 @Composable
 fun CJWorkspaceTheme(
     settings: WorkspaceSettings,
     file: WorkspaceFont?,
+    workspaceFullPath: String?,
     content: @Composable () -> Unit
 ) {
+    val context = LocalPlatformContext.current
+    val imageLoader = remember {
+        ImageLoader.Builder(context)
+            .memoryCache {
+                MemoryCache.Builder()
+                    .maxSizePercent(context, 0.25)
+                    .build()
+            }
+            .diskCache {
+                DiskCache.Builder()
+                    .directory("/Users/new07/Desktop/images_Cache/".toPath())
+                    .maxSizeBytes(512L * 1024 * 1024)
+                    .build()
+            }
+            .build()
+    }
+    setSingletonImageLoaderFactory {
+        imageLoader
+    }
     LaunchedEffect(settings.language) {
         changeLanguage(settings.language ?: "en")
     }
@@ -67,7 +95,7 @@ fun CJWorkspaceTheme(
     }
     val density by remember(settings) {
         derivedStateOf {
-            Density(settings.density.coerceIn(0.75f .. 3f), settings.fontScale.coerceIn(0.75f .. 3f))
+            Density(settings.density.coerceIn(0.75f..3f), settings.fontScale.coerceIn(0.75f..3f))
         }
     }
     val customTextSelectionColors = TextSelectionColors(
@@ -83,7 +111,9 @@ fun CJWorkspaceTheme(
             density = density.density * systemDensity.density,
             fontScale = density.fontScale * systemDensity.fontScale
         ),
-        LocalSystemDensity provides systemDensity
+        LocalSystemDensity provides systemDensity,
+        LocalImageLoader provides imageLoader,
+        LocalWorkspacePath provides (workspaceFullPath ?: "")
     ) {
         content()
     }

@@ -5,14 +5,18 @@ import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.arkivanov.mvikotlin.extensions.coroutines.stateFlow
 import com.moly3.cedarjam.core.domain.model.WorkspaceInput
 import com.moly3.cedarjam.pages.page_select_workspace.store.SelectWorkspaceStoreFactory
+import dev.zacsweers.metro.Assisted
+import dev.zacsweers.metro.AssistedFactory
+import dev.zacsweers.metro.AssistedInject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.StateFlow
 import org.koin.core.component.KoinComponent
 
+@AssistedInject
 class SelectWorkspaceComponent(
-    componentContext: ComponentContext,
-    storeFactory: StoreFactory,
-    private val onSelectWorkspace: (WorkspaceInput) -> Unit
+    @Assisted componentContext: ComponentContext,
+    @Assisted storeFactory: StoreFactory, // Provided by DI Graph
+    @Assisted private val onSelectWorkspace: (WorkspaceInput) -> Unit
 ) : ISelectWorkspaceComponent,
     ComponentContext by componentContext,
     KoinComponent {

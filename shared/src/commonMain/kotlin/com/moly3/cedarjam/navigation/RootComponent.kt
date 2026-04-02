@@ -7,9 +7,7 @@ import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.childStack
-import com.arkivanov.decompose.router.stack.childStackWebNavigation
 import com.arkivanov.decompose.router.stack.pushToFront
-import com.arkivanov.decompose.router.webhistory.WebNavigation
 import com.arkivanov.decompose.value.Value
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.arkivanov.mvikotlin.main.store.DefaultStoreFactory
@@ -25,10 +23,14 @@ import com.moly3.cedarjam.core.ui.service.MacTrackpadGestureService
 import com.moly3.cedarjam.navigation.Root.Child.SelectWorkspace
 import com.moly3.cedarjam.navigation.Root.Child.Workspace
 import com.moly3.cedarjam.pages.page_select_workspace.SelectWorkspaceComponent
+import com.moly3.cedarjam.pages.page_select_workspace.SelectWorkspaceFactory
 import com.moly3.cedarjam.pages.page_workspace.WorkspaceComponentImpl
 import com.moly3.core_domain.BuildConfig
+import dev.zacsweers.metro.Assisted
+import dev.zacsweers.metro.AssistedInject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -37,12 +39,18 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.koin.core.scope.Scope
 
-@OptIn(ExperimentalDecomposeApi::class)
+@AssistedInject
 class RootComponent(
-    private val parentComponentContext: ComponentContext,
-    private val onDestroy: () -> Unit = {}
+    @Assisted private val componentContext: ComponentContext,
+    @Assisted private val onDestroy: () -> Unit = {},
+    private val selectWorkspaceFactory: SelectWorkspaceFactory,
+    private val navigator: NavigatorDispatcher,
+    private val coroutineScope: CoroutineScope,
+    private val macTrackpadGestureService: MacTrackpadGestureService,
+    override val messageService: IMessageService,
+    override val alertService: AlertService
 ) : Root,
-    ComponentContext by parentComponentContext,
+    ComponentContext by componentContext,
     IDecomposeScopeComponent,
     KoinComponent,
     NavigationParent {
@@ -54,14 +62,11 @@ class RootComponent(
     }
     private val storeFactory: StoreFactory = DefaultStoreFactory()
     private val navigation = StackNavigation<Config>()
-    private val navigator: NavigatorDispatcher by inject()
-    private val coroutineScope: CoroutineScope by inject()
-    private val macTrackpadGestureService: MacTrackpadGestureService by inject()
-    override val messageService: IMessageService by inject()
     override val appEnvironment: IAppEnvironment by inject()
-    override val appSettingsFlow: StateFlow<AppSettings> = appEnvironment.getAppSettingsFlow()
-    override val alertService: AlertService by inject()
     val syncUseCase: ISyncUseCase by inject()
+
+    override val appSettingsFlow: StateFlow<AppSettings> = appEnvironment.getAppSettingsFlow()
+
     override val sendingBranchFlow: Flow<UIState<SyncStatusChannel, String>>
         get() = syncUseCase.sendingBranchFlow()
     private val _stack = childStack(
@@ -71,22 +76,10 @@ class RootComponent(
         childFactory = ::child
     )
 
-
-    override val webNavigation: WebNavigation<*> =
-        childStackWebNavigation(
-            navigator = navigation,
-            stack = _stack,
-            serializer = Config.serializer(),
-            pathMapper = { null },
-            childSelector = {
-                null
-            },
-        )
-
     private fun child(config: Config, componentContext: ComponentContext): Root.Child =
         when (config) {
             Config.Empty -> SelectWorkspace(
-                SelectWorkspaceComponent(
+                selectWorkspaceFactory.invoke(
                     componentContext = componentContext,
                     storeFactory = storeFactory,
                     onSelectWorkspace = {
@@ -156,6 +149,8 @@ class RootComponent(
     }
 
     override val children: Value<ChildStack<*, Root.Child>> = _stack
+
+    @OptIn(ExperimentalDecomposeApi::class, ExperimentalCoroutinesApi::class)
     override fun getItems(): List<Child<*, *>> {
         return children.stateFlow.value.items
     }

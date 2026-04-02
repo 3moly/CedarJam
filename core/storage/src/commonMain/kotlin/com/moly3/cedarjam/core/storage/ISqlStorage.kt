@@ -5,6 +5,7 @@ import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.IndexFileDto
 import com.moly3.cedarjam.core.domain.model.ResultWrapper
 import com.moly3.cedarjam.core.domain.model.UIState
+import com.moly3.cedarjam.core.domain.model.WorkspaceInput
 import com.moly3.cedarjam.core.domain.model.error.DatabaseError
 import com.moly3.cedarjam.core.domain.model.request.CreateCollectionRequest
 import com.moly3.cedarjam.core.domain.model.request.CreateCollectionRowRequest
@@ -17,6 +18,7 @@ import com.moly3.cedarjam.core.domain.model.request.UpdateDataCollectionRequest
 import com.moly3.cedarjam.core.domain.model.request.UpdateDataCollectionRowRequest
 import com.moly3.cedarjam.core.domain.model.request.UpdateRowsByPdf
 import com.moly3.cedarjam.core.domain.model.request.UpdateTagRequest
+import com.moly3.cedarjam.core.domain.service.AppContextProvider
 import com.moly3.cedarjam.db.Annotation
 import com.moly3.cedarjam.db.DataCollection
 import com.moly3.cedarjam.db.DataCollectionRow
@@ -108,4 +110,10 @@ interface ISqlStorage {
     fun deleteCollection(id: Long)
     fun deleteTagToTag(id: Long)
     fun deleteTagCollectionRow(id: Long)
+
+    fun interface Factory {
+        operator fun invoke(
+            workspacePath: String
+        ): ISqlStorage
+    }
 }

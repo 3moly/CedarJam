@@ -1,8 +1,8 @@
 package com.moly3.cedarjam.navigation
 
 import androidx.compose.runtime.Immutable
+import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.ExperimentalDecomposeApi
-import com.arkivanov.decompose.router.webhistory.WebNavigationOwner
 import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.domain.model.settings.AppSettings
 import com.moly3.cedarjam.core.domain.repository.IAppEnvironment
@@ -11,12 +11,13 @@ import com.moly3.cedarjam.core.domain.service.IMessageService
 import com.moly3.cedarjam.core.domain.usecase.SyncStatusChannel
 import com.moly3.cedarjam.pages.page_select_workspace.ISelectWorkspaceComponent
 import com.moly3.cedarjam.pages.page_workspace.WorkspaceComponent
+import dev.zacsweers.metro.AssistedFactory
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
 @OptIn(ExperimentalDecomposeApi::class)
 @Immutable
-interface Root : NavigationComponent<Root.Child>, WebNavigationOwner {
+interface Root : NavigationComponent<Root.Child> {
 
     val isRelease: Boolean
     val messageService: IMessageService

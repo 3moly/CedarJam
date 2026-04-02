@@ -6,6 +6,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.window.application
 import co.touchlab.kermit.Logger
+import com.app.di.createDesktopAppGraph
 import com.arkivanov.decompose.DecomposeSettings
 import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.essenty.backhandler.BackDispatcher
@@ -17,8 +18,9 @@ import com.moly3.app.func.readSerializableContainer
 import com.moly3.app.func.writeToFile
 import com.moly3.cedarjam.core.domain.model.AndroidApplicationContext
 import com.moly3.cedarjam.di.initApp
+import com.moly3.cedarjam.di.metro.createRootComponent
 import com.moly3.cedarjam.navigation.Root
-import com.moly3.cedarjam.navigation.createRootComponentSafe
+import com.moly3.cedarjam.navigation.createComponentContext
 import dev.datlag.kcef.KCEF
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.filesDir
@@ -61,22 +63,34 @@ fun main() {
         }
     }
 
+    //    onDestroy = {
+    //                saveState()
+    //            },
+
+    val appGraph = createDesktopAppGraph()
     val root: Root = runOnUiThread {
-        createRootComponentSafe(
-            lifecycle = lifecycle,
-            stateKeeper = stateKeeper,
-            backDispatcher = backDispatcher,
-            onDestroy = {
-                saveState()
-            },
-            onErrorInit = {
-                saveFile.delete()
-                stateKeeper =
-                    StateKeeperDispatcher(saveFile.readSerializableContainer())
-                stateKeeper
-            }
-        )
+        runOnUiThread {
+            createRootComponent(
+                componentContext = createComponentContext(
+                    lifecycle = lifecycle,
+                    stateKeeper = stateKeeper,
+                    backDispatcher = backDispatcher,
+                    onErrorInit = {
+                        saveFile.delete()
+                        stateKeeper =
+                            StateKeeperDispatcher(saveFile.readSerializableContainer())
+                        stateKeeper
+                    }
+                ),
+                graph = appGraph,
+                onDestroy = {
+                    saveState()
+                }
+            )
+        }
     }
+
+//    }
 
     Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
         val errorMessage = "💥 Uncaught exception in thread ${thread.name}: ${throwable.message}"

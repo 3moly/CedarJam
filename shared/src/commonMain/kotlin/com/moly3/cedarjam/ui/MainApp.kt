@@ -53,6 +53,36 @@ import org.koin.mp.KoinPlatform.getKoin
 @OptIn(ExperimentalDecomposeApi::class)
 @Composable
 fun MainApp(root: Root) {
+    val registry = remember {
+        val koin = getKoin()
+        koin.get<DialogRegistry>().apply {
+            registerUI { dialog: DialogSelectOptionsService, input: DialogSelectOptionsServiceInput ->
+                DialogSelectOptionsUI(dialog, input)
+            }
+            registerUI { dialog: DialogColorPickerService, input: Color? ->
+                DialogColorPickerUI(dialog, input)
+            }
+            registerUI { dialog: DialogCreateWorkspaceService, input: Unit ->
+                DialogCreateWorkspaceUI(dialog)
+            }
+            registerUI { dialog: DialogDeleteService, input: Unit ->
+                DialogDeleteUI(dialog)
+            }
+            registerUI { dialog: DialogSelectTagService, i ->
+                DialogSelectTagUI(
+                    dialog = dialog,
+                    workspaceSession = i
+                )
+            }
+            registerUI { dialog: DialogTagToTagService, i ->
+                DialogTagToTagUI(
+                    dialog = dialog,
+                    workspaceSession = i
+                )
+            }
+        }
+    }
+
     val stack by root.children.subscribeAsState()
     val appSettings by root.appSettingsFlow.collectAsState()
     val syncStatus by root.sendingBranchFlow.collectAsState(UIState.Loading)
@@ -80,40 +110,20 @@ fun MainApp(root: Root) {
                     animation = stackAnimation()
                 ) {
                     when (val instance = it.instance) {
-                        is Root.Child.Workspace -> WorkspacePage(component = instance.component)
-                        is Root.Child.SelectWorkspace -> SelectWorkspacePage(component = instance.component)
-                    }
-                }
-                val registry = remember {
-                    val koin = getKoin()
-                    koin.get<DialogRegistry>().apply {
-                        registerUI { dialog: DialogSelectOptionsService, input: DialogSelectOptionsServiceInput ->
-                            DialogSelectOptionsUI(dialog, input)
-                        }
-                        registerUI { dialog: DialogColorPickerService, input: Color? ->
-                            DialogColorPickerUI(dialog, input)
-                        }
-                        registerUI { dialog: DialogCreateWorkspaceService, input: Unit ->
-                            DialogCreateWorkspaceUI(dialog)
-                        }
-                        registerUI { dialog: DialogDeleteService, input: Unit ->
-                            DialogDeleteUI(dialog)
-                        }
-                        registerUI { dialog: DialogSelectTagService, i ->
-                            DialogSelectTagUI(
-                                dialog = dialog,
-                                workspaceSession = i
-                            )
-                        }
-                        registerUI { dialog: DialogTagToTagService, i ->
-                            DialogTagToTagUI(
-                                dialog = dialog,
-                                workspaceSession = i
-                            )
+                        is Root.Child.Workspace -> WorkspacePage(
+                            component = instance.component,
+                            dialogContent = {
+                                registry.Host()
+                            }
+                        )
+
+                        is Root.Child.SelectWorkspace -> {
+                            SelectWorkspacePage(component = instance.component)
+                            registry.Host()
                         }
                     }
                 }
-                registry.Host()
+
 
 
                 Box(Modifier.fillMaxSize()) {

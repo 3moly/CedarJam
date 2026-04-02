@@ -1,11 +1,16 @@
 package com.moly3.cedarjam.pages.page_collection.ui.internal
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -13,10 +18,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.func.navigationBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.func.pageControlsPadding
 import com.moly3.cedarjam.core.ui.func.wstatusBarsPaddingCJ
@@ -25,6 +32,9 @@ import com.moly3.cedarjam.core.ui.uikit.CJText
 import com.moly3.cedarjam.core.ui.uikit.NeumorphicShape
 import com.moly3.cedarjam.pages.page_collection.Intent
 import com.moly3.cedarjam.pages.page_collection.State
+import com.moly3.lazyFlow.func.items
+import com.moly3.lazyFlow.model.FlowItemSizeMode
+import com.moly3.lazyFlow.ui.LazyFlow
 import kotlinx.coroutines.FlowPreview
 import vector.DotsHorizontal
 
@@ -41,11 +51,22 @@ internal fun PageContent(
             modifier = Modifier.padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            CJText(
-                text = state.collection?.name ?: "",
-                fontSize = 21.sp,
-                modifier = Modifier.weight(1f)
-            )
+            Row(
+                modifier = Modifier.weight(1f),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                CJText(
+                    text = state.collection?.name ?: "",
+                    fontSize = 21.sp,
+                    modifier = Modifier
+                )
+                CJText(
+                    text = state.collection?.viewType?.toString() ?: "",
+                    fontSize = 21.sp,
+                    modifier = Modifier
+                )
+            }
             NeumorphicShape(
                 modifier = Modifier.size(32.dp),
                 painter = rememberVectorPainter(DotsHorizontal)
@@ -53,103 +74,124 @@ internal fun PageContent(
                 onIntent(Intent.OpenOptions)
             }
         }
-        Column(modifier = Modifier.fillMaxWidth().weight(1f)) {
+        LazyFlow(
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+            horizontalGap = 4.dp,
+            verticalGap = 4.dp
+        ) {
+            items(items = state.rows, itemSize = { FlowItemSizeMode.Dynamic }) { item ->
+                Column(
+                    modifier = Modifier
+                        .width(100.dp)
+                        .background(
+                            LocalAppTheme.current.colors.backgroundPrimary,
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        .clip(RoundedCornerShape(8.dp)),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
 
-//            if (state.collection != null) {
-//                when (state.collection.viewType) {
-//                    CollectionViewType.Word,
-//                    CollectionViewType.DataGrid -> {
-//                        CollectionDataGrid(
-//                            modifier = Modifier,
-//                            collection = state.collection,
-//                            workspace = state.workspace,
-//                            rows = state.rows,
-//                            tags = state.tags,
-//                            tagCollectionRows = state.tagCollectionRows,
-//                            openRow = {
-//                                onIntent(
-//                                    OpenCollectionRow(
-//                                        collectionId = it.collectionId,
-//                                        it.id
-//                                    )
-//                                )
-//                            },
-//                            renameRow = { row, name ->
-//                                onIntent(RenameCollectionRow(row, name))
-//                            },
-//                            addTag = {
-//                                onIntent(AddCollectionRowTag(it))
-//                            },
-//                            deleteRow = {
-//                                onIntent(DeleteCollectionRow(it.id))
-//                            },
-//                            onSetDocument = { file, row ->
-//                                onIntent(SetDocumentToRow(row, file))
-//                            },
-//                            openDocument = {
-//                                onIntent(OpenDocument(it))
-//                            }
-//                        )
-//                    }
-//
-//                    CollectionViewType.Youtube -> {
-//                        CollectionJapan(
-//                            rows = state.rows,
-//                            isOneWord = false,
-//                            isPdfShow = false,
-//                            youtubeLink = true,
-//                            workspace = state.workspace,
-//                            webLink = true,
-//                            openWebLink = {
-//                                onIntent(OpenWebLink(it))
-//                            },
-//                            openRow = { row ->
-//                                onIntent(
-//                                    OpenCollectionRow(
-//                                        collectionId = row.collectionId,
-//                                        row.id
-//                                    )
-//                                )
-//                            }
-//                        )
-//                    }
-//
-//                    CollectionViewType.PDF -> {
-//                        CollectionJapan(
-//                            rows = state.rows,
-//                            isOneWord = false,
-//                            isPdfShow = true,
-//                            workspace = state.workspace,
-//                            youtubeLink = false,
-//                            webLink = false,
-//                            openRow = { row ->
-//                                onIntent(OpenCollectionRow(row.collectionId, row.id))
-//                            }
-//                        )
-//                    }
-//
-//                    CollectionViewType.Anime -> {
-//                        CJText("Anime")
-//                    }
-//
-//                    CollectionViewType.Japan -> {
-//                        CollectionJapan(
-//                            rows = state.rows,
-//                            isOneWord = true,
-//                            isPdfShow = false,
-//                            youtubeLink = false,
-//                            workspace = state.workspace,
-//                            webLink = false,
-//                            openRow = { row ->
-//                                onIntent(OpenCollectionRow(row.collectionId, row.id))
-//                            }
-//                        )
-//                    }
-//
-//
-//                }
-//            }
+                }
+            }
         }
+//        Column(modifier = Modifier.fillMaxWidth().weight(1f)) {
+//
+////            if (state.collection != null) {
+////                when (state.collection.viewType) {
+////                    CollectionViewType.Word,
+////                    CollectionViewType.DataGrid -> {
+////                        CollectionDataGrid(
+////                            modifier = Modifier,
+////                            collection = state.collection,
+////                            workspace = state.workspace,
+////                            rows = state.rows,
+////                            tags = state.tags,
+////                            tagCollectionRows = state.tagCollectionRows,
+////                            openRow = {
+////                                onIntent(
+////                                    OpenCollectionRow(
+////                                        collectionId = it.collectionId,
+////                                        it.id
+////                                    )
+////                                )
+////                            },
+////                            renameRow = { row, name ->
+////                                onIntent(RenameCollectionRow(row, name))
+////                            },
+////                            addTag = {
+////                                onIntent(AddCollectionRowTag(it))
+////                            },
+////                            deleteRow = {
+////                                onIntent(DeleteCollectionRow(it.id))
+////                            },
+////                            onSetDocument = { file, row ->
+////                                onIntent(SetDocumentToRow(row, file))
+////                            },
+////                            openDocument = {
+////                                onIntent(OpenDocument(it))
+////                            }
+////                        )
+////                    }
+////
+////                    CollectionViewType.Youtube -> {
+////                        CollectionJapan(
+////                            rows = state.rows,
+////                            isOneWord = false,
+////                            isPdfShow = false,
+////                            youtubeLink = true,
+////                            workspace = state.workspace,
+////                            webLink = true,
+////                            openWebLink = {
+////                                onIntent(OpenWebLink(it))
+////                            },
+////                            openRow = { row ->
+////                                onIntent(
+////                                    OpenCollectionRow(
+////                                        collectionId = row.collectionId,
+////                                        row.id
+////                                    )
+////                                )
+////                            }
+////                        )
+////                    }
+////
+////                    CollectionViewType.PDF -> {
+////                        CollectionJapan(
+////                            rows = state.rows,
+////                            isOneWord = false,
+////                            isPdfShow = true,
+////                            workspace = state.workspace,
+////                            youtubeLink = false,
+////                            webLink = false,
+////                            openRow = { row ->
+////                                onIntent(OpenCollectionRow(row.collectionId, row.id))
+////                            }
+////                        )
+////                    }
+////
+////                    CollectionViewType.Anime -> {
+////                        CJText("Anime")
+////                    }
+////
+////                    CollectionViewType.Japan -> {
+////                        CollectionJapan(
+////                            rows = state.rows,
+////                            isOneWord = true,
+////                            isPdfShow = false,
+////                            youtubeLink = false,
+////                            workspace = state.workspace,
+////                            webLink = false,
+////                            openRow = { row ->
+////                                onIntent(OpenCollectionRow(row.collectionId, row.id))
+////                            }
+////                        )
+////                    }
+////
+////
+////                }
+////            }
+//        }
         Row(
             modifier = Modifier.padding(8.dp),
             verticalAlignment = Alignment.CenterVertically

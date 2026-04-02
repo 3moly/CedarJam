@@ -33,54 +33,39 @@ import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class)
 @Composable
-fun WorkspacePage(component: WorkspaceComponent) {
+fun WorkspacePage(
+    component: WorkspaceComponent,
+    dialogContent: @Composable () -> Unit = {}
+) {
     val state by component.state.collectAsState()
-    val context = LocalPlatformContext.current
-    val imageLoader = remember {
-        ImageLoader.Builder(context)
-            .memoryCache {
-                MemoryCache.Builder()
-                    .maxSizePercent(context, 0.25)
-                    .build()
-            }
-            .diskCache {
-                DiskCache.Builder()
-                    .directory("/Users/new07/Desktop/images_Cache/".toPath())
-                    .maxSizeBytes(512L * 1024 * 1024)
-                    .build()
-            }
-            .build()
-    }
-    setSingletonImageLoaderFactory {
-        imageLoader
-    }
-    CompositionLocalProvider(
-        LocalImageLoader provides imageLoader,
-        LocalWorkspacePath provides (state.activeWorkspace?.absolutePath ?: "")
-    ) {
-        CJWorkspaceTheme(settings = state.settings, file = state.workspaceFont) {
-            Box(
-                Modifier
-                    .background(LocalAppTheme.current.colors.backgroundPrimary)
-                    .imePaddingCJ()
-            ) {
-                WorkspacePageContent(
-                    component = component,
-                    state = state,
-                    onIntent = { component.onIntent(it) }
-                )
-            }
 
-            val child by component.settingsDialogSlot.subscribeAsState()
-            AnimatedVisibility(
-                visible = child.child != null,
-                enter = slideInHorizontally { it } + fadeIn(),
-                exit = slideOutHorizontally { it } + fadeOut()
-            ) {
-                child.child?.instance?.let {
-                    DialogSettingsUI(it)
-                }
+    CJWorkspaceTheme(
+        settings = state.settings,
+        file = state.workspaceFont,
+        workspaceFullPath = state.activeWorkspace?.absolutePath
+    ) {
+        Box(
+            Modifier
+                .background(LocalAppTheme.current.colors.backgroundPrimary)
+                .imePaddingCJ()
+        ) {
+            WorkspacePageContent(
+                component = component,
+                state = state,
+                onIntent = { component.onIntent(it) }
+            )
+        }
+
+        val child by component.settingsDialogSlot.subscribeAsState()
+        AnimatedVisibility(
+            visible = child.child != null,
+            enter = slideInHorizontally { it } + fadeIn(),
+            exit = slideOutHorizontally { it } + fadeOut()
+        ) {
+            child.child?.instance?.let {
+                DialogSettingsUI(it)
             }
         }
+        dialogContent()
     }
 }

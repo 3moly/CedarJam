@@ -9,7 +9,7 @@ plugins {
     alias(libs.plugins.sqlDelight)
     alias(libs.plugins.compose)
     alias(libs.plugins.compose.compiler)
-//    kotlin("native.cocoapods") // Add this plugin
+    alias(libs.plugins.metro)
 }
 
 kotlin {
@@ -17,14 +17,6 @@ kotlin {
     android {
         namespace = "com.moly3.cedarjam.core.storage"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
-//        defaultConfig {
-//            minSdk = libs.versions.android.minSdk.get().toInt()
-//        }
-//        buildFeatures.compose = true
-//        compileOptions {
-//            sourceCompatibility = JavaVersion.VERSION_17
-//            targetCompatibility = JavaVersion.VERSION_17
-//        }
     }
     jvm()
     listOf(
