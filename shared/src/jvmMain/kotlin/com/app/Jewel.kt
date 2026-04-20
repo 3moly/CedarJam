@@ -1,9 +1,17 @@
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -12,8 +20,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.ApplicationScope
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.rememberWindowState
@@ -152,7 +162,64 @@ fun ApplicationScope.JewelDesktop(
                         }
                     }
                 }
+                DebugLayout()
             }
         }
     }
+}
+
+@Composable
+fun DebugLayout() {
+    Column(
+        modifier = Modifier
+            .fillMaxHeight()
+            .width(600.dp)
+            .background(Color.Red)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.Top,
+        horizontalAlignment = Alignment.Start
+    ) {
+
+        DebugBox(Color.Red)
+        DebugBox(Color.Cyan)
+        DebugBox(Color.Red)
+        DebugBox(Color.Cyan)
+
+        Spacer(modifier = Modifier.height(16.dp))
+        DebugButton()
+//        Button(onClick = { }) {
+//            Text("Button")
+//        }
+    }
+}
+
+@Composable
+fun DebugButton() {
+
+    Box(
+        modifier = Modifier
+            .background(
+                color = Color(0xFF008B8B).copy(alpha = 1f),
+                shape = RoundedCornerShape(8.dp)
+            )
+            .padding(horizontal = 32.dp, vertical = 8.dp)
+    ) {
+        BasicText(
+            text = "hohow",
+            modifier = Modifier.align(Alignment.Center),
+            style = TextStyle(
+                fontSize = 32.sp,
+                color = Color.White
+            )
+        )
+    }
+}
+
+@Composable
+private fun DebugBox(color: Color) {
+    Box(
+        modifier = Modifier
+            .size(30.dp)
+            .background(color)
+    )
 }

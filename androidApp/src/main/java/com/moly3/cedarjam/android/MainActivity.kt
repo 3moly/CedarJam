@@ -16,6 +16,8 @@ import com.arkivanov.essenty.statekeeper.StateKeeperDispatcher
 import com.moly3.cedarjam.navigation.createComponentContext
 import com.moly3.cedarjam.ui.MainApp
 import com.moly3.cedarjam.core.domain.DefaultJson
+import com.moly3.cedarjam.di.metro.CedarJamGraph
+import com.moly3.cedarjam.di.metro.createRootComponent
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.dialogs.init
 import io.github.vinceglb.filekit.filesDir
@@ -61,13 +63,19 @@ class MainActivity : ComponentActivity() {
 
 
         val essentyLifecycle = lifecycle.asEssentyLifecycle()
-        val rootComponent = createComponentContext(
-            lifecycle = essentyLifecycle,
-            stateKeeper = stateKeeperDispatcher!!,
-            backDispatcher = BackHandler(onBackPressedDispatcher),
-            onErrorInit = {
-                stateKeeperDispatcher = StateKeeperDispatcher(null)
-                stateKeeperDispatcher!!
+        val rootComponent = createRootComponent(
+            componentContext = createComponentContext(
+                lifecycle = essentyLifecycle,
+                stateKeeper = stateKeeperDispatcher!!,
+                backDispatcher = BackHandler(onBackPressedDispatcher),
+                onErrorInit = {
+                    stateKeeperDispatcher = StateKeeperDispatcher(null)
+                    stateKeeperDispatcher!!
+                }
+            ),
+            graph = CedarJamGraph.instance,
+            onDestroy = {
+                //saveState()
             }
         )
         lifecycle.asEssentyLifecycle().doOnStop {

@@ -12,7 +12,7 @@ plugins {
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.serialization)
     alias(libs.plugins.composeHotReload)
-    alias(libs.plugins.stability.analyzer)
+//    alias(libs.plugins.stability.analyzer)
     kotlin("native.cocoapods")
     alias(libs.plugins.metro)
 }

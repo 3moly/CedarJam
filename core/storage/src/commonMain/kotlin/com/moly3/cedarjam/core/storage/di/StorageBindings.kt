@@ -50,3 +50,6 @@ object StorageBindings {
 object StorageBindingTestMode {
     var useMapSettings: Boolean = false
 }
+
+
+
