@@ -18,11 +18,11 @@ import com.moly3.cedarjam.core.domain.repository.IWorkspaceEnvironment
 import com.moly3.cedarjam.core.domain.usecase.ISyncUseCase
 import com.moly3.cedarjam.core.net.IRemoteSyncRepository
 import com.moly3.cedarjam.core.storage.ISystemFilesManager
+import com.moly3.cedarjam.di.metro.CedarJamGraph
 import com.moly3.cedarjam.pages.page_tab.TabComponent
 import com.moly3.cedarjam.pages.page_workspace.Intent
 import io.kotest.matchers.collections.shouldHaveSize
 import kotlinx.coroutines.delay
-import org.koin.mp.KoinPlatform.getKoin
 import shared_tests.func.checkFlowListSize
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -78,8 +78,8 @@ class UI1Test : UITest() {
     }
 
     private suspend inline fun IWorkspaceEnvironment.isFullSynced() {
-        val koin = getKoin()
-        val syncUseCase = koin.get<ISyncUseCase>()
+        val graph = CedarJamGraph.instance
+        val syncUseCase = graph.cedarJamDependencies.syncUseCase
         val workspaceEnv = this
         val syncStatusResult = syncUseCase.getStatus(workspaceEnv)
         syncStatusResult.shouldBeSuccess()
@@ -135,8 +135,8 @@ class UI1Test : UITest() {
             platformPath = "build/.test_workspace_hehe",
             serverName = "hehe"
         )
-        val koin = getKoin()
-        val remoteSync = koin.get<IRemoteSyncRepository>()
+        val koin = CedarJamGraph.instance
+        val remoteSync = koin.cedarJamDependencies. //.get<IRemoteSyncRepository>()
         val fs = koin.get<ISystemFilesManager>()
         fs.deleteNodeHeavy(workspace.platformPath)
 

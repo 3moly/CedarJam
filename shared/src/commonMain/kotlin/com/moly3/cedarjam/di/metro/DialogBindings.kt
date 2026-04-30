@@ -6,10 +6,15 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.ContributesTo
 import dev.zacsweers.metro.Provides
+import dev.zacsweers.metro.SingleIn
+
 @ContributesTo(AppScope::class)
 @BindingContainer
 object DialogBindings {
-    @Provides fun provideDialogRegistry(): DialogRegistry = DialogRegistry()
+    @SingleIn(AppScope::class)
+    @Provides fun provideDialogRegistry(): DialogRegistry {
+        return DialogRegistry()
+    }
     @Provides fun provideIDialogRegister(registry: DialogRegistry): IDialogRegister = registry
     @Provides fun provideDialogSelectTagService(register: IDialogRegister):DialogSelectTagService = DialogSelectTagService(register)
     @Provides fun provideDialogTagToTagService(register: IDialogRegister):DialogTagToTagService = DialogTagToTagService(register)

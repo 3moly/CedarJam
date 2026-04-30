@@ -10,14 +10,12 @@ import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.moly3.cedarjam.core.domain.func.combine
 import com.moly3.cedarjam.core.domain.func.ignoreSearchByRelativePath
 import com.moly3.cedarjam.core.domain.io
-import com.moly3.cedarjam.core.domain.model.CollectionDTO
 import com.moly3.cedarjam.core.domain.model.CollectionRowDTO
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.FileTreeNode.Companion.getAllFilesByExtension
 import com.moly3.cedarjam.core.domain.model.LineMatch
 import com.moly3.cedarjam.core.domain.model.NavigateToFile
 import com.moly3.cedarjam.core.domain.model.ResultWrapper
-import com.moly3.cedarjam.core.domain.model.TagDTO
 import com.moly3.cedarjam.core.domain.model.TimeMachine
 import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.domain.model.bind
@@ -40,7 +38,6 @@ import com.moly3.cedarjam.navigation.Route.Collection
 import com.moly3.cedarjam.navigation.Route.Tag
 import com.moly3.cedarjam.navigation.Route.Tags
 import com.moly3.cedarjam.navigation.consumeOrDefault
-import com.moly3.cedarjam.navigation.subToLog
 import com.moly3.cedarjam.pages.page_home.Intent
 import com.moly3.cedarjam.pages.page_home.State
 import com.moly3.cedarjam.pages.page_home.State.Companion.fromSaveable

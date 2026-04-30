@@ -24,7 +24,8 @@ import com.moly3.cedarjam.core.domain.usecase.OpenNodeDataUseCaseFactory
 import com.moly3.cedarjam.core.ui.dialog.DialogRegistry
 import com.moly3.cedarjam.core.ui.service.IJvmBrowserService
 import com.moly3.cedarjam.core.ui.service.MacTrackpadGestureService
-import com.moly3.cedarjam.navigation.AppGraphServices
+import com.moly3.cedarjam.core.data.di.AppGraphServices
+import com.moly3.cedarjam.core.net.IRemoteSyncRepository
 import com.moly3.cedarjam.navigation.Navigator
 import com.moly3.cedarjam.navigation.NavigatorDispatcher
 import dev.zacsweers.metro.Inject
@@ -57,4 +58,5 @@ class CedarJamDependencies(
     override val dialogDeleteService: DialogDeleteService,
     override val navigator: Navigator,
     override val navigateToFileUseCaseFactory: NavigateToFileUseCaseFactory,
+    override val remote: IRemoteSyncRepository,
 ) : AppGraphServices

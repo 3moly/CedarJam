@@ -25,7 +25,6 @@ import com.moly3.cedarjam.di.metro.CedarJamGraph
 import com.moly3.cedarjam.di.metro.RootCoroutineScope
 import com.moly3.cedarjam.navigation.Root.Child.SelectWorkspace
 import com.moly3.cedarjam.navigation.Root.Child.Workspace
-import com.moly3.cedarjam.pages.page_select_workspace.SelectWorkspaceComponent
 import com.moly3.cedarjam.pages.page_select_workspace.SelectWorkspaceFactory
 import com.moly3.cedarjam.pages.page_workspace.WorkspaceComponentImpl
 import com.moly3.core_domain.BuildConfig

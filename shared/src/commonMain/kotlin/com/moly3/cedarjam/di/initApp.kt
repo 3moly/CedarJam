@@ -5,7 +5,7 @@ import co.touchlab.kermit.Logger
 import co.touchlab.kermit.Severity
 import com.moly3.cedarjam.core.domain.model.AndroidApplicationContext
 import com.moly3.cedarjam.core.domain.di.AppServiceLocator
-import com.moly3.cedarjam.navigation.AppGraphServicesLocator
+import com.moly3.cedarjam.core.data.di.AppGraphServicesLocator
 import com.moly3.cedarjam.core.storage.di.StorageBindingTestMode
 import com.moly3.cedarjam.di.metro.createCedarJamAppGraph
 import com.moly3.cedarjam.di.metro.CedarJamGraph
@@ -27,6 +27,7 @@ fun initApp(
     FileKit.init(context)
     PlatformAndroidContext.init(context)
     StorageBindingTestMode.useMapSettings = isTest
+
     CedarJamGraph.init(createCedarJamAppGraph())
     AppGraphServicesLocator.instance = CedarJamGraph.deps
     AppServiceLocator.init(

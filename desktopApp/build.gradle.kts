@@ -53,7 +53,7 @@ kotlin {
                 implementation(libs.videoplayer)
 
                 implementation(libs.coroutines)
-                implementation(libs.koin)
+
                 implementation(libs.decompose)
                 implementation(libs.mvi)
                 implementation(libs.mvi.coroutines)

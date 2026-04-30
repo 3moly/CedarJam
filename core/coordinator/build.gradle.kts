@@ -26,7 +26,6 @@ kotlin {
             dependencies {
                 implementation(projects.core.domain)
 
-                implementation(libs.koin)
                 implementation(libs.coroutines)
                 implementation(libs.datetime)
                 implementation(libs.compose.foundation)

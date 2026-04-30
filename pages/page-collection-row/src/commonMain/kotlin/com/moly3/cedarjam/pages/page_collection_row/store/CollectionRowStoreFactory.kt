@@ -23,7 +23,6 @@ import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.NavigateToFile
 import com.moly3.cedarjam.core.ui.model.PageNameData
 import com.moly3.cedarjam.core.domain.model.TagDTO
-import com.moly3.cedarjam.core.domain.model.getCollectionRowGraphId
 import com.moly3.cedarjam.core.domain.model.request.RenameDataCollectionRowRequest
 import com.moly3.cedarjam.core.domain.model.request.mapToUpdateRequest
 import com.moly3.cedarjam.core.domain.service.FileManagerService

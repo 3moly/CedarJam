@@ -28,6 +28,10 @@ kotlin {
                 implementation(projects.core.domain)
                 implementation(projects.core.net)
                 implementation(projects.core.storage)
+                implementation(projects.core.coordinator)
+                implementation(projects.core.navigation)
+                implementation(projects.core.ui)
+
                 implementation(libs.coroutines)
                 implementation(libs.datetime)
                 implementation(libs.compose.foundation)

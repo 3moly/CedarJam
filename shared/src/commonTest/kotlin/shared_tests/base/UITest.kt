@@ -19,6 +19,8 @@ import com.moly3.cedarjam.ui.MainApp
 import com.moly3.cedarjam.core.domain.func.runBlocking
 import com.moly3.cedarjam.core.storage.func.init
 import com.moly3.cedarjam.core.ui.compositions.LocalUITestScope
+import com.moly3.cedarjam.di.metro.createCedarJamAppGraph
+import com.moly3.cedarjam.di.metro.createRootComponent
 import com.moly3.cedarjam.pages.page_tab.TabComponent
 import com.moly3.cedarjam.pages.page_tabs.TabsComponent
 import com.moly3.cedarjam.pages.page_workspace.WorkspaceComponent
@@ -28,8 +30,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
-import org.koin.core.context.stopKoin
-import org.koin.mp.KoinPlatformTools
 import kotlin.test.BeforeTest
 
 @OptIn(ExperimentalTestApi::class)
@@ -40,55 +40,56 @@ abstract class UITest : BaseTest() {
     @OptIn(ExperimentalCoroutinesApi::class)
     @BeforeTest
     fun before() = runTest {
-        cleanupState()
+//        cleanupState()
 //        Dispatchers.setMain(dispatcher)
 //        Logger.setLogWriters(CommonWriter())
         FileKit.init(getTestApplicationContext())
         initApp(getTestApplicationContext(), isTest = true)
         runBlocking(Dispatchers.Main.immediate) {
             lifecycle = LifecycleRegistry()
-            component = RootComponent(
-                parentComponentContext = DefaultComponentContext(lifecycle = lifecycle!!)
+            component = createRootComponent(
+                componentContext = DefaultComponentContext(lifecycle = lifecycle!!),
+                graph = createCedarJamAppGraph(),
+                onDestroy = {}
             )
             lifecycle!!.resume()
         }
     }
 
 
-    private suspend fun cleanupState() {
-        // Stop lifecycle first to prevent new operations
-        lifecycle?.stop()
-        lifecycle?.destroy()
-        lifecycle = null
-        component = null
-
-        // Allow pending operations to complete
-        yield()
-
-        // Clean shutdown of Koin with proper timeout
-        var attempts = 0
-        val maxAttempts = 10
-
-        while (KoinPlatformTools.defaultContext().getOrNull() != null && attempts < maxAttempts) {
-            attempts++
-            try {
-                Logger.d("Attempting to stop Koin (attempt $attempts)")
-                stopKoin()
-                Logger.d("Koin stopped successfully")
-                break
-            } catch (exc: Exception) {
-                Logger.w("Failed to stop Koin on attempt $attempts: ${exc.message}")
-                if (attempts >= maxAttempts) {
-                    Logger.e("Max attempts reached, forcing cleanup")
-                    break
-                }
-                delay(100L)
-            }
-        }
-
-        // Give some time for any remaining cleanup
-        delay(200L)
-    }
+//    private suspend fun cleanupState() {
+//        // Stop lifecycle first to prevent new operations
+//        lifecycle?.stop()
+//        lifecycle?.destroy()
+//        lifecycle = null
+//        component = null
+//
+//        // Allow pending operations to complete
+//        yield()
+//
+//        // Clean shutdown of Koin with proper timeout
+//        var attempts = 0
+//        val maxAttempts = 10
+//
+//        while (KoinPlatformTools.defaultContext().getOrNull() != null && attempts < maxAttempts) {
+//            attempts++
+//            try {
+//                Logger.d("Attempting to stop Koin (attempt $attempts)")
+//                Logger.d("Koin stopped successfully")
+//                break
+//            } catch (exc: Exception) {
+//                Logger.w("Failed to stop Koin on attempt $attempts: ${exc.message}")
+//                if (attempts >= maxAttempts) {
+//                    Logger.e("Max attempts reached, forcing cleanup")
+//                    break
+//                }
+//                delay(100L)
+//            }
+//        }
+//
+//        // Give some time for any remaining cleanup
+//        delay(200L)
+//    }
 
 
     inline fun <reified CurrentPage> ComposeUiTest.checkAndWaitCurrentPage(timeoutMillis: Long = 1_000L) {
@@ -109,7 +110,7 @@ abstract class UITest : BaseTest() {
         timeoutMillis: Long = 1_000L
     ): TabsComponent {
         waitUntil("", timeoutMillis) {
-            Logger.e{ "first active: ${component.children.value.items.first().instance}" }
+            Logger.e { "first active: ${component.children.value.items.first().instance}" }
             component.children.value.items.first().instance is TabsComponent
         }
         return component.children.value.items.first().instance as TabsComponent
@@ -139,7 +140,7 @@ abstract class UITest : BaseTest() {
         runComposeUiTest {
             beforeSetContent()
             setContent {
-                CompositionLocalProvider(LocalUITestScope provides true){
+                CompositionLocalProvider(LocalUITestScope provides true) {
                     MainApp(component!!)
                 }
             }
@@ -154,6 +155,5 @@ abstract class UITest : BaseTest() {
             while (lifecycle?.state != Lifecycle.State.DESTROYED) {
                 delay(100L)
             }
-            stopKoin()
         }
 }

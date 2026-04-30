@@ -1,4 +1,4 @@
-package com.moly3.cedarjam.navigation
+package com.moly3.cedarjam.core.data.di
 
 import com.moly3.cedarjam.core.coordinator.SetIsDarkCoordinator
 import com.moly3.cedarjam.core.domain.dialog.DialogAddCollectionRowService
@@ -21,9 +21,12 @@ import com.moly3.cedarjam.core.domain.service.IUtilsService
 import com.moly3.cedarjam.core.domain.usecase.ISyncUseCase
 import com.moly3.cedarjam.core.domain.usecase.NavigateToFileUseCaseFactory
 import com.moly3.cedarjam.core.domain.usecase.OpenNodeDataUseCaseFactory
+import com.moly3.cedarjam.core.net.IRemoteSyncRepository
 import com.moly3.cedarjam.core.ui.dialog.DialogRegistry
 import com.moly3.cedarjam.core.ui.service.IJvmBrowserService
 import com.moly3.cedarjam.core.ui.service.MacTrackpadGestureService
+import com.moly3.cedarjam.navigation.Navigator
+import com.moly3.cedarjam.navigation.NavigatorDispatcher
 
 /**
  * Application service surface for UI/store layers that cannot depend on the `shared` Metro graph
@@ -56,6 +59,7 @@ interface AppGraphServices {
     val dialogDeleteService: DialogDeleteService
     val navigator: Navigator
     val navigateToFileUseCaseFactory: NavigateToFileUseCaseFactory
+    val remote: IRemoteSyncRepository
 }
 
 object AppGraphServicesLocator {

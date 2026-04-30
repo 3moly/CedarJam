@@ -23,7 +23,8 @@ class SelectWorkspaceComponent(
         SelectWorkspaceStoreFactory(
             storeFactory = storeFactory,
             lifecycle = lifecycle,
-            onSelectWorkspace = onSelectWorkspace
+            onSelectWorkspace = onSelectWorkspace,
+            appEnvironment =
         ).create()
     }
 

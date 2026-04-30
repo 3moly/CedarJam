@@ -30,7 +30,6 @@ import com.moly3.cedarjam.core.ui.service.MacTrackpadGestureService
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
 import com.moly3.cedarjam.core.domain.usecase.IOpenNodeDataUseCase
 import com.moly3.cedarjam.navigation.Navigator
-import com.moly3.cedarjam.navigation.Route
 import com.moly3.cedarjam.navigation.mapper.toRoute
 import com.moly3.cedarjam.pages.page_graph.placeNodesCircular
 import kotlinx.collections.immutable.toImmutableList

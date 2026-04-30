@@ -10,12 +10,10 @@ import com.arkivanov.decompose.router.children.SimpleNavigation
 import com.arkivanov.decompose.router.children.children
 import com.arkivanov.decompose.router.slot.activate
 import com.arkivanov.decompose.router.slot.child
-import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.value.Value
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.arkivanov.mvikotlin.extensions.coroutines.labels
 import com.arkivanov.mvikotlin.extensions.coroutines.stateFlow
-import com.moly3.cedarjam.navigation.AppGraphServices
 import com.moly3.cedarjam.navigation.CreateWorkspaceSession
 import com.moly3.cedarjam.navigation.IDecomposeScopeComponent
 import com.moly3.cedarjam.navigation.Route
@@ -23,8 +21,6 @@ import com.moly3.cedarjam.navigation.stateFlow
 import com.moly3.cedarjam.pages.page_tabs.TabsComponent
 import com.moly3.cedarjam.pages.page_tabs.TabsComponentImpl
 import com.moly3.cedarjam.pages.page_workspace.store.WorkspaceStoreFactory
-import com.moly3.cedarjam.core.domain.dialog.DialogSelectTagService
-import com.moly3.cedarjam.core.domain.dialog.DialogTagToTagService
 import com.moly3.cedarjam.core.ui.model.PageNameData
 import com.moly3.cedarjam.core.domain.model.WorkspaceInput
 import com.moly3.cedarjam.core.domain.repository.IFilesRepository

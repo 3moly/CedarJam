@@ -59,7 +59,6 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import com.moly3.cedarjam.navigation.AppGraphServicesLocator
 import kotlin.math.ceil
 import kotlin.time.ExperimentalTime
 
@@ -71,7 +70,6 @@ internal class CollectionStoreFactory(
     private val workspaceSession: WorkspaceSession,
     private val openWorkspaceSettings: (Boolean) -> Unit
 ) {
-    private val d get() = AppGraphServicesLocator.instance
 
     private val currentPageState = MutableStateFlow(0)
     private val pageSizeState = MutableStateFlow(10L)

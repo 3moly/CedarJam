@@ -14,7 +14,6 @@ import com.moly3.cedarjam.core.domain.model.WorkspaceInput
 import com.moly3.cedarjam.core.domain.model.mapToUIState
 import com.moly3.cedarjam.core.domain.repository.IAppEnvironment
 import com.moly3.cedarjam.core.domain.service.IMessageService
-import com.moly3.cedarjam.core.domain.usecase.ISyncUseCase
 import com.moly3.cedarjam.navigation.BaseExecutor
 import com.moly3.cedarjam.pages.page_select_workspace.Intent
 import com.moly3.cedarjam.pages.page_select_workspace.State
@@ -24,20 +23,19 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import com.moly3.cedarjam.navigation.AppGraphServicesLocator
 import kotlinx.coroutines.SupervisorJob
 
 internal class SelectWorkspaceStoreFactory(
     private val storeFactory: StoreFactory,
     private val lifecycle: Lifecycle,
+    private val appEnvironment: IAppEnvironment,
+    private val isd: IMessageService,
+    private  val dialogCreateWorkspaceService: DialogCreateWorkspaceService,
     private val onSelectWorkspace: (WorkspaceInput) -> Unit
 ) {
-
-    private val d get() = AppGraphServicesLocator.instance
-    private val appEnvironment: IAppEnvironment get() = d.appEnvironment
-    private val dialogCreateWorkspaceService: DialogCreateWorkspaceService get() = d.dialogCreateWorkspaceService
+//    private val dialogCreateWorkspaceService: DialogCreateWorkspaceService get() = d.dialogCreateWorkspaceService
     private val coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
-    private val isd: IMessageService get() = d.messageService
+//    private val isd: IMessageService get() = d.messageService
 
     fun create(): SelectWorkspaceStore = object : SelectWorkspaceStore,
         Store<Intent, State, Unit> by storeFactory.create(

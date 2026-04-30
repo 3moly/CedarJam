@@ -29,7 +29,7 @@ kotlin {
             dependencies {
                 implementation(projects.core.domain)
 
-                implementation(libs.koin)
+
 
                 implementation(libs.shared.logger.kermit)
                 implementation(libs.coroutines)

@@ -47,10 +47,12 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import com.moly3.cedarjam.navigation.AppGraphServicesLocator
-import kotlin.getValue
 
 internal class DialogGraphStoreFactory(
+    private val navigator: Navigator,
+    private val deleteService: DialogDeleteService,
+    private val selectTagService: DialogSelectTagService,
+    private val openNodeDataUseCase: IOpenNodeDataUseCase,
     private val workspaceSession: WorkspaceSession,
     private val storeFactory: StoreFactory,
     private val lifecycle: Lifecycle,
@@ -59,12 +61,9 @@ internal class DialogGraphStoreFactory(
     private val openPdfPage: (Int) -> Unit
 ) {
 
-    private val d get() = AppGraphServicesLocator.instance
-    private val navigator: Navigator get() = d.navigator
-    private val deleteService: DialogDeleteService get() = d.dialogDeleteService
-    private val openNodeDataUseCase: IOpenNodeDataUseCase get() =
-        d.openNodeDataUseCaseFactory(workspaceSession.fileManagerService)
-    private val selectTagService: DialogSelectTagService get() = d.dialogSelectTagService
+//    private val openNodeDataUseCase: IOpenNodeDataUseCase get() =
+//        d.openNodeDataUseCaseFactory(workspaceSession.fileManagerService)
+//    private val selectTagService: DialogSelectTagService get() = d.dialogSelectTagService
 
     fun create(stateKeeper: StateKeeper): DialogGraphStore = object : DialogGraphStore,
         Store<Intent, State, Unit> by storeFactory.create(

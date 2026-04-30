@@ -3,7 +3,6 @@ package com.moly3.cedarjam.features.feature_settings.child.general
 import com.arkivanov.decompose.ComponentContext
 import com.moly3.cedarjam.core.domain.dialog.DialogColorPickerService
 import com.moly3.cedarjam.core.domain.func.hiddenDirectory
-import com.moly3.cedarjam.core.domain.func.pathWrapper
 import com.moly3.cedarjam.core.domain.io
 import com.moly3.cedarjam.core.domain.model.AppColorsData
 import com.moly3.cedarjam.core.domain.model.ColorsType

@@ -17,14 +17,11 @@ import com.moly3.cedarjam.core.domain.model.FileTreeNode.Companion.getAllFilesBy
 import com.moly3.cedarjam.core.domain.model.FileType
 import com.moly3.cedarjam.core.domain.model.ResultWrapper
 import com.moly3.cedarjam.core.ui.model.PageNameData
-import com.moly3.cedarjam.core.domain.model.getGraphId
 import com.moly3.cedarjam.core.domain.model.navigation.input.FilePageInput
 import com.moly3.cedarjam.core.domain.model.request.CreateTagLinkRequest
 import com.moly3.cedarjam.core.domain.model.request.UpdateRowsByPdf
 import com.moly3.cedarjam.core.domain.model.toGetFileType
-import com.moly3.cedarjam.core.domain.repository.IAppEnvironment
 import com.moly3.cedarjam.core.domain.repository.IFilesRepository
-import com.moly3.cedarjam.core.domain.repository.getCollectionRows
 import com.moly3.cedarjam.core.domain.service.FileManagerService
 import com.moly3.cedarjam.core.domain.service.IImageTransform
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
@@ -46,7 +43,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChangedBy
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch

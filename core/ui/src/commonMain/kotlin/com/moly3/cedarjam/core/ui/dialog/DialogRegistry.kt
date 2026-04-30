@@ -6,6 +6,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateListOf
+import co.touchlab.kermit.Logger
 import com.moly3.cedarjam.core.domain.dialog.DialogState
 import com.moly3.cedarjam.core.domain.dialog.GlobalDialog
 import com.moly3.cedarjam.core.domain.dialog.IDialogRegister
@@ -16,6 +17,10 @@ typealias ComposableDialogUI = @Composable (GlobalDialog<*, *>, Any?) -> Unit
 
 
 class DialogRegistry : IDialogRegister {
+
+    init {
+        Logger.e { "DialogRegistry created" }
+    }
     //    private val activeStack = mutableStateListOf<GlobalDialog<*, *>>()
     // Maps a Class (e.g., DialogRenameService::class) to its UI renderer
     val uiFactories = mutableMapOf<KClass<*>, ComposableDialogUI>()

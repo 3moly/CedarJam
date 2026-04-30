@@ -17,7 +17,6 @@ import com.moly3.cedarjam.core.domain.service.WorkspaceSession
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import com.moly3.cedarjam.navigation.AppGraphServicesLocator
 import kotlin.random.Random
 
 internal class TagsStoreFactory(

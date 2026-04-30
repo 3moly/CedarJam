@@ -162,64 +162,7 @@ fun ApplicationScope.JewelDesktop(
                         }
                     }
                 }
-                DebugLayout()
             }
         }
     }
-}
-
-@Composable
-fun DebugLayout() {
-    Column(
-        modifier = Modifier
-            .fillMaxHeight()
-            .width(600.dp)
-            .background(Color.Red)
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Top,
-        horizontalAlignment = Alignment.Start
-    ) {
-
-        DebugBox(Color.Red)
-        DebugBox(Color.Cyan)
-        DebugBox(Color.Red)
-        DebugBox(Color.Cyan)
-
-        Spacer(modifier = Modifier.height(16.dp))
-        DebugButton()
-//        Button(onClick = { }) {
-//            Text("Button")
-//        }
-    }
-}
-
-@Composable
-fun DebugButton() {
-
-    Box(
-        modifier = Modifier
-            .background(
-                color = Color(0xFF008B8B).copy(alpha = 1f),
-                shape = RoundedCornerShape(8.dp)
-            )
-            .padding(horizontal = 32.dp, vertical = 8.dp)
-    ) {
-        BasicText(
-            text = "hohow",
-            modifier = Modifier.align(Alignment.Center),
-            style = TextStyle(
-                fontSize = 32.sp,
-                color = Color.White
-            )
-        )
-    }
-}
-
-@Composable
-private fun DebugBox(color: Color) {
-    Box(
-        modifier = Modifier
-            .size(30.dp)
-            .background(color)
-    )
 }

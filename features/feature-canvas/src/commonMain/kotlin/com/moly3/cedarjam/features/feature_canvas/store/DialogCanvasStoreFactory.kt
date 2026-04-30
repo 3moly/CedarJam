@@ -42,7 +42,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import com.moly3.cedarjam.navigation.AppGraphServicesLocator
-import kotlin.getValue
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.time.Clock

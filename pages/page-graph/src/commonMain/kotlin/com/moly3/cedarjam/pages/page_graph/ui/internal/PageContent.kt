@@ -51,10 +51,11 @@ internal fun PageContent(state: State, onIntent: (Intent) -> Unit) {
             .onPointerEvent(PointerEventType.Exit) {
                 onIntent(Intent.SetIsMouseCaptured(false))
             }) {
+
         Graph(
             connections = state.connections,
             stateNodes = state.graphNodes,
-            viewSettings = state.graphViewSettings,
+            viewSettings = state.graphViewSettings.copy(targetFrameMs = 1L),
             coordinates = state.coordinates,
             velocities = state.velocities,
             zoom = state.zoom,

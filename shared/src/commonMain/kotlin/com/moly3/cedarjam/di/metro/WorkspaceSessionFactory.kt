@@ -24,7 +24,7 @@ class WorkspaceSessionFactory(
         stateKeeper: StateKeeper,
     ): WorkspaceSession = create(workspaceInput, stateKeeper)
 
-    fun create(workspaceInput: WorkspaceInput, stateKeeper: StateKeeper): WorkspaceSession {
+    private fun create(workspaceInput: WorkspaceInput, stateKeeper: StateKeeper): WorkspaceSession {
         if (workspaceInput.name.isEmpty() || workspaceInput.serverName.isEmpty()) {
             throw NullPointerException("WorkspaceSession workspace name or serverName is empty")
         }

@@ -22,7 +22,7 @@ data class State(
     val connections: ImmutableMap<String, ImmutableList<String>> = persistentMapOf(),
     val zoom: Float = 1f,
     val graphUserPosition: Offset = Offset.Zero,
-    val graphViewSettings: GraphViewSettings = GraphViewSettings.Default,
+    val graphViewSettings: GraphViewSettings = GraphViewSettings.Default.copy(targetFrameMs = 1L),
     val coordinates: ImmutableMap<String, Offset> = persistentMapOf(),
     val velocities: ImmutableMap<String, Offset> = persistentMapOf(),
 ) {
