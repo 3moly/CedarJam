@@ -1,6 +1,5 @@
 package com.moly3.cedarjam.core.domain.features.mdprops
 
-import androidx.compose.runtime.Stable
 import kotlin.time.Clock.System
 
 /**
@@ -16,14 +15,18 @@ import kotlin.time.Clock.System
  *    step was also a coalescing edit within [coalesceWindowMs], so a burst of
  *    typing collapses into a single undo step.
  */
-@Stable
 class DocumentHistory(
     initial: MarkdownDocument,
     private val maxDepth: Int = 200,
     private val coalesceWindowMs: Long = 600L,
     private val now: () -> Long = { System.now().toEpochMilliseconds() },
 ) {
-    private data class Entry(val doc: MarkdownDocument, val coalescing: Boolean, val at: Long)
+    private data class Entry(
+        val doc: MarkdownDocument,
+        val focus: FocusSnapshot,
+        val coalescing: Boolean,
+        val at: Long,
+    )
 
     private val undoStack = ArrayDeque<Entry>()
     private val redoStack = ArrayDeque<Entry>()
@@ -31,47 +34,62 @@ class DocumentHistory(
     var current: MarkdownDocument = initial
         private set
 
+    /** Focus snapshot for [current] — kept up to date by the editor as the caret moves. */
+    var currentFocus: FocusSnapshot = FocusSnapshot(rowId = initial.rows.firstOrNull()?.id)
+        private set
+
     val canUndo: Boolean get() = undoStack.isNotEmpty()
     val canRedo: Boolean get() = redoStack.isNotEmpty()
 
-    /** A discrete, non-mergeable edit. */
-    fun commit(next: MarkdownDocument) {
+    /**
+     * Records that the caret moved without the document changing (navigation,
+     * clicking into a row). Updates [currentFocus] so the *next* commit captures
+     * the right pre-edit position. Does NOT create an undo step.
+     */
+    fun noteFocus(focus: FocusSnapshot) {
+        currentFocus = focus
+    }
+
+    /** Discrete edit. [focusAfter] is where the caret lands once the edit applies. */
+    fun commit(next: MarkdownDocument, focusAfter: FocusSnapshot) {
         if (next == current) return
-        push(coalescing = false)
+        push(coalescing = false)          // pushes (current, currentFocus)
         current = next
+        currentFocus = focusAfter
         redoStack.clear()
     }
 
-    /** A typing edit; merges into the previous coalescing step if recent enough. */
-    fun commitCoalescing(next: MarkdownDocument) {
+    fun commitCoalescing(next: MarkdownDocument, focusAfter: FocusSnapshot) {
         if (next == current) return
         val last = undoStack.lastOrNull()
         val mergeable = last != null && last.coalescing &&
                 (now() - last.at) <= coalesceWindowMs
-        // If not mergeable, push the current state as a fresh coalescing checkpoint.
         if (!mergeable) push(coalescing = true)
-        // If mergeable, we keep the existing checkpoint and just advance current —
-        // the stack already holds the pre-burst state.
         current = next
+        currentFocus = focusAfter
         redoStack.clear()
     }
 
-    fun undo(): MarkdownDocument? {
+    /** Returns the restored document plus the focus to apply, or null. */
+    fun undo(): Pair<MarkdownDocument, FocusSnapshot>? {
         val prev = undoStack.removeLastOrNull() ?: return null
-        redoStack.addLast(Entry(current, prev.coalescing, now()))
+        // Save current onto redo so redo can return here.
+        redoStack.addLast(Entry(current, currentFocus, prev.coalescing, now()))
         current = prev.doc
-        return current
+        currentFocus = prev.focus
+        return current to currentFocus
     }
 
-    fun redo(): MarkdownDocument? {
+    fun redo(): Pair<MarkdownDocument, FocusSnapshot>? {
         val next = redoStack.removeLastOrNull() ?: return null
-        undoStack.addLast(Entry(current, next.coalescing, now()))
+        undoStack.addLast(Entry(current, currentFocus, next.coalescing, now()))
         current = next.doc
-        return current
+        currentFocus = next.focus
+        return current to currentFocus
     }
 
     private fun push(coalescing: Boolean) {
-        undoStack.addLast(Entry(current, coalescing, now()))
+        undoStack.addLast(Entry(current, currentFocus, coalescing, now()))
         while (undoStack.size > maxDepth) undoStack.removeFirst()
     }
 }

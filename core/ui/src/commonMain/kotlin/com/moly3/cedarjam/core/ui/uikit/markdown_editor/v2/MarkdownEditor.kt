@@ -20,8 +20,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.moly3.cedarjam.core.domain.features.mdprops.DocumentHistory
+import com.moly3.cedarjam.core.domain.features.mdprops.FocusSnapshot
 import com.moly3.cedarjam.core.domain.features.mdprops.MarkdownDocument
 import com.moly3.cedarjam.core.domain.features.mdprops.MarkdownRow
+import com.moly3.cedarjam.core.domain.features.mdprops.RowFocusManager
 import com.moly3.cedarjam.core.domain.features.mdprops.RowType
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.uikit.CJText
@@ -130,6 +132,7 @@ fun MarkdownEditor(
 }
 
 
+
 /* ----------------------------------------------------------------------------------
  * Callback implementation — turns row intent into immutable document updates.
  * -------------------------------------------------------------------------------- */
@@ -142,26 +145,52 @@ private fun documentCallbacks(
     readOnly: Boolean,
 ): RowCallbacks = object : RowCallbacks {
 
+    private fun applyFocus(f: FocusSnapshot) {
+        f.rowId?.let { focusManager.focus(it, f.caret) }
+    }
+
+    private fun commit(next: MarkdownDocument, focusAfter: FocusSnapshot) {
+        history.commit(next, focusAfter)
+        emit(history.current)
+        applyFocus(focusAfter)
+    }
+
+    private fun commitTyping(next: MarkdownDocument, rowId: String) {
+        // Typing: caret stays in the same row. End is the good-enough target.
+        val f = FocusSnapshot(rowId, RowFocusManager.CaretTarget.End)
+        history.commitCoalescing(next, f)
+        emit(history.current)
+        // No applyFocus here — the field already has the caret; re-focusing
+        // would fight the user's typing. (See note below.)
+    }
+
     override fun onUndo() {
         if (readOnly) return
-        history.undo()?.let { emit(it) }
+        history.undo()?.let { (doc, focus) ->
+            emit(doc)
+            applyFocus(focus)
+        }
     }
 
     override fun onRedo() {
         if (readOnly) return
-        history.redo()?.let { emit(it) }
+        history.redo()?.let { (doc, focus) ->
+            emit(doc)
+            applyFocus(focus)
+        }
     }
 
     override fun onTextChange(rowId: String, text: String) {
         if (readOnly) return
-        emit(current().replaceRow(rowId) { it.copy(text = text) })
+        commitTyping(current().replaceRow(rowId) { it.copy(text = text) }, rowId)
     }
 
     override fun onTypeChange(rowId: String, type: RowType) {
         if (readOnly) return
-        emit(current().replaceRow(rowId) { it.copy(type = type) })
-        // Keep focus on the row after switching its type.
-        focusManager.focus(rowId, RowFocusManager.CaretTarget.End)
+        commit(
+            current().replaceRow(rowId) { it.copy(type = type) },
+            FocusSnapshot(rowId, RowFocusManager.CaretTarget.End),
+        )
     }
 
     override fun onSplitRow(rowId: String, before: String, after: String) {
@@ -169,19 +198,18 @@ private fun documentCallbacks(
         val doc = current()
         val source = doc.rowOrNull(rowId) ?: return
 
-        // A new row inherits list/quote type so consecutive Enters keep the list
-        // going; everything else falls back to a plain paragraph.
         val newType = when (source.type) {
             RowType.BulletList, RowType.NumberedList, RowType.Quote -> source.type
             else -> RowType.Paragraph
         }
 
-        // Special case: pressing Enter on an empty list/quote row exits the list.
         if (before.isEmpty() && after.isEmpty() &&
             source.type in setOf(RowType.BulletList, RowType.NumberedList, RowType.Quote)
         ) {
-            emit(doc.replaceRow(rowId) { it.copy(type = RowType.Paragraph) })
-            focusManager.focus(rowId)
+            commit(
+                doc.replaceRow(rowId) { it.copy(type = RowType.Paragraph) },
+                FocusSnapshot(rowId, RowFocusManager.CaretTarget.Start),
+            )
             return
         }
 
@@ -189,33 +217,31 @@ private fun documentCallbacks(
         val updated = doc
             .replaceRow(rowId) { it.copy(text = before) }
             .insertRowAfter(rowId, newRow)
-        emit(updated)
-        focusManager.focus(newRow.id, RowFocusManager.CaretTarget.Start)
+        commit(updated, FocusSnapshot(newRow.id, RowFocusManager.CaretTarget.Start))
     }
 
     override fun onMergeWithPrevious(rowId: String) {
         if (readOnly) return
         val doc = current()
         val index = doc.indexOfRow(rowId)
-        if (index <= 0) return // first row — nothing to merge into
+        if (index <= 0) return
 
         val currentRow = doc.rows[index]
         val previous = doc.rows[index - 1]
 
-        // Dividers can't hold text — deleting one just removes it.
         if (previous.type == RowType.Divider) {
-            emit(doc.removeRow(previous.id))
-            focusManager.focus(rowId, RowFocusManager.CaretTarget.Start)
+            commit(
+                doc.removeRow(previous.id),
+                FocusSnapshot(rowId, RowFocusManager.CaretTarget.Start),
+            )
             return
         }
 
-        // Caret should land where the two texts join.
         val mergedText = previous.text + currentRow.text
         val updated = doc
             .replaceRow(previous.id) { it.copy(text = mergedText) }
             .removeRow(rowId)
-        emit(updated)
-        focusManager.focus(previous.id, RowFocusManager.CaretTarget.End)
+        commit(updated, FocusSnapshot(previous.id, RowFocusManager.CaretTarget.End))
     }
 
     override fun onNavigate(rowId: String, direction: NavDirection) {
@@ -231,6 +257,9 @@ private fun documentCallbacks(
             NavDirection.Up -> RowFocusManager.CaretTarget.End
             NavDirection.Down -> RowFocusManager.CaretTarget.Start
         }
+        // Navigation is not an edit — but it MUST update currentFocus, so the
+        // next commit records the right pre-edit caret.
+        history.noteFocus(FocusSnapshot(target.id, caret))
         focusManager.focus(target.id, caret)
     }
 }

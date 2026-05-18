@@ -1,6 +1,5 @@
 package com.moly3.cedarjam.ui
 
-import EditorScreen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -35,7 +34,7 @@ import com.moly3.cedarjam.core.ui.compositions.LocalVideoPlayer
 import com.moly3.cedarjam.core.ui.onPointerEvent
 import com.moly3.cedarjam.core.ui.uikit.CJApplicationTheme
 import com.moly3.cedarjam.core.ui.uikit.NeumorphicShape
-import com.moly3.cedarjam.core.ui.uikit.markdown_editor.v2.MarkdownEditorExample
+import com.moly3.cedarjam.core.ui.uikit.markdown_editor.MarkdownEditorExample
 import com.moly3.cedarjam.navigation.Root
 import com.moly3.cedarjam.navigation.Route
 import com.moly3.cedarjam.pages.page_select_workspace.ui.SelectWorkspacePage

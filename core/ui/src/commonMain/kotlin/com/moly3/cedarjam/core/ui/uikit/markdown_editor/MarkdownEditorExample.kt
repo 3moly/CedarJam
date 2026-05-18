@@ -1,4 +1,4 @@
-package com.moly3.cedarjam.core.ui.uikit.markdown_editor.v2
+package com.moly3.cedarjam.core.ui.uikit.markdown_editor
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -10,18 +10,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.moly3.cedarjam.core.domain.features.mdprops.DocumentHistory
-import com.moly3.cedarjam.core.domain.features.mdprops.DocumentProperty
 import com.moly3.cedarjam.core.domain.features.mdprops.MarkdownDecoder
 import com.moly3.cedarjam.core.domain.features.mdprops.MarkdownDocument
-import com.moly3.cedarjam.core.domain.features.mdprops.MarkdownEncoder
-import com.moly3.cedarjam.core.domain.features.mdprops.MarkdownRow
-import com.moly3.cedarjam.core.domain.features.mdprops.PropertyType
-import com.moly3.cedarjam.core.domain.features.mdprops.RowType
+import com.moly3.cedarjam.core.ui.uikit.markdown_editor.v2.MarkdownEditor
 
 /**
- * Minimal example of hosting [MarkdownEditor].
+ * Minimal example of hosting [com.moly3.cedarjam.core.ui.uikit.markdown_editor.v2.MarkdownEditor].
  *
- * The editor is fully state-hoisted: you pass in a [com.moly3.cedarjam.core.domain.features.mdprops.MarkdownDocument] and receive a
+ * The editor is fully state-hoisted: you pass in a [MarkdownDocument] and receive a
  * new one through `onDocumentChange` whenever anything changes — title, properties,
  * row text, row type, row added/removed. Persisting it (DB, file, network) is up to
  * the caller; the editor deliberately does none of that.
@@ -189,15 +185,13 @@ fun MarkdownEditorExample() {
 
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         val history = remember { DocumentHistory(document) }
-        var document by remember { mutableStateOf(history.current) }
+        var doc by remember { mutableStateOf(history.current) }
+
         MarkdownEditor(
-            document = document,
-            onDocumentChange = { updated ->
-                history.commitCoalescing(updated)   // or commit() for structural edits
-                document = updated
-            },
+            document = doc,
+            onDocumentChange = { updated -> doc = updated },   // pure sink — no history call
             modifier = Modifier.fillMaxSize(),
-            history = history
+            history = history,
         )
     }
 }
