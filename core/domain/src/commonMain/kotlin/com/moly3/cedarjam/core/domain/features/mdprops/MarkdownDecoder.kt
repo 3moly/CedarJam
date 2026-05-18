@@ -142,7 +142,10 @@ object MarkdownDecoder {
 
         while (i < lines.size) {
             val line = lines[i]
-
+            if (line.isBlank()) {
+                rows.add(MarkdownRow(type = RowType.Paragraph, text = ""))
+                i++; continue
+            }
             // --- fenced code block ------------------------------------------------
             val fence = fencedCodeStart.find(line)
             if (fence != null) {

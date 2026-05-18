@@ -33,4 +33,6 @@ interface RowCallbacks {
 
     /** Arrow key at a row edge: move focus to the adjacent row. */
     fun onNavigate(rowId: String, direction: NavDirection)
+    fun onUndo()
+    fun onRedo()
 }

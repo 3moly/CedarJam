@@ -2,11 +2,63 @@ package features.markdown
 
 import com.moly3.cedarjam.core.domain.features.mdprops.MarkdownDecoder
 import com.moly3.cedarjam.core.domain.features.mdprops.MarkdownEncoder
+import com.moly3.cedarjam.core.domain.features.search.ItemType
+import com.moly3.cedarjam.core.domain.features.search.Searchable
 import io.kotest.matchers.shouldBe
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class FileParser {
+
+    private val note1 = Searchable(
+        type = ItemType.FILE,
+        fileName = "cedar-q3-review.md",
+        path = "Work/cedar-q3-review.md",
+        content = "# Project: Cedar — Q3 Review\n\nThis is the **opening paragraph**...",  // body only
+        tags = setOf("review", "quarterly", "needs-follow-up", "finance/budget"),
+        properties = mapOf(
+            "title" to "Project: Cedar — Q3 Review",
+            "aliases" to listOf("cedar-q3", "Q3 Review"),
+            "status" to "in-progress",
+            "published" to false,
+            "priority" to 1,
+            "progress" to 0.75,
+            "budget" to 12500,            // 12_500 — depends if your YAML reader accepts underscores
+            "estimate" to 1200,
+            "ratio" to -0.5,
+            "zip" to "01970",          // quoted → stays a String, leading zero preserved
+            "phone" to "555-0173",       // unquoted; many parsers keep this a String, not a number
+            "version" to 2,
+            "empty_field" to null,
+            "nothing" to null,
+            "tilde_null" to null,
+            "created" to "2024-07-01",     // a String unless you have a date type
+            "deadline" to "2024-09-30 17:00:00",
+            "last_edited" to "2024-08-15T09:30",
+            "contributors" to listOf(
+                mapOf("name" to "Ada Lovelace", "role" to "lead"),
+                mapOf("name" to "Alan Turing", "role" to "reviewer"),
+            ),
+            "scores" to listOf(9, 8.5, 7, 10),
+            "flags" to listOf(true, false, true),
+            "mixed" to listOf(42, "hello", true, null, "quoted, comma"),
+            "nested_meta" to mapOf(
+                "source" to "import",
+                "confidence" to "high",
+                "reviewed" to true
+            ),
+            "url" to "https://example.com/page#section",
+            "hashtag_in_quotes" to "this # is not a comment",
+            "colon_value" to "ratio is 3:1 today",
+            "weird key with spaces" to "kept verbatim",
+            "quoted:key" to "also kept",
+            "empty_list" to emptyList<Any?>(),
+            "empty_map" to emptyMap<String, Any?>(),
+            "flow_map" to mapOf("x" to 1, "y" to 2, "label" to "origin"),
+            "description" to "A multi-word unquoted scalar that should stay text",
+        ),
+        tasks = listOf(/* see note below */),
+    )
 
     @Test
     fun test() {

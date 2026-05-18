@@ -9,6 +9,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.moly3.cedarjam.core.domain.features.mdprops.DocumentHistory
 import com.moly3.cedarjam.core.domain.features.mdprops.DocumentProperty
 import com.moly3.cedarjam.core.domain.features.mdprops.MarkdownDecoder
 import com.moly3.cedarjam.core.domain.features.mdprops.MarkdownDocument
@@ -187,13 +188,16 @@ fun MarkdownEditorExample() {
     }
 
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+        val history = remember { DocumentHistory(document) }
+        var document by remember { mutableStateOf(history.current) }
         MarkdownEditor(
             document = document,
             onDocumentChange = { updated ->
-                // This fires on every edit. Persist / sync here as needed.
+                history.commitCoalescing(updated)   // or commit() for structural edits
                 document = updated
             },
             modifier = Modifier.fillMaxSize(),
+            history = history
         )
     }
 }

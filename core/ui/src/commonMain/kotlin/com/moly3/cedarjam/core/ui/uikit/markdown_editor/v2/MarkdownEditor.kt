@@ -1,19 +1,30 @@
 package com.moly3.cedarjam.core.ui.uikit.markdown_editor.v2
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.moly3.cedarjam.core.domain.features.mdprops.DocumentHistory
 import com.moly3.cedarjam.core.domain.features.mdprops.MarkdownDocument
 import com.moly3.cedarjam.core.domain.features.mdprops.MarkdownRow
 import com.moly3.cedarjam.core.domain.features.mdprops.RowType
+import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
+import com.moly3.cedarjam.core.ui.uikit.CJText
 
 /**
  * A Notion-/Obsidian-style Markdown editor for Compose Multiplatform.
@@ -46,40 +57,44 @@ fun MarkdownEditor(
     onDocumentChange: (MarkdownDocument) -> Unit,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
+    history: DocumentHistory,
     readOnly: Boolean = false,
+    showLineNumbers: Boolean = true,          // <-- new toggle
 ) {
     val listState = rememberLazyListState()
     val focusManager = rememberRowFocusManager()
 
-    // The callbacks object translates row-level intent into document edits.
-    // `remember(document)` keeps it cheap while always closing over fresh state.
-    val callbacks = remember(document, onDocumentChange, readOnly) {
+    val callbacks = remember(document, onDocumentChange, readOnly, history) {
         documentCallbacks(
             current = { document },
             emit = onDocumentChange,
             focusManager = focusManager,
             readOnly = readOnly,
+            history = history
         )
     }
 
+    // Width of the gutter scales with the largest line number so digits don't clip.
+    val gutterWidth = if (showLineNumbers) {
+        val digits = document.rows.size.toString().length
+        (16 + digits * 9).dp          // rough monospace sizing; tune to taste
+    } else 0.dp
+
     LazyColumn(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize()
+            .background(LocalAppTheme.current.colors.backgroundSecondary),
         state = listState,
         contentPadding = contentPadding,
     ) {
-        // --- 1. Title -----------------------------------------------------------
         item(key = "title") {
             TitleEditor(
                 title = document.title,
                 onTitleChange = { if (!readOnly) onDocumentChange(document.copy(title = it)) },
-                onSubmit = {
-                    document.rows.firstOrNull()?.let { focusManager.focus(it.id) }
-                },
+                onSubmit = { document.rows.firstOrNull()?.let { focusManager.focus(it.id) } },
                 modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
             )
         }
 
-        // --- 2. Properties ------------------------------------------------------
         item(key = "properties") {
             PropertiesSection(
                 properties = document.properties,
@@ -90,24 +105,30 @@ fun MarkdownEditor(
             )
         }
 
-        // --- 3. Rows ------------------------------------------------------------
-        // `key` = stable row id so Compose recycles correctly while scrolling and
-        // preserves per-row state across reorders/insertions.
         itemsIndexed(
             items = document.rows,
             key = { _, row -> row.id },
         ) { index, row ->
-            MarkdownRowItem(
-                row = row,
-                index = index,
-                isLast = index == document.rows.lastIndex,
-                focusManager = focusManager,
-                callbacks = callbacks,
-                modifier = Modifier.fillMaxWidth(),
-            )
+            Row(modifier = Modifier.fillMaxWidth()) {
+                if (showLineNumbers) {
+                    LineNumberGutter(
+                        number = index + 1,
+                        width = gutterWidth,
+                    )
+                }
+                MarkdownRowItem(
+                    row = row,
+                    index = index,
+                    isLast = index == document.rows.lastIndex,
+                    focusManager = focusManager,
+                    callbacks = callbacks,
+                    modifier = Modifier.weight(1f),   // was fillMaxWidth()
+                )
+            }
         }
     }
 }
+
 
 /* ----------------------------------------------------------------------------------
  * Callback implementation — turns row intent into immutable document updates.
@@ -116,9 +137,20 @@ fun MarkdownEditor(
 private fun documentCallbacks(
     current: () -> MarkdownDocument,
     emit: (MarkdownDocument) -> Unit,
+    history: DocumentHistory,
     focusManager: RowFocusManager,
     readOnly: Boolean,
 ): RowCallbacks = object : RowCallbacks {
+
+    override fun onUndo() {
+        if (readOnly) return
+        history.undo()?.let { emit(it) }
+    }
+
+    override fun onRedo() {
+        if (readOnly) return
+        history.redo()?.let { emit(it) }
+    }
 
     override fun onTextChange(rowId: String, text: String) {
         if (readOnly) return
@@ -200,5 +232,21 @@ private fun documentCallbacks(
             NavDirection.Down -> RowFocusManager.CaretTarget.Start
         }
         focusManager.focus(target.id, caret)
+    }
+}
+
+/** Left-gutter cell showing a single line's number. */
+@Composable
+private fun LineNumberGutter(number: Int, width: Dp) {
+    Box(
+        modifier = Modifier
+            .width(width)
+            .padding(top = 4.dp, end = 8.dp),   // top aligns roughly with first text line
+        contentAlignment = Alignment.TopEnd,
+    ) {
+        CJText(
+            text = number.toString(),
+            color = LocalAppTheme.current.colors.secondaryFont
+        )
     }
 }

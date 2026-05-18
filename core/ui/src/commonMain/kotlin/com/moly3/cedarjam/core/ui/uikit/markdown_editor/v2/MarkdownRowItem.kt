@@ -26,9 +26,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.isMetaPressed
 import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
@@ -87,9 +90,10 @@ fun MarkdownRowItem(
     // Keep local text in sync if the model text changed externally (e.g. merge).
     LaunchedEffect(row.text) {
         if (row.text != fieldValue.text) {
+            val caret = fieldValue.selection.end.coerceAtMost(row.text.length)
             fieldValue = fieldValue.copy(
                 text = row.text,
-                selection = TextRange(row.text.length.coerceAtMost(row.text.length)),
+                selection = TextRange(caret),
             )
         }
     }
@@ -198,6 +202,8 @@ private fun RowTextField(
     val isCode = row.type == RowType.Code
     val style = row.type.textStyle()
 
+    var isFocused by remember { mutableStateOf(false) }
+
     val container = if (isCode) {
         Modifier
             .fillMaxWidth()
@@ -211,7 +217,6 @@ private fun RowTextField(
     }
 
     Column(modifier = modifier.fillMaxWidth()) {
-        // Image rows show a preview above the URL field once a URL is present.
         if (row.type == RowType.Image && fieldValue.text.isNotBlank()) {
             ImagePreview(url = fieldValue.text)
         }
@@ -223,17 +228,16 @@ private fun RowTextField(
                 modifier = Modifier
                     .fillMaxWidth()
                     .focusRequester(requester)
+                    .onFocusChanged { isFocused = it.isFocused }
                     .onPreviewKeyEvent(onKeyEvent),
                 textStyle = style,
                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                // Code & multiline types allow visible newlines; others are single-line
-                // visually but we still intercept Enter ourselves via key events.
                 singleLine = false,
                 keyboardOptions = KeyboardOptions(
                     imeAction = if (row.type.isMultiline) ImeAction.Default else ImeAction.None,
                 ),
                 decorationBox = { inner ->
-                    if (fieldValue.text.isEmpty()) {
+                    if (fieldValue.text.isEmpty() && isFocused) {
                         Text(
                             text = row.type.placeholder(),
                             style = style,
@@ -420,6 +424,15 @@ private fun handleKeyEvent(
     }
     if (keyEvent.isShiftPressed && keyEvent.key == Key.Tab) {
         return handleShiftTab(fieldValue, callbacks, onLocalValueChange)
+    }
+    val ctrl = keyEvent.isCtrlPressed || keyEvent.isMetaPressed
+    if (ctrl && keyEvent.key == Key.Z) {
+        if (keyEvent.isShiftPressed) callbacks.onRedo() else callbacks.onUndo()
+        return true
+    }
+    if (ctrl && keyEvent.key == Key.Y) {
+        callbacks.onRedo()
+        return true
     }
 
     return when (keyEvent.key) {
