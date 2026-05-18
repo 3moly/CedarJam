@@ -14,6 +14,7 @@ import com.moly3.cedarjam.core.domain.io
 import com.moly3.cedarjam.core.domain.model.FileName
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.bind
+import com.moly3.cedarjam.core.domain.model.config.GraphSaveConfig
 import com.moly3.cedarjam.core.domain.model.node.ObsidianGraphData
 import com.moly3.cedarjam.core.domain.model.resultBlock
 import com.moly3.cedarjam.core.domain.repository.IAppEnvironment
@@ -32,10 +33,9 @@ import com.moly3.cedarjam.pages.page_graph.State
 import com.moly3.cedarjam.pages.page_graph.State.Companion.fromSaveable
 import com.moly3.cedarjam.pages.page_graph.State.Companion.toSaveable
 import com.moly3.cedarjam.pages.page_graph.placeNodesCircular
-import com.moly3.cedarjam.pages.page_graph.store.GraphStore.Msg.SetConfig
+import com.moly3.cedarjam.pages.page_graph.store.GraphStore.Msg.*
 import com.moly3.cedarjam.pages.page_graph.store.GraphStore.Msg.SetConnections
 import com.moly3.cedarjam.pages.page_graph.store.GraphStore.Msg.SetCoordinates
-import com.moly3.cedarjam.pages.page_graph.store.GraphStore.Msg.SetGraphSettings
 import com.moly3.cedarjam.pages.page_graph.store.GraphStore.Msg.SetGraphUserPosition
 import com.moly3.cedarjam.pages.page_graph.store.GraphStore.Msg.SetIsShowSettings
 import com.moly3.cedarjam.pages.page_graph.store.GraphStore.Msg.SetNodes
@@ -106,8 +106,7 @@ class GraphStoreImpl @AssistedInject constructor(
         private val openNodeDataUseCase: IOpenNodeDataUseCase,
         private val engine: IGraphEngine<String, ObsidianGraphData>,
         private val openWorkspaceSettings: (Boolean) -> Unit
-    ) :
-        BaseExecutor<Intent, Unit, State, GraphStore.Msg, Unit>(lifecycle) {
+    ) : BaseExecutor<Intent, Unit, State, GraphStore.Msg, Unit>(lifecycle) {
 
         private val _isMouseCapturedState = MutableStateFlow(false)
         private val _pendingSaveConfig = MutableSharedFlow<GraphSaveConfig>()
@@ -117,7 +116,7 @@ class GraphStoreImpl @AssistedInject constructor(
             ObsGraphEco(
                 scope = scope,
                 workspaceSession = workspaceSession,
-                config = state().config,
+                config = state().partConfig.filter,
                 appEnvironment = appEnvironment
             )
         }
@@ -158,8 +157,8 @@ class GraphStoreImpl @AssistedInject constructor(
                 graphEco.graphState
 //                    .distinctUntilChanged()
                     .collectLatest {
-                        if (it != state().config) {
-                            dispatch(SetConfig(it))
+                        if (it != state().partConfig.filter) {
+                            //dispatch(SetConfig(it))
                         }
                     }
             }
@@ -203,11 +202,6 @@ class GraphStoreImpl @AssistedInject constructor(
         override fun executeIntent(intent: Intent) {
             when (intent) {
 
-                is Intent.SetConfig -> {
-                    graphEco.setGraphConfig(intent.value)
-                    engine.reheat()
-                }
-
                 is Intent.OpenNodeData -> {
                     scope.launch(io) {
 
@@ -245,33 +239,8 @@ class GraphStoreImpl @AssistedInject constructor(
                     openWorkspaceSettings(true)
                 }
 
-
-                is Intent.SetGraphSettings -> {
-                    scope.launch {
-                        _pendingSaveConfig.emit(
-                            GraphSaveConfig(
-                                isPinned = true,
-                                name = "Default",
-                                config = intent.value
-                            )
-                        )
-                    }
-
-                    val oldSettings = state().graphSettings
-                    if (intent.value != oldSettings) {
-                        if (intent.value.isGraphSettingsNudge(oldSettings)) {
-                            engine.nudge()
-                        }
-                        dispatch(SetGraphSettings(intent.value))
-                    }
-                }
-
                 is Intent.SetCoordinates -> {
                     dispatch(SetCoordinates(intent.value.toPersistentMap()))
-                }
-
-                is Intent.SetVelocities -> {
-                    dispatch(GraphStore.Msg.SetVelocities(intent.value.toPersistentMap()))
                 }
 
                 is Intent.SetIsMouseCaptured -> {
@@ -281,23 +250,50 @@ class GraphStoreImpl @AssistedInject constructor(
                         }
                     }
                 }
+
+                is Intent.SetGraphSettings -> {
+                    val config = intent.config
+                    val partConfig = state().partConfig
+                    val oldSettings = partConfig.config
+                    if (config != oldSettings) {
+                        if (config.isGraphSettingsNudge(oldSettings)) {
+                            engine.nudge()
+                        }
+                    }
+                    dispatch(
+                        SetPartConfig(
+                            partConfig.copy(config = config)
+                        )
+                    )
+                }
+
+                is Intent.SetFilter -> {
+                    val filter = intent.value
+                    val partConfig = state().partConfig
+                    if (filter != partConfig.filter) {
+                        engine.reheat()
+                    }
+                    graphEco.setGraphConfig(filter)
+                    dispatch(
+                        SetPartConfig(
+                            partConfig.copy(filter = filter)
+                        )
+                    )
+                }
             }
         }
     }
-
 
     private object ReducerImpl : Reducer<State, GraphStore.Msg> {
         override fun State.reduce(msg: GraphStore.Msg): State {
             return when (msg) {
                 is SetNodes -> copy(graphNodes = msg.value.toImmutableList())
                 is SetConnections -> copy(connections = msg.value)
-                is SetConfig -> copy(config = msg.value)
                 is SetZoom -> copy(zoom = msg.value)
                 is SetIsShowSettings -> copy(isShowSettings = msg.value)
                 is SetGraphUserPosition -> copy(graphUserPosition = msg.value)
-                is SetGraphSettings -> copy(graphSettings = msg.value)
                 is SetCoordinates -> copy(coordinates = msg.value)
-                is GraphStore.Msg.SetVelocities -> copy(velocities = msg.value)
+                is SetPartConfig -> copy(partConfig = msg.value)
             }
         }
     }

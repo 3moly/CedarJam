@@ -5,7 +5,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 @Immutable
-data class GraphSettingsConfig(
+data class GraphFilter(
+    val search: String,
     val maxNodes: Int,
     val isShowDirectories: Boolean,
     val isRealFiles: Boolean,
@@ -16,10 +17,11 @@ data class GraphSettingsConfig(
     val isOrphans: Boolean,
     val isGradations: Boolean,
     val isShowImages: Boolean,
-
+    val isIndexFileContent: Boolean
 ) {
     companion object {
-        val Default = GraphSettingsConfig(
+        val Default = GraphFilter(
+            search = "",
             isTags = true,
             isCollections = true,
             isRows = true,
@@ -32,6 +34,7 @@ data class GraphSettingsConfig(
             maxNodes = 30_000,
             isGradations = false,
             isShowImages = false,
+            isIndexFileContent = false
         )
     }
 }

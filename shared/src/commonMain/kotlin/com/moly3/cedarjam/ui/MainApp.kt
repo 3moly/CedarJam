@@ -185,7 +185,6 @@ fun MainApp(root: Root) {
 //                    )
 //                }
             }
-            MarkdownEditorExample()
         }
     }
 }

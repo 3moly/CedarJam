@@ -3,7 +3,6 @@ package com.moly3.cedarjam.pages.page_graph.ui.internal
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -18,7 +17,6 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.unit.dp
 import coil3.ImageLoader
 import coil3.compose.LocalPlatformContext
 import com.moly3.cedarjam.core.domain.func.getPlatform
@@ -34,7 +32,6 @@ import com.moly3.cedarjam.pages.page_graph.Intent
 import com.moly3.cedarjam.pages.page_graph.State
 import com.moly3.cedarjam.pages.page_graph.ui.internal.settingsPanel.SettingsPanel
 import com.moly3.dataviz.core.graph.engine.IGraphEngine
-import com.moly3.dataviz.core.graph.engine.impl.ultra.UltraFastEngine
 import com.moly3.dataviz.graph.features.atlas.AtlasTier
 import com.moly3.dataviz.graph.ui.AtlasPainterLoader
 import com.moly3.dataviz.graph.ui.Graph
@@ -69,10 +66,11 @@ internal fun PageContent(
         val accentColor = LocalAppTheme.current.primaryColor
         val fontColor = LocalAppTheme.current.colors.primaryFont
         val textStyle = LocalTextStyle.current
-        val settings = remember(accentColor, state.graphSettings, fontColor) {
-            state.graphSettings.copy(
-                zoom = state.graphSettings.zoom.copy(stepIn = 1.03f, stepOut = 1f / 1.03f),
-                theme = state.graphSettings.theme.copy(
+        val settings = remember(accentColor, state.partConfig.config, fontColor) {
+
+            state.partConfig.config.copy(
+                zoom = state.partConfig.config.zoom.copy(stepIn = 1.03f, stepOut = 1f / 1.03f),
+                theme = state.partConfig.config.theme.copy(
                     accentColor = accentColor,
                     textColor = fontColor
                 ),
@@ -147,7 +145,7 @@ internal fun PageContent(
             userPosition = state.graphUserPosition,
             zoom = state.zoom,
             coordinates = state.coordinates,
-            loader = if (state.config.isShowImages) loader else suspend { null },
+            loader = if (state.partConfig.filter.isShowImages) loader else suspend { null },
             loaderKey = state.graphNodes.size,
             staticIcons = persistentMapOf(
                 "folder" to folder,
@@ -192,7 +190,8 @@ internal fun PageContent(
             atlasLayers = handle.atlasLayers,
             getIconKey = handle::resolveIconKey,
             getNodeGroups = { _, data ->
-                if (state.graphSettings.groupSettings.enabled) {
+
+                if (settings.groupSettings.enabled) {
                     when (data) {
                         is ObsidianGraphData.Collection -> listOf("collection")
                         is ObsidianGraphData.CollectionRow -> listOf("row")
@@ -232,8 +231,7 @@ internal fun PageContent(
             connections = state.connections,
             stateNodes = state.graphNodes,
             coordinates = state.coordinates,
-            velocities = state.velocities,
-
+            velocities = mapOf(),
             onWatchPosition = { nodePosition ->
                 graphUserPosition.value = nodePosition
                 onIntent(Intent.SetGraphUserPosition(nodePosition))
@@ -260,11 +258,10 @@ internal fun PageContent(
         )
         SettingsPanel(
             zoom = state.zoom,
-            settings = settings,
             nodesCount = state.graphNodes.size,
             isShowSettings = state.isShowSettings,
             onIntent = onIntent,
-            config = state.config
+            partConfig = state.partConfig
         )
     }
 }

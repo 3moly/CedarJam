@@ -2,8 +2,12 @@ package com.moly3.cedarjam.core.domain.service
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
+import com.moly3.cedarjam.core.domain.features.search.ItemType
+import com.moly3.cedarjam.core.domain.features.search.SearchEngine
+import com.moly3.cedarjam.core.domain.features.search.SearchSyntaxException
+import com.moly3.cedarjam.core.domain.features.search.Searchable
+import com.moly3.cedarjam.core.domain.func.combine
 import com.moly3.cedarjam.core.domain.func.extractLinks
-import com.moly3.cedarjam.core.domain.func.pathWrapper
 import com.moly3.cedarjam.core.domain.io
 import com.moly3.cedarjam.core.domain.model.AnnotationDTO
 import com.moly3.cedarjam.core.domain.model.CollectionDTO
@@ -24,7 +28,7 @@ import com.moly3.cedarjam.core.domain.model.getCollectionRowGraphId
 import com.moly3.cedarjam.core.domain.model.getFileTreeNodeGraphId
 import com.moly3.cedarjam.core.domain.model.getGraphId
 import com.moly3.cedarjam.core.domain.model.getTagGraphId
-import com.moly3.cedarjam.core.domain.model.node.GraphSettingsConfig
+import com.moly3.cedarjam.core.domain.model.node.GraphFilter
 import com.moly3.cedarjam.core.domain.model.node.ObsidianGraphData
 import com.moly3.cedarjam.core.domain.model.resultBlock
 import com.moly3.cedarjam.core.domain.model.toFileType
@@ -52,14 +56,14 @@ class ObsGraphEco(
     appEnvironment: IAppEnvironment,
     private val workspaceSession: WorkspaceSession,
     startTargetId: String? = null,
-    config: GraphSettingsConfig = GraphSettingsConfig.Companion.Default
+    config: GraphFilter = GraphFilter.Companion.Default
 ) {
 
     private val _settingsStateFlow = MutableStateFlow(config)
     private val _targetId = MutableStateFlow(startTargetId)
-    val graphState: StateFlow<GraphSettingsConfig> = _settingsStateFlow
+    val graphState: StateFlow<GraphFilter> = _settingsStateFlow
 
-    fun setGraphConfig(config: GraphSettingsConfig) {
+    fun setGraphConfig(config: GraphFilter) {
         scope.launch(io) {
             // Dedupe at the source: every downstream .map{}.distinctUntilChanged()
             // chain runs its map lambda on each emission, so suppressing equal
@@ -180,7 +184,7 @@ class ObsGraphEco(
             allFiles
         }.scoping()
 
-    private val graphNodesFlow = combine(
+    private val graphNodesFlow = kotlinx.coroutines.flow.combine(
         collectionsFlow,
         collectionRowsFlow,
         tagsFlow,
@@ -399,6 +403,7 @@ class ObsGraphEco(
                                     ssLinks
                                 }
                             }
+
                             @Suppress("UNCHECKED_CAST")
                             val list = result as? List<String> ?: return@async null
                             Triple(cacheKey, fileGraphId, list)
@@ -566,6 +571,10 @@ class ObsGraphEco(
         return result
     }
 
+    private val isIndexContentFlow = _settingsStateFlow
+        .map { it.isIndexFileContent }   // <-- add this Boolean to GraphSettingsConfig
+        .distinctUntilChanged()
+
     val connectionsFlow = combine(
         oldConnectionsFlow,
         _targetId
@@ -573,42 +582,220 @@ class ObsGraphEco(
         if (targetId != null) filterConnections(connections, targetId) else connections
     }.scoping()
 
-    private val graphNodes2Flow: Flow<Pair<Set<Any>, List<ObsidianGraphNode>>> = combine(
-        _settingsStateFlow.map { it.isGradations }.distinctUntilChanged(),
-        graphNodesFlow,
-        appEnvironment.getAppSettingsFlow().map { it.theme.primaryColor }.distinctUntilChanged(),
-        appEnvironment.getAppSettingsFlow().map { it.theme.colors.primaryFont }
-            .distinctUntilChanged()
-    ) { gradations, triple, primaryColor, defaultColor ->
-        val nodes = if (gradations) {
-            makeGradation(
-                triple.third,
-                triple.second,
-                primaryColor = primaryColor,
-                defaultColor = defaultColor
-            )
-        } else triple.second
-        Pair(triple.first, nodes)
+    /**
+     * Optional file-content extraction. When [isIndexContentFlow] is false this
+     * emits an empty map (zero disk I/O). Cached by path+mtime exactly like
+     * fileLinkEdgesFlow, so unchanged files skip getNodeText on later emissions.
+     *
+     * Key: file graphId  ->  raw text content.
+     */
+    private val fileContentFlow: Flow<Map<String, String>> = combine(
+        isIndexContentFlow,
+        filesFlow,
+    ) { indexContent, files ->
+        if (!indexContent) return@combine emptyMap<String, String>()
+
+        val ws = workspaceSession.workspaceEnvStateFlow.value
+        val result = HashMap<String, String>(files.size)
+        val liveKeys = HashSet<FileCacheKey>()
+
+        coroutineScope {
+            val deferreds =
+                ArrayList<Deferred<Triple<FileCacheKey, String, String>?>>()
+
+            for (item in files) {
+                if (item !is FileTreeNode.File) continue
+                if (item.name.extension.toFileType() != FileTypeExt.Text) continue
+
+                val graphId = item.getGraphId()
+                val cacheKey = FileCacheKey(item.getFullPath(), item.modifiedTime)
+                liveKeys.add(cacheKey)
+
+                val cached = contentCache[cacheKey]
+                if (cached != null) {
+                    if (cached.isNotEmpty()) result[graphId] = cached
+                    continue
+                }
+
+                deferreds.add(async(io) {
+                    val text = resultBlock(onError = { "" }) {
+                        bind(ws.getNodeText(item))
+                    } as? String ?: return@async null
+                    Triple(cacheKey, graphId, text)
+                })
+            }
+
+            for (d in deferreds) {
+                val triple = d.await() ?: continue
+                // single-threaded merge step — safe to write the plain HashMap
+                contentCache[triple.first] = triple.third
+                if (triple.third.isNotEmpty()) result[triple.second] = triple.third
+            }
+        }
+
+        // prune deleted / changed files, keep memory bounded to current file set
+        if (contentCache.size > liveKeys.size) {
+            contentCache.keys.retainAll(liveKeys)
+        }
+
+        result as Map<String, String>
     }.scoping()
 
+    private val graphNodes2Flow: Flow<Pair<Set<Any>, List<ObsidianGraphNode>>> =
+        kotlinx.coroutines.flow.combine(
+            _settingsStateFlow.map { it.isGradations }.distinctUntilChanged(),
+            graphNodesFlow,
+            appEnvironment.getAppSettingsFlow().map { it.theme.primaryColor }
+                .distinctUntilChanged(),
+            appEnvironment.getAppSettingsFlow().map { it.theme.colors.primaryFont }
+                .distinctUntilChanged()
+        ) { gradations, triple, primaryColor, defaultColor ->
+            val nodes = if (gradations) {
+                makeGradation(
+                    triple.third,
+                    triple.second,
+                    primaryColor = primaryColor,
+                    defaultColor = defaultColor
+                )
+            } else triple.second
+            Pair(triple.first, nodes)
+        }.scoping()
+
+    private val searchQueryFlow = _settingsStateFlow
+        .map { it.search }
+        .distinctUntilChanged()
+
+    /**
+     * Casts every graph node into a [Searchable] so the search engine can index
+     * the whole graph uniformly. File content is optional: only filled when
+     * fileContentFlow has data (driven by isIndexFileContent), otherwise the
+     * `content` field is left blank for files.
+     */
+    val searchablesWithIdFlow: Flow<Map<String, Searchable>> = combine(
+        collectionsFlow,
+        collectionRowsFlow,
+        tagsFlow,
+        filesFlow,
+        annotationsFlow,
+        fileContentFlow,
+    ) { collections, rows, tags, files, annotations, fileContent ->
+
+        val total = collections.size + rows.size + tags.size + files.size + annotations.size
+        // FIX: Build a HashMap to match the Map<String, Searchable> return type
+        val out = HashMap<String, Searchable>(total)
+
+        for (item in collections) {
+            val graphId = item.getGraphId()
+            out[graphId] = Searchable(
+                type = ItemType.COLLECTION,
+                fileName = item.name,
+                path = graphId,
+                content = "",
+            )
+        }
+
+        for (item in tags) {
+            val graphId = item.getGraphId()
+            out[graphId] = Searchable(
+                type = ItemType.TAG,
+                fileName = item.name,
+                path = graphId,
+                content = "",
+                tags = setOf(item.name),
+            )
+        }
+
+        for (item in rows) {
+            val graphId = item.getGraphId()
+            out[graphId] = Searchable(
+                type = ItemType.ROW,
+                fileName = item.name,
+                path = item.fileRelativePath ?: graphId,
+                content = buildString {
+                    item.exampleSentence?.let { appendLine(it) }
+                    item.translation?.let { appendLine(it) }
+                    item.pronunciation?.let { appendLine(it) }
+                }.trim(),
+            )
+        }
+
+        for (item in annotations) {
+            val graphId = item.getGraphId()
+            out[graphId] = Searchable(
+                type = ItemType.ANNOTATION,
+                fileName = "annotation: page ${item.dataPoint}",
+                path = item.dataPath,
+                content = "",
+            )
+        }
+
+        for (item in files) {
+            val graphId = item.getGraphId()
+            out[graphId] = Searchable(
+                type = ItemType.FILE,
+                fileName = item.getShortName(),
+                path = item.getRelativePath(),
+                // optional: empty when indexing is off or file isn't text
+                content = fileContent[graphId] ?: "",
+            )
+        }
+
+        out
+    }.scoping()
+
+
+    /**
+     * Graph ids of nodes that satisfy the active search query.
+     *
+     * - Blank query  -> null  (sentinel for "no filtering", avoids matching every node)
+     * - Invalid query -> null (fail-open; the half-typed query shouldn't empty the graph)
+     * - Valid query  -> Set of matching graphIds
+     *
+     * Depends on searchablesFlow, which is why each Searchable must be paired
+     * with its graphId — Searchable.path is NOT the graphId for files/rows/annotations.
+     */
+    private val searchMatchIdsFlow: Flow<Set<Any>?> = combine(
+        searchQueryFlow,
+        searchablesWithIdFlow,            // see change #2 — now emits Pair<Any, Searchable>
+    ) { query, searchables ->
+        if (query.isBlank()) return@combine null
+
+        val compiled = try {
+            searchEngine.compile(query)
+        } catch (e: SearchSyntaxException) {
+            return@combine null    // fail-open
+        }
+
+        val matched = HashSet<Any>(searchables.size)
+        for ((graphId, searchable) in searchables) {
+            if (searchEngine.matches(compiled, searchable)) {
+                matched.add(graphId)
+            }
+        }
+        matched
+    }.scoping()
     /**
      * OPTIMIZED final nodes flow — graphNodes.first is already a Set built in
      * graphNodesFlow, so the O(1) `contains` lookup needs no per-emission
      * List->Set conversion.
      */
-    val nodes = combine(
+    val nodes = kotlinx.coroutines.flow.combine(
         graphNodes2Flow,
         connectionsFlow,
-        _settingsStateFlow.map { Pair(it.isOrphans, it.maxNodes) }.distinctUntilChanged()
-    ) { graphNodes, connections, isOrphans ->
+        _settingsStateFlow.map { Pair(it.isOrphans, it.maxNodes) }.distinctUntilChanged(),
+        searchMatchIdsFlow,
+    ) { graphNodes, connections, isOrphans, searchIds ->
         val showOrphans = isOrphans.first
         val maxNodes = isOrphans.second
-
         val validIds: Set<Any> = graphNodes.first
 
         val nodes = ArrayList<ObsidianGraphNode>(graphNodes.second.size.coerceAtMost(maxNodes))
         for (node in graphNodes.second) {
             if (nodes.size >= maxNodes) break
+
+            // Search gate: when a query is active, drop non-matching nodes.
+            if (searchIds != null && node.id !in searchIds) continue
+
             if (showOrphans) {
                 nodes.add(node)
             } else {
@@ -616,7 +803,12 @@ class ObsGraphEco(
                 if (neighbors != null) {
                     var hasValidNeighbor = false
                     for (n in neighbors) {
-                        if (n in validIds) {
+                        // FIX: A neighbor is only valid if it exists in the graph
+                        // AND it survived the active search filter.
+                        val isNeighborInGraph = n in validIds
+                        val doesNeighborSurviveSearch = searchIds == null || n in searchIds
+
+                        if (isNeighborInGraph && doesNeighborSurviveSearch) {
                             hasValidNeighbor = true
                             break
                         }
@@ -627,6 +819,26 @@ class ObsGraphEco(
         }
         nodes
     }.scoping()
+
+    private val searchEngine = SearchEngine()
+
+
+
+    val searchablesFlow: Flow<List<Searchable>> =
+        searchablesWithIdFlow.map { it.map { p -> p.value } }
+
+
+
+    // ── add near GraphSettingsConfig usage ──────────────────────────────
+// Assumes GraphSettingsConfig gains a flag; if you can't add one, replace
+// `isIndexFileContent` below with a hardcoded `true`/`false`.
+
+
+    // ── file-content cache, same pattern/threading rules as linkCache ───
+    private val contentCache = HashMap<FileCacheKey, String>()
+
+
+
 
     private companion object {
         // OPTIMIZED: hoisted out of graphNodesFlow so they aren't recomputed

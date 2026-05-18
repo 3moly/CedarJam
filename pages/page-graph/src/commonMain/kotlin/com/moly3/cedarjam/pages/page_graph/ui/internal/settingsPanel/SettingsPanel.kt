@@ -13,9 +13,7 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.width
@@ -24,30 +22,24 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
-import com.moly3.cedarjam.core.domain.func.ignoreIndexSqlDatabaseName
-import com.moly3.cedarjam.core.domain.model.node.GraphSettingsConfig
+import com.moly3.cedarjam.core.domain.model.config.GraphPartConfig
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.func.navigationBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.func.wstatusBarsPaddingCJ
-import com.moly3.cedarjam.core.ui.uikit.ButtSnapType
-import com.moly3.cedarjam.core.ui.uikit.CJButtSnap
 import com.moly3.cedarjam.core.ui.uikit.CJButtonIcon
-import com.moly3.cedarjam.core.ui.uikit.CJIOSwitch
+import com.moly3.cedarjam.core.ui.uikit.CJSearchTextField
 import com.moly3.cedarjam.core.ui.uikit.CJText
 import com.moly3.cedarjam.core.ui.uikit.NeumorphicShape
 import com.moly3.cedarjam.pages.page_graph.Intent
-import com.moly3.dataviz.core.graph.model.GraphSettings
+import com.moly3.cedarjam.pages.page_graph.ui.internal.SettingsSection
 import vector.Settings
-import vector.Tag
-import vector.collection.File05
-import vector.collection.FileAttach01
-import vector.collection.Note
 
 @Composable
 fun EnableOption(text: String, value: Boolean, onClick: () -> Unit) {
@@ -72,10 +64,12 @@ fun BoxScope.SettingsPanel(
     zoom: Float,
     isShowSettings: Boolean,
     nodesCount: Int,
-    config: GraphSettingsConfig,
-    settings: GraphSettings,
+    partConfig: GraphPartConfig,
     onIntent: (Intent) -> Unit
 ) {
+    val filterSearch  = remember{
+        mutableStateOf(TextFieldValue(partConfig.filter.search))
+    }
     Column(
         modifier = Modifier
             .wstatusBarsPaddingCJ()
@@ -117,86 +111,102 @@ fun BoxScope.SettingsPanel(
                             .fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
+                        CJSearchTextField(
+                            modifier = Modifier
+                                .fillMaxWidth(),
+                            isSearchIcon = true,
+                            placeholderText = "Search...",
+                            value = filterSearch.value,
+                            onValueChange = {
+                                filterSearch.value = it
+                                onIntent(Intent.SetFilter(partConfig.filter.copy(search = it.text)))
+                            }
+                        )
                         FlowRow(
                             horizontalArrangement = Arrangement.spacedBy(4.dp),
                             verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             EnableOption(
                                 text = "directories",
-                                value = config.isShowDirectories,
+                                value = partConfig.filter.isShowDirectories,
                                 onClick = {
-                                    onIntent(Intent.SetConfig(config.copy(isShowDirectories = !config.isShowDirectories)))
+                                    onIntent(Intent.SetFilter(partConfig.filter.copy(isShowDirectories = !partConfig.filter.isShowDirectories)))
                                 }
                             )
                             EnableOption(
                                 text = "tags",
-                                value = config.isTags,
+                                value = partConfig.filter.isTags,
 
                                 onClick = {
-                                    onIntent(Intent.SetConfig(config.copy(isTags = !config.isTags)))
+                                    onIntent(Intent.SetFilter(partConfig.filter.copy(isTags = !partConfig.filter.isTags)))
                                 }
                             )
                             EnableOption(
                                 text = "orphans",
-                                value = config.isOrphans,
+                                value = partConfig.filter.isOrphans,
 
                                 onClick = {
-                                    onIntent(Intent.SetConfig(config.copy(isOrphans = !config.isOrphans)))
+                                    onIntent(Intent.SetFilter(partConfig.filter.copy(isOrphans = !partConfig.filter.isOrphans)))
                                 }
                             )
                             EnableOption(
                                 text = "annotations",
-                                value = config.isAnnotations,
+                                value = partConfig.filter.isAnnotations,
                                 onClick = {
-                                    onIntent(Intent.SetConfig(config.copy(isAnnotations = !config.isAnnotations)))
+                                    onIntent(Intent.SetFilter(partConfig.filter.copy(isAnnotations = !partConfig.filter.isAnnotations)))
                                 }
                             )
                             EnableOption(
                                 text = "collections",
-                                value = config.isCollections,
+                                value = partConfig.filter.isCollections,
                                 onClick = {
-                                    onIntent(Intent.SetConfig(config.copy(isCollections = !config.isCollections)))
+                                    onIntent(Intent.SetFilter(partConfig.filter.copy(isCollections = !partConfig.filter.isCollections)))
                                 }
                             )
                             EnableOption(
                                 text = "rows",
-                                value = config.isRows,
+                                value = partConfig.filter.isRows,
                                 onClick = {
-                                    onIntent(Intent.SetConfig(config.copy(isRows = !config.isRows)))
+                                    onIntent(Intent.SetFilter(partConfig.filter.copy(isRows = !partConfig.filter.isRows)))
                                 }
                             )
                             EnableOption(
                                 text = "real files only",
-                                value = config.isRealFiles,
+                                value = partConfig.filter.isRealFiles,
                                 onClick = {
-                                    onIntent(Intent.SetConfig(config.copy(isRealFiles = !config.isRealFiles)))
+                                    onIntent(Intent.SetFilter(partConfig.filter.copy(isRealFiles = !partConfig.filter.isRealFiles)))
                                 }
                             )
                             EnableOption(
                                 text = "gradations",
-                                value = config.isGradations,
+                                value = partConfig.filter.isGradations,
                                 onClick = {
-                                    onIntent(Intent.SetConfig(config.copy(isGradations = !config.isGradations)))
+                                    onIntent(Intent.SetFilter(partConfig.filter.copy(isGradations = !partConfig.filter.isGradations)))
                                 }
                             )
                         }
+                        SettingsSection(
+                            title = "Groups"
+                        ) {
+
+                        }
                         GraphViewSettingsSection(
                             zoom = zoom,
-                            settings = settings,
+                            settings = partConfig.config,
                             onIntent = onIntent
                         )
-                        GraphTextSettingsSection(settings = settings, onIntent = onIntent)
+                        GraphTextSettingsSection(settings =  partConfig.config, onIntent = onIntent)
                         EnableOption(
                             text = "groups",
-                            value = settings.groupSettings.enabled,
+                            value =  partConfig.config.groupSettings.enabled,
                             onClick = {
                                 val groups =
-                                    settings.groupSettings.copy(enabled = !settings.groupSettings.enabled)
-                                onIntent(Intent.SetGraphSettings(settings.copy(groupSettings = groups)))
+                                    partConfig.config.groupSettings.copy(enabled = ! partConfig.config.groupSettings.enabled)
+                                onIntent(Intent.SetGraphSettings( partConfig.config.copy(groupSettings = groups)))
                             }
                         )
-                        if (settings.groupSettings.enabled) {
-                            GraphGroupSettingsSection(settings = settings, onIntent = onIntent)
+                        if ( partConfig.config.groupSettings.enabled) {
+                            GraphGroupSettingsSection(settings =  partConfig.config, onIntent = onIntent)
                         }
                     }
                 }

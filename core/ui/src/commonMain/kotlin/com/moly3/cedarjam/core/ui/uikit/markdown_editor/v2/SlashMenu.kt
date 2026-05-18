@@ -50,7 +50,7 @@ fun SlashMenu(
     Popup(
         offset = offset,
         onDismissRequest = onDismiss,
-        alignment = Alignment.BottomStart,
+        alignment = Alignment.TopStart,
         properties = PopupProperties(focusable = false),
     ) {
         Surface(

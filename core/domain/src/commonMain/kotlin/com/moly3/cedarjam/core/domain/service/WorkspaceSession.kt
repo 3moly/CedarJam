@@ -22,7 +22,7 @@ import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.domain.model.WorkspacePresentation
 import com.moly3.cedarjam.core.domain.model.error.DatabaseError
 import com.moly3.cedarjam.core.domain.model.isSuccess
-import com.moly3.cedarjam.core.domain.model.node.GraphSettingsConfig
+import com.moly3.cedarjam.core.domain.model.node.GraphFilter
 import com.moly3.cedarjam.core.domain.model.node.ObsidianGraphPresentation
 import com.moly3.cedarjam.core.domain.model.node.toPresentation
 import com.moly3.cedarjam.core.domain.model.settings.WorkspaceFont
@@ -33,20 +33,17 @@ import com.moly3.cedarjam.core.domain.repository.IWorkspaceEnvironment
 import com.moly3.cedarjam.core.domain.repository.IWorkspaceEnvironment.Companion.getHiddenDirectory
 import com.moly3.cedarjam.core.domain.usecase.ISyncUseCase
 import com.moly3.cedarjam.core.domain.usecase.SyncStatus2
-import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
-import kotlinx.coroutines.flow.shareIn
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @Stable
@@ -187,7 +184,7 @@ class WorkspaceSession(
             appEnvironment = appEnvironment,
             workspaceSession = this,
             startTargetId = null,
-            config = GraphSettingsConfig.Default.copy(
+            config = GraphFilter.Default.copy(
                 isShowDirectories = false,
                 isOrphans = true
             )
