@@ -40,8 +40,11 @@ kotlin {
                 api(libs.okio)
             }
         }
-        commonTest.dependencies{
+        commonTest.dependencies {
             implementation(libs.kotlin.test)
+            implementation(libs.coroutines.test)
+            implementation(libs.ui.test)
+            implementation(libs.kotest.property)
         }
         androidInstrumentedTest.dependencies{
             implementation(libs.robolectric)
