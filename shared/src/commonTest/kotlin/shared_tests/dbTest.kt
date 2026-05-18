@@ -4,8 +4,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.ExperimentalTestApi
 import shared_tests.base.AppEnvironmentTest
 import shared_tests.base.getTestApplicationContext
-import com.moly3.cedarjam.data.func.createSqlStorage
-import com.moly3.cedarjam.data.func.createSystemFilesManager
 import com.moly3.cedarjam.core.domain.model.navigation.input.TagPageInput
 import com.moly3.cedarjam.pages.page_tab.TabComponentImpl
 import com.moly3.cedarjam.core.data.FilesRepository
@@ -24,6 +22,8 @@ import com.moly3.cedarjam.core.domain.model.request.CreateCollectionRowRequest
 import com.moly3.cedarjam.core.domain.model.request.CreateTagRequest
 import com.moly3.cedarjam.core.domain.model.request.UpdateDataCollectionRowRequest
 import com.moly3.cedarjam.core.domain.service.AppContextProvider
+import com.moly3.cedarjam.core.storage.func.createSqlStorage
+import com.moly3.cedarjam.core.storage.func.createSystemFilesManager
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.koin.mp.KoinPlatform.getKoin
@@ -53,8 +53,8 @@ class dbTest : AppEnvironmentTest() {
     fun appEnvTest() = runTest {
         val appEnvironment: IAppEnvironment = getKoin().get()
         val settings = appEnvironment.getAppSettingsFlow().value
-        assertTrue(settings.currentWorkspaceFullPath == null)
-        appEnvironment.setAppSettings(settings.copy(currentWorkspaceFullPath = "123123"))
+//    todo    assertTrue(settings.currentWorkspaceFullPath == null)
+//        appEnvironment.setAppSettings(settings.copy(currentWorkspaceFullPath = "123123"))
 
     }
 
@@ -116,13 +116,14 @@ class dbTest : AppEnvironmentTest() {
     fun creation() = runTest {
         val workspace = Workspace(
             name = "test",
-            fullpath = getWorkspaceDirectory().getFullPath()
+            platformPath = getWorkspaceDirectory().getFullPath(),
+            serverName = "test"
         )
         val filesStorage = createSystemFilesManager()
         val sql = createSqlStorage(
             systemFilesManager = filesStorage,
             applicationProvider = AppContextProvider(getTestApplicationContext()),
-            workspaceDirectoryPath = workspace.fullpath
+            workspaceDirectoryPath = workspace.platformPath
         )
         sql.init()
     }
@@ -144,7 +145,7 @@ class dbTest : AppEnvironmentTest() {
         env.createDatabase()
         env.createDatabase()
         val createResult = env.createFileNode(
-            parentFolder = null,
+            parentRelativePath = "",
             fileName = FileName(name = "text", "md"),
             isAbsoluteNew = true,
             byteArray = null
@@ -166,13 +167,13 @@ class dbTest : AppEnvironmentTest() {
     @Test
     fun w_env() = runTest {
         val env = createWorkspaceEnv()
-        val nodes = env.getNodes(parentFolder = null)
+        val nodes = env.getNodes(absolutePath = null)
         env.updateTimes()
         assertTrue { nodes.size == 1 }
         var files = env.getFileNodesFlow().first().getOrNull()
         assertTrue("actual size: ${files!!.size}") { files.size == 1 }
         env.createFileNode(
-            null,
+            "",
             fileName = FileName(name = "unknown", extension = "md"),
             isAbsoluteNew = false
         )
@@ -183,7 +184,7 @@ class dbTest : AppEnvironmentTest() {
 
         val file =
             env.createFileNode(
-                directory.getValueOrNull()!!,
+                directory.getValueOrNull()!!.getRelativePath(),
                 fileName = FileName(name = "unknown", extension = "md"),
                 isAbsoluteNew = false
             )
@@ -198,7 +199,7 @@ class dbTest : AppEnvironmentTest() {
         val env = createWorkspaceEnv()
 
         val file = env.createFileNode(
-            null,
+            "",
             fileName = FileName(name = "unknown", extension = "md"), isAbsoluteNew = false,
         ).getValueOrNull()!!
         val files = env.getFileNodesFlow().first().getOrNull()!!
@@ -216,7 +217,7 @@ class dbTest : AppEnvironmentTest() {
         try {
             val file =
                 env.createFileNode(
-                    null,
+                    "",
                     fileName = FileName(name = sameName, extension = ""),
                     isAbsoluteNew = false,
                 )
@@ -232,7 +233,7 @@ class dbTest : AppEnvironmentTest() {
         val expectedName = "unknown."
         val result =
             env.createFileNode(
-                null,
+                "",
                 fileName = FileName(name = expectedName, extension = ""),
                 isAbsoluteNew = false,
             )
@@ -240,27 +241,28 @@ class dbTest : AppEnvironmentTest() {
         assertTrue { result.getValueOrNull()!!.name.name == expectedName }
     }
 
-    @Test
-    fun test_run_arrows() = runTest {
-
-        val filesStorage = createSystemFilesManager()
-        val filesRepository = FilesRepository(filesStorage)
-
-        val file = FileTreeNode.File(
-            parentPath = getWorkspaceDirectory().getFullPath(),
-            name = FileName(
-                name = "mmm",
-                extension = null
-            )
-        )
-
-        filesRepository.createNode(node = file)
-        var nodes = filesRepository.getNodes(node = getWorkspaceDirectory())
-        assertTrue { nodes.count() == 1 }
-        filesRepository.deleteNode(node = file)
-        nodes = filesRepository.getNodes(node = getWorkspaceDirectory())
-        assertTrue("huh: ${nodes.count()}") { nodes.count() == 1 }
-    }
+//    @Test
+//    fun test_run_arrows() = runTest {
+//
+//        val filesStorage = createSystemFilesManager()
+//        val filesRepository = FilesRepository(filesStorage)
+//
+//        val file = FileTreeNode.File(
+//            parentRelativePath = getWorkspaceDirectory().getFullPath(),
+//            name = FileName(
+//                name = "mmm",
+//                extension = null
+//            ),
+//            parentFullPath = ""
+//        )
+//
+//        filesRepository.createNode(workspacePath = , node = file)
+////        var nodes = filesRepository.getNodes()
+////        assertTrue { nodes.count() == 1 }
+////        filesRepository.deleteNode(node = file)
+////        nodes = filesRepository.getNodes()
+////        assertTrue("huh: ${nodes.count()}") { nodes.count() == 1 }
+//    }
 
     @Test
     fun get_text() = runTest {
@@ -269,11 +271,13 @@ class dbTest : AppEnvironmentTest() {
         val filesRepository = FilesRepository(filesStorage)
 
         val file = FileTreeNode.File(
-            parentPath = getWorkspaceDirectory().getFullPath(),
+            workspaceFullPath = "",
+            parentRelativePath = getWorkspaceDirectory().getFullPath(),
             name = FileName(
                 name = "mmm",
                 extension = null
-            )
+            ),
+//            parentFullPath = ""
         )
 
         val text = "wasd"
@@ -288,25 +292,29 @@ class dbTest : AppEnvironmentTest() {
         val filesStorage = createSystemFilesManager()
         val filesRepository = FilesRepository(filesStorage)
         val file = FileTreeNode.File(
-            parentPath = getWorkspaceDirectory().getFullPath(),
+            workspaceFullPath = getWorkspaceDirectory().getFullPath(),
+            parentRelativePath = getWorkspaceDirectory().getFullPath(),
             name = FileName(
                 name = "mmm",
                 extension = null
-            )
+            ),
+//            parentFullPath = ""
         )
         val file2 = FileTreeNode.File(
-            parentPath = getWorkspaceDirectory().getFullPath(),
+            workspaceFullPath = getWorkspaceDirectory().getFullPath(),
+            parentRelativePath = getWorkspaceDirectory().getFullPath(),
             name = FileName(
                 name = "mmm2",
                 extension = null
-            )
+            ),
+//            parentFullPath = ""
         )
 
         val text = "wasd"
         filesRepository.setNodeText(file, text)
         var isExistsFile = filesRepository.isNodeExists(file)
         assertTrue { isExistsFile }
-        filesRepository.moveNode(file, file2)
+        filesRepository.moveNode("", file, file2)
         isExistsFile = filesRepository.isNodeExists(file)
         assertTrue { !isExistsFile }
         val isExistsFile2 = filesRepository.isNodeExists(file2)

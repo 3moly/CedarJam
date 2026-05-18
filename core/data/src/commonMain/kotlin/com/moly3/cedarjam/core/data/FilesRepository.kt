@@ -1,10 +1,8 @@
 package com.moly3.cedarjam.core.data
 
+import com.moly3.cedarjam.core.domain.model.FileItem
 import com.moly3.cedarjam.core.storage.ISystemFilesManager
 import com.moly3.cedarjam.core.storage.func.getOtherFileMeta
-import com.moly3.cedarjam.core.domain.func.pathWrapper
-import com.moly3.cedarjam.core.domain.model.FileItem
-import com.moly3.cedarjam.core.domain.model.FileStructure
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.ResultWrapper
 import com.moly3.cedarjam.core.domain.model.bind
@@ -12,6 +10,8 @@ import com.moly3.cedarjam.core.domain.model.canvas.CanvasDataWithErrors
 import com.moly3.cedarjam.core.domain.model.resultBlock
 import com.moly3.cedarjam.core.domain.repository.IFilesRepository
 import com.moly3.cedarjam.core.domain.util.IPathWrapper
+import com.moly3.cedarjam.core.storage.func.commonGuy.extractZip
+import com.moly3.cedarjam.core.storage.func.commonGuy.packToZip
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class)
@@ -23,56 +23,49 @@ class FilesRepository(
         return filesStorage.toAbsoluteAppPath(relativePath = relativePath)
     }
 
-    override fun extractZipFromBytes(
-        bytes: ByteArray,
-        destinationPath: String,
-        fileStructure: FileStructure
-    ) {
-        filesStorage.extractZipFromBytes(bytes, destinationPath, fileStructure)
-    }
-
-    override suspend fun extractZip(
+    override suspend fun unpackZip(
+        serverIndexes: List<FileItem>,
         archivePath: String,
         workspaceFullPath: String,
-        serverFiles: List<FileItem>
-    ) {
-        _root_ide_package_.com.moly3.cedarjam.core.storage.func.commonGuy.extractZip(
+    ): List<String> {
+        return extractZip(
+            serverIndexes,
             archivePath,
             workspaceFullPath,
-            serverFiles
         )
     }
 
-    override suspend fun packToZip(
+    override suspend fun packFilesToZip(
         workspaceFolderAbsolutePath: String,
         filesToArchive: List<String>,
         archivePath: String
     ) {
-        _root_ide_package_.com.moly3.cedarjam.core.storage.func.commonGuy.packToZip(
+        packToZip(
             workspaceFolderAbsolutePath = workspaceFolderAbsolutePath,
             filesToArchive = filesToArchive,
             archivePath = archivePath
         )
     }
 
-    override fun getNodes(node: FileTreeNode.Directory): List<FileTreeNode> {
-        val fullPath = node.getFullPath()
-        val absolutePath = filesStorage.toAbsoluteAppPath(
-            pathWrapper(
-                fullPath
+    override fun getNodes(workspacePath: String, absolutePath: String): List<FileTreeNode> {
+        val allFiles = filesStorage.getNodes(absolutePath)
+        val mt = getOtherFileMeta(absolutePath)
+        val parentRelativePath = if (absolutePath.contains("$workspacePath/")) {
+            absolutePath.replace("$workspacePath/", "")
+        } else {
+            absolutePath.replace(workspacePath, "")
+        }
+        val main = listOf(
+            FileTreeNode.Directory(
+                workspaceFullPath = workspacePath,
+                children = allFiles,
+                name = "",
+                fileSize = allFiles.sumOf { x -> x.fileSize },
+                modifiedTime = mt.modifiedDateTime.toEpochMilliseconds(),
+                parentRelativePath = parentRelativePath,
+                createdTime = mt.createdDateTime.toEpochMilliseconds(),
             )
         )
-        val allFiles = filesStorage.getNodes(absolutePath.pathString)
-        val mt =
-            getOtherFileMeta(absolutePath.pathString)
-        val main =
-            listOf(
-                node.copy(
-                    children = allFiles,
-                    fileSize = allFiles.sumOf { x -> x.fileSize },
-                    modifiedTime = mt.modifiedDateTime.toEpochMilliseconds()
-                )
-            )
         return main
     }
 
@@ -84,35 +77,67 @@ class FilesRepository(
         filesStorage.deleteNode(node.getFullPath())
     }
 
+    override fun deleteNodeHeavy(node: FileTreeNode) {
+        filesStorage.deleteNodeHeavy(node.getFullPath())
+    }
+
+
     override fun createNode(
+        workspacePath: String,
         node: FileTreeNode,
         byteArray: ByteArray?
     ): ResultWrapper<FileTreeNode, String> {
         return filesStorage.createNode(
+            workspacePath = workspacePath,
             isDirectory = node is FileTreeNode.Directory,
             nodePath = node.getFullPath(),
-            byteArray = byteArray
+            byteArray = byteArray,
+            isMustCreate = true
         )
     }
 
-    override fun getFileNodeFromFullPath(fullPath: String, isDirectory: Boolean): FileTreeNode {
+    override fun createDirectory(
+        workspacePath: String,
+        fullPath: String,
+        isMustCreate: Boolean
+    ): ResultWrapper<Unit, String> {
+        return resultBlock {
+            filesStorage.createNode(
+                workspacePath = workspacePath,
+                isDirectory = true,
+                nodePath = fullPath,
+                byteArray = null,
+                isMustCreate = isMustCreate
+            )
+        }
+    }
+
+    override fun getFileNodeFromFullPath(
+        workspacePath: String,
+        fullPath: String,
+        isDirectory: Boolean
+    ): FileTreeNode {
         return if (isDirectory)
             filesStorage.getDirectoryNodeFromFullPath(
+                workspacePath = workspacePath,
                 fullPath = fullPath,
             )
         else
             filesStorage.getFileNodeFromFullPath(
+                workspacePath = workspacePath,
                 fullPath = fullPath,
             )
     }
 
     override fun moveNode(
+        workspacePath: String,
         node: FileTreeNode,
         newNode: FileTreeNode
     ): ResultWrapper<FileTreeNode, String> {
         return resultBlock {
             bind(
                 filesStorage.moveNode(
+                    workspacePath = workspacePath,
                     nodePath = node.getFullPath(),
                     moveNodePath = newNode.getFullPath(),
                     isDirectory = newNode is FileTreeNode.Directory
@@ -135,6 +160,10 @@ class FilesRepository(
         }
     }
 
+    override fun setNodeBytes(node: FileTreeNode.File, byteArray: ByteArray) {
+        filesStorage.setNodeBytes(nodePath = node.getFullPath(), byteArray = byteArray)
+    }
+
     override fun getNodeBytes(node: FileTreeNode.File): ByteArray {
         return filesStorage.getNodeBytes(node.getFullPath())
     }
@@ -148,5 +177,9 @@ class FilesRepository(
         data: CanvasDataWithErrors
     ): ResultWrapper<Unit, String> {
         return filesStorage.saveNodeCanvas(nodePath = nodePath, data = data)
+    }
+
+    override fun getFileHash(fullPath: String): String {
+        return filesStorage.getFileHash(fullPath)
     }
 }

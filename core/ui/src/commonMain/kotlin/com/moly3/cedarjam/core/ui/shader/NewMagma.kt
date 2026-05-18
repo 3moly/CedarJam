@@ -1,27 +1,12 @@
 package com.moly3.cedarjam.core.ui.shader
 
 import androidx.compose.ui.graphics.Color
-import com.mikepenz.hypnoticcanvas.RuntimeEffect
-import com.mikepenz.hypnoticcanvas.shaders.Shader
 import com.moly3.cedarjam.core.ui.func.darker
+import com.moly3.shaders.RuntimeEffect
+import com.moly3.shaders.Shader
 
 class NewMagma : Shader {
     override val name: String
-        get() = "-"
-
-    override val authorName: String
-        get() = "-"
-
-    override val authorUrl: String
-        get() = "-"
-
-    override val credit: String
-        get() = "-"
-
-    override val license: String
-        get() = "-"
-
-    override val licenseUrl: String
         get() = "-"
 
     override val speedModifier: Float

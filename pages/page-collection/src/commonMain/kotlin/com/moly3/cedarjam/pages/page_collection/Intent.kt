@@ -8,7 +8,7 @@ sealed interface Intent {
     data class RenameCollection(val newName: String) : Intent
     data class ChangeViewType(val viewType: CollectionViewType) : Intent
     data class CreateCollectionRow(val name: String) : Intent
-    data object Generate : Intent
+    data object ImportToAnki : Intent
     data object PreviousPage : Intent
     data object NextPage : Intent
     data class OpenCollectionRow(val collectionId: Long, val rowId: Long) : Intent
@@ -17,5 +17,11 @@ sealed interface Intent {
     data class DeleteCollectionRow(val id: Long) : Intent
     data class OpenWebLink(val value: String) : Intent
     data class OpenDocument(val value: String) : Intent
-    data class SetDocumentToRow(val row: CollectionRowDTO, val fileTreeNode: FileTreeItemPresentation) : Intent
+    data class SetDocumentToRow(
+        val row: CollectionRowDTO,
+        val fileTreeNode: FileTreeItemPresentation
+    ) : Intent
+
+    data object OpenWorkspaceSettings : Intent
+    data object OpenOptions : Intent
 }

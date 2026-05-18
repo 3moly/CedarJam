@@ -1,7 +1,9 @@
 package com.moly3.cedarjam.core.ui.uikit
 
 import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
@@ -10,13 +12,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.sp
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
+import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
 
 @Composable
 fun CJText(
     text: AnnotatedString,
     modifier: Modifier = Modifier,
-    style: TextStyle = LocalAppTheme.current.textStyle,
+    style: TextStyle = LocalTextStyle.current,
     color: Color = Color.Unspecified,
     fontSize: TextUnit = TextUnit.Unspecified,
     fontWeight: FontWeight? = null,
@@ -36,7 +40,8 @@ fun CJText(
         softWrap = softWrap,
         overflow = overflow,
         maxLines = maxLines,
-        minLines = minLines
+        minLines = minLines,
+        autoSize = TextAutoSize.StepBased(minFontSize = 10.sp, maxFontSize = fontSize)
     )
 }
 
@@ -44,7 +49,7 @@ fun CJText(
 fun CJText(
     text: String,
     modifier: Modifier = Modifier,
-    style: TextStyle = LocalAppTheme.current.textStyle,
+    style: TextStyle = LocalTextStyle.current,
     color: Color = Color.Unspecified,
     fontSize: TextUnit = TextUnit.Unspecified,
     fontWeight: FontWeight? = null,
@@ -54,6 +59,12 @@ fun CJText(
     minLines: Int = 1,
     textAlign: TextAlign = TextAlign.Unspecified
 ) {
+    val currentFontSize = remember(fontSize, style) {
+        if (fontSize == TextUnit.Unspecified) {
+            style.fontSize
+        } else
+            fontSize
+    }
     BasicText(
         modifier = modifier,
         text = text,
@@ -66,6 +77,7 @@ fun CJText(
         softWrap = softWrap,
         overflow = overflow,
         maxLines = maxLines,
-        minLines = minLines
+        minLines = minLines,
+        autoSize = TextAutoSize.StepBased(minFontSize = 6.sp, maxFontSize = currentFontSize)
     )
 }

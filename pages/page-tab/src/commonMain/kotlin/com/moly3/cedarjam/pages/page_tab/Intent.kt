@@ -1,6 +1,6 @@
 package com.moly3.cedarjam.pages.page_tab
 
-import com.moly3.cedarjam.core.domain.model.PageNameData
+import com.moly3.cedarjam.core.ui.model.PageNameData
 
 sealed class Intent {
     data object Back : Intent()
@@ -10,4 +10,6 @@ sealed class Intent {
         val newName: String,
         val pageType: PageNameData.PageType
     ) : Intent()
+    data object OpenWorkspaceSettings : Intent()
+
 }

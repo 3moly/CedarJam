@@ -3,24 +3,39 @@ package com.moly3.cedarjam.pages.page_graph
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.arkivanov.mvikotlin.extensions.coroutines.stateFlow
+import com.moly3.cedarjam.core.domain.model.node.ObsidianGraphData
+import com.moly3.cedarjam.core.domain.service.WorkspaceSession
+import com.moly3.cedarjam.pages.page_graph.store.GraphStoreFactory
+import com.moly3.dataviz.core.graph.engine.IGraphEngine
+import com.moly3.dataviz.core.graph.engine.impl.ultra.UltraFastEngine
+import com.moly3.dataviz.core.graph.engine.impl.ultra.UltraFastEngineConfig
+import dev.zacsweers.metro.Assisted
+import dev.zacsweers.metro.AssistedInject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.StateFlow
-import com.moly3.cedarjam.pages.page_graph.store.GraphStoreFactory
-import com.moly3.cedarjam.core.domain.service.WorkspaceSession
 
+@AssistedInject
 class GraphComponentImpl(
-    componentContext: ComponentContext,
-    storeFactory: StoreFactory,
-    workspaceSession: WorkspaceSession
+    @Assisted componentContext: ComponentContext,
+    @Assisted storeFactory: StoreFactory,
+    @Assisted workspaceSession: WorkspaceSession,
+    @Assisted private val openWorkspaceSettings: (Boolean) -> Unit,
+    private val graphStoreFactory: GraphStoreFactory,
 ) : GraphComponent,
     ComponentContext by componentContext {
 
+    override val engine: IGraphEngine<String, ObsidianGraphData> =
+        UltraFastEngine(config = UltraFastEngineConfig.Default)
+
     private val store by lazy {
-        GraphStoreFactory(
+        graphStoreFactory.create(
             storeFactory = storeFactory,
             lifecycle = lifecycle,
-            workspaceSession = workspaceSession
-        ).create(componentContext.stateKeeper)
+            workspaceSession = workspaceSession,
+            openWorkspaceSettings = openWorkspaceSettings,
+            stateKeeper = stateKeeper,
+            engine = engine
+        )
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)

@@ -40,3 +40,61 @@ job("publish wasm") {
         }
     }
 }
+job("build linux arm64") {
+
+    startOn {
+        gitPush {
+            anyBranchMatching {
+                +"linuxarm64"
+            }
+        }
+    }
+    host {
+
+        env["SYNC_SERVER_URL"] = "{{ project:CEDAR_SYNC_SERVER_URL }}"
+        env["SYNC_SERVER_TOKEN"] = "{{ project:CEDAR_SYNC_SERVER_TOKEN }}"
+        env["IS_RELEASE"] = "{{ project:CEDAR_IS_RELEASE }}"
+
+        shellScript {
+            interpreter = "/bin/bash"
+            content = """
+                set -e
+
+                # Enable ARM64 emulation natively on the Space runner VM
+                docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+                echo "1. Creating ARM64 container..."
+                docker create --cidfile container_id.txt \
+                    --platform linux/arm64 \
+                    -e SYNC_SERVER_URL \
+                    -e SYNC_SERVER_TOKEN \
+                    -e IS_RELEASE \
+                    -w /workspace \
+                    eclipse-temurin:21 \
+                    bash -c "apt update && apt install -y dpkg-dev fakeroot rpm libfuse2 libglib2.0-0 && chmod +x gradlew && ./gradlew :shared:packageReleaseDistributionForCurrentOS"
+
+                read CONTAINER_ID < container_id.txt
+
+                echo "2. Copying source code to container: ${'$'}{'$'}CONTAINER_ID"
+                docker cp . "${'$'}{'$'}CONTAINER_ID":/workspace
+
+                echo "3. Running the build inside the container..."
+                docker start -a "${'$'}{'$'}CONTAINER_ID"
+
+                echo "4. Extracting the build artifacts..."
+                mkdir -p shared/build/compose/binaries/
+                docker cp "${'$'}{'$'}CONTAINER_ID":/workspace/shared/build/compose/binaries/. shared/build/compose/binaries/
+                
+                # Cleanup
+                docker rm "${'$'}{'$'}CONTAINER_ID"
+                rm container_id.txt
+            """
+        }
+        fileArtifacts {
+            localPath = "shared/build/compose/binaries/"
+            archive = true
+            remotePath = "cedarjam/build.zip"
+            onStatus = OnStatus.SUCCESS
+        }
+    }
+}

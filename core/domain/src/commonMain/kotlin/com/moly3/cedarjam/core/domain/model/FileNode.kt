@@ -1,6 +1,7 @@
 package com.moly3.cedarjam.core.domain.model
 
 import com.moly3.cedarjam.core.domain.func.hiddenDirectory
+import com.moly3.cedarjam.core.domain.func.normalizeText
 import com.moly3.cedarjam.core.domain.func.pathWrapper
 import kotlinx.io.files.Path
 import kotlinx.serialization.Serializable
@@ -10,6 +11,32 @@ data class FileName(
     val name: String,
     val extension: String?
 )
+
+fun String?.toFileType(): FileTypeExt {
+    return when (this?.lowercase()) {
+        "png", "jpeg", "jpg", "heic", "svg", "webp" -> {//, "svg", "webp"
+            FileTypeExt.Image
+        }
+
+        "mp4", "mov" -> FileTypeExt.Video
+        "pdf" -> FileTypeExt.Pdf
+
+        "md", "txt" -> FileTypeExt.Text
+        "canvas" -> FileTypeExt.Canvas
+
+        else -> FileTypeExt.None
+    }
+}
+
+enum class FileTypeExt {
+    None,
+    Pdf,
+    Image,
+    Mid,
+    Video,
+    Canvas,
+    Text
+}
 
 @Serializable
 sealed class FileTreeNode {
@@ -28,15 +55,19 @@ sealed class FileTreeNode {
     abstract val fileSize: Long
     abstract val modifiedTime: Long
     abstract val createdTime: Long
-    abstract val parentPath: String
+    abstract val workspaceFullPath: String
+    abstract val parentRelativePath: String
     abstract fun getShortName(): String
     abstract fun getFullName(): String
+    abstract fun getExtension(): String?
     abstract fun getFullPath(): String
+    abstract fun getRelativePath(): String
 
     @Serializable
     data class File(
         val name: FileName,
-        override val parentPath: String,
+        override val workspaceFullPath: String,
+        override val parentRelativePath: String,
         override val createdTime: Long = 0L,
         override val modifiedTime: Long = 0L,
         override val fileSize: Long = 0L,
@@ -56,51 +87,69 @@ sealed class FileTreeNode {
             }
         }
 
-        override fun getFullPath(): String {
-            val fullName = getFullName()
-            if (fullName.isEmpty())
-                return parentPath
+        override fun getExtension(): String? {
+            return name.extension
+        }
 
+        override fun getRelativePath(): String {
+            return pathWrapper(parentRelativePath, getFullName()).pathString.normalizeText()
+        }
+
+        override fun getFullPath(): String {
             return pathWrapper(
-                parentPath,
+                workspaceFullPath,
+                parentRelativePath,
                 getFullName()
-            ).toString()
+            ).pathString.normalizeText()
         }
     }
 
     @Serializable
     data class Directory(
         val name: String,
-        override val parentPath: String,
+        override val parentRelativePath: String,
+        override val workspaceFullPath: String,
         val children: List<FileTreeNode>,
         override val createdTime: Long = 0L,
         override val modifiedTime: Long = 0L,
         override val fileSize: Long,
     ) : FileTreeNode() {
         companion object {
-            fun create(fullPath: Path, children: List<FileTreeNode> = listOf()): Directory {
-                return create(fullPath.toString(), children = children)
+            fun create(
+                workspacePath: String,
+                fullPath: Path,
+                children: List<FileTreeNode> = listOf()
+            ): Directory {
+                return create(workspacePath, fullPath.toString(), children = children)
             }
 
-            //, fileSize: Long = 0L
-            fun create(fullPath: String, children: List<FileTreeNode> = listOf()): Directory {
-                val name = if (fullPath.contains("/")) {
-                    fullPath.substringAfterLast("/")
+            fun create(
+                workspacePath: String,
+                relativePath: String,
+                children: List<FileTreeNode> = listOf()
+            ): Directory {
+                val name = if (relativePath.contains("/")) {
+                    relativePath.substringAfterLast("/")
                 } else {
                     ""
                 }
-                val parentPath = if (fullPath.contains("/")) {
-                    fullPath.substringBeforeLast("/")
+                val parentPath = if (relativePath.contains("/")) {
+                    relativePath.substringBeforeLast("/")
                 } else {
-                    fullPath.substringBeforeLast("/")
+                    relativePath.substringBeforeLast("/")
                 }
                 return Directory(
                     name = name,
-                    parentPath = parentPath,
+                    workspaceFullPath = workspacePath,
+                    parentRelativePath = parentPath,
                     children = children,
                     fileSize = children.sumOf { x -> x.fileSize }
                 )
             }
+        }
+
+        override fun getRelativePath(): String {
+            return pathWrapper(parentRelativePath, getFullName()).pathString
         }
 
         override fun getShortName(): String {
@@ -111,10 +160,15 @@ sealed class FileTreeNode {
             return name
         }
 
+        override fun getExtension(): String? {
+            return null
+        }
+
+
         override fun getFullPath(): String {
             return pathWrapper(
-                parentPath,
-                getFullName()
+                workspaceFullPath,
+                getRelativePath(),
             ).toString()
         }
     }
@@ -175,35 +229,25 @@ sealed class FileTreeNode {
         }
 
         fun List<FileTreeNode>.getAll(isSkipOwnNode: Boolean = false): List<FileTreeNode> {
-            val textFiles = mutableListOf<FileTreeNode>()
+            val files = mutableListOf<FileTreeNode>()
             for (item in this) {
-                if (!isSkipOwnNode)
-                    textFiles.add(item)
+                if (!isSkipOwnNode) {
+                    files.add(item)
+                }
                 when (item) {
                     is Directory -> {
-                        textFiles.addAll(item.children.getAll())
+                        files.addAll(item.children.getAll())
                     }
 
                     is File -> {
                     }
                 }
             }
-            return textFiles
+            return files
         }
 
         fun List<FileTreeNode>.hideHiddenDirectory(): List<FileTreeNode> {
             return this.filter { x -> x.getFullName() != hiddenDirectory }
-        }
-
-        fun List<FileTreeNode>.sortByIsDirectory(): List<FileTreeNode> {
-            return this.sortedWith(compareBy<FileTreeNode> { !it.isDirectory() }
-                .thenBy { it.getFullName() })
-        }
-
-        fun List<FileTreeNode>.hideDsStore(): List<FileTreeNode> {
-            return this.filter { x -> x.getFullName().lowercase() != ".DS_Store".lowercase() }
-                .sortedWith(compareBy<FileTreeNode> { !it.isDirectory() }
-                    .thenBy { it.getFullName() })
         }
     }
 }

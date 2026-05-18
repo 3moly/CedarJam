@@ -1,13 +1,11 @@
 package com.moly3.cedarjam.core.domain.dialog
 
-import com.moly3.cedarjam.core.domain.model.TagDTO
+import com.moly3.cedarjam.core.domain.dialog.model.DialogTagToTagServiceData
+import com.moly3.cedarjam.core.domain.service.WorkspaceSession
 
-class DialogTagToTagService : GlobalDialog<Unit, DialogTagToTagServiceData?>(
-    isGenericDialog = false,
-    closeValue = null
-)
-
-data class DialogTagToTagServiceData(
-    val firstTag: TagDTO,
-    val secondTag: TagDTO
-)
+class DialogTagToTagService(register: IDialogRegister) :
+    GlobalDialog<WorkspaceSession, DialogTagToTagServiceData?>(
+        isGenericDialog = false,
+        closeValue = null,
+        register = register
+    )

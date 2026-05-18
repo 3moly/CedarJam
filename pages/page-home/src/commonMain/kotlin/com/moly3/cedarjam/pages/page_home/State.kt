@@ -1,38 +1,39 @@
 package com.moly3.cedarjam.pages.page_home
 
+import androidx.compose.runtime.Stable
 import androidx.compose.ui.text.input.TextFieldValue
-import com.moly3.cedarjam.pages.page_home.model.FileVersionLine
-import com.moly3.cedarjam.pages.page_home.model.TimeMachine
+import com.moly3.cedarjam.core.domain.model.FileTreeNode
+import com.moly3.cedarjam.core.domain.model.TimeMachine
 import com.moly3.cedarjam.core.domain.model.UIState
+import com.moly3.cedarjam.pages.page_home.model.TimeMachineFilterType
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.serialization.Serializable
 
+@Stable
 data class State(
+    val allNodes: UIState<ImmutableList<FileTreeNode>, String> = UIState.Loading,
     val searchTextFieldValue: TextFieldValue = TextFieldValue(""),
-    val count: Int = 0,
     val timeMachinesState: UIState<ImmutableList<TimeMachine>, Nothing> = UIState.Loading,
-    val fileVersionsState: UIState<ImmutableList<FileVersionLine>, String> = UIState.Loading,
-    val uploadState: UIState<Unit, String> = UIState.Loading,
+    val filterType: TimeMachineFilterType = TimeMachineFilterType.All
 ) {
     @Serializable
     data class SaveableState(
         val searchText: String = "",
-        val count: Int = 0,
+        val filterType: TimeMachineFilterType = TimeMachineFilterType.All
     )
 
     companion object {
         fun SaveableState.fromSaveable(): State {
             return State(
                 searchTextFieldValue = TextFieldValue(this.searchText),
-                count = this.count,
-
-                )
+                filterType = this.filterType
+            )
         }
 
         fun State.toSaveable(): SaveableState {
             return SaveableState(
                 searchText = this.searchTextFieldValue.text,
-                count = this.count
+                filterType = this.filterType
             )
         }
     }

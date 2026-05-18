@@ -53,6 +53,18 @@ import com.moly3.cedarjam.core.domain.model.UIState
 //}
 
 @Composable
+fun <T, E> UIStateSuccessOnly(
+    state: UIState<T, E>,
+    success: @Composable (T) -> Unit
+) {
+    when (state) {
+        is UIState.Error -> {}
+        UIState.Loading -> {}
+        is UIState.Success -> success(state.data)
+    }
+}
+
+@Composable
 fun <T, E> UIStateContentNoBox(
     boxModifier: Modifier = Modifier,
     state: UIState<T, E>,

@@ -1,214 +1,168 @@
 package com.moly3.cedarjam.pages.page_collection_row.ui.internal
 
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.input.TextFieldState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.layout.onLayoutRectChanged
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.constraintlayout.compose.ConstraintLayout
+import com.moly3.cedarjam.core.domain.func.formatEpochMillis
+import com.moly3.cedarjam.core.domain.model.CollectionDTO
+import com.moly3.cedarjam.core.domain.model.CollectionRowDTO
+import com.moly3.cedarjam.core.domain.model.CollectionViewType
+import com.moly3.cedarjam.core.ui.func.isCompactUI
+import com.moly3.cedarjam.core.ui.func.rememberPdfBitmap
+import com.moly3.cedarjam.core.ui.func.statusBarsPaddingCJ
+import com.moly3.cedarjam.core.ui.func.wstatusBarsPaddingCJ
+import com.moly3.cedarjam.core.ui.uikit.AppThemePreview
 import com.moly3.cedarjam.pages.page_collection_row.Intent
 import com.moly3.cedarjam.pages.page_collection_row.State
-import com.moly3.cedarjam.core.ui.func.getPdfImage
-import com.moly3.cedarjam.core.domain.io
-import com.moly3.cedarjam.core.ui.uikit.CJButton
-import com.moly3.cedarjam.core.ui.uikit.CJTextField
-import com.moly3.cedarjam.core.ui.uikit.CJText
-import com.moly3.cedarjam.core.ui.uikit.magmaTextFieldMinTextSize
-import kotlinx.coroutines.launch
-import kotlinx.io.files.Path
+import com.moly3.lazyflow.FlowItemSize
+import com.moly3.lazyflow.core.model.FlowMainAxisArrangement
+import com.moly3.lazyflow.ui.LazyFlow
 
 @Composable
 internal fun PageContent(state: State, onIntent: (Intent) -> Unit) {
-    val isEditState = remember { mutableStateOf(false) }
-    Box(Modifier.fillMaxSize().background(Color.DarkGray)) {
+    fun updateRow(row: CollectionRowDTO) {
+        onIntent(Intent.Update(row))
+    }
+    Box(Modifier.wstatusBarsPaddingCJ().fillMaxSize()) {
         if (state.collectionRow != null) {
-            var imgBitmap by remember {
-                mutableStateOf<ImageBitmap?>(null)
-            }
-            LaunchedEffect(state.collectionRow.fileRelativePath, state.workspace) {
-                launch(io) {
-                    try {
-                        imgBitmap = if (state.collectionRow.fileRelativePath != null) {
-                            getPdfImage(
-                                Path(
-                                    "state.workspace?.fullpath",
-                                    state.collectionRow.fileRelativePath!!
-                                ).toString(),
-                                page = 0,
-                                dpi = 100f
-                            )
-                        } else {
-                            null
-                        }
-                    } catch (exc: Exception) {
-                    }
-                }
-            }
+            val row = state.collectionRow
+            val imgBitmap = rememberPdfBitmap(state.collectionRow.fileRelativePath)
             val scrollState = rememberScrollState()
-            val textNameState = remember {
-                TextFieldState(state.collectionRow.name)
-            }
 
             Column(
                 modifier = Modifier.fillMaxSize().padding(12.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    val startSize = 14f
-                    ConstraintLayout(modifier = Modifier.align(Alignment.TopCenter)) {
-                        val (preText, text) = createRefs()
-                        Row(modifier = Modifier.constrainAs(preText) {
-                            end.linkTo(text.start, margin = 4.dp)
-                        }, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            CJText("collections", color = Color.Gray, fontSize = startSize.sp)
-                            CJText("/", color = Color.Gray, fontSize = startSize.sp)
-                            CJText(
-                                "${state.collection?.name}",
-                                color = Color.Gray,
-                                fontSize = startSize.sp,
-                                modifier = Modifier.clickable {
-                                    onIntent(Intent.OpenCollection)
-                                }
-                            )
-                            CJText("/", color = Color.Gray, fontSize = startSize.sp)
-                        }
-                        val isBigText =
-                            remember(
-                                scrollState.canScrollBackward,
-                                textNameState.text.length,
-                                state.collectionRow.fileRelativePath
-                            ) {
-                                if (scrollState.canScrollBackward || !state.collectionRow.fileRelativePath.isNullOrEmpty())
-                                    false
-                                else
-                                    textNameState.text.length < 6
-                            }
-
-                        val animatedFontSize by animateFloatAsState(if (isBigText) 110f else magmaTextFieldMinTextSize)
-                        val animatedWidthSize by animateDpAsState(if (isBigText) 100.dp else 10.dp)
-
-                        CJTextField(
-                            modifier = Modifier
-                                .width(IntrinsicSize.Min)
-                                .widthIn(min = animatedWidthSize)
-                                .constrainAs(text) {
-                                    top.linkTo(parent.top)
-                                },
-                            textStyle = TextStyle.Default.copy(
-                                textAlign = TextAlign.Center,
-                                fontSize = animatedFontSize.sp
-                            ),
-                            text = textNameState,
-                            onDone = {
-                                onIntent(Intent.Rename(textNameState.text.toString()))
-                            }
-                        )
-                    }
-                }
-
-                Column(
-                    Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                        .verticalScroll(scrollState)
+                NameField(
+                    collectionRow = state.collectionRow,
+                    collection = state.collection,
+                    scrollState = scrollState,
+                    onIntent = onIntent
+                )
+                val windowWidth = remember { mutableStateOf<Int>(0) }
+                LazyFlow(
+//                    orientation = orientation,
+                    modifier = Modifier.weight(1f).fillMaxWidth().onLayoutRectChanged {
+                        windowWidth.value = it.width
+                    },
+                    mainAxisArrangement = FlowMainAxisArrangement.Center
                 ) {
                     if (imgBitmap != null) {
-                        Image(
-                            bitmap = imgBitmap!!,
-                            contentDescription = null,
-                            modifier = Modifier
-                                .height(200.dp)
-                                .align(Alignment.CenterHorizontally),
-                            contentScale = ContentScale.FillHeight
+                        item("img") {
+                            Image(
+                                bitmap = imgBitmap,
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .height(200.dp)
+                                    .align(Alignment.CenterHorizontally),
+                                contentScale = ContentScale.FillHeight
+                            )
+                        }
+                    }
+                    item(
+                        "fields",
+                        size = FlowItemSize.Exact(
+                            DpSize(
+                                width = windowWidth.value.dp,
+                                height = 400.dp
+                            )
                         )
-                    } else {
-
-                    }
-
-                    CJButton(
-                        text = "Import pdf",
-                        onClick = {
-                            onIntent(Intent.ImportPdf)
-                        })
-                    if (!isEditState.value) {
-                        CJButton(
-                            text = "Edit",
-                            onClick = {
-                                isEditState.value = !isEditState.value
-                            })
-                    }
-
-                    if (isEditState.value) {
-                        var webLinkTextState by remember(state.collectionRow) {
-                            mutableStateOf(
-                                TextFieldValue(
-                                    state.collectionRow.webLink ?: ""
+                    ) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            TextPropertyField(
+                                placeholder = "mod time",
+                                value = state.collectionRow.modifiedTime.formatEpochMillis()
+                            )
+                            TextPropertyField(
+                                placeholder = "web link",
+                                value = state.collectionRow.webLink ?: "",
+                                onSave = { updateRow(row.copy(webLink = it)) }
+                            )
+                            TextPropertyField(
+                                placeholder = "file path",
+                                value = state.collectionRow.fileRelativePath ?: ""
+                            )
+//                            if (state.collection?.viewType == CollectionViewType.PDF) {
+//
+//                            }
+                            if (state.collection?.viewType == CollectionViewType.Word) {
+                                TextPropertyField(
+                                    placeholder = "translation",
+                                    value = state.collectionRow.translation ?: "",
+                                    onSave = { updateRow(row.copy(translation = it)) }
                                 )
-                            )
-                        }
-                        Column {
-                            CJText(text = "web link:")
-                            CJTextField(
-                                modifier = Modifier.width(500.dp),
-                                value = webLinkTextState,
-                                onValueChanged = {
-                                    webLinkTextState = it
-                                }
-                            )
-                        }
-
-                        Row {
-                            CJButton(
-                                text = "Update",
-                                onClick = {
-                                    onIntent(
-                                        Intent.Update(
-                                            collRow = state.collectionRow.copy(
-                                                webLink = webLinkTextState.text
-                                            )
-                                        )
-                                    )
-                                    isEditState.value = false
-                                })
-                            CJButton(
-                                text = "Cancel",
-                                onClick = {
-                                    isEditState.value = false
-                                })
+                                TextPropertyField(
+                                    placeholder = "pronunciation",
+                                    value = state.collectionRow.pronunciation ?: "",
+                                    onSave = { updateRow(row.copy(pronunciation = it)) }
+                                )
+                                TextPropertyField(
+                                    placeholder = "example sentence",
+                                    value = state.collectionRow.exampleSentence ?: "",
+                                    onSave = { updateRow(row.copy(exampleSentence = it)) }
+                                )
+                            }
                         }
                     }
                 }
             }
         }
+    }
+}
+
+@Preview
+@Composable
+private fun PageContentPreview() {
+    AppThemePreview(isDark = false) {
+        PageContent(
+            state = State(
+                collection = CollectionDTO(
+                    id = 1,
+                    name = "japanese words",
+                    viewType = CollectionViewType.Word,
+                    createdTime = 0,
+                    modifiedTime = 0
+                ),
+                collectionRow = CollectionRowDTO(
+                    id = 1L,
+                    name = "アニメ",
+                    collectionId = 1,
+                    fileRelativePath = null,
+                    imgRelativePath = null,
+                    webLink = null,
+                    currentProgress = null,
+                    progressMax = null,
+                    isCompleted = false,
+                    translation = null,
+                    pronunciation = null,
+                    exampleSentence = null,
+                    createdTime = 0L,
+                    modifiedTime = 0L,
+                    points = 0L,
+                )
+            ),
+            onIntent = {}
+        )
     }
 }

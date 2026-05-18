@@ -1,20 +1,30 @@
 package com.moly3.cedarjam.core.domain.model
 
+import com.moly3.cedarjam.core.domain.func.normalizeText
+
 
 fun FileTreeNode.getGraphId(): String {
-    return getFullPath().getFileTreeNodeGraphId()
+    return getRelativePath().getFileTreeNodeGraphId()
 }
 
 fun String.getFileTreeNodeGraphId(): String {
-    return "filenode: $this"
+    return "filenode: ${this.normalizeText()}"
 }
 
 fun CollectionDTO.getGraphId(): String {
     return id.getCollectionGraphId()
 }
 
+fun AnnotationDTO.getGraphId(): String {
+    return id.getAnnotationGraphId()
+}
+
 fun Long.getCollectionGraphId(): String {
     return "collection: $this"
+}
+
+fun Long.getAnnotationGraphId(): String {
+    return "annotation: $this"
 }
 
 fun CollectionRowDTO.getGraphId(): String {

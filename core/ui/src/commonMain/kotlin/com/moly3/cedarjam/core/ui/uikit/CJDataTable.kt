@@ -1,5 +1,6 @@
 package com.moly3.cedarjam.core.ui.uikit
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -11,12 +12,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -24,11 +29,13 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 @Composable
 fun <T> CJDataTable(
+    isLazyColumn: Boolean = true,
     isFixedHeader: Boolean = true,
     modifier: Modifier = Modifier,
     itemModifierBuilder: Modifier.(T) -> Modifier = { Modifier },
@@ -36,50 +43,85 @@ fun <T> CJDataTable(
     data: List<T>
 ) {
     val maxColumnWidthsState = remember(data, headers) { mutableStateMapOf<Int, Float>() }
-    Column(modifier = modifier) {
+    Column(modifier = modifier.horizontalScroll(rememberScrollState())) {
         if (isFixedHeader) {
+            DataRow(
+                modifier = Modifier.fillMaxWidth().widthIn(min = 10.dp),
+                key = data,
+                headers = headers,
+                maxColumnWidthsState = maxColumnWidthsState
+            ) { header ->
+                CJText(text = header.headerName, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+        }
+        if (isLazyColumn) {
+            LazyColumn(
+                modifier = Modifier
+            ) {
+                if (!isFixedHeader) {
+                    item("header") {
+                        DataRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            key = data,
+                            headers = headers,
+                            maxColumnWidthsState = maxColumnWidthsState
+                        ) { header ->
+                            CJText(
+                                text = header.headerName,
+                                maxLines = 1
+                            )
+                        }
+                    }
+                }
+                for (item in data) {
+                    item(key = item.toString()) {
+                        DataRow(
+                            modifier = Modifier.animateItem().itemModifierBuilder(item),
+                            key = data,
+                            headers = headers,
+                            maxColumnWidthsState = maxColumnWidthsState
+                        ) { header ->
+                            if (header.content != null) {
+                                header.content(item)
+                            } else if (header.contentStr != null) {
+                                SelectionContainer {
+                                    CJText(
+                                        text = header.contentStr(item),
+                                        maxLines = 1
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
             DataRow(
                 modifier = Modifier.fillMaxWidth(),
                 key = data,
                 headers = headers,
                 maxColumnWidthsState = maxColumnWidthsState
             ) { header ->
-                CJText(text = header.headerName)
-            }
-        }
-        LazyColumn(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            if (!isFixedHeader) {
-                item("header") {
-                    DataRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        key = data,
-                        headers = headers,
-                        maxColumnWidthsState = maxColumnWidthsState
-                    ) { header ->
-                        CJText(
-                            text = header.headerName
-                        )
-                    }
-                }
+                CJText(
+                    text = header.headerName,
+                    maxLines = 1
+                )
             }
             for (item in data) {
-                item(key = item.toString()) {
-                    DataRow(
-                        modifier = Modifier.animateItem().itemModifierBuilder(item),
-                        key = data,
-                        headers = headers,
-                        maxColumnWidthsState = maxColumnWidthsState
-                    ) { header ->
-                        if (header.content != null) {
-                            header.content(item)
-                        } else if (header.contentStr != null) {
-                            SelectionContainer {
-                                CJText(
-                                    text = header.contentStr(item)
-                                )
-                            }
+                DataRow(
+                    modifier = Modifier.itemModifierBuilder(item),
+                    key = data,
+                    headers = headers,
+                    maxColumnWidthsState = maxColumnWidthsState
+                ) { header ->
+                    if (header.content != null) {
+                        header.content(item)
+                    } else if (header.contentStr != null) {
+                        SelectionContainer {
+                            CJText(
+                                text = header.contentStr(item),
+                                maxLines = 1
+                            )
                         }
                     }
                 }
@@ -124,6 +166,7 @@ private fun <T> DataRow(
 
                 DataTableCell(
                     modifier = Modifier
+
                         .let { baseModifier ->
                             // Apply either weight, fixed width, or max calculated width
                             when {
@@ -174,6 +217,7 @@ private fun <T> DataRow(
                                 modifier.height(IntrinsicSize.Min)
                             }
                         }
+                        .clipToBounds()
                 ) {
                     contentItem(header)
                 }

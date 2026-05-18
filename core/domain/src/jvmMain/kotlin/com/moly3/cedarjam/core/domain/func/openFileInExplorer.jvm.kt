@@ -1,10 +1,9 @@
 package com.moly3.cedarjam.core.domain.func
 
-import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import java.io.File
 
-actual fun openFileInExplorer(fileNode: FileTreeNode) {
-    val file = File(fileNode.getFullPath())
+actual fun openFileInExplorer(fullPath: String) {
+    val file = File(fullPath)
     if (!file.exists()) {
         println("File does not exist: ${file.absolutePath}")
         return

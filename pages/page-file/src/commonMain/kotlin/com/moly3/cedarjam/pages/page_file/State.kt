@@ -1,16 +1,20 @@
 package com.moly3.cedarjam.pages.page_file
 
+import com.moly3.cedarjam.core.domain.model.AnnotationDTO
 import com.moly3.cedarjam.core.domain.model.FileType
 import com.moly3.cedarjam.core.domain.model.TagDTO
 import com.moly3.cedarjam.core.domain.model.TagLinkDTO
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.serialization.Serializable
 
 data class State(
     val connectionsCount: Int = 0,
     val relativePath: String = "",
     val fileType: FileType? = null,
-    val tags: List<TagDTO> = listOf(),
-    val tagLinks: List<TagLinkDTO> = listOf()
+    val tags: ImmutableList<TagDTO> = persistentListOf(),
+    val tagLinks: ImmutableList<TagLinkDTO> = persistentListOf(),
+    val annotations: ImmutableList<AnnotationDTO> = persistentListOf()
 ) {
     @Serializable
     data class SaveableState(

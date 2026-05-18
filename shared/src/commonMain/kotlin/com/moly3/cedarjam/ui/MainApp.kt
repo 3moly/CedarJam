@@ -1,22 +1,19 @@
 package com.moly3.cedarjam.ui
 
+import EditorScreen
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.isBackPressed
 import androidx.compose.ui.input.pointer.isForwardPressed
@@ -25,69 +22,83 @@ import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.extensions.compose.experimental.stack.ChildStack
 import com.arkivanov.decompose.extensions.compose.experimental.stack.animation.stackAnimation
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
+import com.moly3.cedarjam.core.domain.dialog.DialogColorPickerService
+import com.moly3.cedarjam.core.domain.dialog.DialogCreateWorkspaceService
+import com.moly3.cedarjam.core.domain.dialog.DialogDeleteService
+import com.moly3.cedarjam.core.domain.dialog.DialogSelectOptionsService
+import com.moly3.cedarjam.core.domain.dialog.DialogSelectTagService
+import com.moly3.cedarjam.core.domain.dialog.DialogTagToTagService
+import com.moly3.cedarjam.core.domain.dialog.model.DialogSelectOptionsServiceInput
+import com.moly3.cedarjam.core.domain.model.UIState
+import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
+import com.moly3.cedarjam.core.ui.compositions.LocalVideoPlayer
+import com.moly3.cedarjam.core.ui.onPointerEvent
+import com.moly3.cedarjam.core.ui.uikit.CJApplicationTheme
+import com.moly3.cedarjam.core.ui.uikit.NeumorphicShape
+import com.moly3.cedarjam.core.ui.uikit.markdown_editor.v2.MarkdownEditorExample
 import com.moly3.cedarjam.navigation.Root
 import com.moly3.cedarjam.navigation.Route
 import com.moly3.cedarjam.pages.page_select_workspace.ui.SelectWorkspacePage
 import com.moly3.cedarjam.pages.page_workspace.ui.WorkspacePage
+import com.moly3.cedarjam.pages.page_workspace.ui.dialog.DialogSelectTagUI
+import com.moly3.cedarjam.pages.page_workspace.ui.dialog.DialogTagToTagUI
 import com.moly3.cedarjam.ui.app.AppComposableWidgetHideKeyboard
-import com.moly3.cedarjam.ui.dialog.DialogAddCollectionRowUI
-import com.moly3.cedarjam.ui.dialog.DialogAppSettingsUI
 import com.moly3.cedarjam.ui.dialog.DialogColorPickerUI
-import com.moly3.cedarjam.ui.dialog.DialogCreateWorkspaceService
+import com.moly3.cedarjam.ui.dialog.DialogCreateWorkspaceUI
 import com.moly3.cedarjam.ui.dialog.DialogDeleteUI
-import com.moly3.cedarjam.ui.dialog.DialogSelectWorkspaceUI
+import com.moly3.cedarjam.ui.dialog.DialogSelectOptionsUI
 import com.moly3.cedarjam.ui.dialog.SuccessSnackbarComponent
-import com.moly3.cedarjam.core.ui.uikit.CJApplicationTheme
-import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
-import com.moly3.cedarjam.core.ui.compositions.LocalHazeState
-import com.moly3.cedarjam.core.ui.compositions.LocalVideoPlayer
-import com.moly3.cedarjam.core.ui.onPointerEvent
-import com.moly3.cedarjam.core.ui.uikit.CJButton
-import com.moly3.cedarjam.pages.page_workspace.ui.ToolbarState
-import com.skydoves.compose.stability.runtime.TraceRecomposition
-import dev.chrisbanes.haze.hazeSource
-import dev.chrisbanes.haze.rememberHazeState
-import io.github.kdroidfilter.composemediaplayer.VideoPlayerSurface
+import com.moly3.cedarjam.di.metro.CedarJamGraph
 import io.github.kdroidfilter.composemediaplayer.rememberVideoPlayerState
-
 
 @OptIn(ExperimentalDecomposeApi::class)
 @Composable
-@TraceRecomposition
-fun MainApp(
-    root: Root,
-    titleBarContent: @Composable (@Composable (ToolbarState) -> Unit) -> Unit = {
-        it(
-            ToolbarState(
-                isFullscreen = true,
-                0.dp,
-                isFirstCut = true,
-                controlsWidthToCut = 0.dp
-            )
-        )
+fun MainApp(root: Root) {
+    val registry = remember {
+        CedarJamGraph.deps.dialogRegistry.apply {
+            registerUI { dialog: DialogSelectOptionsService, input: DialogSelectOptionsServiceInput ->
+                DialogSelectOptionsUI(dialog, input)
+            }
+            registerUI { dialog: DialogColorPickerService, input: Color? ->
+                DialogColorPickerUI(dialog, input ?: Color.Black)
+            }
+            registerUI { dialog: DialogCreateWorkspaceService, input: Unit ->
+                DialogCreateWorkspaceUI(dialog)
+            }
+            registerUI { dialog: DialogDeleteService, input: Unit ->
+                DialogDeleteUI(dialog)
+            }
+            registerUI { dialog: DialogSelectTagService, i ->
+                DialogSelectTagUI(
+                    dialog = dialog,
+                    workspaceSession = i
+                )
+            }
+            registerUI { dialog: DialogTagToTagService, i ->
+                DialogTagToTagUI(
+                    dialog = dialog,
+                    workspaceSession = i
+                )
+            }
+        }
     }
-) {
-    val stack by root.childStack.subscribeAsState()
-    val appSettings by root.appSettingsFlow.collectAsState()
 
-    CJApplicationTheme(appSettings = appSettings) {
-        val hazeState = rememberHazeState(blurEnabled = false)
+    val stack by root.children.subscribeAsState()
+    val appSettings by root.appSettingsFlow.collectAsState()
+    val syncStatus by root.sendingBranchFlow.collectAsState(UIState.Loading)
+    CJApplicationTheme(isRelease = root.isRelease, appSettings = appSettings) {
         val playerState = rememberVideoPlayerState()
         CompositionLocalProvider(
-            LocalHazeState provides hazeState,
             LocalVideoPlayer provides playerState,
         ) {
             Box(
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier
+                    .fillMaxSize()
                     .background(LocalAppTheme.current.colors.backgroundPrimary)
-                    .statusBarsPadding()
-                    .navigationBarsPadding()
-                    .imePadding()
             ) {
                 ChildStack(
                     modifier = Modifier
                         .fillMaxSize()
-                        .hazeSource(state = hazeState)
                         .onPointerEvent(PointerEventType.Press) {
                             if (it.buttons.isBackPressed) {
                                 root.onNavigate(Route.Back)
@@ -101,66 +112,81 @@ fun MainApp(
                     when (val instance = it.instance) {
                         is Root.Child.Workspace -> WorkspacePage(
                             component = instance.component,
-                            titleBarContent = titleBarContent
+                            dialogContent = {
+                                registry.Host()
+                            }
                         )
 
-                        is Root.Child.Empty -> SelectWorkspacePage(component = instance.component)
-                    }
-                }
-                Box(Modifier.fillMaxSize()) {
-                    val player = LocalVideoPlayer.current
-                    if (player.hasMedia) {
-                        Box(
-                            modifier = Modifier
-                                .width(300.dp)
-                                .height(200.dp)
-                                .padding(16.dp)
-                                .align(Alignment.BottomEnd)
-                        ) {
-                            VideoPlayerSurface(
-                                modifier = Modifier
-                                    .align(Alignment.BottomEnd),
-                                playerState = player
-                            )
-                            Row(
-                                modifier = Modifier.padding(8.dp).align(Alignment.BottomCenter),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                val buttonText = if (player.isPlaying) "stop" else "play"
-                                CJButton(modifier = Modifier, text = buttonText) {
-                                    if (player.isPlaying) {
-                                        player.stop()
-                                    } else {
-                                        player.play()
-                                    }
-                                }
-                            }
+                        is Root.Child.SelectWorkspace -> {
+                            SelectWorkspacePage(component = instance.component)
+                            registry.Host()
                         }
                     }
                 }
-                DialogDeleteUI(root.dialogDeleteService)
-                DialogAddCollectionRowUI(root.dialogAddCollectionRowService)
-                DialogCreateWorkspaceService(root.dialogCreateWorkspaceService)
-                DialogSelectWorkspaceUI(
-                    appEnvironment = root.appEnvironment,
-                    dialogCreate = root.dialogCreateWorkspaceService,
-                    root.dialogSelectWorkspaceService
-                )
-                DialogColorPickerUI(dialog = root.dialogColorPickerService)
-                DialogAppSettingsUI(dialog = root.dialogAppSettingsService)
                 Box(Modifier.fillMaxSize()) {
                     SuccessSnackbarComponent(
                         messageService = root.messageService
                     )
                 }
                 AppComposableWidgetHideKeyboard()
+                TopAlertServiceUI(root.alertService)
+                when (val sync = syncStatus) {
+                    is UIState.Error,
+                    UIState.Loading -> {
+                    }
 
+                    is UIState.Success -> {
+                        NeumorphicShape(
+                            modifier = Modifier.align(Alignment.Center).size(200.dp),
+                            content = {
+                                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        com.moly3.cedarjam.core.ui.uikit.CJText(
+                                            text = sync.data.message
+                                        )
+                                        com.moly3.cedarjam.core.ui.uikit.CJText(
+                                            text = "progress: ${sync.data.progress}/${sync.data.all}"
+                                        )
+                                    }
+                                }
+                            }) {
 
+                        }
+                    }
+                }
+//                Box(Modifier.fillMaxSize().background(Color.Black).padding(40.dp).flatClickable {}){
+//                    val editorState = rememberNotionEditorState(
+//                        initial = listOf(
+//                            NotionBlock(type = BlockType.H1, text = "My Document"),
+//                            NotionBlock(type = BlockType.Paragraph, text = "Start writing here..."),
+//                            NotionBlock(
+//                                type = BlockType.Custom,
+//                                customContent = {
+//                                    // Any composable you like
+//                                    Row(
+//                                        modifier = Modifier
+//                                            .fillMaxWidth()
+//                                            .background(Color(0xFFF5F5F5), RoundedCornerShape(8.dp))
+//                                            .padding(12.dp),
+//                                        verticalAlignment = Alignment.CenterVertically,
+//                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+//                                    ) {
+//                                        Icon(Icons.Default.Info, contentDescription = null, tint = Color(0xFF2383E2))
+//                                        Text("This is a custom block!", fontWeight = FontWeight.Medium)
+//                                    }
+//                                }
+//                            ),
+//                            NotionBlock(type = BlockType.Image), // placeholder until you supply an ImageBitmap
+//                        )
+//                    )
+//
+//                    NotionEditor(
+//                        state = editorState,
+//                        modifier = Modifier.fillMaxSize()
+//                    )
+//                }
             }
-            Box(Modifier.fillMaxSize()) {
-                //ChibiCharacter()
-            }
+            MarkdownEditorExample()
         }
     }
 }

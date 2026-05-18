@@ -7,17 +7,24 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import coil3.compose.rememberAsyncImagePainter
+import com.github.panpf.zoomimage.CoilZoomAsyncImage
+import com.github.panpf.zoomimage.compose.rememberZoomState
+import com.github.panpf.zoomimage.rememberCoilZoomState
+import com.moly3.cedarjam.core.domain.model.AnnotationDTO
+import com.moly3.cedarjam.core.domain.model.FileType
+import com.moly3.cedarjam.core.domain.model.request.CreateAnnotationRequest
+import com.moly3.cedarjam.core.domain.repository.IFilesRepository
+import com.moly3.cedarjam.core.domain.service.IUtilsService
+import com.moly3.cedarjam.core.domain.service.WorkspaceSession
+import com.moly3.cedarjam.core.ui.compositions.LocalImageLoader
+import com.moly3.cedarjam.core.ui.service.IJvmBrowserService
+import com.moly3.cedarjam.core.ui.service.MacTrackpadGestureService
+import com.moly3.cedarjam.core.ui.uikit.CJText
+import com.moly3.cedarjam.core.ui.uikit.CJZoomableViewLayout
 import com.moly3.cedarjam.features.feature_file_view.internal.MidiUI
 import com.moly3.cedarjam.features.feature_file_view.internal.PdfUI
 import com.moly3.cedarjam.features.feature_file_view.internal.VideoUI
-import com.moly3.cedarjam.core.domain.model.FileType
-import com.moly3.cedarjam.core.domain.repository.IFilesRepository
-import com.moly3.cedarjam.core.ui.service.IJvmBrowserService
-import com.moly3.cedarjam.core.domain.service.IUtilsService
-import com.moly3.cedarjam.core.ui.service.MacTrackpadGestureService
-import com.moly3.cedarjam.core.domain.service.WorkspaceSession
-import com.moly3.cedarjam.core.ui.uikit.CJText
-import com.moly3.cedarjam.core.ui.uikit.CJZoomableViewLayout
+import kotlinx.collections.immutable.ImmutableList
 import kotlinx.coroutines.FlowPreview
 
 @OptIn(FlowPreview::class)
@@ -30,6 +37,9 @@ fun FileView(
     workspaceSession: WorkspaceSession,
     modifier: Modifier,
     fileNode: FileType,
+    annotations: ImmutableList<AnnotationDTO>,
+    onAddAnnotation: (CreateAnnotationRequest) -> Unit,
+    onDeleteAnnotation: (AnnotationDTO) -> Unit,
     contentCanvas: @Composable (FileType.Canvas) -> Unit,
     contentFileEdit: @Composable (FileType.Text) -> Unit,
     nextPage: (FileType.PDF) -> Unit = {},
@@ -53,25 +63,28 @@ fun FileView(
                 utilsService = utilsService
             )
 
-            is FileType.PDF -> PdfUI(
-                fileType = fl,
-                macTrackpadGestureService = macTrackpadGestureService,
-                back = { backPage(fl) },
-                forward = { nextPage(fl) },
-                toPage = { toPage(fl, it) }
-            )
+            is FileType.PDF -> {
+
+                PdfUI(
+                    fileType = fl,
+                    macTrackpadGestureService = macTrackpadGestureService,
+                    back = { backPage(fl) },
+                    forward = { nextPage(fl) },
+                    toPage = { toPage(fl, it) },
+                    onDeleteAnnotation = onDeleteAnnotation,
+                    onAddAnnotation = onAddAnnotation,
+                    annotations = annotations,
+                )
+            }
 
             is FileType.Image -> {
-                CJZoomableViewLayout(
+                val zoomState = rememberCoilZoomState()
+                CoilZoomAsyncImage(
+                    zoomState = zoomState,
+                    model = fl.fileNode.getFullPath(),
+                    contentDescription = "view image",
                     modifier = Modifier.fillMaxSize(),
-                    macTrackpadGestureService = macTrackpadGestureService
-                ) {
-                    Image(
-                        painter = rememberAsyncImagePainter(model = fl.fileNode.getFullPath()),
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
+                )
             }
 
             is FileType.Text -> contentFileEdit(fl)

@@ -18,7 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.moly3.cedarjam.core.domain.dialog.DialogTagToTagService
-import com.moly3.cedarjam.core.domain.dialog.DialogTagToTagServiceData
+import com.moly3.cedarjam.core.domain.dialog.model.DialogTagToTagServiceData
 import com.moly3.cedarjam.core.domain.model.TagDTO
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
 import com.moly3.cedarjam.core.ui.uikit.CJDialogGeneric
@@ -30,65 +30,63 @@ import kotlinx.coroutines.launch
 fun DialogTagToTagUI(workspaceSession: WorkspaceSession, dialog: DialogTagToTagService) {
     val scope = rememberCoroutineScope()
 
-    CJDialogGeneric(dialog = dialog) {
-        val tags = workspaceSession.workspaceEnvStateFlow.value.getTagsFlow().collectAsState(listOf()).value
+    val tags = workspaceSession.workspaceEnvStateFlow.value.getTagsFlow().collectAsState(listOf()).value
 
-        val selectedTag1 = remember { mutableStateOf<TagDTO?>(null) }
-        val selectedTag2 = remember { mutableStateOf<TagDTO?>(null) }
-        Box(
-            Modifier.fillMaxSize().background(Color.Green.copy(alpha = 0.3f))
-                .clickable(interactionSource = null, onClick = {
-                    scope.launch {
-                        dialog.setResult(null)
-                    }
-                }),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(
-                Modifier.background(Color.Green, shape = RoundedCornerShape(24.dp))
-                    .padding(24.dp)
-            ) {
-                if (tags != null) {
-                    Row {
-                        SelectTagList(
-                            tags = tags,
-                            currentTag = selectedTag1.value,
-                            currentTag2 = selectedTag2.value,
-                            onSelectTag = {
-                                selectedTag1.value = it
-                            }
-                        )
-                        SelectTagList(
-                            tags = tags,
-                            currentTag = selectedTag2.value,
-                            currentTag2 = selectedTag1.value,
-                            onSelectTag = {
-                                selectedTag2.value = it
-                            }
-                        )
-                    }
+    val selectedTag1 = remember { mutableStateOf<TagDTO?>(null) }
+    val selectedTag2 = remember { mutableStateOf<TagDTO?>(null) }
+    Box(
+        Modifier.fillMaxSize().background(Color.Green.copy(alpha = 0.3f))
+            .clickable(interactionSource = null, onClick = {
+                scope.launch {
+                    dialog.setResult(null)
                 }
-                Row(
-                    Modifier
-
-                ) {
-                    CJButton(text = "Create") {
-                        scope.launch {
-                            val tag1 = selectedTag1.value
-                            val tag2 = selectedTag2.value
-
-                            if (tag1 == null)
-                                return@launch
-                            if (tag2 == null)
-                                return@launch
-
-                            dialog.setResult(
-                                DialogTagToTagServiceData(
-                                    firstTag = tag1,
-                                    secondTag = tag2
-                                )
-                            )
+            }),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            Modifier.background(Color.Green, shape = RoundedCornerShape(24.dp))
+                .padding(24.dp)
+        ) {
+            if (tags != null) {
+                Row {
+                    SelectTagList(
+                        tags = tags,
+                        currentTag = selectedTag1.value,
+                        currentTag2 = selectedTag2.value,
+                        onSelectTag = {
+                            selectedTag1.value = it
                         }
+                    )
+                    SelectTagList(
+                        tags = tags,
+                        currentTag = selectedTag2.value,
+                        currentTag2 = selectedTag1.value,
+                        onSelectTag = {
+                            selectedTag2.value = it
+                        }
+                    )
+                }
+            }
+            Row(
+                Modifier
+
+            ) {
+                CJButton(text = "Create") {
+                    scope.launch {
+                        val tag1 = selectedTag1.value
+                        val tag2 = selectedTag2.value
+
+                        if (tag1 == null)
+                            return@launch
+                        if (tag2 == null)
+                            return@launch
+
+                        dialog.setResult(
+                            DialogTagToTagServiceData(
+                                firstTag = tag1,
+                                secondTag = tag2
+                            )
+                        )
                     }
                 }
             }

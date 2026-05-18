@@ -1,11 +1,19 @@
 package com.moly3.cedarjam.core.domain.service
 
+import androidx.compose.runtime.Stable
 import co.touchlab.kermit.Logger
-import com.moly3.cedarjam.core.domain.model.FileTreeNode.Companion.hideHiddenDirectory
-import com.moly3.cedarjam.core.domain.model.node.toPresentation
+import com.moly3.cedarjam.core.domain.func.hiddenDirectory
+import com.moly3.cedarjam.core.domain.func.nowInMs
+import com.moly3.cedarjam.core.domain.func.shareScope
+import com.moly3.cedarjam.core.domain.model.AnnotationDTO
 import com.moly3.cedarjam.core.domain.model.CollectionDTO
 import com.moly3.cedarjam.core.domain.model.CollectionRowDTO
+import com.moly3.cedarjam.core.domain.model.FileName
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
+import com.moly3.cedarjam.core.domain.model.FileTreeNode.Companion.getAll
+import com.moly3.cedarjam.core.domain.model.FileTreeNode.Companion.hideHiddenDirectory
+import com.moly3.cedarjam.core.domain.model.IndexFileDto
+import com.moly3.cedarjam.core.domain.model.ResultWrapper
 import com.moly3.cedarjam.core.domain.model.TagCollectionRowDTO
 import com.moly3.cedarjam.core.domain.model.TagDTO
 import com.moly3.cedarjam.core.domain.model.TagLinkDTO
@@ -13,17 +21,27 @@ import com.moly3.cedarjam.core.domain.model.TagToTagDTO
 import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.domain.model.WorkspacePresentation
 import com.moly3.cedarjam.core.domain.model.error.DatabaseError
+import com.moly3.cedarjam.core.domain.model.isSuccess
 import com.moly3.cedarjam.core.domain.model.node.GraphSettingsConfig
 import com.moly3.cedarjam.core.domain.model.node.ObsidianGraphPresentation
+import com.moly3.cedarjam.core.domain.model.node.toPresentation
+import com.moly3.cedarjam.core.domain.model.settings.WorkspaceFont
+import com.moly3.cedarjam.core.domain.model.settings.WorkspaceSettings
 import com.moly3.cedarjam.core.domain.repository.IAppEnvironment
+import com.moly3.cedarjam.core.domain.repository.IFilesRepository
 import com.moly3.cedarjam.core.domain.repository.IWorkspaceEnvironment
 import com.moly3.cedarjam.core.domain.repository.IWorkspaceEnvironment.Companion.getHiddenDirectory
+import com.moly3.cedarjam.core.domain.usecase.ISyncUseCase
+import com.moly3.cedarjam.core.domain.usecase.SyncStatus2
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
@@ -31,12 +49,22 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.shareIn
 
 @OptIn(ExperimentalCoroutinesApi::class)
+@Stable
 class WorkspaceSession(
+    private val filesRepository: IFilesRepository,
     private val appEnvironment: IAppEnvironment,
     private val scope: CoroutineScope,
     private val workspace: IWorkspaceEnvironment,
     val fileManagerService: FileManagerService,
 ) {
+
+    fun getSettingsFlow(): StateFlow<WorkspaceSettings> {
+        return workspace.getWorkspaceSettingsFlow()
+    }
+
+    suspend fun setSettings(settings: WorkspaceSettings) {
+        workspace.setWorkspaceSettings(settings)
+    }
 
     val workspaceEnvStateFlow: StateFlow<IWorkspaceEnvironment> = MutableStateFlow(workspace)
 
@@ -44,6 +72,11 @@ class WorkspaceSession(
         println("val workspaceFlow: Flow<Workspace> ${it.getWorkspace().name}")
         it.getWorkspace()
     }
+
+    val indexFilesFlow: Flow<List<IndexFileDto>> = workspaceEnvStateFlow.flatMapLatest {
+        println("val workspaceFlow: Flow<Workspace> ${it.getWorkspace().name}")
+        it.getIndexFilesFlow()
+    }.shareScope()
 
     val databaseStatusFlow: Flow<UIState<Unit, DatabaseError>> =
         workspaceEnvStateFlow.flatMapLatest { workspaceEnv ->
@@ -54,18 +87,26 @@ class WorkspaceSession(
             workspaceEnv.getFileNodesFlow()
         }.onStart { emit(UIState.Loading) }
 
+    val allFiles: Flow<UIState<List<FileTreeNode>, String>> = filesFlow.map {
+        it.map{
+            it.getAll().toPersistentList()
+        }
+    }
+
     fun <T> Flow<T>.shareScope(): Flow<T> {
-        return this.shareIn(
-            scope = scope,
-            started = SharingStarted.Lazily,
-            replay = 1
-        )
+        return this.shareScope(scope)
     }
 
     val collectionsFlow: Flow<List<CollectionDTO>> =
         workspaceEnvStateFlow
             .flatMapLatest {
                 it.getCollectionsFlow()
+            }.shareScope()
+
+    val annotationsFlow: Flow<List<AnnotationDTO>> =
+        workspaceEnvStateFlow
+            .flatMapLatest {
+                it.getAnnotationsFlow()
             }.shareScope()
 
     val collectionRowsFlow: Flow<List<CollectionRowDTO>> =
@@ -96,7 +137,7 @@ class WorkspaceSession(
     val tagLinksFlow: Flow<List<TagLinkDTO>> =
         workspaceEnvStateFlow
             .flatMapLatest {
-                it.getTagLinksFlow()
+                it.getTagFilesFlow()
             }.shareScope()
 
     private val resourcesFlow: Flow<UIState<List<FileTreeNode>, Nothing>> = combine(
@@ -107,10 +148,11 @@ class WorkspaceSession(
             Logger.d("resourcesFlow: ${files}")
             UIState.Loading
         } else {
+
             UIState.Success(
                 getHiddenDirectory(
                     workspace = workspace,
-                    name = "Resources",
+                    name = "",
                     directoryName = IWorkspaceEnvironment.hiddenResources,
                     files = files.data
                 )
@@ -175,6 +217,53 @@ class WorkspaceSession(
                 rows = rows,
                 files = files
             ) ?: listOf()
+        }
+    }
+
+    private val _workspaceFont = MutableStateFlow<WorkspaceFont?>(null)
+    val workspaceFont = _workspaceFont.asStateFlow()
+
+    suspend fun initConfigAndFiles() {
+        workspace.initConfigAndFiles()
+        loadLocalFont()
+        workspace.reinitDatabase()
+    }
+
+    suspend fun loadLocalFont(newFile: FileTreeNode.File? = null) {
+        val node = FileTreeNode.File(
+            name = FileName(name = "default", extension = "otf"),
+            workspaceFullPath = workspace.getWorkspace().absolutePath,
+            parentRelativePath = hiddenDirectory
+        )
+        val newNode = newFile ?: node
+        val font = try {
+            if (filesRepository.isNodeExists(newNode)) {
+                WorkspaceFont(newNode, timestamp = nowInMs())
+            } else
+                null
+        } catch (exc: Exception) {
+            null
+        }
+        _workspaceFont.emit(font)
+    }
+
+    suspend fun sync(useCase: ISyncUseCase): ResultWrapper<SyncStatus2, String> {
+        val syncResult =
+            useCase.syncronize(workspace = workspaceEnvStateFlow.value, isAbsoluteNewLocal = false)
+        val env = workspaceEnvStateFlow.value
+
+        //dispatch(SettingsSyncStore.Msg.SetUploadState(resultss.mapToUIState(onError = { "" })))
+        if (syncResult.isSuccess()) {
+            env.initConfigAndFiles()
+            loadLocalFont()
+        }
+        env.reinitDatabase()
+        return syncResult
+    }
+
+    companion object{
+        fun WorkspaceSession.workspaceName():String{
+            return this.workspaceEnvStateFlow.value.getWorkspace().name
         }
     }
 }

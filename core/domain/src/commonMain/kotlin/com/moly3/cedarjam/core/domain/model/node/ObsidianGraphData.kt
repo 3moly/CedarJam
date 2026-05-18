@@ -1,12 +1,15 @@
 package com.moly3.cedarjam.core.domain.model.node
 
+import androidx.compose.runtime.Stable
 import com.moly3.cedarjam.core.domain.model.CollectionDTO
 import com.moly3.cedarjam.core.domain.model.CollectionRowDTO
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.TagDTO
+import com.moly3.cedarjam.core.domain.model.node.ObsidianGraphPresentation.*
 import kotlinx.serialization.Serializable
 
 @Serializable
+@Stable
 sealed class ObsidianGraphData {
     @Serializable
     data class Tag(val id: Long) : ObsidianGraphData()
@@ -14,11 +17,20 @@ sealed class ObsidianGraphData {
     @Serializable
     data class Collection(val id: Long) : ObsidianGraphData()
 
+
+    @Serializable
+    data class Annotation(val id: Long) : ObsidianGraphData()
+
     @Serializable
     data class CollectionRow(val id: Long, val collectionId: Long) : ObsidianGraphData()
 
     @Serializable
-    data class File(val fullPath: String) : ObsidianGraphData()
+    data class File(
+        val relativePath: String,
+        val isDirectory: Boolean,
+        val extension: String?,
+        val fullPath: String
+    ) : ObsidianGraphData()
 }
 
 sealed class ObsidianGraphPresentation {
@@ -37,54 +49,64 @@ fun ObsidianGraphPresentation.toGraphData(): ObsidianGraphData {
             collectionId = this.value.collectionId
         )
 
-        is ObsidianGraphPresentation.File -> ObsidianGraphData.File(this.value.getFullPath())
+        is ObsidianGraphPresentation.File -> ObsidianGraphData.File(
+            this.value.getRelativePath(),
+            isDirectory = this.value.isDirectory(),
+            extension = this.value.getExtension(),
+            fullPath = this.value.getFullPath()
+        )
+
         is ObsidianGraphPresentation.Tag -> ObsidianGraphData.Tag(this.value.id)
         is ObsidianGraphPresentation.Unknown -> TODO()
     }
 }
 
 fun List<ObsidianGraphData>.toPresentation(
-    tags: List<TagDTO>,
-    collections: List<CollectionDTO>,
-    rows: List<CollectionRowDTO>,
-    files: List<FileTreeNode>
+    tags: List<TagDTO> = listOf(),
+    collections: List<CollectionDTO> = listOf(),
+    rows: List<CollectionRowDTO> = listOf(),
+    files: List<FileTreeNode> = listOf()
 ): List<ObsidianGraphPresentation> {
     return this.map {
         when (val data = it) {
             is ObsidianGraphData.Collection -> {
                 val collection = collections.firstOrNull { x -> x.id == data.id }
                 if (collection != null) {
-                    ObsidianGraphPresentation.Collection(collection)
+                    Collection(collection)
                 } else {
-                    ObsidianGraphPresentation.Unknown(data)
+                    Unknown(data)
                 }
             }
 
             is ObsidianGraphData.CollectionRow -> {
                 val row = rows.firstOrNull { x -> x.id == data.id }
                 if (row != null) {
-                    ObsidianGraphPresentation.CollectionRow(row)
+                    CollectionRow(row)
                 } else {
-                    ObsidianGraphPresentation.Unknown(data)
+                    Unknown(data)
                 }
             }
 
             is ObsidianGraphData.File -> {
-                val file = files.firstOrNull { x -> x.getFullPath() == data.fullPath }
+                val file = files.firstOrNull { x -> x.getRelativePath() == data.relativePath }
                 if (file != null) {
-                    ObsidianGraphPresentation.File(file)
+                    File(file)
                 } else {
-                    ObsidianGraphPresentation.Unknown(data)
+                    Unknown(data)
                 }
             }
 
             is ObsidianGraphData.Tag -> {
                 val tag = tags.firstOrNull { x -> x.id == data.id }
                 if (tag != null) {
-                    ObsidianGraphPresentation.Tag(tag)
+                    Tag(tag)
                 } else {
-                    ObsidianGraphPresentation.Unknown(data)
+                    Unknown(data)
                 }
+            }
+
+            is ObsidianGraphData.Annotation -> {
+                Unknown(data)
             }
         }
     }

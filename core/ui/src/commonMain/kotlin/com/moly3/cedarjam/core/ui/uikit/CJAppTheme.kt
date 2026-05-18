@@ -7,16 +7,14 @@ import com.moly3.cedarjam.core.domain.model.ColorsType
 
 data class CJAppTheme(
     val currentTheme: ColorsType,
-    val textStyle: TextStyle,
     val primaryColor: Color,
     val colors: AppColorsData
 ) {
     companion object Companion {
         val Default = CJAppTheme(
-            textStyle = TextStyle.Companion.Default,
             colors = AppColorsData.Dark,
             primaryColor = Color.Red,
-            currentTheme = ColorsType.Unspecified
+            currentTheme = ColorsType.Dark
         )
     }
 }

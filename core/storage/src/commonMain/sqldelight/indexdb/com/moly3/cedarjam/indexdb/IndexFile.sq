@@ -1,0 +1,68 @@
+CREATE TABLE IndexFile (
+  relativePath TEXT PRIMARY KEY,
+  contentHash TEXT,
+  modifiedTime INTEGER NOT NULL,
+  size INTEGER,
+  isDirectory INTEGER NOT NULL DEFAULT 0,
+  lastSyncedHash TEXT,
+  serverSyncStatus INTEGER NOT NULL
+);
+
+-- serverSyncStatus 0: SYNCED, 1: DIRTY (Modified), 2: NEW, 3: DELETED
+
+-- WHEN local contentHash changes:
+-- if lastSyncedHash = X and serverHash = NULL -> CREATE
+-- if lastSyncedHash = X and serverHash = X -> UPDATE
+-- if lastSyncedHash = X and serverHash = Y -> CONFLICT
+-- serverSyncStatus = DELETED and serverHash = X -> DELETE
+
+selectAll:
+SELECT * FROM IndexFile;
+
+findOne:
+SELECT *
+FROM IndexFile
+WHERE relativePath = ?;
+
+insertItem:
+INSERT OR REPLACE INTO IndexFile(relativePath, contentHash, modifiedTime, size, isDirectory, lastSyncedHash, serverSyncStatus)
+VALUES (?, ?, ?, ?, ?, ?, ?);
+
+updateItem:
+UPDATE IndexFile
+SET contentHash = ?, modifiedTime = ?, size = ?, serverSyncStatus = ?
+WHERE relativePath = ?;
+
+updateStatus:
+UPDATE IndexFile
+SET serverSyncStatus = ?
+WHERE relativePath = ?;
+
+updateLastSyncHash:
+UPDATE IndexFile
+SET lastSyncedHash = ?, serverSyncStatus = ?
+WHERE relativePath = ?;
+
+deleteItem:
+DELETE FROM IndexFile
+WHERE relativePath = ?;
+
+upsertSyncedFile:
+INSERT OR REPLACE INTO IndexFile(
+    relativePath,
+    contentHash,
+    modifiedTime,
+    size,
+    isDirectory,
+    lastSyncedHash,
+    serverSyncStatus
+)
+VALUES (
+    :relativePath,
+    :contentHash,
+    :modifiedTime,
+    :size,
+    :isDirectory,
+    :contentHash, -- lastSyncedHash становится равен текущему, так как мы только что синхронизировались
+    0 -- serverSyncStatus = SYNCED
+);

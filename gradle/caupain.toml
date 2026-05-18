@@ -1,0 +1,81 @@
+# Configures the Maven repositories where the dependencies are hosted.
+# If none are specified, the default repositories "google" and "mavenCentral" are used.
+# Repositories are queried in the order they are specified.
+repositories = [
+    "google",
+    "gradlePluginPortal",
+    "mavenCentral", # Default repositories "google", "mavenCentral" and "gradlePluginPortal" are provided as shortcuts
+    { url = "https://jogamp.org/deployment/maven" },
+    { url = "https://packages.jetbrains.team/maven/p/kpm/public/" },
+    { url = "https://s01.oss.sonatype.org/content/repositories/snapshots" },
+    { url = "https://maven.pkg.jetbrains.space/public/p/compose/dev" },
+    { url = "https://packages.jetbrains.team/maven/p/kpm/public/" }
+]
+# Configures the Maven repositories where the plugins are hosted.
+# If none are specified, the default repositories "gradlePluginPortal", "google" and "mavenCentral" are used.
+# Repositories are queried in the order they are specified.
+# Syntax is the same as for the "repositories" key.
+pluginRepositories = [ "google", "mavenCentral" ]
+# Version catalog path. Default is "gradle/libs.versions.toml".
+versionCatalogPath = "another/path/to/libs.versions.toml"
+# You can also define multiple version catalogs. Warning: defining this will override the previous single path
+versionCatalogPaths = [ "gradle/libs.versions.toml" ]
+# Excluded dependencies. These will not be checked for updates.
+# You can exclude by key. The key matches the name used in the version catalog.
+#excludedKeys = [ "excluded1", "excluded2" ]
+# You can also exclude by group and optionally by name. If name is not specified, all dependencies in the group
+# are excluded. Furthermore, if name is not specified, then group is interpreted as a glob.
+#excludedLibraries = [
+#    { group = "com.google.guava" }, # Exclude all dependencies in the group
+#    { group = "com.google.guava", name = "guava" }, # Exclude only the guava dependency
+#    { group = "com.google.**" }, # Exclude all dependencies with group starting with com.google
+#    { group = "com.google.*.sub" }, # Exclude all dependencies like com.google.something.sub
+#]
+# You can exclude plugins by their id
+#excludedPlugins = [
+#    { id = "excluded.plugin.id" }
+#]
+# Policy name to use. See the documentation section about policies for more information
+policy = "latest"
+# Policy plugin directory. This is the directory where the custom policies are located.
+# Only applies to JVM, see the documentation section about policies for more information
+#policyPluginDir = "path/to/policy/plugin/dir"
+# Cache directory. This is the directory where the HTTP cache is stored. Defaults to the user cache
+# directory.
+#cacheDir = "path/to/cache/dir"
+# Output type. Can be "console", "html", "markdown" or "json". Default is "console".
+#outputType = "html"
+# Output path, for HTML, Markdown and JSON output types. Default is build/reports/dependencies-update.(html|md|json)
+#outputPath = "path/to/output/file.html"
+# Whether or not to show a block in the report that summarizes the updates from the version block in
+# the version catalog. This allows to quickly see what to update if you use the versions block heavily.
+# Default is false.
+showVersionsReferences = true
+# Path to the Gradle wrapper properties file. This is used to check for an update in the Gradle wrapper.
+# Default is "gradle/wrapper/gradle-wrapper.properties".
+gradleWrapperPropertiesPath = "/path/to/properties/file"
+# By default, Caupain only checks updates for static versions in the version catalog (versions like 1.0.0 or
+# 1.0.0-SNAPSHOT).
+# The rationale behind this is that dynamic versions or rich versions indicate that the version range is
+# already specified, and that an update isn't needed. If this value is passed to false, Caupain will try
+# to find the latest version for all dependencies, even if they are dynamic or rich versions.
+# This is where the result may not be exactly what you want, because Caupain will not use Gradle to
+# try to resolve the exact dependency that is used.
+# Default is true.
+onlyCheckStaticVersions = false
+# The stability level to use for Gradle version checks. Default is stable. Possible values are: stable,
+# rc, milestone, releaseNightly, nightly.
+gradleStabilityLevel = "nightly"
+# Whether or not to show a section in the report about the ignored available updates. Default is false.
+checkIgnored = true
+# Github token, used to search for release notes on GitHub.
+#githubToken = "your-token"
+# Whether or not to search for release notes on GitHub and display the link to them in the results.
+# If a GitHub token is provided, this will be true by default.
+searchReleaseNotes = true
+# Whether to verify that .pom files exist in the repository before accepting a version as valid.
+# When enabled, only versions with available POM metadata will be considered for updates.
+# This helps ensure that suggested versions are actually downloadable.
+# Note: This may slow down the checking process as it adds extra network requests.
+# Default is false.
+verifyExistence = true

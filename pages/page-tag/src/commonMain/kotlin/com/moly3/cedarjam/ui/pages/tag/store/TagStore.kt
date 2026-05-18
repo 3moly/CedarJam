@@ -3,7 +3,7 @@ package com.moly3.cedarjam.ui.pages.tag.store
 import com.arkivanov.mvikotlin.core.store.Store
 import com.moly3.cedarjam.ui.pages.tag.Intent
 import com.moly3.cedarjam.ui.pages.tag.State
-import com.moly3.cedarjam.core.domain.model.PageNameData
+import com.moly3.cedarjam.core.ui.model.PageNameData
 import com.moly3.cedarjam.core.domain.model.TagDTO
 import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.domain.model.node.ObsidianGraphPresentation

@@ -1,68 +1,71 @@
 package com.moly3.cedarjam.navigation
 
 import co.touchlab.kermit.Logger
+import com.arkivanov.decompose.Child
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.childStack
-import com.arkivanov.decompose.router.stack.childStackWebNavigation
 import com.arkivanov.decompose.router.stack.pushToFront
-import com.arkivanov.decompose.router.webhistory.WebNavigation
 import com.arkivanov.decompose.value.Value
+import com.arkivanov.essenty.lifecycle.doOnDestroy
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.arkivanov.mvikotlin.main.store.DefaultStoreFactory
-import com.moly3.cedarjam.navigation.Root.Child.Empty
-import com.moly3.cedarjam.navigation.Root.Child.Workspace
-import com.moly3.cedarjam.pages.page_select_workspace.SelectWorkspaceComponent
-import com.moly3.cedarjam.pages.page_workspace.WorkspaceComponentImpl
-import com.moly3.cedarjam.core.domain.dialog.DialogAddCollectionRowService
-import com.moly3.cedarjam.core.domain.dialog.DialogAppSettingsService
-import com.moly3.cedarjam.core.domain.dialog.DialogColorPickerService
-import com.moly3.cedarjam.core.domain.dialog.DialogCreateWorkspaceService
-import com.moly3.cedarjam.core.domain.dialog.DialogDeleteService
-import com.moly3.cedarjam.core.domain.dialog.DialogSelectWorkspaceService
-import com.moly3.cedarjam.core.domain.model.AppSettings
+import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.domain.model.WorkspaceInput
+import com.moly3.cedarjam.core.domain.model.settings.AppSettings
 import com.moly3.cedarjam.core.domain.repository.IAppEnvironment
-import com.moly3.cedarjam.core.ui.service.MacTrackpadGestureService
+import com.moly3.cedarjam.core.domain.service.AlertService
 import com.moly3.cedarjam.core.domain.service.IMessageService
+import com.moly3.cedarjam.core.domain.usecase.ISyncUseCase
+import com.moly3.cedarjam.core.domain.usecase.SyncStatusChannel
+import com.moly3.cedarjam.core.ui.service.MacTrackpadGestureService
+import com.moly3.cedarjam.di.metro.RootCoroutineScope
+import com.moly3.cedarjam.navigation.Root.Child.SelectWorkspace
+import com.moly3.cedarjam.navigation.Root.Child.Workspace
+import com.moly3.cedarjam.pages.page_select_workspace.SelectWorkspaceFactory
+import com.moly3.cedarjam.pages.page_workspace.WorkspaceComponentFactory
+import com.moly3.core_domain.BuildConfig
+import dev.zacsweers.metro.Assisted
+import dev.zacsweers.metro.AssistedInject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
-import org.koin.core.scope.Scope
 
-@OptIn(ExperimentalDecomposeApi::class)
+@AssistedInject
 class RootComponent(
-    private val parentComponentContext: ComponentContext,
-    private val onDestroy: () -> Unit = {}
+    @Assisted private val componentContext: ComponentContext,
+    @Assisted private val onDestroy: () -> Unit = {},
+    private val selectWorkspaceFactory: SelectWorkspaceFactory,
+    private val navigator: NavigatorDispatcher,
+    private val rootCoroutineScope: RootCoroutineScope,
+    private val macTrackpadGestureService: MacTrackpadGestureService,
+    override val messageService: IMessageService,
+    override val alertService: AlertService,
+    override val appEnvironment: IAppEnvironment,
+    private val syncUseCase: ISyncUseCase,
+    private val workspaceComponentFactory: WorkspaceComponentFactory,
 ) : Root,
-    ComponentContext by parentComponentContext,
+    ComponentContext by componentContext,
     IDecomposeScopeComponent,
-    KoinComponent {
+    NavigationParent {
 
-    override val scope by componentScope()
+    private val coroutineScope: CoroutineScope = rootCoroutineScope.scope
 
+    override val isRelease: Boolean by lazy {
+        BuildConfig.IsRelease
+    }
     private val storeFactory: StoreFactory = DefaultStoreFactory()
     private val navigation = StackNavigation<Config>()
-    private val navigator: NavigatorDispatcher by inject()
-    private val coroutineScope: CoroutineScope by inject()
-    private val macTrackpadGestureService: MacTrackpadGestureService by inject()
-
-    override val dialogAddCollectionRowService: DialogAddCollectionRowService by inject()
-    override val dialogAppSettingsService: DialogAppSettingsService by inject()
-    override val dialogColorPickerService: DialogColorPickerService by inject()
-    override val dialogCreateWorkspaceService: DialogCreateWorkspaceService by inject()
-    override val dialogDeleteService: DialogDeleteService by inject()
-    override val dialogSelectWorkspaceService: DialogSelectWorkspaceService by inject()
-    override val messageService: IMessageService by inject()
-    override val appEnvironment: IAppEnvironment by inject()
     override val appSettingsFlow: StateFlow<AppSettings> = appEnvironment.getAppSettingsFlow()
 
+    override val sendingBranchFlow: Flow<UIState<SyncStatusChannel, String>>
+        get() = syncUseCase.sendingBranchFlow()
     private val _stack = childStack(
         source = navigation,
         serializer = Config.serializer(),
@@ -70,29 +73,12 @@ class RootComponent(
         childFactory = ::child
     )
 
-
-    override val webNavigation: WebNavigation<*> =
-        childStackWebNavigation(
-            navigator = navigation,
-            stack = _stack,
-            serializer = Config.serializer(),
-            pathMapper = {
-//             TODO   when(val config = it.configuration){
-//                    Config.Empty -> "empty"
-//                    is Config.Workspace -> "workspace/${config.workspace.name}"
-//                }
-                null
-            },
-            childSelector = {
-                null
-            },
-        )
-
     private fun child(config: Config, componentContext: ComponentContext): Root.Child =
         when (config) {
-            Config.Empty -> Empty(
-                SelectWorkspaceComponent(
+            Config.Empty -> SelectWorkspace(
+                selectWorkspaceFactory.invoke(
                     componentContext = componentContext,
+                    storeFactory = storeFactory,
                     onSelectWorkspace = {
                         Logger.d("onSelectWorkspace: ${it.name}")
                         try {
@@ -105,10 +91,10 @@ class RootComponent(
             )
 
             is Config.Workspace -> Workspace(
-                WorkspaceComponentImpl(
+                workspaceComponentFactory.invoke(
                     workspaceInput = config.workspace,
                     context = componentContext,
-                    storeFactory = storeFactory
+                    storeFactory = storeFactory,
                 )
             )
         }
@@ -123,6 +109,7 @@ class RootComponent(
     }
 
     init {
+        lifecycle.doOnDestroy { onDestroy() }
         coroutineScope.launch {
             navigator.events.collect {
                 onNavigate(it)
@@ -139,10 +126,13 @@ class RootComponent(
                 }
 
                 Route.Back,
+                Route.Forward -> {
+                    bringTabAndRoute(configuration, route)
+                }
+
                 is Route.CollRow,
                 is Route.Collection,
                 is Route.File,
-                Route.Forward,
                 Route.MainGraph,
                 Route.MainHome,
                 is Route.Tag,
@@ -155,17 +145,17 @@ class RootComponent(
         }
     }
 
-    override val childStack: Value<ChildStack<*, Root.Child>> = _stack
+    override val children: Value<ChildStack<*, Root.Child>> = _stack
+
+    @OptIn(ExperimentalDecomposeApi::class, ExperimentalCoroutinesApi::class)
+    override fun getItems(): List<Child<*, *>> {
+        return children.stateFlow.value.items
+    }
 
     override fun shareMagnifyValue(value: Double) {
         coroutineScope.launch {
             macTrackpadGestureService.shareValue(value)
         }
-    }
-
-    override fun onScopeClose(scope: Scope) {
-        super.onScopeClose(scope)
-        onDestroy()
     }
 
     @Serializable

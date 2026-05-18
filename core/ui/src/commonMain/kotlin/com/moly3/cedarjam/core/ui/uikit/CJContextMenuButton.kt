@@ -20,6 +20,7 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
+import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
 import com.moly3.cedarjam.core.ui.onPointerEvent
 
 @Composable
@@ -45,7 +46,7 @@ fun CJContextMenuButton(text: String, onClick: () -> Unit) {
         CJText(
             modifier = Modifier.padding(horizontal = 10.dp),
             text = text,
-            style = LocalAppTheme.current.textStyle,
+            style = LocalTextStyle.current,
             fontSize = 12.sp
         )
     }

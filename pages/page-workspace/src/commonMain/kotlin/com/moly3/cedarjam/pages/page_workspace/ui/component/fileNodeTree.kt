@@ -15,12 +15,21 @@ import androidx.compose.ui.unit.dp
 import com.mohamedrejeb.compose.dnd.DragAndDropState
 import com.mohamedrejeb.compose.dnd.drag.DraggableItem
 import com.mohamedrejeb.compose.dnd.drop.dropTarget
+import com.moly3.cedarjam.core.domain.func.getPlatform
+import com.moly3.cedarjam.core.domain.model.Platform
+import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.pages.page_workspace.model.RenameFileNodeData
 import com.moly3.cedarjam.core.ui.func.onSecondaryClickWithPosition
+import com.moly3.cedarjam.core.ui.func.rememberWindowSize
+import com.moly3.cedarjam.core.ui.model.CJText
 import com.moly3.cedarjam.core.ui.model.FileTreeItemPresentation
+import com.moly3.cedarjam.core.ui.model.WindowSize
+import com.moly3.lazyflow.FlowItemSize
+import com.moly3.lazyflow.LazyFlowScope
 import kotlinx.collections.immutable.ImmutableSet
+import org.jetbrains.compose.resources.stringResource
 
-fun LazyListScope.fileNodeTree(
+fun LazyFlowScope.fileNodeTree(
     selectedKey: String?,
     item: FileTreeItemPresentation,
     spacingLeft: Int,
@@ -38,8 +47,7 @@ fun LazyListScope.fileNodeTree(
     onDirectoryCreateClick: (FileTreeItemPresentation) -> Unit,
     onRename: (FileTreeItemPresentation, String) -> Unit
 ) {
-    item(item.key) {
-        val scope = rememberCoroutineScope()
+    item(item.key, size = FlowItemSize.FillCrossAxis(24.dp), contentType = "file") {
         var isDragTarget by remember { mutableStateOf(false) }
         val isOpened = remember(openedDirectories, item.key, item.children) {
             if (item.children != null) {
@@ -53,18 +61,29 @@ fun LazyListScope.fileNodeTree(
                 else -> false
             }
         }
-        val isDraggableEnabled = remember(item) {
-            when (val data = item.data) {
+        val windowSize by rememberWindowSize()
+        val isDraggableEnabled = remember(item, windowSize) {
+            val isEnable = when (val data = item.data) {
                 is FileTreeItemPresentation.FileTreeItemPresentationData.Directory -> data.isDragEnabled
                 is FileTreeItemPresentation.FileTreeItemPresentationData.File -> true
                 else -> false
+            }
+            when (getPlatform()) {
+                Platform.Android,
+                Platform.Ios -> {
+                    if (windowSize != WindowSize.Compact)
+                        isEnable
+                    else false
+                }
+                Platform.Jvm,
+                Platform.Wasm -> isEnable
             }
         }
         val isRename = remember(renameFileNodeData, item.key) {
             renameFileNodeData?.presentation?.key == item.key
         }
         DraggableItem(
-            modifier = Modifier.animateItem(),
+            modifier = Modifier,//.animateItem(),
             enabled = isDraggableEnabled,
             state = dragAndDropState,
             key = item.key,
@@ -103,14 +122,22 @@ fun LazyListScope.fileNodeTree(
                         else
                             it
                     },
-                backColor = item.backColor,
+                syncStatus = when (val data = item.data) {
+                    is FileTreeItemPresentation.FileTreeItemPresentationData.Directory -> data.syncStatus
+                    is FileTreeItemPresentation.FileTreeItemPresentationData.File -> data.syncStatus
+                    else -> null
+                },
+                backColor = item.backColor ?: LocalAppTheme.current.colors.backgroundSecondary,
                 isOpen = isOpened,
                 isSelected = selectedKey == item.key,
                 isDragTarget = isDragTarget,
                 isRename = isRename,
                 isContextMenuTarget = contextMenuTargetKey == item.key,
 
-                title = item.name,
+                title = when (val name = item.name) {
+                    is CJText.Raw -> name.text
+                    is CJText.Res -> stringResource(name.res)
+                },
                 fileExtension = item.fileExtension,
                 isDirectory = item.children != null,
                 counter = null,

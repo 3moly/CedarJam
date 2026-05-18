@@ -1,41 +1,57 @@
 package com.moly3.cedarjam.pages.page_graph.ui.internal
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import coil3.ImageLoader
+import coil3.compose.LocalPlatformContext
+import com.moly3.cedarjam.core.domain.func.getPlatform
 import com.moly3.cedarjam.core.domain.io
+import com.moly3.cedarjam.core.domain.model.FileTypeExt
+import com.moly3.cedarjam.core.domain.model.Platform
+import com.moly3.cedarjam.core.domain.model.node.ObsidianGraphData
+import com.moly3.cedarjam.core.domain.model.toFileType
+import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
+import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
+import com.moly3.cedarjam.core.ui.onPointerEvent
 import com.moly3.cedarjam.pages.page_graph.Intent
 import com.moly3.cedarjam.pages.page_graph.State
-import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
-import com.moly3.cedarjam.core.ui.onPointerEvent
-import com.moly3.cedarjam.core.ui.uikit.CJButtonIcon
-import com.moly3.cedarjam.core.ui.uikit.CJSlider
-import com.moly3.cedarjam.core.ui.uikit.CJText
-import com.moly3.cedarjam.core.ui.vectors.SettingsFuture
+import com.moly3.cedarjam.pages.page_graph.ui.internal.settingsPanel.SettingsPanel
+import com.moly3.dataviz.core.graph.engine.IGraphEngine
+import com.moly3.dataviz.core.graph.engine.impl.ultra.UltraFastEngine
+import com.moly3.dataviz.graph.features.atlas.AtlasTier
+import com.moly3.dataviz.graph.ui.AtlasPainterLoader
 import com.moly3.dataviz.graph.ui.Graph
+import com.moly3.dataviz.graph.ui.TierSelection
+import com.moly3.dataviz.graph.ui.rememberAtlasComposer
+import com.moly3.dataviz.graph.ui.rememberMovementTracker
+import kotlinx.collections.immutable.persistentMapOf
 import kotlin.time.ExperimentalTime
+
 
 @OptIn(ExperimentalTime::class)
 @Composable
-internal fun PageContent(state: State, onIntent: (Intent) -> Unit) {
-    val settingsWidth by animateDpAsState(if (state.isShowSettings) 130.dp else 48.dp)
+internal fun PageContent(
+    state: State,
+    engine: IGraphEngine<String, ObsidianGraphData>,
+    onIntent: (Intent) -> Unit
+) {
     Box(
         Modifier
             .fillMaxSize()
@@ -49,271 +65,206 @@ internal fun PageContent(state: State, onIntent: (Intent) -> Unit) {
             .onPointerEvent(PointerEventType.Exit) {
                 onIntent(Intent.SetIsMouseCaptured(false))
             }) {
+
+        val accentColor = LocalAppTheme.current.primaryColor
+        val fontColor = LocalAppTheme.current.colors.primaryFont
+        val textStyle = LocalTextStyle.current
+        val settings = remember(accentColor, state.graphSettings, fontColor) {
+            state.graphSettings.copy(
+                zoom = state.graphSettings.zoom.copy(stepIn = 1.03f, stepOut = 1f / 1.03f),
+                theme = state.graphSettings.theme.copy(
+                    accentColor = accentColor,
+                    textColor = fontColor
+                ),
+            )
+        }
+
+        val density = LocalDensity.current
+
+        val context = LocalPlatformContext.current
+        val coilImageLoader = remember { ImageLoader(context) }
+        val loader: AtlasPainterLoader<String, ObsidianGraphData> = { node ->
+            null
+//            if (state.config.isShowImages) {
+//                when (val dt = node.data) {
+//                    is ObsidianGraphData.File -> {
+//                        when (dt.extension.toFileType()) {
+//                            FileTypeExt.Image -> loadImageSafely(
+//                                context,
+//                                coilImageLoader,
+//                                dt.fullPath
+//                            )
+//
+//                            else -> null
+//                        }
+//                    }
+//
+//                    else -> null
+//                }
+//            } else {
+//                null
+//            }
+        }
+        var viewport by remember { mutableStateOf(IntSize.Zero) }
+        val movement = rememberMovementTracker(idleMillis = 200)
+//        LaunchedEffect(s.velocities) { if (s.velocities.isNotEmpty()) movement.trigger() }
+        LaunchedEffect(state.zoom) { movement.trigger() }
+        LaunchedEffect(state.graphUserPosition) { movement.trigger() }
+
+        val video = rememberVectorPainter(vector.collection.Youtube)
+        val folder = rememberVectorPainter(vector.FolderAdd)
+        val tag = rememberVectorPainter(vector.Tag)
+        val tiers = remember {
+            val isIos = getPlatform() == Platform.Ios
+            val atlasses = mutableListOf<AtlasTier>()
+            atlasses.add(
+                AtlasTier(
+                    name = "hq",
+                    tileSizePx = if (isIos) 64 else 128,
+                    selection = TierSelection.TopByDistance(if (isIos) 10 else 100),
+                    isCircular = true,
+                    freezeOnMove = true,   // <-- was false
+                )
+            )
+//            if (!isIos) {
+//                atlasses.add(
+//                    AtlasTier(
+//                        name = "lq",
+//                        tileSizePx = 32,
+//                        selection = TierSelection.All,
+//                        isCircular = true,
+//                        freezeOnMove = getPlatform() == Platform.Ios
+//                    )
+//                )
+//            }
+            atlasses
+        }
+
+        val handle = rememberAtlasComposer(
+            nodes = state.graphNodes,
+            tiers = tiers,
+            viewport = viewport,
+            userPosition = state.graphUserPosition,
+            zoom = state.zoom,
+            coordinates = state.coordinates,
+            loader = if (state.config.isShowImages) loader else suspend { null },
+            loaderKey = state.graphNodes.size,
+            staticIcons = persistentMapOf(
+                "folder" to folder,
+                "tag" to tag,
+                "video" to video
+            ),
+            concurrencyLimit = 3,
+            staticIconKey = { id, data ->
+                when (val dt = data) {
+                    is ObsidianGraphData.Annotation -> {
+                        null
+                    }
+
+                    is ObsidianGraphData.Collection -> null
+                    is ObsidianGraphData.CollectionRow -> null
+                    is ObsidianGraphData.File -> {
+                        if (dt.isDirectory) {
+                            "folder"
+                        } else {
+                            when (dt.extension.toFileType()) {
+                                FileTypeExt.Image -> null
+                                FileTypeExt.Video -> "video"
+                                else -> null
+                            }
+                        }
+                    }
+
+                    is ObsidianGraphData.Tag -> "tag"
+                    null -> null
+                }
+            },
+            isMoving = movement.isMoving
+        )
+        val graphUserPosition = remember { mutableStateOf(state.graphUserPosition) }
+        val updatedZoom by rememberUpdatedState(state.zoom)
         Graph(
+            userPosition = graphUserPosition.value,
+            zoom = state.zoom,
+            textStyle = textStyle,
+            modifier = Modifier.fillMaxSize().onGloballyPositioned { viewport = it.size },
+            engine = engine,
+            atlasLayers = handle.atlasLayers,
+            getIconKey = handle::resolveIconKey,
+            getNodeGroups = { _, data ->
+                if (state.graphSettings.groupSettings.enabled) {
+                    when (data) {
+                        is ObsidianGraphData.Collection -> listOf("collection")
+                        is ObsidianGraphData.CollectionRow -> listOf("row")
+                        is ObsidianGraphData.File -> if (data.isDirectory)
+                            listOf("directory")
+                        else listOf("file")
+
+                        is ObsidianGraphData.Tag -> listOf("tag")
+                        is ObsidianGraphData.Annotation -> listOf("annotation")
+                    }
+                } else
+                    listOf()
+            },
+            getGroupColor = { groupName ->
+                when (groupName) {
+                    "directory" -> Color.LightGray
+                    "file" -> Color.Green
+                    "annotation" -> Color.Red
+                    "tag" -> Color.White
+                    "row" -> Color.Blue
+                    "collection" -> Color.Cyan
+                    else -> Color.Green
+                }
+            },
+            getGroupName = { groupName ->
+                when (groupName) {
+                    "directory" -> "Directory"
+                    "file" -> "Files"
+                    "annotation" -> "Annotations"
+                    "tag" -> "Tags"
+                    "row" -> "Rows"
+                    "collection" -> "Collections"
+                    else -> "File"
+                }
+            },
+            settings = settings,
             connections = state.connections,
             stateNodes = state.graphNodes,
-            viewSettings = state.graphViewSettings,
             coordinates = state.coordinates,
             velocities = state.velocities,
-            zoom = state.zoom,
-            onZoomChange = {
-                onIntent(Intent.SetZoom(it))
+
+            onWatchPosition = { nodePosition ->
+                graphUserPosition.value = nodePosition
+                onIntent(Intent.SetGraphUserPosition(nodePosition))
             },
-            userPosition = state.graphUserPosition,
-            onCentralGlobalPosition = {
-                onIntent(Intent.SetGraphUserPosition(it))
+            onPanDelta = { delta ->
+                val newValue = graphUserPosition.value + (delta / updatedZoom)
+                graphUserPosition.value = newValue
+                onIntent(Intent.SetGraphUserPosition(newValue))
             },
+            onZoomChange = { isGesture, newValue ->
+
+                onIntent(Intent.SetZoom(isGesture, newValue))
+            },
+
             onNodeClick = { node ->
                 val data = node.data
-                if (data != null) {
-                    onIntent(Intent.OpenNodeData(data))
-                }
+                if (data != null) onIntent(Intent.OpenNodeData(data))
             },
             onCoordinatesUpdate = {
                 onIntent(Intent.SetCoordinates(it))
             },
-            onVelocitiesUpdate = {
-                onIntent(Intent.SetVelocities(it))
-            },
             io = io,
-            fontColor = LocalAppTheme.current.colors.primaryFont,
-            circleColor = Color.Yellow,
-            primaryColor = Color.Blue,
-            circleLineColor = LocalAppTheme.current.colors.divide,
-            consume = false
+            consume = false,
         )
-
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-                .align(Alignment.TopEnd)
-                .clip(RoundedCornerShape(8.dp))
-                .background(LocalAppTheme.current.colors.backgroundSecondary)
-                .verticalScroll(rememberScrollState())
-        ) {
-            Column(
-                modifier = Modifier.width(settingsWidth).padding(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                horizontalAlignment = Alignment.End
-            ) {
-                CJButtonIcon(imageVector = SettingsFuture, onClick = {
-                    onIntent(Intent.SetIsShowSettings(!state.isShowSettings))
-                })
-                AnimatedVisibility(state.isShowSettings) {
-                    Column {
-                        SwitchOption(
-                            modifier = Modifier,
-                            text = "Collections",
-                            value = state.config.isCollections,
-                            onClick = {
-                                onIntent(Intent.SetConfig(state.config.copy(isCollections = !state.config.isCollections)))
-                            }
-                        )
-                        SwitchOption(
-                            modifier = Modifier,
-                            text = "Rows",
-                            value = state.config.isRows,
-                            onClick = {
-                                onIntent(Intent.SetConfig(state.config.copy(isRows = !state.config.isRows)))
-                            }
-                        )
-                        SwitchOption(
-                            modifier = Modifier,
-                            text = "Tags",
-                            value = state.config.isTags,
-                            onClick = {
-                                onIntent(Intent.SetConfig(state.config.copy(isTags = !state.config.isTags)))
-                            }
-                        )
-                        SwitchOption(
-                            modifier = Modifier,
-                            text = "Directories",
-                            value = state.config.isShowDirectories,
-                            onClick = {
-                                onIntent(Intent.SetConfig(state.config.copy(isShowDirectories = !state.config.isShowDirectories)))
-                            }
-                        )
-                        SwitchOption(
-                            modifier = Modifier,
-                            text = "Orphans",
-                            value = state.config.isOrphans,
-                            onClick = {
-                                onIntent(Intent.SetConfig(state.config.copy(isOrphans = !state.config.isOrphans)))
-                            }
-                        )
-                        SwitchOption(
-                            modifier = Modifier,
-                            text = "Real files only",
-                            value = state.config.isRealFiles,
-                            onClick = {
-                                onIntent(Intent.SetConfig(state.config.copy(isRealFiles = !state.config.isRealFiles)))
-                            }
-                        )
-                        SwitchOption(
-                            modifier = Modifier,
-                            text = "Gradation",
-                            value = state.config.isGradations,
-                            onClick = {
-                                onIntent(Intent.SetConfig(state.config.copy(isGradations = !state.config.isGradations)))
-                            }
-                        )
-                        CJText("zoom: ${state.zoom}")
-                        CJText(
-                            "center force: ${state.graphViewSettings.centerForce}"
-                        )
-                        CJSlider(
-                            modifier = Modifier.width(150.dp),
-                            value = state.graphViewSettings.centerForce,
-                            onValueChange = {
-                                onIntent(
-                                    Intent.SetGraphViewSettings(
-                                        state.graphViewSettings.copy(
-                                            centerForce = it
-                                        )
-                                    )
-                                )
-                            },
-                            valueRange = 0.001f..1f
-                        )
-                        CJText(
-                            "link force: ${state.graphViewSettings.linkForce}"
-                        )
-                        CJSlider(
-                            modifier = Modifier.width(150.dp),
-                            value = state.graphViewSettings.linkForce,
-                            onValueChange = {
-                                onIntent(
-                                    Intent.SetGraphViewSettings(
-                                        state.graphViewSettings.copy(
-                                            linkForce = it
-                                        )
-                                    )
-                                )
-                            },
-                            valueRange = 0.00001f..10f
-                        )
-                        CJText(
-                            "link distance: ${state.graphViewSettings.linkDistance}"
-                        )
-                        CJSlider(
-                            modifier = Modifier.width(150.dp),
-                            value = state.graphViewSettings.linkDistance,
-                            onValueChange = {
-                                onIntent(
-                                    Intent.SetGraphViewSettings(
-                                        state.graphViewSettings.copy(
-                                            linkDistance = it
-                                        )
-                                    )
-                                )
-                            },
-                            valueRange = 1f..500f
-                        )
-                        CJText(
-                            "circle size: ${state.graphViewSettings.circleSize}"
-                        )
-                        CJSlider(
-                            modifier = Modifier.width(150.dp),
-                            value = state.graphViewSettings.circleSize,
-                            onValueChange = {
-                                onIntent(
-                                    Intent.SetGraphViewSettings(
-                                        state.graphViewSettings.copy(
-                                            circleSize = it
-                                        )
-                                    )
-                                )
-                            },
-                            valueRange = 0.1f..50f
-                        )
-                        CJText(
-                            "repel force: ${state.graphViewSettings.repelForce}"
-                        )
-                        CJSlider(
-                            modifier = Modifier.width(150.dp),
-                            value = state.graphViewSettings.repelForce,
-                            onValueChange = {
-                                onIntent(
-                                    Intent.SetGraphViewSettings(
-                                        state.graphViewSettings.copy(
-                                            repelForce = it
-                                        )
-                                    )
-                                )
-                            },
-                            valueRange = 0.1f..100000f
-                        )
-                        CJText(
-                            "unconnectedRepulsionMultiplier: ${state.graphViewSettings.unconnectedRepulsionMultiplier}"
-                        )
-                        CJSlider(
-                            modifier = Modifier.width(150.dp),
-                            value = state.graphViewSettings.unconnectedRepulsionMultiplier,
-                            onValueChange = {
-                                onIntent(
-                                    Intent.SetGraphViewSettings(
-                                        state.graphViewSettings.copy(
-                                            unconnectedRepulsionMultiplier = it
-                                        )
-                                    )
-                                )
-                            },
-                            valueRange = 1f..10f
-                        )
-                        CJText(
-                            "minMutualConnectionsForClustering: ${state.graphViewSettings.minMutualConnectionsForClustering}"
-                        )
-                        CJSlider(
-                            modifier = Modifier.width(150.dp),
-                            value = state.graphViewSettings.minMutualConnectionsForClustering.toFloat(),
-                            onValueChange = {
-                                onIntent(
-                                    Intent.SetGraphViewSettings(
-                                        state.graphViewSettings.copy(
-                                            minMutualConnectionsForClustering = it.toInt()
-                                        )
-                                    )
-                                )
-                            },
-                            valueRange = 1f..10f
-                        )
-                        CJText(
-                            "clusteringForce: ${state.graphViewSettings.clusteringForce}"
-                        )
-                        CJSlider(
-                            modifier = Modifier.width(150.dp),
-                            value = state.graphViewSettings.clusteringForce,
-                            onValueChange = {
-                                onIntent(
-                                    Intent.SetGraphViewSettings(
-                                        state.graphViewSettings.copy(
-                                            clusteringForce = it
-                                        )
-                                    )
-                                )
-                            },
-                            valueRange = 1f..50f
-                        )
-                        CJText(
-                            "longDistanceLinkMultiplier: ${state.graphViewSettings.longDistanceLinkMultiplier}"
-                        )
-                        CJSlider(
-                            modifier = Modifier.width(150.dp),
-                            value = state.graphViewSettings.longDistanceLinkMultiplier,
-                            onValueChange = {
-                                onIntent(
-                                    Intent.SetGraphViewSettings(
-                                        state.graphViewSettings.copy(
-                                            longDistanceLinkMultiplier = it
-                                        )
-                                    )
-                                )
-                            },
-                            valueRange = 1f..1000f
-                        )
-                    }
-                }
-            }
-        }
+        SettingsPanel(
+            zoom = state.zoom,
+            settings = settings,
+            nodesCount = state.graphNodes.size,
+            isShowSettings = state.isShowSettings,
+            onIntent = onIntent,
+            config = state.config
+        )
     }
 }

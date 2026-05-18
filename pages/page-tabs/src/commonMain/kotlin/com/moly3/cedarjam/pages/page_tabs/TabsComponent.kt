@@ -3,20 +3,22 @@ package com.moly3.cedarjam.pages.page_tabs
 import androidx.compose.runtime.Immutable
 import com.moly3.cedarjam.navigation.NavigationComponent
 import com.moly3.cedarjam.pages.page_tab.TabComponent
-import com.moly3.cedarjam.core.domain.model.PageNameData
+import com.moly3.cedarjam.core.ui.model.PageNameData
+import com.moly3.cedarjam.navigation.NavigationInstance
+import com.moly3.cedarjam.navigation.NavigationParent
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
 @Immutable
-interface TabsComponent : NavigationComponent<TabsComponent.Child> {
+interface TabsComponent : NavigationComponent<TabsComponent.Child>, NavigationParent {
     val index: Int
     val activeTab: Flow<TabsState>
     val state: StateFlow<State>
     fun onIntent(intent: Intent)
 
     @Immutable
-    sealed class Child {
-        abstract val component: NavigationComponent<*>
+    sealed class Child: NavigationInstance {
+        abstract override val component: NavigationComponent<*>
 
         class Tab(override val component: TabComponent) : Child()
     }

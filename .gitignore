@@ -30,3 +30,8 @@ moko-resources-generated.js
 /iosApp/Pods/
 *.podspec
 *.zip
+/gradle/gradle-daemon-jvm.properties
+/output/
+/com.the3moly.benchmark.GetNodesBenchmark.getNodes-Throughput/flame-alloc-forward.html
+/com.the3moly.benchmark.GetNodesBenchmark.getNodes-Throughput/flame-alloc-reverse.html
+/com.the3moly.benchmark.GetNodesBenchmark.getNodes-Throughput/

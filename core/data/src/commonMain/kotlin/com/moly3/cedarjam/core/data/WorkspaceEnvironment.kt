@@ -1,25 +1,26 @@
 package com.moly3.cedarjam.core.data
 
 import com.moly3.cedarjam.core.net.IRemoteSyncRepository
-import com.moly3.data.DataCollectionRow
-import com.moly3.data.Tag
 import com.moly3.cedarjam.core.domain.DefaultJson
 import com.moly3.cedarjam.core.domain.func.doNothing
-import com.moly3.cedarjam.core.domain.func.getRelativePath
-import com.moly3.cedarjam.core.domain.func.hiddenDirectory
-import com.moly3.cedarjam.core.domain.func.pathWrapper
+import com.moly3.cedarjam.core.domain.func.normalizeText
+import com.moly3.cedarjam.core.domain.func.nowInMs
 import com.moly3.cedarjam.core.domain.func.toColor
 import com.moly3.cedarjam.core.domain.func.toHexString
 import com.moly3.cedarjam.core.domain.io
 import com.moly3.cedarjam.core.domain.model.AnnotationDTO
 import com.moly3.cedarjam.core.domain.model.CollectionDTO
 import com.moly3.cedarjam.core.domain.model.CollectionRowDTO
-import com.moly3.cedarjam.core.domain.model.DeletedFileMetadata
+import com.moly3.cedarjam.core.domain.model.FileItem
 import com.moly3.cedarjam.core.domain.model.FileMetadata
 import com.moly3.cedarjam.core.domain.model.FileName
 import com.moly3.cedarjam.core.domain.model.FileStructure
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
+import com.moly3.cedarjam.core.domain.model.FileTreeNode.Companion.getAll
+import com.moly3.cedarjam.core.domain.model.IndexFileDto
 import com.moly3.cedarjam.core.domain.model.ResultWrapper
+import com.moly3.cedarjam.core.domain.model.SyncStatus
+import com.moly3.cedarjam.core.domain.model.TagAnnotationDTO
 import com.moly3.cedarjam.core.domain.model.TagCollectionRowDTO
 import com.moly3.cedarjam.core.domain.model.TagDTO
 import com.moly3.cedarjam.core.domain.model.TagLinkDTO
@@ -30,8 +31,10 @@ import com.moly3.cedarjam.core.domain.model.WorkspacePresentation
 import com.moly3.cedarjam.core.domain.model.bind
 import com.moly3.cedarjam.core.domain.model.ensure
 import com.moly3.cedarjam.core.domain.model.error.DatabaseError
+import com.moly3.cedarjam.core.domain.model.fold
+import com.moly3.cedarjam.core.domain.model.getSettingsJsonFile
+import com.moly3.cedarjam.core.domain.model.request.CreateAnnotationRequest
 import com.moly3.cedarjam.core.domain.model.resultBlock
-import com.moly3.cedarjam.core.domain.model.shouldBeSuccess
 import com.moly3.cedarjam.core.domain.model.toCollectionViewType
 import com.moly3.cedarjam.core.domain.repository.IFilesRepository
 import com.moly3.cedarjam.core.domain.repository.IWorkspaceEnvironment
@@ -46,37 +49,39 @@ import com.moly3.cedarjam.core.domain.model.request.RenameDataCollectionRowReque
 import com.moly3.cedarjam.core.domain.model.request.RenameTagRequest
 import com.moly3.cedarjam.core.domain.model.request.UpdateDataCollectionRequest
 import com.moly3.cedarjam.core.domain.model.request.UpdateDataCollectionRowRequest
+import com.moly3.cedarjam.core.domain.model.request.UpdateRowsByPdf
 import com.moly3.cedarjam.core.domain.model.request.UpdateTagRequest
+import com.moly3.cedarjam.core.domain.model.settings.WorkspaceSettings
 import com.moly3.cedarjam.core.domain.service.FileManagerService
 import com.moly3.cedarjam.core.storage.ISqlStorage
+import com.moly3.cedarjam.db.Annotation
+import com.moly3.cedarjam.db.DataCollectionRow
+import com.moly3.cedarjam.db.Tag
+import com.moly3.cedarjam.indexdb.IndexFile
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
+import kotlin.collections.listOf
 import kotlin.collections.map
-import kotlin.time.Clock
+import kotlin.collections.set
 import kotlin.time.ExperimentalTime
 
 class WorkspaceEnvironment(
     private val sqlStorageFactory: () -> ISqlStorage,//core:data
     private val workspace: WorkspacePresentation,
-    private val filesRepo: IFilesRepository,//core:data
+    private val filesRepository: IFilesRepository,//core:data
     private val fileManagerService: FileManagerService, //core:data
-    private val syncNetRepository: IRemoteSyncRepository //-> core:net
+    private val syncNetRepository: IRemoteSyncRepository, //-> core:net,
 ) : IWorkspaceEnvironment {
 
-    private val fileNodesState = MutableStateFlow(tryToGet())
-
-    private val deletedFilesMeta = FileTreeNode.File(
-        name = FileName(name = "deleted_files", extension = null),
-        parentPath = pathWrapper(
-            workspace.absolutePath,
-            hiddenDirectory
-        ).pathString
-    )
+    private val fileNodesState: MutableStateFlow<UIState<List<FileTreeNode>, String>> =
+        MutableStateFlow(UIState.Loading)
+    private val _appSettingsStateFlow = MutableStateFlow(WorkspaceSettings.defaultSettings)
 
     private val sqlStorage: ISqlStorage by lazy {
         println("--- workspace sqlstorage init ${workspace.name} ---")
@@ -97,81 +102,101 @@ class WorkspaceEnvironment(
         }
     }
 
-    override fun getNodes(parentFolder: FileTreeNode.Directory?): List<FileTreeNode> {
-        val directoryNode = parentFolder ?: FileTreeNode.Directory.create(workspace.absolutePath)
-        return filesRepo.getNodes(directoryNode)
+    override suspend fun initConfigAndFiles() {
+        withContext(io) {
+            updateTimes()
+            updateWorkspaceSettings()
+        }
+    }
+
+    suspend fun updateWorkspaceSettings() {
+        val settingsFile = workspace.getSettingsJsonFile()
+        val settings = try {
+            val jsonResult = filesRepository.getNodeText(settingsFile)
+            jsonResult.fold(
+                onFailure = {
+                    WorkspaceSettings.defaultSettings
+                },
+                onSuccess = {
+                    DefaultJson.decodeFromString<WorkspaceSettings>(it)
+                }
+            )
+        } catch (exc: Exception) {
+            WorkspaceSettings.defaultSettings
+        }
+        _appSettingsStateFlow.emit(settings)
+    }
+
+
+    override fun getWorkspaceSettingsFlow(): StateFlow<WorkspaceSettings> {
+        return _appSettingsStateFlow
+    }
+
+    override suspend fun setWorkspaceSettings(settings: WorkspaceSettings) {
+        withContext(io) {
+            val json = DefaultJson.encodeToString(settings)
+            filesRepository.setNodeText(workspace.getSettingsJsonFile(), json)
+            _appSettingsStateFlow.emit(settings)
+        }
+    }
+
+    override fun getNodes(absolutePath: String?): List<FileTreeNode> {
+        val absolutePathGl = absolutePath ?: workspace.absolutePath
+        return filesRepository.getNodes(
+            workspacePath = workspace.absolutePath,
+            absolutePath = absolutePathGl
+        )
     }
 
     private fun tryToGet(): UIState<List<FileTreeNode>, String> {
         return try {
-            UIState.Success(getNodes(null))
+            val files = getNodes(null)
+            UIState.Success(files)
         } catch (exc: Exception) {
             UIState.Error(exc.message ?: "")
         }
     }
 
-//    override suspend fun downloadSync() {
-//        try {
-//            val absolutePath = workspace.absolutePath
-//            val result = syncNetRepository.downloadArchive(
-//                userName = "bulat",
-//                workspaceName = workspace.name
-//            )
-//            result.shouldBeSuccess()
-//            val files = syncNetRepository.workspaceFiles(
-//                userName = "bulat",
-//                workspaceName = workspace.name
-//            )
-//            files.shouldBeSuccess()
-//
-//            val bytes = result.value
-//
-//            filesRepo.extractZipFromBytes(
-//                bytes = bytes,
-//                destinationPath = absolutePath,
-//                fileStructure = files.value
-//            )
-//
-//        } catch (exc: Exception) {
-//            Logger.e("downloadSync error ----- " + exc.message ?: "")
-//        }
-//    }
-
     override suspend fun uploadSync(
-        archiveFullPath: String,
+        archiveNode: FileTreeNode.File,
         metadata: List<FileMetadata>,
         filesToDownload: List<String>,
+        onDownload: suspend (Long, Long?) -> Unit,
+        onUpload: suspend (Long, Long?) -> Unit,
     ): ResultWrapper<ByteArray, String> {
         return resultBlock {
-//catch (excs: RaiseCancellationException) {
-//                throw excs
-//            }
+            var byteArray: ByteArray? = null
             try {
-                val fileNode = filesRepo.getFileNodeFromFullPath(
-                    archiveFullPath,
-                    isDirectory = false
-                ) as FileTreeNode.File
-                val byteArray = filesRepo.getNodeBytes(fileNode)
-                val uploadResult = syncNetRepository.upload(
-                    userName = "bulat",
-                    workspaceName = workspace.name,
-                    metadata = metadata,
-                    filesToDownload = filesToDownload,
-                    archiveByteArray = byteArray
-                )
-                uploadResult.shouldBeSuccess()
-                uploadResult.value
-            } catch (aa: ArithmeticException) {
-                raise(aa.message ?: "")
-            }  catch (exc: Exception) {
-                raise("uploadSync: ${exc.message}")
+                byteArray = filesRepository.getNodeBytes(archiveNode)
+            } catch (exc: Exception) {
             }
+
+            val uploadResult = syncNetRepository.upload(
+                userName = "bulat",
+                workspaceName = workspace.serverName,
+                archiveByteArray = byteArray,
+                metadata = metadata,
+                filesToDownload = filesToDownload,
+                onUpload = onUpload,
+                onDownload = onDownload
+            )
+            bind(uploadResult)
         }
     }
 
+    private val refreshMutex = Mutex()
+
     override suspend fun updateTimes() {
-        val state = tryToGet()
-        fileNodesState.emit(state)
+        withContext(io) {
+            if (fileNodesState.value is UIState.Success && false) {
+
+            } else {
+                refreshMutex.withLock {
+                    val state = tryToGet()
+                    fileNodesState.emit(state)
+                }
+            }
+        }
     }
 
     override suspend fun reinitDatabase() {
@@ -189,7 +214,14 @@ class WorkspaceEnvironment(
     override suspend fun getServerFiles(): ResultWrapper<FileStructure, String> {
         return syncNetRepository.workspaceFiles(
             userName = "bulat",
-            workspaceName = workspace.name
+            workspaceName = workspace.serverName
+        )
+    }
+
+    override suspend fun deleteWorkspaceInServer(): ResultWrapper<Unit, String> {
+        return syncNetRepository.deleteWorkspace(
+            userName = "bulat",
+            workspaceName = workspace.serverName
         )
     }
 
@@ -239,20 +271,24 @@ class WorkspaceEnvironment(
             progressMax = this.progressMax,
             isCompleted = this.isCompleted == 1L,
             createdTime = this.createdTime,
-            modifiedTime = this.modifiedTime
+            modifiedTime = this.modifiedTime,
+            points = this.points ?: 0L
         )
     }
 
-    @OptIn(ExperimentalTime::class)
     override fun getCollectionRowsFlow(collectionId: Long?): Flow<List<CollectionRowDTO>> {
         return sqlStorage
             .getCollectionRows(collectionId = collectionId)
             .map {
-                println(
-                    "${collectionId} rows: mapping to dto ${
-                        Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-                    }"
-                )
+                it.map { d -> d.toDTO() }
+            }
+            .flowOn(io)
+    }
+
+    override fun getCollectionRowsFlowByFileRelativePath(relativePath: String): Flow<List<CollectionRowDTO>> {
+        return sqlStorage
+            .getCollectionRowsByFileRelativePath(relativePath = relativePath)
+            .map {
                 it.map { d -> d.toDTO() }
             }
             .flowOn(io)
@@ -265,22 +301,28 @@ class WorkspaceEnvironment(
     }
 
     override fun getAnnotationsFlow(): Flow<List<AnnotationDTO>> {
-        return flowOf(listOf())
-//        return sqlStorage.getAnnotationsFlow().map {
-//            it.map {
-//                AnnotationDTO(
-//                    id = it.id,
-//                    dataPath = it.dataPath,
-//                    dataPoint = it.dataPoint,
-//                    description = it.description
-//                )
-//            }
-//        }.flowOn(core.domain.io)
+        return sqlStorage.getAnnotationsFlow().map {
+            it.map {
+                AnnotationDTO(
+                    id = it.id,
+                    dataPath = it.dataPath,
+                    dataPoint = it.dataPoint,
+                    description = it.description,
+
+                    x = it.posX.toFloat(),
+                    y = it.posY.toFloat(),
+                    width = it.width.toFloat(),
+                    height = it.height.toFloat(),
+                    modifiedTime = it.modifiedTime,
+                    rowId = it.rowId
+                )
+            }
+        }.flowOn(io)
     }
 
-    override fun getTagLinksFlow(): Flow<List<TagLinkDTO>> {
+    override fun getTagFilesFlow(): Flow<List<TagLinkDTO>> {
         return sqlStorage
-            .getTagLinks()
+            .getTagFiles()
             .map {
                 it.mapNotNull {
                     var data: TagLinkDtoData? = null
@@ -295,6 +337,21 @@ class WorkspaceEnvironment(
                             data = data
                         )
                     else null
+                }
+            }
+            .flowOn(io)
+    }
+
+    override fun getTagAnnotationsFlow(): Flow<List<TagAnnotationDTO>> {
+        return sqlStorage
+            .getTagAnnotations()
+            .map {
+                it.map {
+                    TagAnnotationDTO(
+                        id = it.id,
+                        tagId = it.tagId,
+                        annotationId = it.annotationId
+                    )
                 }
             }
             .flowOn(io)
@@ -322,6 +379,45 @@ class WorkspaceEnvironment(
             .flowOn(io)
     }
 
+    fun IndexFile.dto(): IndexFileDto {
+        val syncStatus = when (this.serverSyncStatus) {
+            SyncStatus.SYNCED.code ->
+                SyncStatus.SYNCED
+
+            SyncStatus.DIRTY.code ->
+                SyncStatus.DIRTY
+
+            SyncStatus.NEW.code ->
+                SyncStatus.NEW
+
+            SyncStatus.DELETED.code ->
+                SyncStatus.DELETED
+
+            else -> null
+        }
+        return IndexFileDto(
+            relativePath = this.relativePath,
+            contentHash = this.contentHash,
+            modifiedTime = this.modifiedTime,
+            size = this.size,
+            isDirectory = this.isDirectory == 1L,
+            lastSyncedHash = this.lastSyncedHash,
+            serverSyncStatus = syncStatus
+        )
+    }
+
+    override fun getIndexFilesFlow(): Flow<List<IndexFileDto>> {
+        return sqlStorage
+            .getIndexFilesFlow()
+            .map { d -> d.map { it.dto() } }
+            .flowOn(io)
+    }
+
+    override fun getIndexFiles(): List<IndexFileDto> {
+        return sqlStorage
+            .getIndexFiles()
+            .map { d -> d.dto() }
+    }
 
     override fun getTagsFlow(): Flow<List<TagDTO>> {
         return sqlStorage.getTagsFlow()
@@ -392,14 +488,18 @@ class WorkspaceEnvironment(
 
     override fun isWorkspaceExists(): Boolean {
         val result =
-            filesRepo.isNodeExists(FileTreeNode.Directory.create(getWorkspace().fullpath))
+            filesRepository.isNodeExists(
+                FileTreeNode.Directory.create(
+                    getWorkspace().absolutePath,
+                    getWorkspace().fullpath
+                )
+            )
         println("workspace env - isWorkspaceExists(): $result")
         return result
     }
 
-
     override suspend fun createFileNode(
-        parentFolder: FileTreeNode.Directory?,
+        parentRelativePath: String,
         fileName: FileName,
         isAbsoluteNew: Boolean,
         byteArray: ByteArray?,
@@ -410,35 +510,48 @@ class WorkspaceEnvironment(
             while (true) {
                 newNameFileNode = FileTreeNode.File(
                     name = fileName.copy(name = fileName.name + index.toString()),
-                    parentPath = parentFolder?.getFullPath() ?: workspace.fullpath,
-                    fileSize = 0L
+                    parentRelativePath = parentRelativePath,
+                    workspaceFullPath = getWorkspace().absolutePath,
+                    fileSize = 0L,
                 )
-                if (!filesRepo.isNodeExists(newNameFileNode)) {
+                if (!filesRepository.isNodeExists(newNameFileNode)) {
                     break
                 }
                 index++
             }
-            filesRepo.createNode(
+            filesRepository.createNode(
+                workspacePath = workspace.absolutePath,
                 newNameFileNode,
                 byteArray = byteArray
             )
         } else {
-            filesRepo.createNode(
+            filesRepository.createNode(
+                workspacePath = workspace.absolutePath,
                 FileTreeNode.File(
                     name = fileName,
-                    parentPath = parentFolder?.getFullPath() ?: workspace.fullpath,
-                    fileSize = 0L
+                    parentRelativePath = parentRelativePath,
+                    workspaceFullPath = getWorkspace().absolutePath,
+                    fileSize = 0L,
                 ),
                 byteArray = byteArray
             )
         }
 
-        return resultBlock<FileTreeNode.File,String> {
+        return resultBlock {
             val fileNode = bind(newNode)
             ensure(fileNode is FileTreeNode.File) { "Expected file to be created" }
-            updateTimes()
-            fileNode as FileTreeNode.File
+            se(parentRelativePath, fileNode)
+            fileNode
         }
+    }
+
+    private suspend fun se(parentRelativePath: String, createdNode: FileTreeNode) {
+        updateTimes()
+//        val filesState = fileNodesState.value
+//        if (filesState is UIState.Success) {
+//            val files = filesState.data.insertNode(createdNode, parentRelativePath)
+//            fileNodesState.emit(UIState.Success(files))
+//        }
     }
 
     override suspend fun createDirectory(
@@ -448,78 +561,94 @@ class WorkspaceEnvironment(
     ): ResultWrapper<FileTreeNode.Directory, String> {
         val newNode = if (isAbsoluteNew) {
             var index = 0
-            var ff: FileTreeNode.Directory?
+            var selectedDir: FileTreeNode.Directory?
             while (true) {
-                val ss = FileTreeNode.Directory(
+                val directory = FileTreeNode.Directory(
                     name = name + index.toString(),
-                    parentPath = parentFolder?.getFullPath() ?: workspace.fullpath,
+                    parentRelativePath = parentFolder?.getRelativePath() ?: "",
                     children = listOf(),
-                    fileSize = 0L
+                    fileSize = 0L,
+                    workspaceFullPath = getWorkspace().absolutePath
                 )
-                if (!filesRepo.isNodeExists(ss)) {
-                    ff = ss
+                if (!filesRepository.isNodeExists(directory)) {
+                    selectedDir = directory
                     break
                 }
                 index++
             }
-            filesRepo.createNode(ff, byteArray = null)
+            filesRepository.createNode(workspacePath = workspace.absolutePath, selectedDir)
         } else {
-            filesRepo.createNode(
+            filesRepository.createNode(
+                workspacePath = workspace.absolutePath,
                 FileTreeNode.Directory(
                     name = name,
-                    parentPath = parentFolder?.getFullPath() ?: workspace.fullpath,
+                    parentRelativePath = parentFolder?.getRelativePath() ?: "",
                     children = listOf(),
-                    fileSize = 0L
-                ),
-                byteArray = null
+                    fileSize = 0L,
+                    workspaceFullPath = getWorkspace().absolutePath,
+                )
             )
         }
         return resultBlock {
-
             val fileNode = bind(newNode)
             ensure(fileNode is FileTreeNode.Directory) { "Expected directory to be created" }
-            updateTimes()
-            fileNode as FileTreeNode.Directory
+
+            val deletedFiles = getDeletedFilesMetadata().toMutableMap()
+            if (deletedFiles.contains(fileNode.getRelativePath())) {
+                deletedFiles.remove(fileNode.getRelativePath())
+                saveDeletedMetadata(deletedFiles)
+            }
+            if (parentFolder != null) {
+                se(parentFolder.getRelativePath(), fileNode)
+            }
+            fileNode
         }
     }
 
-    private fun renameDD(
-        oldDirectoryRelativePath: String,
+    data class RenamedFileSnap(
+        val oldNode: FileTreeNode,
+        val renamed: FileTreeNode
+    )
+
+    private fun renameAllChildNodes(
         newDirectoryRelativePath: String,
         children: List<FileTreeNode>?
-    ) {
+    ): List<RenamedFileSnap> {
+        val listOfOldChilds = mutableListOf<RenamedFileSnap>()
         if (children == null)
-            return
+            return listOfOldChilds
         for (child in children) {
-            val oldRelativePath = child.getRelativePath(workspacePath = workspace.fullpath)
+            val oldRelativePath = child.getRelativePath()
 
             val newNode = when (child) {
                 is FileTreeNode.Directory -> child.copy(
-                    parentPath = child.parentPath.replaceFirst(
-                        oldDirectoryRelativePath,
-                        newDirectoryRelativePath
-                    )
+                    parentRelativePath = newDirectoryRelativePath
                 )
 
                 is FileTreeNode.File -> child.copy(
-                    parentPath = child.parentPath.replaceFirst(
-                        oldDirectoryRelativePath,
-                        newDirectoryRelativePath
+                    parentRelativePath = newDirectoryRelativePath
+                )
+            }
+            listOfOldChilds.add(
+                RenamedFileSnap(
+                    oldNode = child,
+                    renamed = newNode
+                )
+            )
+            sqlStorage.renameFileNode(
+                oldRelativePath = oldRelativePath,
+                newRelativePath = newNode.getRelativePath()
+            )
+            if (newNode.isDirectory()) {
+                listOfOldChilds.addAll(
+                    renameAllChildNodes(
+                        newDirectoryRelativePath = newNode.getRelativePath(),
+                        newNode.getChildrenOrNull()
                     )
                 )
             }
-            sqlStorage.renameFileNode(
-                oldRelativePath = oldRelativePath,
-                newRelativePath = newNode.getRelativePath(workspacePath = workspace.fullpath)
-            )
-            if (newNode.isDirectory()) {
-                renameDD(
-                    oldDirectoryRelativePath = oldRelativePath,
-                    newDirectoryRelativePath = newNode.getRelativePath(workspacePath = workspace.fullpath),
-                    newNode.getChildrenOrNull()
-                )
-            }
         }
+        return listOfOldChilds
     }
 
     override suspend fun renameNode(
@@ -527,35 +656,91 @@ class WorkspaceEnvironment(
         newNode: FileTreeNode
     ): ResultWrapper<FileTreeNode, String> {
         return resultBlock {
+            //todo remove unnecessary
+            val oldNode = getNodes(null).getAll(true)
+                .firstOrNull { b -> b.getFullPath() == oldNode.getFullPath() }!!
 
             ensure(newNode.getShortName().isNotEmpty()) { "new name is empty" }
-            ensure(filesRepo.isNodeExists(oldNode)) { "file is not exists" }
-            ensure(!filesRepo.isNodeExists(newNode)) { "target path is already exists" }
+            ensure(filesRepository.isNodeExists(oldNode)) { "file is not exists" }
+            ensure(!filesRepository.isNodeExists(newNode)) { "target path is already exists" }
 
-            val oldRelativePath = oldNode.getRelativePath(workspacePath = workspace.fullpath)
+            val oldRelativePath = oldNode.getRelativePath()
             val updatedNode = bind(
-                filesRepo.moveNode(
+                filesRepository.moveNode(
+                    workspacePath = workspace.absolutePath,
                     oldNode,
                     newNode
                 )
             )
+            val deletedFiles = getDeletedFilesMetadata().toMutableMap()
+
             if (oldNode.isDirectory()) {
-                renameDD(
-                    oldDirectoryRelativePath = oldRelativePath,
-                    newDirectoryRelativePath = updatedNode.getRelativePath(workspacePath = workspace.fullpath),
-                    oldNode.getChildrenOrNull()
+                val listOfRenamedSnaps = renameAllChildNodes(
+                    newDirectoryRelativePath = updatedNode.getRelativePath(),
+                    children = oldNode.getChildrenOrNull()
                 )
+                for (snap in listOfRenamedSnaps) {
+                    val oldNodePath = snap.oldNode.getRelativePath()
+                    val newNodePath = snap.renamed.getRelativePath()
+                    sqlStorage.renameFileNode(
+                        oldRelativePath = oldNodePath,
+                        newRelativePath = newNodePath
+                    )
+                    fileManagerService.movedFile(
+                        oldNodePath,
+                        newNodePath
+                    )
+
+                    val oldDeleteFile = deletedFiles[oldNodePath]
+                    deletedFiles[oldNodePath] = oldDeleteFile.createIndexForDeletion(snap.oldNode)
+                    if (deletedFiles.contains(newNodePath)) {
+                        deletedFiles.remove(newNodePath)
+                    }
+                }
             }
+            val newRelativePath = newNode.getRelativePath()
             sqlStorage.renameFileNode(
                 oldRelativePath = oldRelativePath,
-                newRelativePath = newNode.getRelativePath(workspacePath = workspace.fullpath)
+                newRelativePath = newRelativePath
             )
-            updateTimes()
+
             fileManagerService.movedFile(
-                oldNode,
-                newNode
+                oldNode.getRelativePath(),
+                newNode.getRelativePath()
             )
+
+            val oldIndex = deletedFiles[oldRelativePath]
+            deletedFiles[oldRelativePath] = oldIndex.createIndexForDeletion(oldNode)
+            if (deletedFiles.contains(newRelativePath)) {
+                deletedFiles.remove(newRelativePath)
+            }
+            saveDeletedMetadata(deletedFiles)
+
+            updateTimes()
+
             updatedNode
+        }
+    }
+
+    private fun IndexFileDto?.createIndexForDeletion(
+        node: FileTreeNode,
+        modifiedTime: Long = nowInMs()
+    ): IndexFileDto {
+        return if (this != null) {
+            this.copy(
+                modifiedTime = modifiedTime,
+                serverSyncStatus = SyncStatus.DELETED
+            )
+        } else {
+            IndexFileDto(
+                relativePath = node.getRelativePath(),
+                contentHash = null,
+                modifiedTime = modifiedTime,
+                size = null,
+                isDirectory = node is FileTreeNode.Directory,
+                lastSyncedHash = null,
+                serverSyncStatus = SyncStatus.DELETED
+            )
         }
     }
 
@@ -570,15 +755,15 @@ class WorkspaceEnvironment(
     }
 
     override suspend fun copyFile(
-        originalFullPath: String,
         newFile: FileTreeNode.File,
         byteArray: ByteArray?
     ) {
-        if (filesRepo.isNodeExists(newFile)) {
+        if (filesRepository.isNodeExists(newFile)) {
             doNothing()
             return
         }
-        filesRepo.createNode(
+        filesRepository.createNode(
+            workspacePath = workspace.absolutePath,
             node = newFile,
             byteArray = byteArray
         )
@@ -601,56 +786,87 @@ class WorkspaceEnvironment(
 
     @OptIn(ExperimentalTime::class)
     override suspend fun deleteNode(node: FileTreeNode) {
-        if (node is FileTreeNode.Directory) {
-            for (item in node.children) {
-                deleteNode(item)
+        deleteNodes(listOf(node))
+    }
+
+    private fun internalDeleteNodes(child: FileTreeNode): List<FileTreeNode> {
+        val files = mutableListOf<FileTreeNode>()
+        files.add(child)
+        if (child is FileTreeNode.Directory) {
+            for (childNode in child.children) {
+                files.addAll(internalDeleteNodes(childNode))
             }
         }
-        filesRepo.deleteNode(node)
-        val metadataList = getDeletedFilesMetadata().toMutableMap()
-        val relativePath = node.getRelativePath(workspacePath = workspace.absolutePath)
-        val addedTime = Clock.System.now().toEpochMilliseconds()
-        metadataList[relativePath] = addedTime
-        saveDeletedMetadata(metadataList)
+        filesRepository.deleteNode(child)
+        return files
+    }
 
+    @OptIn(ExperimentalTime::class)
+    private suspend fun deleteNodes(nodesToDelete: List<FileTreeNode>) {
+        val metadataList = getDeletedFilesMetadata().toMutableMap()
+        for (node in nodesToDelete) {
+            val files = internalDeleteNodes(node)
+            for (node in files) {
+                val relativePath = node.getRelativePath()
+                val metadataOld = metadataList[relativePath]
+                metadataList[relativePath] = metadataOld.createIndexForDeletion(node)
+            }
+        }
+        saveDeletedMetadata(metadataList)
         updateTimes()
     }
 
-    private fun getDeletedFilesMetadata(): Map<String, Long> {
-        var deletedMetadata = mutableListOf<DeletedFileMetadata>()
-        val deletedNode = getNodeText(node = deletedFilesMeta)
-        when (deletedNode) {
-            is ResultWrapper.Error -> {}
-
-            is ResultWrapper.Success -> {
-                try {
-                    deletedMetadata = DefaultJson.decodeFromString(deletedNode.value)
-                } catch (exc: Exception) {
-                }
-            }
-        }
-        return deletedMetadata.associate { Pair(it.relativePath, it.deletedTime) }
-    }
-
-    private suspend fun saveDeletedMetadata(list: Map<String, Long>): ResultWrapper<Unit, String> {
-        val json = DefaultJson.encodeToString(list.map { d ->
-            DeletedFileMetadata(
-                relativePath = d.key,
-                deletedTime = d.value
-            )
-        })
-        return setNodeText(deletedFilesMeta, json)
-    }
-
     override fun getNodeText(node: FileTreeNode.File): ResultWrapper<String, String> {
-        return filesRepo.getNodeText(node)
+        return filesRepository.getNodeText(node)
     }
 
     override suspend fun setNodeText(
         node: FileTreeNode.File,
         text: String
     ): ResultWrapper<Unit, String> {
-        return filesRepo.setNodeText(node, text)
+        return filesRepository.setNodeText(node, text)
+    }
+
+    override fun syncDirtyFiles(list: List<IndexFileDto>): ResultWrapper<Unit, String> {
+        return sqlStorage.syncDirtyFiles(list)
+    }
+
+    override fun deleteIndexFiles(list: List<String>): ResultWrapper<Unit, String> {
+        return sqlStorage.deleteIndexFiles(list)
+    }
+
+    override fun updateIndexFiles(
+        localNodes: List<FileTreeNode>,
+        serverNodes: List<FileItem>
+    ): ResultWrapper<Unit, String> {
+        return sqlStorage.updateIndexFiles(
+            localNodes = localNodes,
+            serverNodes = serverNodes
+        )
+    }
+
+    override fun closeDatabase() {
+        sqlStorage.close()
+    }
+
+    override fun updateIndexFilesLocal(localNodes: List<FileTreeNode>): ResultWrapper<Unit, String> {
+        return sqlStorage.updateIndexFilesLocal(
+            localNodes = localNodes
+        )
+    }
+
+    override fun syncAllIndexes(specificIndexes: List<IndexFileDto>): ResultWrapper<Unit, String> {
+        return sqlStorage.syncAllFiles(specificIndexes = specificIndexes)
+    }
+
+    override fun setFilesAsSynced(
+        paths: List<String>,
+        serverNodes: List<FileItem>
+    ): ResultWrapper<Unit, String> {
+        return sqlStorage.setFilesAsSynced(
+            paths = paths,
+            serverNodes = serverNodes
+        )
     }
 
     override fun createCollection(request: CreateCollectionRequest): ResultWrapper<Long, String> {
@@ -665,6 +881,10 @@ class WorkspaceEnvironment(
         sqlStorage.updateCollectionRow(request = request)
     }
 
+    override fun updateRowsForPdf(request: UpdateRowsByPdf) {
+        sqlStorage.updateRowsForPdf(request = request)
+    }
+
     override fun deleteCollectionRow(id: Long) {
         sqlStorage.deleteCollectionRow(id = id)
     }
@@ -675,19 +895,22 @@ class WorkspaceEnvironment(
 
 
     @OptIn(ExperimentalTime::class)
-    override fun createAnnotation(data: AnnotationDTO) {
-//      todo  val createTime = Clock.System.now().toEpochMilliseconds()
-//
-//        sqlStorage.createAnnotation(
-//            data = Annotation(
-//                id = data.id,
-//                dataPath = data.dataPath,
-//                dataPoint = data.dataPoint,
-//                description = data.description,
-//                createdTime = createTime,
-//                modifiedTime = createTime
-//            )
-//        )
+    override suspend fun createAnnotation(data: CreateAnnotationRequest): ResultWrapper<Long, String> {
+        return sqlStorage.createAnnotation(
+            annotation = Annotation(
+                id = 0L,
+                dataPath = data.dataPath.normalizeText(),
+                dataPoint = data.dataPoint,
+                description = data.description,
+                createdTime = nowInMs(),
+                modifiedTime = nowInMs(),
+                posX = data.x.toDouble(),
+                posY = data.y.toDouble(),
+                width = data.width.toDouble(),
+                height = data.height.toDouble(),
+                rowId = data.rowId
+            )
+        )
     }
 
     override fun createTag(request: CreateTagRequest): ResultWrapper<Long, String> {
@@ -709,10 +932,7 @@ class WorkspaceEnvironment(
 
     override fun createTagLink(request: CreateTagLinkRequest) {
         sqlStorage.addTagLink(
-            relativePath = getRelativePath(
-                fullPath = request.fullPath,
-                workspacePath = workspace.fullpath
-            ),
+            relativePath = request.relativePath,
             tagId = request.tagId
         )
     }
@@ -745,19 +965,25 @@ class WorkspaceEnvironment(
         sqlStorage.createDatabase()
     }
 
-    override fun getDeletedFilesMetadata(workspace: IWorkspaceEnvironment): Map<String, Long> {
-        var deletedMetadata = mutableListOf<DeletedFileMetadata>()
-        val deletedNode = workspace.getNodeText(node = deletedFilesMeta)
-        when (deletedNode) {
-            is ResultWrapper.Error -> {}
+    override suspend fun createDatabaseFiles() {
+        sqlStorage.createDbFiles()
+    }
 
-            is ResultWrapper.Success -> {
-                try {
-                    deletedMetadata = DefaultJson.decodeFromString(deletedNode.value)
-                } catch (exc: Exception) {
-                }
-            }
+    override suspend fun createIndexDatabaseFiles() {
+        sqlStorage.createIndexDbFiles()
+    }
+
+    override suspend fun saveDeletedMetadata(list: Map<String, IndexFileDto>): ResultWrapper<Unit, String> {
+        return resultBlock {
+            sqlStorage.syncIndexDeletedFiles(list)
         }
-        return deletedMetadata.associate { Pair(it.relativePath, it.deletedTime) }
+    }
+
+    override fun getDeletedFilesMetadata(): Map<String, IndexFileDto> {
+        return sqlStorage.getIndexFiles()
+            .filter { d -> d.serverSyncStatus == SyncStatus.DELETED.code }
+            .associate { d ->
+                d.relativePath to d.dto()
+            }
     }
 }

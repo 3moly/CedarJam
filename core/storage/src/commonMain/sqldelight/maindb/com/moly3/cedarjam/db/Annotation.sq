@@ -1,0 +1,53 @@
+CREATE TABLE Annotation (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  dataPath TEXT NOT NULL, -- relativePath
+  dataPoint REAL NOT NULL, -- page of PDF
+  description TEXT NOT NULL, -- text of PDF
+
+  createdTime INTEGER NOT NULL,
+  modifiedTime INTEGER NOT NULL,
+
+  posX REAL NOT NULL, -- 0f .. 1f
+  posY REAL NOT NULL, -- 0f .. 1f
+  width REAL NOT NULL, -- 0f .. 1f
+  height REAL NOT NULL, -- 0f .. 1f
+
+  rowId INTEGER,
+  FOREIGN KEY (rowId) REFERENCES DataCollectionRow(id) ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+selectAll:
+SELECT *
+FROM Annotation;
+
+
+-- selectByDataPath:
+-- SELECT *
+-- FROM Annotation
+-- WHERE dataPath = :searchPath;
+
+selectByDataPath:
+SELECT *
+FROM Annotation
+WHERE dataPath LIKE :searchPath;
+
+delete:
+DELETE FROM Annotation
+WHERE id = :id;
+
+insertNew:
+INSERT INTO Annotation(dataPath, dataPoint, description, createdTime, modifiedTime,posX,posY,width,height, rowId)
+VALUES ?;
+
+updateDataPath:
+UPDATE Annotation
+SET dataPath = :newFileRelativePath
+WHERE dataPath = :oldFileRelativePath;
+
+updateDataPathById:
+UPDATE Annotation
+SET dataPath = :newFileRelativePath
+WHERE id = :id;
+
+lastInsertId:
+SELECT last_insert_rowid();

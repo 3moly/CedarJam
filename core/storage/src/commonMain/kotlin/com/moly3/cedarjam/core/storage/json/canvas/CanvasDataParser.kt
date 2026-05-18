@@ -8,10 +8,12 @@ import com.moly3.cedarjam.core.domain.model.canvas.Position
 import com.moly3.cedarjam.core.domain.model.canvas.ShapeImpl
 import com.moly3.cedarjam.core.domain.model.canvas.Size
 import com.moly3.cedarjam.core.domain.func.ComposeColorSerializer
+import com.moly3.cedarjam.core.domain.model.canvas.StylusPathImpl
 import com.moly3.cedarjam.core.storage.json.canvas.CanvasDataParser.ArcConnectionJson.Companion.toJson
 import com.moly3.cedarjam.core.storage.json.canvas.CanvasDataParser.ArcConnectionJson.Companion.toModel
-import com.moly3.dataviz.core.block.model.BoxSide
-import com.moly3.dataviz.core.block.model.ShapeConnection
+import com.moly3.dataviz.core.whiteboard.model.BoxSide
+import com.moly3.dataviz.core.whiteboard.model.ShapeConnection
+import com.moly3.dataviz.core.whiteboard.model.StylusPath
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
 
@@ -25,17 +27,49 @@ object CanvasDataParser {
     fun parse(jsonString: String): CanvasDataWithErrors {
         val rootElement = json.parseToJsonElement(jsonString).jsonObject
 
-        val shapes = parseShapes(rootElement["shapes"]?.jsonArray ?: JsonArray(emptyList()))
+        val shapes = parseShapes(
+            rootElement["shapes"]?.jsonArray ?: JsonArray(emptyList())
+        )
         val connections =
-            parseConnections(rootElement["connections"]?.jsonArray ?: JsonArray(emptyList()))
-
-        return CanvasDataWithErrors(shapes, connections)
+            parseConnections(
+                rootElement["connections"]?.jsonArray ?: JsonArray(emptyList())
+            )
+        val drawing =
+            parseDrawing(
+                rootElement["drawing"]?.jsonArray ?: JsonArray(emptyList())
+            )
+        return CanvasDataWithErrors(
+            shapes = shapes,
+            connections = connections,
+            drawing = drawing
+        )
     }
 
     private fun parseShapes(shapesArray: JsonArray): List<ResultWrapper<ShapeImpl, CanvasShapeError>> {
         return shapesArray.map { shapeElement ->
             try {
                 val shapeJson = json.decodeFromJsonElement<ShapeImpl>(shapeElement)
+                ResultWrapper.Success(shapeJson)
+            } catch (e: Exception) {
+                val position = tryExtractPosition(shapeElement)
+                val size = tryExtractSize(shapeElement)
+                ResultWrapper.Error(
+                    CanvasShapeError(
+                        rawJson = shapeElement,
+                        error = e.message ?: "Unknown error",
+                        position = position ?: Position(0.0f, 0.0f),
+                        size = size ?: Size(50.0f, 50.0f),
+                        id = tryExtractId(shapeElement)
+                    )
+                )
+            }
+        }
+    }
+
+    private fun parseDrawing(shapesArray: JsonArray): List<ResultWrapper<StylusPathImpl, CanvasShapeError>> {
+        return shapesArray.map { shapeElement ->
+            try {
+                val shapeJson = json.decodeFromJsonElement<StylusPathImpl>(shapeElement)
                 ResultWrapper.Success(shapeJson)
             } catch (e: Exception) {
                 val position = tryExtractPosition(shapeElement)
@@ -94,32 +128,37 @@ object CanvasDataParser {
         val color: Color?
     ) {
         companion object {
-            fun ShapeConnection.toJson(): ArcConnectionJson {
+            fun ShapeConnection<Long>.toJson(): ArcConnectionJson {
                 return ArcConnectionJson(
                     id = id,
-                    fromBox = fromBox,
-                    toBox = toBox,
+                    fromBox = fromBoxId,
+                    toBox = toBoxId,
                     fromSide = fromSide,
                     toSide = toSide,
                     arcHeight = arcHeight,
                     color = color
                 )
             }
-            fun ArcConnectionJson.toModel(): ShapeConnection {
+
+            fun ArcConnectionJson.toModel(): ShapeConnection<Long> {
                 return ShapeConnection(
                     id = id,
-                    fromBox = fromBox,
-                    toBox = toBox,
+                    fromBoxId = fromBox,
+                    toBoxId = toBox,
                     fromSide = fromSide,
                     toSide = toSide,
                     arcHeight = arcHeight,
                     color = color
                 )
+            }
+
+            fun StylusPathImpl.toJson(): StylusPathImpl {
+                return this
             }
         }
     }
 
-    private fun parseConnections(connectionsArray: JsonArray): List<ResultWrapper<ShapeConnection, CanvasShapeError>> {
+    private fun parseConnections(connectionsArray: JsonArray): List<ResultWrapper<ShapeConnection<Long>, CanvasShapeError>> {
         return connectionsArray.map { connectionElement ->
             try {
                 val arcConnectionJson =
@@ -159,9 +198,19 @@ object CanvasDataParser {
             }
         }
 
+        val drawingArray = buildJsonArray {
+            data.drawing.forEach { result ->
+                when (result) {
+                    is ResultWrapper.Success -> add(json.encodeToJsonElement(result.value.toJson()))
+                    is ResultWrapper.Error -> add(result.error.rawJson)
+                }
+            }
+        }
+
         val rootObject = buildJsonObject {
             put("shapes", shapesArray)
             put("connections", connectionsArray)
+            put("drawing", drawingArray)
         }
 
         return json.encodeToString(JsonObject.serializer(), rootObject)

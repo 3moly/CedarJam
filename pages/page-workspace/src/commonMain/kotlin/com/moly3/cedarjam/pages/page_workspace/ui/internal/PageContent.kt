@@ -3,12 +3,18 @@ package com.moly3.cedarjam.pages.page_workspace.ui.internal
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -19,17 +25,23 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.moly3.cedarjam.pages.page_workspace.Intent
 import com.moly3.cedarjam.pages.page_workspace.Label
 import com.moly3.cedarjam.pages.page_workspace.State
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalDragAndDrop
+import com.moly3.cedarjam.core.ui.func.isCompactUI
 import com.moly3.cedarjam.core.ui.func.rememberWindowSize
 import com.moly3.cedarjam.core.ui.model.WindowSize
+import com.moly3.cedarjam.core.ui.uikit.CJText
+import com.moly3.cedarjam.core.ui.uikit.UIStateContentNoBox
+import com.moly3.lazyflow.ui.rememberLazyFlowState
 import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.rememberHazeState
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
 
@@ -42,46 +54,34 @@ fun PageContent(
     state: State,
     labelsFlow: Flow<Label>,
     onIntent: (Intent) -> Unit,
-    onSetIsFullMenu: (Boolean) -> Unit,
     content: @Composable () -> Unit
 ) {
     val dragAndDropState = LocalDragAndDrop.current
     val menuAnimWidth = if (state.isMenuOpened) state.menuWidth.dp else minimumWidth.dp
-    val hazeState = rememberHazeState(blurEnabled = false)
-    val hazeStyle = remember {
-        HazeStyle(
-            backgroundColor = Color.Black,
-            tints = listOf(HazeTint(Color.Black.copy(0.1f))),
-            blurRadius = 16.dp,
-            noiseFactor = HazeDefaults.noiseFactor
-        )
-    }
-    val listState = rememberLazyListState()
+
+    val scrollState = rememberLazyFlowState()
+//    val listState = rememberLazyListState()
     LaunchedEffect(Unit) {
         labelsFlow.collectLatest {
             when (it) {
                 is Label.ScrollToIndex -> {
-                    listState.scrollToItem(it.index)
+                    delay(100L)
+                    scrollState.animateScrollToItem(it.index)
                 }
             }
         }
     }
-    val windowSize by rememberWindowSize()
-    if (windowSize == WindowSize.Compact) {
+    if (isCompactUI()) {
         Box(Modifier.fillMaxSize()) {
             if (state.isMenuOpened) {
                 MenuContent(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.displayCutoutPadding().fillMaxSize(),
                     isFullMenu = state.isMenuOpened,
-                    hazeState = hazeState,
-                    hazeStyle = hazeStyle,
                     state = state,
-                    listState = listState,
+                    scrollState = scrollState,
+//                    listState = listState,
                     dragAndDropState = dragAndDropState,
-                    onIntent = onIntent,
-                    onSetIsFullMenu = {
-                        onSetIsFullMenu(it)
-                    }
+                    onIntent = onIntent
                 )
             } else {
                 Box(
@@ -121,16 +121,12 @@ fun PageContent(
                             size = Size(sliderWidthPx, size.height)
                         )
                     },
+                scrollState = scrollState,
                 isFullMenu = state.isMenuOpened,
-                hazeState = hazeState,
-                hazeStyle = hazeStyle,
                 state = state,
-                listState = listState,
+//                listState = listState,
                 dragAndDropState = dragAndDropState,
-                onIntent = onIntent,
-                onSetIsFullMenu = {
-                    onSetIsFullMenu(it)
-                }
+                onIntent = onIntent
             )
             Box(
                 modifier = Modifier

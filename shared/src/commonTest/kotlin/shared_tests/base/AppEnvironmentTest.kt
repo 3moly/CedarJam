@@ -2,6 +2,7 @@ package shared_tests.base
 
 import co.touchlab.kermit.CommonWriter
 import co.touchlab.kermit.Logger
+import co.touchlab.kermit.Severity
 import com.moly3.cedarjam.di.initApp
 import com.moly3.cedarjam.core.domain.func.getPlatform
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
@@ -33,19 +34,23 @@ abstract class AppEnvironmentTest : BaseTest() {
             Platform.Android,
             Platform.Ios -> {
                 FileTreeNode.Directory(
-                    parentPath = FileKit.filesDirPath(),
+                    workspaceFullPath = "",
+                    parentRelativePath = FileKit.filesDirPath(),
                     name = "/test_env2",
                     children = listOf(),
-                    fileSize = 0L
+                    fileSize = 0L,
+//                    parentFullPath = ""
                 )
             }
 
             Platform.Jvm -> {
                 FileTreeNode.Directory(
-                    parentPath = "/Users/{user_name}/Desktop/", //todo replace
+                    workspaceFullPath = "",
+                    parentRelativePath = "build/.test_workspace",
                     name = "asa",
                     children = listOf(),
-                    fileSize = 0L
+                    fileSize = 0L,
+//                    parentFullPath = ""
                 )
             }
 
@@ -73,7 +78,7 @@ abstract class AppEnvironmentTest : BaseTest() {
         return WorkspacePresentation(
             name = "test_env2",
             fullpath = fullPath,
-            absolutePath = fullPath
+            serverName = "test_env2"
         )
     }
 
@@ -82,7 +87,7 @@ abstract class AppEnvironmentTest : BaseTest() {
 
         return getKoin().get {
             parametersOf(
-                WorkspaceInput(workspace.name),
+                WorkspaceInput(workspace.name,workspace.name),
                 FileManagerService(workspace, FileManagerService.OpenedFiles())
             )
         }
@@ -100,7 +105,8 @@ abstract class AppEnvironmentTest : BaseTest() {
         sd.createWorkspace(
             Workspace(
                 name = workspace.name,
-                fullpath = workspace.fullpath
+                platformPath = workspace.fullpath,
+                serverName = workspace.name
             )
         )
         val filesStorage = createSystemFilesManager()

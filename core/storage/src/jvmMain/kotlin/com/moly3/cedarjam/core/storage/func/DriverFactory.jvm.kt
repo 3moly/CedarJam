@@ -1,22 +1,24 @@
 package com.moly3.cedarjam.core.storage.func
 
+import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlDriver
+import app.cash.sqldelight.db.SqlSchema
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.moly3.cedarjam.core.domain.model.AndroidApplicationContext
 import com.moly3.cedarjam.core.domain.model.ResultWrapper
 import com.moly3.cedarjam.core.domain.model.error.DatabaseError
 import com.moly3.cedarjam.core.domain.model.resultBlock
-import com.moly3.cedarjam.core.storage.Database
 import java.util.Properties
 
 actual fun createSqlDriver(
     androidApplicationContext: AndroidApplicationContext?,
-    dbPath: String
+    dbPath: String,
+    schema: SqlSchema<QueryResult.Value<Unit>>
 ): ResultWrapper<SqlDriver, DatabaseError> {
-    return resultBlock {
+    return resultBlock<SqlDriver, DatabaseError>(onError = { DatabaseError.Error(it.toString()) }) {
         if (dbPath == null) {
             val dr = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
-            Database.Schema.create(dr)
+            schema.create(dr)
             dr
         } else {
             try {
@@ -28,7 +30,7 @@ actual fun createSqlDriver(
                         put("synchronous", "NORMAL")
                         put("foreign_keys", "ON")
                     },
-                    Database.Schema
+                    schema
                 )
                 jdbc
             } catch (exc: Exception) {

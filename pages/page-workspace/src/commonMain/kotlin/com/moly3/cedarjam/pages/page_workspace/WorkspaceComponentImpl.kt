@@ -8,22 +8,35 @@ import com.arkivanov.decompose.router.children.NavState
 import com.arkivanov.decompose.router.children.SimpleChildNavState
 import com.arkivanov.decompose.router.children.SimpleNavigation
 import com.arkivanov.decompose.router.children.children
+import com.arkivanov.decompose.router.slot.activate
+import com.arkivanov.decompose.router.slot.child
 import com.arkivanov.decompose.value.Value
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.arkivanov.mvikotlin.extensions.coroutines.labels
 import com.arkivanov.mvikotlin.extensions.coroutines.stateFlow
+import com.moly3.cedarjam.core.coordinator.SetIsDarkCoordinator
+import com.moly3.cedarjam.core.domain.dialog.DialogColorPickerService
+import com.moly3.cedarjam.core.domain.dialog.DialogDeleteService
+import com.moly3.cedarjam.core.domain.model.WorkspaceInput
+import com.moly3.cedarjam.core.domain.repository.IFilesRepository
+import com.moly3.cedarjam.core.domain.service.AlertService
+import com.moly3.cedarjam.core.domain.service.IMessageService
+import com.moly3.cedarjam.core.domain.service.WorkspaceSession
+import com.moly3.cedarjam.core.domain.usecase.ISyncUseCase
+import com.moly3.cedarjam.core.domain.usecase.NavigateToFileUseCaseFactory
+import com.moly3.cedarjam.core.ui.model.PageNameData
+import com.moly3.cedarjam.features.feature_settings.func.settingsDialogScopeFactory
+import com.moly3.cedarjam.features.feature_settings.model.DialogConfig
+import com.moly3.cedarjam.navigation.CreateWorkspaceSession
 import com.moly3.cedarjam.navigation.IDecomposeScopeComponent
+import com.moly3.cedarjam.navigation.Navigator
 import com.moly3.cedarjam.navigation.Route
-import com.moly3.cedarjam.navigation.componentScope
 import com.moly3.cedarjam.navigation.stateFlow
 import com.moly3.cedarjam.pages.page_tabs.TabsComponent
-import com.moly3.cedarjam.pages.page_tabs.TabsComponentImpl
+import com.moly3.cedarjam.pages.page_tabs.TabsComponentFactory
 import com.moly3.cedarjam.pages.page_workspace.store.WorkspaceStoreFactory
-import com.moly3.cedarjam.core.domain.dialog.DialogSelectTagService
-import com.moly3.cedarjam.core.domain.dialog.DialogTagToTagService
-import com.moly3.cedarjam.core.domain.model.PageNameData
-import com.moly3.cedarjam.core.domain.model.WorkspaceInput
-import com.moly3.cedarjam.core.domain.service.WorkspaceSession
+import dev.zacsweers.metro.Assisted
+import dev.zacsweers.metro.AssistedInject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -35,41 +48,70 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.serialization.Serializable
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
-import org.koin.core.parameter.parametersOf
-import org.koin.core.scope.Scope
 
 data class PageNameWorkspace(
     val pageNameData: PageNameData?
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
+@AssistedInject
 class WorkspaceComponentImpl(
-    private val workspaceInput: WorkspaceInput,
-    context: ComponentContext,
-    storeFactory: StoreFactory
-) : KoinComponent,
-    ComponentContext by context,
+    @Assisted private val workspaceInput: WorkspaceInput,
+    @Assisted context: ComponentContext,
+    @Assisted storeFactory: StoreFactory,
+    override val filesRepository: IFilesRepository,
+    private val createWorkspaceSession: CreateWorkspaceSession,
+    private val navigator: Navigator,
+    private val setIsDarkCoordinator: SetIsDarkCoordinator,
+    private val alertService: AlertService,
+    private val syncUseCase: ISyncUseCase,
+    private val messageService: IMessageService,
+    private val dialogColorPickerService: DialogColorPickerService,
+    private val dialogDeleteService: DialogDeleteService,
+    private val navigateToFileUseCaseFactory: NavigateToFileUseCaseFactory,
+    private val tabsComponentFactory: TabsComponentFactory,
+) : ComponentContext by context,
     IDecomposeScopeComponent,
     WorkspaceComponent {
 
-    override val scope by componentScope()
-    private val coroutineScope: CoroutineScope by inject()
-    override val workspaceSession: WorkspaceSession by inject {
-        parametersOf(
-            workspaceInput,
-            context.stateKeeper
+    private val coroutineScope: CoroutineScope =
+        CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    override val workspaceSession: WorkspaceSession by lazy {
+        createWorkspaceSession(workspaceInput, stateKeeper)
+    }
+
+    private val settingsDialogScope by lazy {
+        settingsDialogScopeFactory(
+            storeFactory = storeFactory,
+            workspaceSession = workspaceSession,
+            dialogColorPickerService = dialogColorPickerService,
+            systemFilesManager = filesRepository,
+            syncUseCase = syncUseCase,
         )
     }
-    override val dialogSelectTagService: DialogSelectTagService by inject()
-    override val dialogTagToTagService: DialogTagToTagService by inject()
+
+    override val settingsDialogSlot = settingsDialogScope.slot
+
     private val store by lazy {
         WorkspaceStoreFactory(
             storeFactory = storeFactory,
             lifecycle = lifecycle,
-            workspaceSession = workspaceSession
+            workspaceSession = workspaceSession,
+            navigator = navigator,
+            setIsDarkCoordinator = setIsDarkCoordinator,
+            alertService = alertService,
+            filesRepo = filesRepository,
+            syncUseCase = syncUseCase,
+            messagerService = messageService,
+            dialogColorPickerService = dialogColorPickerService,
+            dialogDeleteService = dialogDeleteService,
+            fileManagerService = workspaceSession.fileManagerService,
+            navigateToFileUseCase = navigateToFileUseCaseFactory(workspaceSession.fileManagerService),
+            onSettingsOpen = {
+                settingsDialogScope.navigation.activate(DialogConfig)
+            },
         ).create(stateKeeper = stateKeeper)
     }
 
@@ -89,7 +131,7 @@ class WorkspaceComponentImpl(
         children(
             source = navigation,
             stateSerializer = NavigationState.serializer(),
-            key = "workspace",
+            key = "workspace_${workspaceInput.name}",
             initialState = {
                 NavigationState(
                     configurations = listOf(Config.Tabs(index = 0))
@@ -102,11 +144,14 @@ class WorkspaceComponentImpl(
                 )
             },
             childFactory = { config, componentContext ->
-                TabsComponentImpl(
+                tabsComponentFactory.invoke(
                     context = componentContext,
                     storeFactory = storeFactory,
                     workspaceSession = workspaceSession,
                     index = config.index,
+                    openMenu = {
+                        store.accept(Intent.SetIsFullMenu(it))
+                    },
                     onSelfDestroy = {
                         removeTabs(index = config.index)
                     },
@@ -130,10 +175,15 @@ class WorkspaceComponentImpl(
     override val children: Value<WorkspaceComponent.Children<*, TabsComponent>>
         get() = _children
 
+    override fun getItems(): List<Child<*, *>> {
+
+        return _children.stateFlow.value.items
+    }
+
     init {
         coroutineScope.launch {
             _children.stateFlow.collectLatest {
-                val indexes = it.items.map { d->d.instance.index }
+                val indexes = it.items.map { d -> d.instance.index }
                 store.accept(Intent.ClearingTabs(indexes))
             }
         }
@@ -141,6 +191,7 @@ class WorkspaceComponentImpl(
             val activeIndexFlow = state
                 .map { it.activeTabsIndex }
                 .distinctUntilChanged()
+
             combine(
                 _children.stateFlow,
                 activeIndexFlow
@@ -180,17 +231,19 @@ class WorkspaceComponentImpl(
         }
     }
 
-    override fun onScopeClose(scope: Scope) {
-        println("destroying workspace -> ${workspaceInput.name} <-")
-    }
-
     @OptIn(DelicateDecomposeApi::class)
     override fun onNavigate(route: Route) {
-        coroutineScope.launch(Dispatchers.Main.immediate) {
-            val foundActive = _children.value.items
-                .firstOrNull { d -> d.instance.index == state.value.activeTabsIndex }
-                ?: _children.value.items.firstOrNull()
-            foundActive?.instance?.onNavigate(route)
+        val settingsSlotChild = settingsDialogScope.slot.child
+
+        if (settingsSlotChild != null && route is Route.Back) {
+            settingsSlotChild.instance.onBackClicked()
+        } else {
+            coroutineScope.launch(Dispatchers.Main.immediate) {
+                val foundActive = _children.value.items
+                    .firstOrNull { d -> d.instance.index == state.value.activeTabsIndex }
+                    ?: _children.value.items.firstOrNull()
+                foundActive?.instance?.onNavigate(route)
+            }
         }
     }
 

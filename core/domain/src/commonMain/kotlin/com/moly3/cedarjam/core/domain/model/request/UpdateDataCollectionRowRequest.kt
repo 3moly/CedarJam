@@ -19,6 +19,11 @@ data class UpdateDataCollectionRowRequest(
     val modifiedTime: Long
 )
 
+data class UpdateRowsByPdf(
+    val relativePath: String,
+    val newPage: Int
+)
+
 fun CollectionRowDTO.mapToUpdateRequest(): UpdateDataCollectionRowRequest {
     return UpdateDataCollectionRowRequest(
         id = this.id,

@@ -1,5 +1,6 @@
 package com.moly3.cedarjam.core.domain.service
 
+import com.moly3.cedarjam.core.domain.func.nowInMs
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.WorkspacePresentation
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -15,13 +16,13 @@ import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class)
 class FileManagerService(
-    val workspacePresentation: WorkspacePresentation,
+//    val workspacePresentation: WorkspacePresentation,
     startedState: OpenedFiles
 ) {
 
     @Serializable
     data class FileNodeSeconds(
-        val fileNodeFullPath: String = "",
+        val fileNodeRelativePath: String = "",
         val refreshToken: Long? = null
     )
 
@@ -41,19 +42,19 @@ class FileManagerService(
 
 
     suspend fun openFile(fileNode: FileTreeNode, isReadOnly: Boolean): Long {
-        return openFile(fileNode.getFullPath(), isReadOnly)
+        return openFile(fileNode.getRelativePath(), isReadOnly)
     }
 
-    suspend fun openFile(fullpath: String, isReadOnly: Boolean): Long {
+    suspend fun openFile(relativePath: String, isReadOnly: Boolean): Long {
         val alreadyAdded = _openedFilesState.value
             .states
             .asSequence()
-            .firstOrNull { d -> d.value.fileNodeFullPath == fullpath }
+            .firstOrNull { d -> d.value.fileNodeRelativePath == relativePath }
         val timestamp = if (alreadyAdded != null) {
             //_lastOpenedFile.emit(alreadyAdded.value)
             alreadyAdded.key
         } else {
-            val fileNodeSeconds = FileNodeSeconds(fullpath, null)
+            val fileNodeSeconds = FileNodeSeconds(relativePath, null)
             if (!isReadOnly) {
                 //_lastOpenedFile.emit(fileNodeSeconds)
             }
@@ -69,14 +70,14 @@ class FileManagerService(
 
     @OptIn(ExperimentalTime::class)
     fun getTimestampByFileNode(fileNode: FileTreeNode): Long? {
-        return getTimestampByFileNode(fileNode.getFullPath())
+        return getTimestampByFileNode(fileNode.getRelativePath())
     }
 
     @OptIn(ExperimentalTime::class)
-    fun getTimestampByFileNode(fullpath: String): Long? {
+    fun getTimestampByFileNode(relativePath: String): Long? {
         val map = _openedFilesState.value.states
         for (pair in map) {
-            if (pair.value.fileNodeFullPath == fullpath)
+            if (pair.value.fileNodeRelativePath == relativePath)
                 return pair.key
         }
         return null
@@ -85,25 +86,20 @@ class FileManagerService(
     @OptIn(ExperimentalTime::class)
     fun getFileNodeByTimestamp(timestamp: Long): String? {
         val map = _openedFilesState.value.states
-        return map[timestamp]?.fileNodeFullPath
+        return map[timestamp]?.fileNodeRelativePath
     }
 
     @OptIn(ExperimentalTime::class)
-    suspend fun movedFile(oldFileNode: FileTreeNode, newFileNode: FileTreeNode) {
-        movedFile(oldFileNode.getFullPath(), newFileNode)
-    }
-
-    @OptIn(ExperimentalTime::class)
-    suspend fun movedFile(oldFileNode: String, newFileNode: FileTreeNode) {
-        val timestamp = getTimestampByFileNode(oldFileNode)
+    suspend fun movedFile(oldRelativePath: String, newRelativePath: String) {
+        val timestamp = getTimestampByFileNode(oldRelativePath)
 
         val map = _openedFilesState.value.states.toMutableMap()
 
         val lastFile = map[timestamp]
         if (lastFile != null) {
             val last = FileNodeSeconds(
-                newFileNode.getFullPath(),
-                refreshToken = Clock.System.now().toEpochMilliseconds()
+                newRelativePath,
+                refreshToken = nowInMs()
             )
             map.put(
                 timestamp!!,
@@ -111,31 +107,7 @@ class FileManagerService(
             )
             //_lastOpenedFile.emit(last)
             _openedFilesState.emit(OpenedFiles(map))
-        } else {
-            val openedFiles = _openedFilesState.value.states.toMutableMap()
-            when (oldFileNode) {
-                is FileTreeNode.Directory -> {
-                    val foundFiles = _openedFilesState.value.states
-                        //.filter { d -> d.value.fileNode is FileTreeNode.File }
-                        .filter { d ->
-                            d.value.fileNodeFullPath.contains(oldFileNode.getFullPath())
-                        }
-                    for (item in foundFiles) {
-                        val fileNode = item.value.fileNodeFullPath
-                        val newParentPath = fileNode.replaceFirst(
-                            oldFileNode.getFullPath(),
-                            newFileNode.getFullPath()
-                        )
-                        openedFiles[item.key] =
-                            item.value.copy(fileNodeFullPath = newParentPath)
-                    }
-                }
-
-                is FileTreeNode.File -> {
-                    //todo openFile(fileNode, isReadOnly = false)
-                }
-            }
-            _openedFilesState.emit(OpenedFiles(openedFiles))
         }
+//        }
     }
 }

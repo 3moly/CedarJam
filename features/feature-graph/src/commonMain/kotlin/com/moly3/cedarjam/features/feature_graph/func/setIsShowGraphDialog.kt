@@ -4,12 +4,13 @@ import com.arkivanov.decompose.router.slot.activate
 import com.moly3.cedarjam.features.feature_graph.Intent
 import com.moly3.cedarjam.features.feature_graph.model.DialogConfig
 import com.moly3.cedarjam.features.feature_graph.model.DialogScope
+import com.moly3.cedarjam.features.feature_graph.model.GraphDialogInput
 
 fun DialogScope.setIsShowGraphDialog(
-    targetId: String?,
+    target: GraphDialogInput,
     isShow: Boolean
 ) {
-    navigation.activate(DialogConfig(targetId = targetId))
+    navigation.activate(DialogConfig(target = target))
     val instance = slot.value.child?.instance
     instance?.onIntent(Intent.SetIsShowContent(isShow))
 }

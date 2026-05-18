@@ -1,6 +1,7 @@
 package com.moly3.cedarjam.pages.page_workspace.model
 
 import androidx.compose.ui.geometry.Offset
+import com.moly3.cedarjam.core.ui.model.CJText
 import kotlinx.collections.immutable.ImmutableList
 
 data class ContextMenuData(
@@ -10,6 +11,6 @@ data class ContextMenuData(
 )
 
 data class ContextMenuButton(
-    val title: String,
+    val title: CJText,
     val onClick: () -> Unit
 )

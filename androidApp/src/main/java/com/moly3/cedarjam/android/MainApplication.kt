@@ -8,6 +8,6 @@ class MainApplication : Application() {
     override fun onCreate() {
         super.onCreate()
 
-        initApp(this as AndroidApplicationContext)
+        initApp(this as AndroidApplicationContext, isRelease = true)
     }
 }

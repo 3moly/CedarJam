@@ -24,7 +24,7 @@ fun CJButtonIcon(
     isEnabled: Boolean = true,
     onClick: () -> Unit
 ) {
-    Box(
+    NeumorphicShape(
         modifier = modifier
             .size(size.dp)
             .clip(RoundedCornerShape(8.dp))
@@ -35,13 +35,13 @@ fun CJButtonIcon(
                 else
                     it
             },
-        contentAlignment = Alignment.Center
-    ) {
-        Image(
-            imageVector,
-            contentDescription = null,
-            colorFilter = ColorFilter.tint(LocalAppTheme.current.colors.icon)
-        )
-    }
+        content = {
+            Image(
+                imageVector,
+                contentDescription = null,
+                colorFilter = ColorFilter.tint(LocalAppTheme.current.colors.icon)
+            )
+        }
+    )
 }
 

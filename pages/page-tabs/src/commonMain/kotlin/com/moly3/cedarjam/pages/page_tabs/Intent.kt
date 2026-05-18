@@ -1,6 +1,6 @@
 package com.moly3.cedarjam.pages.page_tabs
 
-import com.moly3.cedarjam.core.domain.model.PageNameData
+import com.moly3.cedarjam.core.ui.model.PageNameData
 
 sealed class Intent {
     data object AddNewTabs : Intent()

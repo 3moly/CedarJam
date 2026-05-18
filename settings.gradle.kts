@@ -37,6 +37,7 @@ include(
     ":features:feature-browser",
     ":features:feature-file",
     ":features:feature-file-view",
+    ":features:feature-settings",
 
     ":pages:page-home",
     ":pages:page-file",
@@ -50,3 +51,6 @@ include(
     ":pages:page-select-workspace",
     ":pages:page-workspace",
 )
+include(":desktopApp")
+include(":benchmark")
+include(":core:coordinator")

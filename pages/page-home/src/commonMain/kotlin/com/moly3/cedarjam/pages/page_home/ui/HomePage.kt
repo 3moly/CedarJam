@@ -13,6 +13,7 @@ fun HomePage(component: HomeComponent) {
     val scope = rememberCoroutineScope()
     val state = component.state.collectAsState().value
     PageContent(
+        workspaceFullPath = component.workspaceFullPath,
         state = state,
         onIntent = {
             scope.launch(Dispatchers.Main.immediate) {

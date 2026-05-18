@@ -1,28 +1,29 @@
 package com.moly3.cedarjam.core.storage.internal
 
+import app.cash.sqldelight.Query
 import app.cash.sqldelight.coroutines.asFlow
-import app.cash.sqldelight.coroutines.mapToList
-import app.cash.sqldelight.coroutines.mapToOne
-import app.cash.sqldelight.coroutines.mapToOneOrNull
+import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlDriver
-import com.moly3.data.DataCollection
-import com.moly3.data.DataCollectionRow
-import com.moly3.data.Tag
-import com.moly3.data.TagCollectionRow
-import com.moly3.data.TagFileNode
-import com.moly3.data.TagToTag
+import app.cash.sqldelight.db.SqlSchema
+import co.touchlab.kermit.Logger
 import com.moly3.cedarjam.core.storage.ISqlStorage
 import com.moly3.cedarjam.core.storage.ISystemFilesManager
 import com.moly3.cedarjam.core.storage.exception.DbNotCreatedException
 import com.moly3.cedarjam.core.storage.func.createSqlDriver
 import com.moly3.cedarjam.core.domain.func.doNothing
 import com.moly3.cedarjam.core.domain.func.hiddenDirectory
+import com.moly3.cedarjam.core.domain.func.indexSqlDatabaseName
+import com.moly3.cedarjam.core.domain.func.normalizeText
 import com.moly3.cedarjam.core.domain.func.nowInMs
 import com.moly3.cedarjam.core.domain.func.pathWrapper
+import com.moly3.cedarjam.core.domain.func.sqlDatabaseName
 import com.moly3.cedarjam.core.domain.func.toHexString
 import com.moly3.cedarjam.core.domain.io
+import com.moly3.cedarjam.core.domain.model.FileItem
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
+import com.moly3.cedarjam.core.domain.model.IndexFileDto
 import com.moly3.cedarjam.core.domain.model.ResultWrapper
+import com.moly3.cedarjam.core.domain.model.SyncStatus
 import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.domain.model.bind
 import com.moly3.cedarjam.core.domain.model.ensure
@@ -39,15 +40,31 @@ import com.moly3.cedarjam.core.domain.model.request.RenameDataCollectionRowReque
 import com.moly3.cedarjam.core.domain.model.request.RenameTagRequest
 import com.moly3.cedarjam.core.domain.model.request.UpdateDataCollectionRequest
 import com.moly3.cedarjam.core.domain.model.request.UpdateDataCollectionRowRequest
+import com.moly3.cedarjam.core.domain.model.request.UpdateRowsByPdf
 import com.moly3.cedarjam.core.domain.model.request.UpdateTagRequest
 import com.moly3.cedarjam.core.domain.service.AppContextProvider
-import com.moly3.cedarjam.core.storage.Database
+import com.moly3.cedarjam.core.storage.func.syncAllFiles
+import com.moly3.cedarjam.core.storage.func.updateIndex
+import com.moly3.cedarjam.core.storage.func.updateIndexLocal
+import com.moly3.cedarjam.db.Annotation
+import com.moly3.cedarjam.db.DataCollection
+import com.moly3.cedarjam.db.DataCollectionRow
+import com.moly3.cedarjam.db.Database
+import com.moly3.cedarjam.db.Tag
+import com.moly3.cedarjam.db.TagAnnotation
+import com.moly3.cedarjam.db.TagCollectionRow
+import com.moly3.cedarjam.db.TagFileNode
+import com.moly3.cedarjam.db.TagToTag
+import com.moly3.cedarjam.indexdb.IndexDatabase
+import com.moly3.cedarjam.indexdb.IndexFile
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import kotlin.collections.listOf
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class, ExperimentalCoroutinesApi::class)
@@ -56,12 +73,23 @@ internal class SqlStorage(
     private val applicationProvider: AppContextProvider,
     private val workspaceDirectoryPath: String
 ) : ISqlStorage {
-    private val mapContext = io
+    private val mapContext = io.limitedParallelism(50)
 
     private val _dbStateFlow =
         MutableStateFlow<UIState<Database, DatabaseError>>(UIState.Loading)
 
+    private val _indexDbStateFlow =
+        MutableStateFlow<UIState<IndexDatabase, DatabaseError>>(UIState.Loading)
+
     private val dbFlow: Flow<Database?> = _dbStateFlow.map { uiState ->
+        when (uiState) {
+            is UIState.Error -> null
+            is UIState.Loading -> null
+            is UIState.Success -> uiState.data
+        }
+    }.flowOn(mapContext)
+
+    private val indexDbFlow: Flow<IndexDatabase?> = _indexDbStateFlow.map { uiState ->
         when (uiState) {
             is UIState.Error -> null
             is UIState.Loading -> null
@@ -78,22 +106,65 @@ internal class SqlStorage(
         }
     }
 
+    private fun <T> runQueryOrThrowIndex(body: (IndexDatabase) -> T): T {
+        val dbState = _indexDbStateFlow.value
+        return when (val state = dbState) {
+            is UIState.Error -> throw DbNotCreatedException(state.error.toString())
+            UIState.Loading -> throw DbNotCreatedException("database is initialized")
+            is UIState.Success -> body(dbState.data)
+        }
+    }
+
     private fun getDatabasePath(): String {
+        if (workspaceDirectoryPath.isEmpty()) {
+            throw NullPointerException("workspace for db is empty")
+        }
         return pathWrapper(
             workspaceDirectoryPath,
             hiddenDirectory,
-            "sqlite.db"
+            "$sqlDatabaseName.db"
         ).pathString
     }
 
-    private fun getSqlDriver(): ResultWrapper<SqlDriver, DatabaseError> {
-        val dbPath = getDatabasePath()
-        return resultBlock {
+    private fun getIndexDatabasePath(): String {
+        if (workspaceDirectoryPath.isEmpty()) {
+            throw NullPointerException("workspace for db is empty")
+        }
+        return pathWrapper(
+            workspaceDirectoryPath,
+            hiddenDirectory,
+            "$indexSqlDatabaseName.db"
+        ).pathString
+    }
+
+    private fun getGenericSqlDriver(
+        dbPath: String,
+        schema: SqlSchema<QueryResult.Value<Unit>>
+    ): ResultWrapper<SqlDriver, DatabaseError> {
+        return resultBlock<SqlDriver, DatabaseError>(onError = { DatabaseError.Error("") }) {
             val dbPath = systemFilesManager.toAbsoluteAppPath(pathWrapper(dbPath)).pathString
             ensure(systemFilesManager.isNodeExists(dbPath)) { DatabaseError.NotExist }
-            val sqlResult = createSqlDriver(applicationProvider.getApplicationContext(), dbPath)
+            Logger.w { " ALERT" }
+            Logger.w { " ALERT" }
+            Logger.w { " ALERT" }
+            Logger.w { "sqlite.db ${dbPath}" }
+            Logger.w { " ALERT" }
+            Logger.w { " ALERT" }
+            Logger.w { " ALERT" }
+            val sqlResult = createSqlDriver(
+                applicationProvider.getApplicationContext(), dbPath,
+                schema
+            )
             bind(sqlResult)
         }
+    }
+
+    private fun getMainDbDriver(): ResultWrapper<SqlDriver, DatabaseError> {
+        return getGenericSqlDriver(dbPath = getDatabasePath(), schema = Database.Schema)
+    }
+
+    private fun getIndexDbDriver(): ResultWrapper<SqlDriver, DatabaseError> {
+        return getGenericSqlDriver(dbPath = getIndexDatabasePath(), schema = IndexDatabase.Schema)
     }
 
     override fun getDatabaseStatus(): Flow<UIState<Unit, DatabaseError>> {
@@ -104,14 +175,46 @@ internal class SqlStorage(
         }
     }
 
-    override suspend fun createDatabase() {
+    override suspend fun createIndexDbFiles() {
+        val indexDb = getIndexDatabasePath()
+        if (!systemFilesManager.isNodeExists(indexDb)) {
+            systemFilesManager.createNode(
+                workspacePath = "",
+                isDirectory = false,
+                nodePath = indexDb,
+                byteArray = null,
+                isMustCreate = true
+            )
+        }
+        val indexSqlDriver = getIndexDbDriver()
+        _indexDbStateFlow.emit(
+            indexSqlDriver.fold(
+                onFailure = { error ->
+                    UIState.Error(error)
+                },
+                onSuccess = { driver ->
+                    UIState.Success(IndexDatabase(driver))
+                }
+            ))
+    }
+
+    override suspend fun createDbFiles() {
         val dbPath = getDatabasePath()
-        systemFilesManager.createNode(
-            isDirectory = false,
-            nodePath = dbPath,
-            byteArray = null
-        )
-        val sqlDriver = getSqlDriver()
+        //todo if directory created with db name, need to double check
+        if (!systemFilesManager.isNodeExists(dbPath)) {
+            systemFilesManager.createNode(
+                workspacePath = "",
+                isDirectory = false,
+                nodePath = dbPath,
+                byteArray = null,
+                isMustCreate = true
+            )
+        }
+    }
+
+
+    override suspend fun createDatabase() {
+        val sqlDriver = getMainDbDriver()
         _dbStateFlow.emit(
             sqlDriver.fold(
                 onFailure = { error ->
@@ -121,28 +224,107 @@ internal class SqlStorage(
                     UIState.Success(Database(driver))
                 }
             ))
-
+        val indexSqlDriver = getIndexDbDriver()
+        _indexDbStateFlow.emit(
+            indexSqlDriver.fold(
+                onFailure = { error ->
+                    UIState.Error(error)
+                },
+                onSuccess = { driver ->
+                    UIState.Success(IndexDatabase(driver))
+                }
+            ))
     }
 
+    private var mainSqlDriver: SqlDriver? = null
+    private var indexSqlDriver2: SqlDriver? = null
+
     override fun init() {
-        val sqlDriver = getSqlDriver()
+        val sqlDriver = getMainDbDriver()
         _dbStateFlow.value = sqlDriver.fold(
             onFailure = { error ->
                 UIState.Error(error)
             },
             onSuccess = { driver ->
+                mainSqlDriver = driver
                 UIState.Success(Database(driver))
             }
         )
+        val indexSqlDriver = getIndexDbDriver()
+        _indexDbStateFlow.value = (
+                indexSqlDriver.fold(
+                    onFailure = { error ->
+                        UIState.Error(error)
+                    },
+                    onSuccess = { driver ->
+                        indexSqlDriver2 = driver
+                        UIState.Success(IndexDatabase(driver))
+                    }
+                ))
+    }
+
+    override fun close() {
+        mainSqlDriver?.close()
+    }
+
+    private fun <T : Any> Query<T>.mapFlowList(): Flow<List<T>> {
+        return this
+            .asFlow()
+            .map {
+                try {
+                    it.executeAsList()
+                } catch (exc: Exception) {
+                    listOf()
+                }
+            }
+    }
+
+    private fun Query<Long>.mapFlowAsOneLong(): Flow<Long> {
+        return this
+            .asFlow()
+            .map {
+                it.executeAsOneOrNull() ?: 0L
+            }
+    }
+
+    private fun <T : Any> Query<T>.mapFlowAsOneOrNull(): Flow<T?> {
+        return this
+            .asFlow()
+            .map {
+                try {
+                    it.executeAsOneOrNull()
+                } catch (exc: Exception) {
+                    null
+                }
+            }
+    }
+
+    override fun getIndexFilesFlow(): Flow<List<IndexFile>> {
+        return indexDbFlow.flatMapLatest { db ->
+            if (db != null) {
+                db.indexFileQueries
+                    .selectAll()
+                    .mapFlowList()
+            } else {
+                flowOf(listOf())
+            }
+        }
+    }
+
+    override fun getIndexFiles(): List<IndexFile> {
+        return runQueryOrThrowIndex { db ->
+            db.indexFileQueries.selectAll().executeAsList()
+        }
     }
 
     override fun getTagToTagsFlow(): Flow<List<TagToTag>> {
-        return dbFlow.flatMapLatest { db ->
+        return dbFlow.flowOn(mapContext).flatMapLatest { db ->
             if (db != null) {
                 db.tagToTagQueries
                     .selectAll()
-                    .asFlow()
-                    .mapToList(mapContext)
+                    .mapFlowList()
+//                    .asFlow()
+//                    .mapToList(mapContext)
             } else {
                 flowOf(listOf())
             }
@@ -154,33 +336,65 @@ internal class SqlStorage(
             if (db != null) {
                 db.tagQueries
                     .selectAll()
-                    .asFlow()
-                    .mapToList(mapContext)
+                    .mapFlowList()
+//                    .asFlow()
+//                    .mapToList(mapContext)
             } else {
                 flowOf(listOf())
             }
         }
     }
 
+    override fun getAnnotationsFlow(): Flow<List<Annotation>> {
+        return dbFlow.flatMapLatest { db ->
+            if (db != null) {
+                db.annotationQueries
+                    .selectAll()
+                    .mapFlowList()
+//                    .asFlow()
+//                    .mapToList(mapContext)
+            } else {
+                flowOf(listOf())
+            }
+        }
+    }
+
+
     override fun getTagFlow(id: Long): Flow<Tag?> {
         return dbFlow.flatMapLatest { db ->
             if (db != null) {
                 db.tagQueries
                     .findOne(id = id)
-                    .asFlow()
-                    .mapToOneOrNull(mapContext)
+                    .mapFlowAsOneOrNull()
+//                    .asFlow()
+//                    .mapToOneOrNull(mapContext)
             } else {
                 flowOf(null)
             }
         }
     }
 
-    override fun getTagLinks(): Flow<List<TagFileNode>> {
+    override fun getTagFiles(): Flow<List<TagFileNode>> {
         return dbFlow.flatMapLatest {
-            it?.tagFileNodeQueries
-                ?.selectAll()
-                ?.asFlow()
-                ?.mapToList(mapContext) ?: flowOf(listOf())
+            if (it != null) {
+                it.tagFileNodeQueries
+                    .selectAll()
+                    .mapFlowList()
+            } else {
+                flowOf(listOf())
+            }
+        }
+    }
+
+    override fun getTagAnnotations(): Flow<List<TagAnnotation>> {
+        return dbFlow.flatMapLatest {
+            if (it != null) {
+                it.tagAnnotationQueries
+                    .selectAll()
+                    .mapFlowList()
+            } else {
+                flowOf(listOf())
+            }
         }
     }
 
@@ -188,8 +402,7 @@ internal class SqlStorage(
         return dbFlow.flatMapLatest {
             it?.dataCollectionQueries
                 ?.selectAll()
-                ?.asFlow()
-                ?.mapToList(mapContext) ?: flowOf(listOf())
+                ?.mapFlowList() ?: flowOf(listOf())
         }
     }
 
@@ -197,8 +410,7 @@ internal class SqlStorage(
         return dbFlow.flatMapLatest {
             it?.dataCollectionQueries
                 ?.selectById(id = id)
-                ?.asFlow()
-                ?.mapToOneOrNull(mapContext) ?: flowOf(null)
+                ?.mapFlowAsOneOrNull() ?: flowOf(null)
         }
     }
 
@@ -206,8 +418,7 @@ internal class SqlStorage(
         return dbFlow.flatMapLatest {
             it?.tagCollectionRowQueries
                 ?.selectAll()
-                ?.asFlow()
-                ?.mapToList(mapContext) ?: flowOf(listOf())
+                ?.mapFlowList() ?: flowOf(listOf())
         }
     }
 
@@ -220,8 +431,19 @@ internal class SqlStorage(
                 else
                     db.dataCollectionRowQueries.selectAll()
 
-                prepare.asFlow()
-                    .mapToList(mapContext)
+                prepare.mapFlowList()
+            } else {
+                flowOf(listOf())
+            }
+        }
+    }
+
+    override fun getCollectionRowsByFileRelativePath(relativePath: String): Flow<List<DataCollectionRow>> {
+        return dbFlow.flatMapLatest { db ->
+            if (db != null) {
+                val prepare = db.dataCollectionRowQueries
+                    .selectByFileRelativePath(relativePath)
+                prepare.mapFlowList()
             } else {
                 flowOf(listOf())
             }
@@ -238,8 +460,7 @@ internal class SqlStorage(
                         it.getCount()
                     }
                 }
-                ?.asFlow()
-                ?.mapToOne(mapContext) ?: flowOf(0)
+                ?.mapFlowAsOneLong() ?: flowOf(0L)
         }
     }
 
@@ -256,8 +477,9 @@ internal class SqlStorage(
                         pageSize = pageSize,
                         offset = offset
                     )
-                    .asFlow()
-                    .mapToList(mapContext)
+                    .mapFlowList()
+//                    .asFlow()
+//                    .mapToList(mapContext)
             } else {
                 flowOf(listOf())
             }
@@ -266,10 +488,126 @@ internal class SqlStorage(
 
     override fun getCollectionRow(rowId: Long): Flow<DataCollectionRow?> {
         return dbFlow.flatMapLatest {
-            it?.dataCollectionRowQueries
-                ?.selectById(id = rowId)
-                ?.asFlow()
-                ?.mapToOneOrNull(mapContext) ?: flowOf(null)
+            if (it != null) {
+                it.dataCollectionRowQueries
+                    .selectById(id = rowId)
+                    .mapFlowAsOneOrNull()
+//                    .asFlow()
+//                    .mapToOneOrNull(mapContext)
+            } else {
+                flowOf(null)
+            }
+        }
+    }
+
+    override fun updateIndexFilesLocal(localNodes: List<FileTreeNode>): ResultWrapper<Unit, String> {
+        return runQueryOrThrowIndex { db ->
+            resultBlock {
+                updateIndexLocal(
+                    localNodes,
+                    db
+                )
+            }
+        }
+    }
+
+    override fun syncAllFiles(specificIndexes: List<IndexFileDto>): ResultWrapper<Unit, String> {
+        return runQueryOrThrowIndex { db ->
+            resultBlock {
+                syncAllFiles(dbHelper = db, specificIndexes = specificIndexes)
+            }
+        }
+    }
+
+    override fun updateIndexFiles(
+        localNodes: List<FileTreeNode>,
+        serverNodes: List<FileItem>
+    ): ResultWrapper<Unit, String> {
+        return runQueryOrThrowIndex { db ->
+            resultBlock {
+                updateIndex(
+                    localNodes,
+                    serverNodes,
+                    db
+                )
+            }
+        }
+    }
+
+    override fun syncDirtyFiles(list: List<IndexFileDto>): ResultWrapper<Unit, String> {
+        return runQueryOrThrowIndex { db ->
+            resultBlock {
+                db.indexFileQueries.selectAll().executeAsList().map {
+                    val found = list.firstOrNull { b -> b.relativePath == it.relativePath }
+                    if (found != null) {
+                        db.indexFileQueries.updateLastSyncHash(
+                            relativePath = found.relativePath,
+                            lastSyncedHash = found.contentHash,
+                            serverSyncStatus = 0L
+                        )
+                    }
+                }
+                Unit
+            }
+        }
+    }
+
+
+    override fun deleteIndexFiles(list: List<String>): ResultWrapper<Unit, String> {
+        return runQueryOrThrowIndex { db ->
+            resultBlock {
+                db.indexFileQueries.transaction {
+                    for (item in list) {
+                        db.indexFileQueries.deleteItem(item)
+                    }
+                }
+            }
+        }
+    }
+
+    override fun syncIndexDeletedFiles(list: Map<String, IndexFileDto>): ResultWrapper<Unit, String> {
+        return runQueryOrThrowIndex { db ->
+            resultBlock {
+                db.indexFileQueries.transaction {
+                    for (item in list) {
+                        db.indexFileQueries.insertItem(
+                            relativePath = item.key,
+                            contentHash = item.value.contentHash,
+                            modifiedTime = item.value.modifiedTime,
+                            size = item.value.size,
+                            lastSyncedHash = item.value.lastSyncedHash,
+                            serverSyncStatus = SyncStatus.DELETED.code,
+                            isDirectory = if (item.value.isDirectory) 1L else 0L
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    override fun createAnnotation(annotation: Annotation): ResultWrapper<Long, String> {
+        return runQueryOrThrow { db ->
+            resultBlock {
+                db.annotationQueries.transactionWithResult() {
+                    db.annotationQueries.insertNew(annotation)
+                    db.annotationQueries.lastInsertId().executeAsOne()
+                }
+            }
+        }
+    }
+
+    override fun setFilesAsSynced(
+        paths: List<String>,
+        serverNodes: List<FileItem>
+    ): ResultWrapper<Unit, String> {
+        return runQueryOrThrowIndex { db ->
+            resultBlock {
+                com.moly3.cedarjam.core.storage.func.setFilesAsSynced(
+                    paths,
+                    serverNodes,
+                    db,
+                )
+            }
         }
     }
 
@@ -321,7 +659,8 @@ internal class SqlStorage(
                             translation = request.translation,
                             exampleSentence = request.exampleSentence,
                             pronunciation = request.pronunciation,
-                            isCompleted = if (request.isCompleted) 1L else 0L
+                            isCompleted = if (request.isCompleted) 1L else 0L,
+                            points = 0
                         )
                     )
                     db.dataCollectionRowQueries.lastInsertId().executeAsOne()
@@ -354,6 +693,7 @@ internal class SqlStorage(
                     color = request.color.toHexString(),
                     modifiedTime = request.modifiedTime
                 )
+                Unit
             }
         }
     }
@@ -371,7 +711,7 @@ internal class SqlStorage(
                             id = 1L,
                             firstTagId = request.tagId,
                             secondTagId = request.tag2Id,
-                            createdTime = request.modifiedTime
+                            createdTime = request.createdTime
                         )
                     )
                     val tagId = db.tagToTagQueries.lastInsertId().executeAsOneOrNull()
@@ -407,10 +747,6 @@ internal class SqlStorage(
         }
     }
 
-    override fun insertOrUpdateFileNodes(workspaceFullPath: String, data: List<FileTreeNode>) {
-
-    }
-
     override fun renameTag(request: RenameTagRequest) {
         runQueryOrThrow { db ->
             val found = db.tagQueries.search(request.newName).executeAsOneOrNull()
@@ -442,6 +778,16 @@ internal class SqlStorage(
                     oldFileRelativePath = oldRelativePath,
                     newFileRelativePath = newRelativePath
                 )
+                val all = db.annotationQueries.selectAll().executeAsList()
+                val physicalFounds =
+                    all.filter { d -> d.dataPath.normalizeText() == oldRelativePath.normalizeText() }
+
+                for (item in physicalFounds) {
+                    db.annotationQueries.updateDataPathById(
+                        newFileRelativePath = newRelativePath.normalizeText(),
+                        id = item.id
+                    )
+                }
             }
         }
     }
@@ -498,6 +844,16 @@ internal class SqlStorage(
                 pronunciation = request.pronunciation,
 
                 modifiedTime = request.modifiedTime,
+            )
+        }
+    }
+
+    override fun updateRowsForPdf(request: UpdateRowsByPdf) {
+        runQueryOrThrow { db ->
+            db.dataCollectionRowQueries.updateProgressByPdf(
+                fileRelativePath = request.relativePath.normalizeText(),
+                currentProgress = request.newPage.toDouble(),
+                modifiedTime = nowInMs()
             )
         }
     }

@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActionScope
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextFieldDecorator
 import androidx.compose.foundation.text.input.TextFieldLineLimits
@@ -34,6 +36,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -46,25 +49,35 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
-import com.mikepenz.hypnoticcanvas.shaderBackground
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
+import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
 import com.moly3.cedarjam.core.ui.shader.NewMagma
+import com.moly3.shaders.shaderBackground
 
 @Composable
 fun CJTextField(
     modifier: Modifier = Modifier,
+    readOnly: Boolean = false,
     singleLine: Boolean = true,
     value: TextFieldValue,
+    imeAction: ImeAction = ImeAction.Unspecified,
+    onAnyAction: KeyboardActionScope.() -> Unit = {},
     onValueChanged: (TextFieldValue) -> Unit
 ) {
     BasicTextField(
         modifier = modifier,
         value = value,
-        textStyle = LocalAppTheme.current.textStyle,
+        readOnly = readOnly,
+        textStyle = LocalTextStyle.current,
         onValueChange = onValueChanged,
         singleLine = singleLine,
+        keyboardActions = KeyboardActions(onAnyAction),
+        keyboardOptions = KeyboardOptions(imeAction = imeAction),
         decorationBox = {
-            Box(modifier=Modifier.background(LocalAppTheme.current.colors.backgroundPrimary).padding(4.dp)){
+            Box(
+                modifier = Modifier.background(LocalAppTheme.current.colors.backgroundPrimary)
+                    .padding(4.dp)
+            ) {
                 it()
             }
         }
@@ -149,7 +162,7 @@ fun CJTextField2(
 fun CJTextField(
     text: TextFieldState,
     modifier: Modifier = Modifier,
-    textStyle: TextStyle = LocalAppTheme.current.textStyle,
+    textStyle: TextStyle = LocalTextStyle.current,
     enabled: Boolean = true,
     keyboardType: KeyboardType = KeyboardType.Unspecified,
     onDone: () -> Unit,
@@ -192,9 +205,10 @@ fun CJTextField(
 fun CJTextField(
     value: TextFieldValue,
     modifier: Modifier = Modifier,
-    textStyle: TextStyle = LocalAppTheme.current.textStyle,
+    textStyle: TextStyle = LocalTextStyle.current,
     onValueChange: (TextFieldValue) -> Unit,
     enabled: Boolean = true,
+    color: Color = Color.Unspecified,
     keyboardType: KeyboardType = KeyboardType.Unspecified,
     onDone: () -> Unit = {},
     onDecorator: (@Composable (innerTextField: @Composable (() -> Unit)) -> Unit)? = null
@@ -213,7 +227,7 @@ fun CJTextField(
             true
         }),
         maxLines = 1,
-        textStyle = textStyle,
+        textStyle = textStyle.merge(color = color),
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
         cursorBrush = SolidColor(LocalAppTheme.current.primaryColor)
     )

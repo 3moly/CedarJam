@@ -1,12 +1,15 @@
 package com.moly3.cedarjam.core.domain.model
 
+import androidx.compose.runtime.Stable
 import kotlinx.serialization.Serializable
 
 @Serializable
+@Stable
 data class CollectionRowDTO(
     val id: Long,
     val name: String,
     val collectionId: Long,
+
     val fileRelativePath: String? = null,
     val imgRelativePath: String? = null,
     val webLink: String? = null,
@@ -19,5 +22,7 @@ data class CollectionRowDTO(
     val exampleSentence: String? = null,
 
     val createdTime: Long,
-    val modifiedTime: Long
+    val modifiedTime: Long,
+
+    val points: Long
 )

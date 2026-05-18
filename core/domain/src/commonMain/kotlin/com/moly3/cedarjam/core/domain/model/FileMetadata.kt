@@ -4,8 +4,9 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class FileMetadata(
-    val path: String,
-    val createdTime: Long,
+    val relativePath: String,
     val modifiedTime: Long,
-    val isDeleted: Boolean
+    val contentHash: String,
+    val isDeleted: Boolean,
+    val isDirectory: Boolean
 )

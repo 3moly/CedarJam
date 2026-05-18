@@ -8,10 +8,11 @@ import com.moly3.cedarjam.features.feature_canvas.store.DialogCanvasStoreFactory
 import com.moly3.cedarjam.core.domain.model.node.ObsidianGraphData
 import com.moly3.cedarjam.core.domain.repository.IFilesRepository
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
+import com.moly3.cedarjam.core.domain.usecase.IOpenNodeDataUseCase
+import com.moly3.cedarjam.core.ui.service.MacTrackpadGestureService
+import com.moly3.cedarjam.navigation.Navigator
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.StateFlow
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class DialogCanvasComponentImpl(
@@ -19,12 +20,14 @@ class DialogCanvasComponentImpl(
     componentContext: ComponentContext,
     storeFactory: StoreFactory,
     private val file: FileTreeNode.File,
-    private val openNode: (ObsidianGraphData) -> Unit,
-
-    ) : IDialogCanvasComponent,
-    ComponentContext by componentContext, KoinComponent {
-
-    override val filesRepository: IFilesRepository by inject()
+    private val openNodeDataUseCase: IOpenNodeDataUseCase,
+//    private val filesRepository: IFilesRepository,
+    private val navigator: Navigator,
+    private val magnifier: MacTrackpadGestureService,
+//    private val openNode: (ObsidianGraphData) -> Unit,
+    override val filesRepository: IFilesRepository,
+) : IDialogCanvasComponent,
+    ComponentContext by componentContext {
 
     private val store by lazy {
         DialogCanvasStoreFactory(
@@ -32,7 +35,10 @@ class DialogCanvasComponentImpl(
             lifecycle = lifecycle,
             workspaceSession = workspaceSession,
             file = file,
-            openNode = openNode
+            openNodeDataUseCase = openNodeDataUseCase,
+            navigator = navigator,
+            magnifier = magnifier,
+            filesRepository = filesRepository
         ).create(stateKeeper = stateKeeper)
     }
 

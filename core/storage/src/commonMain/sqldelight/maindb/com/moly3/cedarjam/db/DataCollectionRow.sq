@@ -1,0 +1,144 @@
+CREATE TABLE DataCollectionRow (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+
+  currentProgress REAL,
+  progressMax REAL,
+  webLink TEXT,
+
+  isCompleted INTEGER,
+
+  translation TEXT,
+  exampleSentence TEXT,
+  pronunciation TEXT,
+
+  createdTime INTEGER NOT NULL,
+  modifiedTime INTEGER NOT NULL,
+
+  points INTEGER,
+  
+-- FOREIGN KEYS
+  collectionId INTEGER NOT NULL,
+  fileRelativePath TEXT,
+  imgRelativePath TEXT,
+  FOREIGN KEY(collectionId) REFERENCES DataCollection(id) ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+selectAll:
+SELECT *
+FROM DataCollectionRow;
+
+selectById:
+SELECT *
+FROM DataCollectionRow
+WHERE id = :id;
+
+selectByCollectionId:
+SELECT *
+FROM DataCollectionRow
+WHERE collectionId = :id;
+
+selectByFileRelativePath:
+SELECT *
+FROM DataCollectionRow
+WHERE fileRelativePath = :fileRelativePath;
+
+getPaginatedItemsByCollectionId:
+SELECT *
+FROM DataCollectionRow
+WHERE collectionId = :id
+ORDER BY modifiedTime DESC
+LIMIT :pageSize OFFSET :offset;
+
+getCountByCollectionId:
+SELECT COUNT(*) AS totalCount
+FROM DataCollectionRow
+WHERE collectionId = :id;
+
+getCount:
+SELECT COUNT(*) AS totalCount
+FROM DataCollectionRow;
+
+deleteByCollectionId:
+DELETE FROM DataCollectionRow
+WHERE collectionId = :collectionId;
+
+delete:
+DELETE FROM DataCollectionRow
+WHERE id = :id;
+
+searchByCollectionId:
+SELECT COUNT(*) AS totalCount
+FROM DataCollectionRow
+WHERE name = :name AND collectionId = :collectionId;
+
+insertObject:
+INSERT INTO DataCollectionRow
+(
+name,
+currentProgress,
+progressMax,
+webLink,
+isCompleted,
+translation,
+exampleSentence,
+pronunciation,
+createdTime,
+modifiedTime,
+collectionId,
+fileRelativePath,
+imgRelativePath)
+VALUES ?;
+
+updateObject:
+UPDATE DataCollectionRow
+SET
+    currentProgress  = :currentProgress,
+    progressMax      = :progressMax,
+    webLink          = :webLink,
+    fileRelativePath = :fileRelativePath,
+    imgRelativePath  = :imgRelativePath,
+    isCompleted      = :isCompleted,
+    translation      = :translation,
+    exampleSentence  = :exampleSentence,
+    pronunciation    = :pronunciation,
+    modifiedTime     = :modifiedTime
+WHERE id = :id
+  AND (
+    currentProgress  IS NOT :currentProgress OR
+    progressMax      IS NOT :progressMax OR
+    webLink          IS NOT :webLink OR
+    fileRelativePath IS NOT :fileRelativePath OR
+    imgRelativePath  IS NOT :imgRelativePath OR
+    isCompleted      IS NOT :isCompleted OR
+    translation      IS NOT :translation OR
+    exampleSentence  IS NOT :exampleSentence OR
+    pronunciation    IS NOT :pronunciation
+  );
+
+updateProgressByPdf:
+UPDATE DataCollectionRow
+SET currentProgress  = :currentProgress,
+    modifiedTime = :modifiedTime
+WHERE fileRelativePath = :fileRelativePath
+ AND (currentProgress IS NOT :currentProgress);
+
+rename:
+UPDATE DataCollectionRow
+SET name = :newName,
+    modifiedTime = :modifiedTime
+WHERE id = :id
+  AND name <> :newName;
+
+updateFile:
+UPDATE DataCollectionRow
+SET fileRelativePath = :newFileRelativePath
+WHERE fileRelativePath = :oldFileRelativePath;
+
+updateImg:
+UPDATE DataCollectionRow
+SET imgRelativePath = :newFileRelativePath
+WHERE imgRelativePath = :oldFileRelativePath;
+
+lastInsertId:
+SELECT last_insert_rowid();

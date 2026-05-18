@@ -3,64 +3,46 @@ package com.moly3.cedarjam.core.ui.uikit
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SheetState
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import kotlinx.coroutines.launch
-
-private val emptyContent: @Composable ColumnScope.() -> Unit = {}
 
 @ExperimentalMaterial3Api
 class SlotModalBottomSheetState(
-    val  sheetContent: State<@Composable ColumnScope.() -> Unit>,
-    val isVisible: State<Boolean>,
+    val sheetContent: State<@Composable ColumnScope.() -> Unit>,
     val sheetState: SheetState,
 )
 
-@ExperimentalMaterial3Api
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun <T : Any> rememberSlotModalBottomSheetState(
-    child: T?,
-    confirmValueChange: (SheetValue) -> Boolean = { true },
-    skipPartiallyExpanded: Boolean = false,
-    sheetContent: @Composable (child: T) -> Unit,
+fun <T> rememberSlotModalBottomSheetState(
+    data: T,            // This is the input (e.g., Color?)
+    isOpened: Boolean,   // Source of truth for "Should be visible"
+    isClosing: Boolean,
+    onAnimationFinished: () -> Unit,
+    sheetContent: @Composable (data: T) -> Unit,
 ): SlotModalBottomSheetState {
-    val sheetState = rememberModalBottomSheetState(
-        skipPartiallyExpanded = skipPartiallyExpanded,
-        confirmValueChange = confirmValueChange
-    )
-    val isVisible = remember { mutableStateOf(child != null) }
-    val childContent = remember { mutableStateOf(emptyContent) }
-
-    LaunchedEffect(child == null) {
-        if (child == null) {
-            launch { sheetState.hide() }
-                .invokeOnCompletion {
-                    isVisible.value = false
-                    childContent.value = emptyContent
-                }
-        } else {
-            isVisible.value = true
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val contentBuffer = remember { mutableStateOf<(@Composable ColumnScope.() -> Unit)?>(null) }
+    if (isOpened || isClosing) {
+        contentBuffer.value = { sheetContent(data) }
+    }
+    LaunchedEffect(isOpened, isClosing) {
+        if (isClosing) {
+            sheetState.hide()
+            onAnimationFinished()
+            contentBuffer.value = null
+        } else if (isOpened) {
+            sheetState.show()
         }
     }
-
-    DisposableEffect(child) {
-        if (child != null) {
-            childContent.value = { sheetContent(child) }
-        }
-        onDispose {}
-    }
-
-    return remember {
+    return remember(contentBuffer.value) {
         SlotModalBottomSheetState(
-            sheetContent = childContent,
+            sheetContent = mutableStateOf(contentBuffer.value ?: {}),
             sheetState = sheetState,
-            isVisible = isVisible
         )
     }
 }

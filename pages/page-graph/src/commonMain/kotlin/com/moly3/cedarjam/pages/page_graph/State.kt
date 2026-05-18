@@ -6,6 +6,7 @@ import com.moly3.cedarjam.core.domain.model.node.GraphSettingsConfig
 import com.moly3.cedarjam.core.domain.model.OffsetData
 import com.moly3.cedarjam.core.domain.model.mapToOffset
 import com.moly3.cedarjam.core.domain.model.mapToOffsetData
+import com.moly3.dataviz.core.graph.model.GraphSettings
 import com.moly3.dataviz.core.graph.model.GraphViewSettings
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableMap
@@ -22,7 +23,7 @@ data class State(
     val connections: ImmutableMap<String, ImmutableList<String>> = persistentMapOf(),
     val zoom: Float = 1f,
     val graphUserPosition: Offset = Offset.Zero,
-    val graphViewSettings: GraphViewSettings = GraphViewSettings.Default,
+    val graphSettings: GraphSettings = GraphSettings.Default,
     val coordinates: ImmutableMap<String, Offset> = persistentMapOf(),
     val velocities: ImmutableMap<String, Offset> = persistentMapOf(),
 ) {
@@ -34,7 +35,7 @@ data class State(
         val connections: Map<String, List<String>> = mapOf(),
         val zoom: Float = 1f,
         val graphUserPosition: OffsetData = OffsetData.Zero,
-        val graphViewSettings: GraphViewSettings = GraphViewSettings.Default,
+        val graphSettings: GraphSettings = GraphSettings.Default,
         val coordinates: Map<String, OffsetData> = mapOf()
     )
 
@@ -49,7 +50,7 @@ data class State(
                     .toPersistentMap(),
                 zoom = zoom,
                 graphUserPosition = graphUserPosition.mapToOffset(),
-                graphViewSettings = graphViewSettings,
+                graphSettings = graphSettings,
                 coordinates = coordinates
                     .mapValues { it.value.mapToOffset() }
                     .toPersistentMap()
@@ -64,7 +65,7 @@ data class State(
                 connections = connections,
                 zoom = zoom,
                 graphUserPosition = graphUserPosition.mapToOffsetData(),
-                graphViewSettings = graphViewSettings,
+                graphSettings = graphSettings,
                 coordinates = coordinates
                     .mapValues { d -> d.value.mapToOffsetData() }
                     .toPersistentMap()

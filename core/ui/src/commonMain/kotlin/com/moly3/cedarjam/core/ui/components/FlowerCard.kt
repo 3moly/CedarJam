@@ -26,16 +26,16 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.rememberAsyncImagePainter
-import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
+import com.moly3.cedarjam.core.ui.compositions.LocalImageLoader
+import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
 import com.moly3.cedarjam.core.ui.uikit.CJText
-import com.moly3.cedarjam.core.ui.vectors.SettingsFuture
+
 import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
-import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
 fun FlowerCard(
@@ -95,7 +95,12 @@ fun FlowerCard(
             )
         }
         if (youtubeLink != null) {
-            Image(rememberAsyncImagePainter(model = youtubeLink), contentDescription = null)
+            Image(
+                rememberAsyncImagePainter(
+                    model = youtubeLink,
+                    imageLoader = LocalImageLoader.current
+                ), contentDescription = null
+            )
         } else if (documentImage != null) {
             Image(
                 bitmap = documentImage,
@@ -116,7 +121,7 @@ fun FlowerCard(
             ) {
                 Image(
                     modifier = Modifier.size(12.dp),
-                    painter = rememberVectorPainter(SettingsFuture),
+                    painter = rememberVectorPainter(vector.Settings),
                     contentDescription = null,
                     colorFilter = ColorFilter.tint(Color.Green)
                 )
@@ -152,13 +157,13 @@ fun FlowerCard(
                             CJText(
                                 text = currentProgress.toString(),
                                 color = Color.Green,
-                                style = LocalAppTheme.current.textStyle,
+                                style = LocalTextStyle.current,
                                 fontSize = 10.sp
                             )
                             CJText(
                                 text = progressMax.toString(),
                                 color = Color.Green,
-                                style = LocalAppTheme.current.textStyle,
+                                style = LocalTextStyle.current,
                                 fontSize = 10.sp
                             )
                         }

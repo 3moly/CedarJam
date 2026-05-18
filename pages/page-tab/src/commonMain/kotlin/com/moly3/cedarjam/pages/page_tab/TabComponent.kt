@@ -9,24 +9,27 @@ import com.moly3.cedarjam.pages.page_graph.GraphComponent
 import com.moly3.cedarjam.pages.page_home.HomeComponent
 import com.moly3.cedarjam.ui.pages.tag.TagComponent
 import com.moly3.cedarjam.ui.pages.tags.TagsComponent
-import com.moly3.cedarjam.core.domain.model.PageNameData
+import com.moly3.cedarjam.core.ui.model.PageNameData
+import com.moly3.cedarjam.navigation.NavigationInstance
+import com.moly3.cedarjam.navigation.NavigationParent
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
 @Immutable
-interface TabComponent : NavigationComponent<TabComponent.Child> {
+interface TabComponent : NavigationComponent<TabComponent.Child>, NavigationParent {
     val nameFlow: Flow<PageNameData?>
     val state: StateFlow<State>
     fun onIntent(intent: Intent)
     val labels: Flow<Label>
-    sealed class Child {
 
-        class Home(val component: HomeComponent) : Child()
-        class Graph(val component: GraphComponent) : Child()
-        class File(val component: FileComponent) : Child()
-        class Collection(val component: CollectionComponent) : Child()
-        class CollectionRow(val component: CollectionRowComponent) : Child()
-        class Tags(val component: TagsComponent) : Child()
-        class Tag(val component: TagComponent) : Child()
+    sealed class Child : NavigationInstance {
+
+        class Home(override val component: HomeComponent) : Child()
+        class Graph(override val component: GraphComponent) : Child()
+        class File(override val component: FileComponent) : Child()
+        class Collection(override val component: CollectionComponent) : Child()
+        class CollectionRow(override val component: CollectionRowComponent) : Child()
+        class Tags(override val component: TagsComponent) : Child()
+        class Tag(override val component: TagComponent) : Child()
     }
 }

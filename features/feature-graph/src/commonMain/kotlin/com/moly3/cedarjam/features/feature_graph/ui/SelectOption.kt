@@ -6,8 +6,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -15,14 +13,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
-import com.moly3.cedarjam.core.ui.vectors.NetworkNode
+import com.moly3.cedarjam.core.ui.compositions.LocalUIConfig
+import com.moly3.cedarjam.core.ui.func.flatClickable
+import com.moly3.cedarjam.core.ui.service.KVibrator
 import com.moly3.cedarjam.core.ui.uikit.CJText
-import com.moly3.cedarjam.core.ui.vectors.Tag
+import com.moly3.cedarjam.core.ui.uikit.NeumorphicShape
+import vector.Tag
 import com.moly3.cedarjam.core.ui.volumedBorderStroke
 
 @Composable
@@ -32,35 +35,49 @@ fun SelectOption(
     count: Int?,
     onSetIsShowGraph: (Boolean) -> Unit
 ) {
-    Box(
-        modifier = modifier
+    NeumorphicShape(
+        modifier = modifier.padding(16.dp).size(LocalUIConfig.current.fabCircleSize).flatClickable{
+            KVibrator.vibrateShort()
 
-            .height(60.dp)
-            .border(volumedBorderStroke, RoundedCornerShape(8.dp))
-            .padding(horizontal = 8.dp, vertical = 2.dp)
-    ) {
-        Row(
-            modifier = Modifier,
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            SelectButton(
-                isActive = !isOpened,
-                imageVector = Tag,
-                onClick = {
-                    onSetIsShowGraph(false)
-                }
-            )
-            SelectButton(
-                isActive = isOpened,
-                imageVector = NetworkNode,
-                count = count,
-                onClick = {
-                    onSetIsShowGraph(true)
-                }
-            )
-        }
-    }
+            onSetIsShowGraph(!isOpened)
+        },
+//        unpressedColor = LocalAppTheme.current.primaryColor,
+        unpressedIconColor = Color.White,
+        isPressed = isOpened,
+        buttonShape = RoundedCornerShape(100.dp),
+        painter = rememberVectorPainter(Tag),
+        accentColor = Color(0xFF222325),
+//        accentColor = Color.White// Color(0xFFFF916D)
+    )
+//    Box(
+//        modifier = modifier
+//
+//            .height(60.dp)
+//            .border(volumedBorderStroke, RoundedCornerShape(8.dp))
+//            .padding(horizontal = 8.dp, vertical = 2.dp)
+//    ) {
+//        Row(
+//            modifier = Modifier,
+//            verticalAlignment = Alignment.CenterVertically,
+//            horizontalArrangement = Arrangement.spacedBy(8.dp)
+//        ) {
+//            SelectButton(
+//                isActive = !isOpened,
+//                imageVector = Tag,
+//                onClick = {
+//                    onSetIsShowGraph(false)
+//                }
+//            )
+//            SelectButton(
+//                isActive = isOpened,
+//                imageVector = NetworkNode,
+//                count = count,
+//                onClick = {
+//                    onSetIsShowGraph(true)
+//                }
+//            )
+//        }
+//    }
 }
 
 @Composable

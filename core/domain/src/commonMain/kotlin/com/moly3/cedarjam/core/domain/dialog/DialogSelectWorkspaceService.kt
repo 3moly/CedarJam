@@ -1,12 +1,9 @@
 package com.moly3.cedarjam.core.domain.dialog
 
-import com.moly3.cedarjam.core.domain.model.Workspace
+import com.moly3.cedarjam.core.domain.dialog.model.DialogSelectWorkspaceServiceInput
 import com.moly3.cedarjam.core.domain.model.WorkspacePresentation
 
-class DialogSelectWorkspaceService : GlobalDialog<DialogSelectWorkspaceServiceInput, WorkspacePresentation?>(
-    closeValue = null
-)
-
-data class DialogSelectWorkspaceServiceInput(
-    val activeWorkspace: Workspace?,
+class DialogSelectWorkspaceService(register: IDialogRegister) : GlobalDialog<DialogSelectWorkspaceServiceInput, WorkspacePresentation?>(
+    closeValue = null,
+    register = register
 )

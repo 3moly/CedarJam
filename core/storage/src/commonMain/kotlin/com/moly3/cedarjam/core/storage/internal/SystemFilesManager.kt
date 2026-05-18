@@ -7,8 +7,8 @@ import com.moly3.cedarjam.core.storage.func.getFileNodeFromPath
 import com.moly3.cedarjam.core.storage.func.getFiles
 import com.moly3.cedarjam.core.domain.util.IPathWrapper
 import com.moly3.cedarjam.core.domain.func.getPlatform
+import com.moly3.cedarjam.core.domain.func.nowInMs
 import com.moly3.cedarjam.core.domain.func.pathWrapper
-import com.moly3.cedarjam.core.domain.model.FileStructure
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.Platform
 import com.moly3.cedarjam.core.domain.model.ResultWrapper
@@ -18,7 +18,12 @@ import com.moly3.cedarjam.core.domain.model.resultBlock
 import com.moly3.cedarjam.core.domain.util.PathWrapper
 import com.moly3.cedarjam.core.storage.json.canvas.CanvasDataParser
 import com.moly3.cedarjam.core.domain.model.canvas.CanvasDataWithErrors
+import com.moly3.cedarjam.core.domain.service.IFileHasher
+import com.moly3.cedarjam.core.storage.func.calculateFileHash
+import com.moly3.cedarjam.core.storage.func.getFiles2
+import com.moly3.cedarjam.core.storage.func.setLastWriteTimeUtc
 import io.github.vinceglb.filekit.FileKit
+import io.github.vinceglb.filekit.filesDir
 import io.github.vinceglb.filekit.utils.toPath
 import kotlinx.io.buffered
 import kotlinx.io.files.FileNotFoundException
@@ -29,16 +34,18 @@ import kotlinx.io.readByteArray
 import kotlinx.io.readString
 import kotlinx.io.writeString
 
-internal class SystemFilesManager : ISystemFilesManager {
+internal class SystemFilesManager : ISystemFilesManager, IFileHasher {
 
     private val fs: FileSystem = SystemFileSystem
-
-
     private fun copyFile(sourcePath: ByteArray, destinationPath: String) {
+
         val destination = Path(destinationPath)
         val parentDir = destination.parent
         if (parentDir != null && !fs.exists(parentDir)) {
             fs.createDirectories(parentDir)
+        }
+        if (fs.exists(destination)) {
+            fs.delete(destination)
         }
         fs.sink(destination).buffered().use { destinationBuffer ->
             destinationBuffer.write(sourcePath)
@@ -46,7 +53,7 @@ internal class SystemFilesManager : ISystemFilesManager {
     }
 
     private fun writeText(filePath: Path, content: String): ResultWrapper<Unit, String> {
-        return resultBlock {
+        return resultBlock(onError = { it.toString() }) {
             try {
                 val sink = fs.sink(filePath)
                 val bufferedSink = sink.buffered()
@@ -59,18 +66,13 @@ internal class SystemFilesManager : ISystemFilesManager {
         }
     }
 
-    override fun extractZipFromBytes(
-        bytes: ByteArray,
-        destinationPath: String,
-        fileStructure: FileStructure
-    ) {
-        com.moly3.cedarjam.core.storage.func.extractZipFromBytes(
-            bytes,
-            destinationPath,
-            fileStructure
+    override fun appWorkspacesDir(): IPathWrapper {
+        val firstPart = FileKit.filesDir.toString()
+        return pathWrapper(
+            firstPart,
+            "workspaces"
         )
     }
-
 
     override fun toAbsoluteAppPath(relativePath: IPathWrapper): IPathWrapper {
         return when (getPlatform()) {
@@ -108,27 +110,37 @@ internal class SystemFilesManager : ISystemFilesManager {
         }
     }
 
-    override fun getFileNodeFromFullPath(fullPath: String): FileTreeNode.File {
-        val abs = toAbsoluteAppPath(pathWrapper(fullPath))
+    override fun getFileHash(fullPath: String): String {
+        return calculateFileHash(fullPath)
+    }
+
+    override fun getFileNodeFromFullPath(
+        workspacePath: String,
+        fullPath: String
+    ): FileTreeNode.File {
         return getFileNodeFromPath(
-            Path(abs.pathString),
+            workspaceFullPath = workspacePath,
+            Path(fullPath),
             false,
             fileSize = 0L
         ) as FileTreeNode.File
     }
 
-    override fun getDirectoryNodeFromFullPath(fullPath: String): FileTreeNode.Directory {
+    override fun getDirectoryNodeFromFullPath(
+        workspacePath: String,
+        fullPath: String
+    ): FileTreeNode.Directory {
         val abs = toAbsoluteAppPath(pathWrapper(fullPath))
         if (!isNodeExists(abs.pathString)) {
-            createNode(true, abs.pathString, byteArray = null)
+            createNode(workspacePath, true, abs.pathString, byteArray = null, isMustCreate = true)
         }
         return getFileNodeFromPath(
+            workspaceFullPath = workspacePath,
             abs.pathString.toPath(),
             true,
             fileSize = 0L
         ) as FileTreeNode.Directory
     }
-
 
     override fun deleteNode(nodePath: String) {
         try {
@@ -137,12 +149,28 @@ internal class SystemFilesManager : ISystemFilesManager {
         }
     }
 
+    override fun deleteNodeHeavy(nodePath: String) {
+
+        try {
+            val path = Path(nodePath)
+            if (fs.metadataOrNull(path)!!.isDirectory) {
+                val child = fs.list(Path(nodePath))
+                for (childPath in child) {
+                    deleteNodeHeavy(childPath.toString())
+                }
+            }
+            fs.delete(Path(nodePath), true)
+        } catch (exc: Exception) {
+        }
+    }
+
     override fun moveNode(
+        workspacePath: String,
         nodePath: String,
         moveNodePath: String,
         isDirectory: Boolean
     ): ResultWrapper<FileTreeNode, String> {
-        return resultBlock {
+        return resultBlock(onError = { it.toString() }) {
             val path = Path(nodePath)
             val newFilePath = Path(moveNodePath)
             ensure(!fs.exists(newFilePath)) {
@@ -153,18 +181,20 @@ internal class SystemFilesManager : ISystemFilesManager {
             ensure(!isTrans || path.parent.toString() == newFilePath.parent.toString()) { "cannot move to child directory" }
 
             fs.atomicMove(path, newFilePath)
+            setLastWriteTimeUtc(newFilePath.toString(), nowInMs())
             getFileNodeFromPath(
-                newFilePath,
+                workspaceFullPath = workspacePath,
+                filePath = newFilePath,
                 isDirectory = isDirectory,
                 fileSize = 0L
             )
         }
     }
 
-    override fun getNodes(nodePath: String): List<FileTreeNode> {
-        val abs = toAbsoluteAppPath(pathWrapper(nodePath))
+    override fun getNodes(directoryAbsolutePath: String): List<FileTreeNode> {
         return getFiles(
-            parentPath = abs.pathString.toPath()
+            workspaceFullPath = directoryAbsolutePath,
+            parentPath = Path(directoryAbsolutePath)
         ).first
     }
 
@@ -181,18 +211,31 @@ internal class SystemFilesManager : ISystemFilesManager {
         return fs.exists(absolutePath.toPath())
     }
 
+    override fun createDirectory(fullPath: String): ResultWrapper<Unit, String> {
+        return resultBlock(onError = { it.toString() }) {
+            fs.createDirectories(Path(fullPath), mustCreate = true)
+        }
+    }
+
     override fun createNode(
+        workspacePath: String,
         isDirectory: Boolean,
         nodePath: String,
-        byteArray: ByteArray?
+        byteArray: ByteArray?,
+        isMustCreate: Boolean
     ): ResultWrapper<FileTreeNode, String> {
         Logger.w {
             "create node: ${nodePath}"
         }
         val nodePath = toAbsoluteAppPath(PathWrapper(nodePath.toPath())).pathString
-        return resultBlock {
+        return resultBlock(onError = { it.toString() }) {
             val path = Path(nodePath)
             val meta = fs.metadataOrNull(path)
+            if (meta != null && isMustCreate) {
+                if (isDirectory != meta.isDirectory) {
+                    fs.delete(path)
+                }
+            }
             ensure(!(fs.exists(path) && meta?.isDirectory == isDirectory)) {
                 "node $path is already exists"
             }
@@ -208,8 +251,9 @@ internal class SystemFilesManager : ISystemFilesManager {
                 bind(writeTextResult)
             }
             val se = getFileNodeFromPath(
-                path,
-                isDirectory,
+                workspaceFullPath = workspacePath,
+                filePath = path,
+                isDirectory = isDirectory,
                 fileSize = 0L
             )
             if (byteArray != null) {
@@ -217,6 +261,10 @@ internal class SystemFilesManager : ISystemFilesManager {
             }
             se
         }
+    }
+
+    override fun setNodeBytes(nodePath: String, byteArray: ByteArray) {
+        copyFile(byteArray, nodePath)
     }
 
     override fun setNodeText(nodePath: String, text: String): ResultWrapper<Unit, String> {
@@ -238,7 +286,7 @@ internal class SystemFilesManager : ISystemFilesManager {
     }
 
     override fun getNodeCanvas(nodePath: String): ResultWrapper<CanvasDataWithErrors, String> {
-        return resultBlock {
+        return resultBlock(onError = { it.toString() }) {
             val json = getNodeText(nodePath = nodePath)
             CanvasDataParser.parse(json)
         }
@@ -248,7 +296,7 @@ internal class SystemFilesManager : ISystemFilesManager {
         nodePath: String,
         data: CanvasDataWithErrors
     ): ResultWrapper<Unit, String> {
-        return resultBlock {
+        return resultBlock(onError = { it.toString() }) {
             val json = CanvasDataParser.serialize(data)
             setNodeText(nodePath = nodePath, text = json)
         }

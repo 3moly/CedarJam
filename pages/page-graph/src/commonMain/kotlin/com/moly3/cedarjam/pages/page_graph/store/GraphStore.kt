@@ -6,16 +6,21 @@ import com.moly3.cedarjam.core.domain.model.ObsidianGraphNode
 import com.moly3.cedarjam.pages.page_graph.Intent
 import com.moly3.cedarjam.pages.page_graph.State
 import com.moly3.cedarjam.core.domain.model.node.GraphSettingsConfig
+import com.moly3.cedarjam.core.domain.model.node.ObsidianGraphData
+import com.moly3.dataviz.core.graph.engine.IGraphEngine
+import com.moly3.dataviz.core.graph.model.GraphSettings
 import com.moly3.dataviz.core.graph.model.GraphViewSettings
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableMap
 
-internal interface GraphStore : Store<Intent, State, Unit> {
+interface GraphStore : Store<Intent, State, Unit> {
+
+    val engine: IGraphEngine<String, ObsidianGraphData>
 
     sealed interface Msg {
-        data class SetVelocities(val value: ImmutableMap<String, Offset>) : Msg
         data class SetCoordinates(val value: ImmutableMap<String, Offset>) : Msg
-        data class SetGraphViewSettings(val value: GraphViewSettings) : Msg
+        data class SetVelocities(val value: ImmutableMap<String, Offset>) : Msg
+        data class SetGraphSettings(val value: GraphSettings) : Msg
         data class SetGraphUserPosition(val value: Offset) : Msg
         data class SetIsShowSettings(val value: Boolean) : Msg
         data class SetZoom(val value: Float) : Msg

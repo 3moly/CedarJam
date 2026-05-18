@@ -24,3 +24,4 @@ pass only NOT NULL params
 `./gradlew :jsBrowserDevelopmentRun`
 `./gradlew assembleRelease -PcomposeCompilerReports=true --rerun-tasks`
 `./gradlew createModuleGraph --rerun-tasks`
+`./gradlew :shared:hotRunJvm --autoReload`

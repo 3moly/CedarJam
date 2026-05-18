@@ -1,0 +1,100 @@
+name: Build Linux ARM64
+
+on:
+  push:
+    branches: [ linuxarm64 ]
+  pull_request:
+    branches: [ linuxarm64 ]
+  workflow_dispatch:
+
+jobs:
+  matrix_build:
+    name: Build on GitHub Hosted Runners
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            name: ubuntu-x64
+
+          - os: ubuntu-24.04-arm
+            name: ubuntu-arm64
+
+          - os: windows-latest
+            name: windows-x64
+
+          - os: macos-latest
+            name: macos-arm64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup JetBrains Runtime 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'jetbrains'
+          java-version: '21'
+          cache: gradle
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cache Gradle Dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ matrix.name }}-gradle
+          enableCrossOsArchive: true
+
+
+      - name: Grant execute permission for gradlew
+        if: runner.os != 'Windows'
+        run: chmod +x gradlew
+
+      - name: Install Linux packaging tools
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libfuse2 fakeroot dpkg-dev rpm binutils
+
+      - name: Build Release Distribution
+        env:
+          SYNC_SERVER_URL: ${{ secrets.SYNC_SERVER_URL }}
+          SYNC_SERVER_TOKEN: ${{ secrets.SYNC_SERVER_TOKEN }}
+          IS_RELEASE: ${{ secrets.IS_RELEASE }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./gradlew :desktopApp:packageReleaseDistributionForCurrentOS
+
+      - name: Upload jpackage logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jpackage-logs-${{ matrix.name }}
+          path: desktopApp/build/compose/logs/**/*.txt
+          retention-days: 5
+
+      - name: Release Gradle daemon
+        run: ./gradlew -stop
+
+      - name: Upload Windows EXE
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-windows-exe
+          path: desktopApp/build/compose/binaries/main-release/exe/**
+
+      - name: Upload Linux artifacts
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-${{ matrix.name }}
+          path: desktopApp/build/compose/binaries/**
+
+      - name: Upload macOS DMG
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-${{ matrix.name }}
+          path: desktopApp/build/compose/binaries/main-release/dmg/**

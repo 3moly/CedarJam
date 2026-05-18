@@ -19,7 +19,7 @@ import androidx.compose.ui.unit.dp
 import com.moly3.cedarjam.core.domain.func.getPlatform
 import com.moly3.cedarjam.core.domain.model.Platform
 import com.moly3.cedarjam.core.ui.func.keyboardAsState
-import com.moly3.cedarjam.core.ui.vectors.CommonIcHideKeyboard
+import vector.CommonIcHideKeyboard
 
 @Composable
 fun BoxScope.AppComposableWidgetHideKeyboard() {

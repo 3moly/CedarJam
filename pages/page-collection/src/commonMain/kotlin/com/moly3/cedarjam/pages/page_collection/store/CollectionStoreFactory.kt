@@ -5,6 +5,8 @@ import com.arkivanov.mvikotlin.core.store.Reducer
 import com.arkivanov.mvikotlin.core.store.SimpleBootstrapper
 import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
+import com.moly3.cedarjam.core.domain.dialog.DialogDeleteService
+import com.moly3.cedarjam.core.domain.dialog.DialogSelectOptionsService
 import com.moly3.cedarjam.navigation.BaseExecutor
 import com.moly3.cedarjam.navigation.Navigator
 import com.moly3.cedarjam.navigation.Route.CollRow
@@ -14,12 +16,14 @@ import com.moly3.cedarjam.pages.page_collection.Intent
 import com.moly3.cedarjam.pages.page_collection.Label
 import com.moly3.cedarjam.pages.page_collection.State
 import com.moly3.cedarjam.core.domain.dialog.DialogSelectTagService
+import com.moly3.cedarjam.core.domain.dialog.model.DialogSelectOptionsServiceInput
+import com.moly3.cedarjam.core.domain.dialog.model.SelectOption
 import com.moly3.cedarjam.core.ui.func.getPdfResult
-import com.moly3.cedarjam.core.domain.func.getRelativePath
-import com.moly3.cedarjam.core.domain.model.PageNameData
+import com.moly3.cedarjam.core.ui.model.PageNameData
 import com.moly3.cedarjam.core.domain.func.nowInMs
 import com.moly3.cedarjam.core.domain.io
 import com.moly3.cedarjam.core.domain.model.NavigateToFile
+import com.moly3.cedarjam.core.domain.model.anki.AnkiNote
 import com.moly3.cedarjam.core.domain.model.bind
 import com.moly3.cedarjam.core.domain.model.navigation.input.FilePageInput
 import com.moly3.cedarjam.core.domain.model.request.CreateCollectionRowRequest
@@ -29,14 +33,21 @@ import com.moly3.cedarjam.core.domain.model.request.RenameDataCollectionRowReque
 import com.moly3.cedarjam.core.domain.model.request.UpdateDataCollectionRequest
 import com.moly3.cedarjam.core.domain.model.request.mapToUpdateRequest
 import com.moly3.cedarjam.core.domain.model.resultBlock
+import com.moly3.cedarjam.core.domain.repository.IAnkiEnvironment
+import com.moly3.cedarjam.core.domain.repository.getCollectionRows
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
 import com.moly3.cedarjam.core.domain.service.IUtilsService
 import com.moly3.cedarjam.core.domain.usecase.INavigateToFileUseCase
+import com.moly3.cedarjam.core.domain.usecase.NavigateToFileUseCaseFactory
+import com.moly3.cedarjam.core.ui.model.CJText
 import com.moly3.cedarjam.core.ui.model.FileTreeItemPresentation
 import com.moly3.cedarjam.navigation.Route
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -49,9 +60,6 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
-import org.koin.core.parameter.parametersOf
 import kotlin.math.ceil
 import kotlin.time.ExperimentalTime
 
@@ -60,18 +68,23 @@ internal class CollectionStoreFactory(
     private val storeFactory: StoreFactory,
     private val lifecycle: Lifecycle,
     private val pageData: CollectionPageInput,
-    private val workspaceSession: WorkspaceSession
-) : KoinComponent {
+    private val workspaceSession: WorkspaceSession,
+    private val openWorkspaceSettings: (Boolean) -> Unit,
+    private val utilsService: IUtilsService,
+    private val dialogSelectTagService: DialogSelectTagService,
+    private val dialogSelectOptionsService: DialogSelectOptionsService,
+    private val dialogDeleteService: DialogDeleteService,
+    private val navigator: Navigator,
+    private val ankiEnv: IAnkiEnvironment,
+    private val navigateToFileUseCaseFactory: NavigateToFileUseCaseFactory,
+) {
 
     private val currentPageState = MutableStateFlow(0)
     private val pageSizeState = MutableStateFlow(10L)
-    private val coroutineScope: CoroutineScope by inject()
-    private val utilsService: IUtilsService by inject()
-    private val dialogSelectTagService: DialogSelectTagService by inject()
-    private val navigator: Navigator by inject()
-    private val navigateToFileUseCase: INavigateToFileUseCase by inject {
-        parametersOf(workspaceSession.fileManagerService)
-    }
+    private val coroutineScope: CoroutineScope =
+        CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private val navigateToFileUseCase: INavigateToFileUseCase
+        get() = navigateToFileUseCaseFactory(workspaceSession.fileManagerService)
 
     fun create(): CollectionStore = object : CollectionStore,
         Store<Intent, State, Label> by storeFactory.create(
@@ -88,7 +101,7 @@ internal class CollectionStoreFactory(
                     null
                 } else {
                     PageNameData(
-                        name = collection.name,
+                        name = CJText.Raw(collection.name),
                         pageType = PageNameData.PageType.Collection(id = collection.id),
                         modifiedTime = collection.modifiedTime
                     )
@@ -199,6 +212,29 @@ internal class CollectionStoreFactory(
         @OptIn(ExperimentalTime::class)
         override fun executeIntent(intent: Intent) {
             when (intent) {
+                is Intent.OpenOptions -> {
+                    scope.launch {
+                        val result =
+                            dialogSelectOptionsService.open(
+                                DialogSelectOptionsServiceInput(
+                                    options = persistentListOf(
+                                        SelectOption(
+                                            text = "delete",
+                                            onClick = {
+                                                scope.launch {
+                                                    dialogDeleteService.open(Unit)
+                                                }
+                                            }
+                                        )
+                                    )
+                                ))
+                    }
+                }
+
+                is Intent.OpenWorkspaceSettings -> {
+                    openWorkspaceSettings(true)
+                }
+
                 is Intent.DeleteCollectionRow -> {
                     scope.launch {
                         val workspaceEnv = workspaceSession.workspaceEnvStateFlow.value
@@ -232,21 +268,46 @@ internal class CollectionStoreFactory(
                     }
                 }
 
-                is Intent.Generate -> {
+                is Intent.ImportToAnki -> {
                     scope.launch {
                         val workspaceEnv = workspaceSession.workspaceEnvStateFlow.value
-                        val name = "rowwww"
-                        for (item in 0 until 500000) {
-                            workspaceEnv.createCollectionRow(
-                                CreateCollectionRowRequest(
-                                    name = "$name$item",
-                                    collectionId = pageData.collectionId,
-                                    createdTime = nowInMs()
-                                )
+
+                        val collectionName = state().collection?.name ?: return@launch
+                        val deckName = "CedarJam::${collectionName}"
+                        val rows =
+                            workspaceEnv.getCollectionRows(collectionId = pageData.collectionId)
+                        val ankiNotes = rows.distinctBy { d -> d.name }.map {
+                            AnkiNote(
+                                id = null,
+                                deckName = deckName,
+                                modelName = "CedarJam-basic-source",
+                                fields = mapOf(
+                                    "Front" to it.name,
+                                    "Back" to it.translation.toString(),
+                                    "Source" to "Kotlin Documentation"
+                                ),
+                                tags = listOf("kotlin", "programming")
                             )
                         }
+                        ankiEnv.importNotes(deckName = deckName, notes = ankiNotes)
                     }
                 }
+
+//                is Intent.Generate -> {
+//                    scope.launch {
+//                        val workspaceEnv = workspaceSession.workspaceEnvStateFlow.value
+//                        val name = "rowwww"
+//                        for (item in 0 until 500000) {
+//                            workspaceEnv.createCollectionRow(
+//                                CreateCollectionRowRequest(
+//                                    name = "$name$item",
+//                                    collectionId = pageData.collectionId,
+//                                    createdTime = nowInMs()
+//                                )
+//                            )
+//                        }
+//                    }
+//                }
 
 //                is Intent.AddCollectionRow -> {
 //                    scope.launch {
@@ -318,7 +379,7 @@ internal class CollectionStoreFactory(
                     scope.launch {
                         resultBlock {
                             val result =
-                                navigateToFileUseCase.invoke(NavigateToFile.AbsolutePath(intent.value))
+                                navigateToFileUseCase.invoke(NavigateToFile.RelativePath(intent.value))
                             val timestamp = bind(result)
                             navigator.navigate(Route.File(FilePageInput(timestamp)))
                         }
@@ -329,7 +390,7 @@ internal class CollectionStoreFactory(
                     scope.launch {
                         try {
                             val workspaceEnv = workspaceSession.workspaceEnvStateFlow.value
-                            val tag = dialogSelectTagService.open(Unit)
+                            val tag = dialogSelectTagService.open(workspaceSession)
                             if (tag != null) {
                                 workspaceEnv.createTagCollectionRow(
                                     request = CreateTagCollectionRowRequest(
@@ -360,13 +421,8 @@ internal class CollectionStoreFactory(
 
                         when (val data = intent.fileTreeNode.data) {
                             is FileTreeItemPresentation.FileTreeItemPresentationData.File -> {
-                                val relativePath = getRelativePath(
-                                    fullPath = data.fileNode.getFullPath(),
-                                    workspacePath = "workspaceEnv.getWorkspace().fullpath"
-                                )
-
                                 var updateRequest = intent.row.copy(
-                                    fileRelativePath = relativePath,
+                                    fileRelativePath = data.fileNode.getRelativePath(),
                                     modifiedTime = nowInMs()
                                 ).mapToUpdateRequest()
                                 if (data.fileNode.name.extension == "pdf") {
@@ -408,10 +464,10 @@ internal class CollectionStoreFactory(
     private object ReducerImpl : Reducer<State, CollectionStore.Msg> {
         override fun State.reduce(msg: CollectionStore.Msg): State {
             return when (msg) {
-                is CollectionStore.Msg.SetRows -> copy(rows = msg.value)
+                is CollectionStore.Msg.SetRows -> copy(rows = msg.value.toPersistentList())
                 is CollectionStore.Msg.SetCollection -> copy(collection = msg.value)
                 is CollectionStore.Msg.SetWorkspace -> copy(workspace = msg.value)
-                is CollectionStore.Msg.SetTagCollectionRows -> copy(tagCollectionRows = msg.value)
+                is CollectionStore.Msg.SetTagCollectionRows -> copy(tagCollectionRows = msg.value.toPersistentList())
                 is CollectionStore.Msg.SetCurrentPage -> copy(currentPage = msg.value)
                 is CollectionStore.Msg.SetMaxPage -> copy(maxPage = msg.value)
                 is CollectionStore.Msg.SetTags -> copy(tags = msg.value)

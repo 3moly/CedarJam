@@ -11,46 +11,43 @@ import com.moly3.cedarjam.ui.pages.tag.Intent
 import com.moly3.cedarjam.ui.pages.tag.State
 import com.moly3.cedarjam.core.domain.dialog.DialogSelectTagService
 import com.moly3.cedarjam.core.domain.func.nowInMs
-import com.moly3.cedarjam.core.domain.model.PageNameData
+import com.moly3.cedarjam.core.ui.model.PageNameData
 import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.domain.model.bind
-import com.moly3.cedarjam.core.domain.model.getTagGraphId
 import com.moly3.cedarjam.core.domain.model.node.ObsidianGraphPresentation
 import com.moly3.cedarjam.core.domain.model.node.toGraphData
 import com.moly3.cedarjam.core.domain.model.request.CreateTagToTagRequest
 import com.moly3.cedarjam.core.domain.model.resultBlock
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
 import com.moly3.cedarjam.core.domain.usecase.IOpenNodeDataUseCase
+import com.moly3.cedarjam.core.ui.model.CJText
+import com.moly3.cedarjam.core.domain.usecase.OpenNodeDataUseCaseFactory
 import com.moly3.cedarjam.navigation.Navigator
 import com.moly3.cedarjam.navigation.mapper.toRoute
-import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
-import org.koin.core.parameter.parametersOf
-
 
 internal class TagStoreFactory(
     private val workspaceSession: WorkspaceSession,
     private val storeFactory: StoreFactory,
     private val lifecycle: Lifecycle,
     private val pageData: TagPageInput,
-    private val setIsShowGraph: (Boolean) -> Unit
-) : KoinComponent {
+    private val openWorkspaceSettings: (Boolean) -> Unit,
+    private val selectTagService: DialogSelectTagService,
+    private val openNodeDataUseCaseFactory: OpenNodeDataUseCaseFactory,
+    private val navigator: Navigator,
+) {
 
-    private val coroutineScope: CoroutineScope by inject()
-    private val selectTagService: DialogSelectTagService by inject()
-    private val openNodeUseCase: IOpenNodeDataUseCase by inject {
-        parametersOf(workspaceSession.fileManagerService)
-    }
-    private val navigator: Navigator by inject()
+    private val coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private val openNodeUseCase: IOpenNodeDataUseCase get() =
+        openNodeDataUseCaseFactory(workspaceSession.fileManagerService)
 
     fun create(): TagStore = object : TagStore,
         Store<Intent, State, Unit> by storeFactory.create(
@@ -65,7 +62,7 @@ internal class TagStoreFactory(
                 val tag = it.firstOrNull { b -> b.id == pageData.id }
                 if (tag != null) {
                     PageNameData(
-                        name = tag.name,
+                        name = CJText.Raw(tag.name),
                         pageType = PageNameData.PageType.Tag(id = tag.id),
                         modifiedTime = tag.modifiedTime
                     )
@@ -85,15 +82,6 @@ internal class TagStoreFactory(
         override fun onStart(scopeFromStartToStop: CoroutineScope) {
             super.onStart(scopeFromStartToStop)
 
-            val graphNodeTagId = pageData.id.getTagGraphId()
-
-            scopeFromStartToStop.launch {
-                workspaceSession
-                    .getConnectionPresentations(graphNodeTagId)
-                    .collectLatest {
-                        dispatch(TagStore.Msg.SetConnections(it.toPersistentList()))
-                    }
-            }
             scopeFromStartToStop.launch {
                 workspaceSession.tagsFlow.collect {
                     val tag = it.firstOrNull { d -> d.id == pageData.id }
@@ -110,21 +98,21 @@ internal class TagStoreFactory(
             when (intent) {
                 Intent.SetNewTag -> {
                     scope.launch {
-                        val tag = selectTagService.open(Unit)
+                        val tag = selectTagService.open(workspaceSession)
                         if (tag != null && tag.id != pageData.id) {
                             workspaceSession.workspaceEnvStateFlow.value.createTagToTag(
                                 CreateTagToTagRequest(
                                     tagId = pageData.id,
                                     tag2Id = tag.id,
-                                    modifiedTime = nowInMs()
+                                    createdTime = nowInMs()
                                 )
                             )
                         }
                     }
                 }
 
-                is Intent.SetIsShowGraph -> {
-                    setIsShowGraph(intent.value)
+                is Intent.OpenWorkspaceSettings -> {
+                    openWorkspaceSettings(true)
                 }
 
                 is Intent.OpenLink -> {

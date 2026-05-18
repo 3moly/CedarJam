@@ -1,5 +1,6 @@
 package com.moly3.cedarjam.pages.page_collection_row.store
 
+import co.touchlab.kermit.Logger
 import com.arkivanov.essenty.lifecycle.Lifecycle
 import com.arkivanov.mvikotlin.core.store.Reducer
 import com.arkivanov.mvikotlin.core.store.SimpleBootstrapper
@@ -20,14 +21,14 @@ import com.moly3.cedarjam.core.domain.func.pathWrapper
 import com.moly3.cedarjam.core.domain.model.FileName
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.NavigateToFile
-import com.moly3.cedarjam.core.domain.model.PageNameData
+import com.moly3.cedarjam.core.ui.model.PageNameData
 import com.moly3.cedarjam.core.domain.model.TagDTO
-import com.moly3.cedarjam.core.domain.model.getCollectionRowGraphId
 import com.moly3.cedarjam.core.domain.model.request.RenameDataCollectionRowRequest
 import com.moly3.cedarjam.core.domain.model.request.mapToUpdateRequest
 import com.moly3.cedarjam.core.domain.service.FileManagerService
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
 import com.moly3.cedarjam.core.domain.usecase.INavigateToFileUseCase
+import com.moly3.cedarjam.core.ui.model.CJText
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.dialogs.FileKitType.*
 import io.github.vinceglb.filekit.dialogs.openFilePicker
@@ -36,6 +37,7 @@ import io.github.vinceglb.filekit.nameWithoutExtension
 import io.github.vinceglb.filekit.readBytes
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -43,25 +45,25 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
-import org.koin.core.parameter.parametersOf
+import com.moly3.cedarjam.core.domain.usecase.NavigateToFileUseCaseFactory
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 
 internal class CollectionRowStoreFactory(
     private val workspaceSession: WorkspaceSession,
     private val storeFactory: StoreFactory,
     private val lifecycle: Lifecycle,
     private val pageInput: CollectionRowPageInput,
-    private val setIsShowGraph: (Boolean) -> Unit
-) : KoinComponent {
+    private val openWorkspaceSettings: (Boolean) -> Unit,
+    private val navigator: Navigator,
+    private val navigateToFileUseCaseFactory: NavigateToFileUseCaseFactory,
+) {
     private val fileManagerService: FileManagerService by lazy {
         workspaceSession.fileManagerService
     }
-    private val coroutineScope: CoroutineScope by inject()
-    private val navigator: Navigator by inject()
-    private val navigateToFileUseCase: INavigateToFileUseCase by inject {
-        parametersOf(fileManagerService)
-    }
+    private val coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private val navigateToFileUseCase: INavigateToFileUseCase get() =
+        navigateToFileUseCaseFactory(fileManagerService)
 
     fun create(): CollectionRowStore = object : CollectionRowStore,
         Store<Intent, State, Unit> by storeFactory.create(
@@ -78,7 +80,7 @@ internal class CollectionRowStoreFactory(
                     null
                 } else {
                     PageNameData(
-                        name = row.name,
+                        name = CJText.Raw(row.name),
                         pageType = PageNameData.PageType.CollectionRow(id = row.id),
                         modifiedTime = row.modifiedTime
                     )
@@ -97,21 +99,6 @@ internal class CollectionRowStoreFactory(
         override fun onStart(scopeFromStartToStop: CoroutineScope) {
             super.onStart(scopeFromStartToStop)
 
-            val graphNodeTagId = pageInput.rowId.getCollectionRowGraphId()
-
-            scopeFromStartToStop.launch {
-                workspaceSession
-                    .getConnectionPresentations(graphNodeTagId)
-                    .collectLatest {
-                        dispatch(CollectionRowStore.Msg.SetConnectionsCount(it.size))
-                    }
-            }
-            scopeFromStartToStop.launch {
-                workspaceSession.workspaceEnvStateFlow
-                    .collectLatest {
-                        dispatch(CollectionRowStore.Msg.SetWorkspace(it.getWorkspace()))
-                    }
-            }
             scopeFromStartToStop.launch {
                 workspaceSession.workspaceEnvStateFlow
                     .flatMapLatest {
@@ -132,8 +119,17 @@ internal class CollectionRowStoreFactory(
 
         override fun executeIntent(intent: Intent) {
             when (intent) {
-                is Intent.SetIsShowGraph -> {
-                    setIsShowGraph(intent.value)
+                is Intent.SetWebLink -> {
+                    val workspaceEnv = workspaceSession.workspaceEnvStateFlow.value
+                    val row = state().collectionRow ?: return
+
+                    val copiedRow = row.copy(
+                        webLink = intent.value,
+                        modifiedTime = nowInMs()
+                    )
+                    workspaceEnv.updateCollectionRow(
+                        copiedRow.mapToUpdateRequest()
+                    )
                 }
 
                 Intent.ImportPdf -> {
@@ -141,7 +137,7 @@ internal class CollectionRowStoreFactory(
                         val file =
                             FileKit.openFilePicker(type = File(extension = "pdf"))
                         val row = state().collectionRow
-                        val pdfResult = getPdfResult(file.toString())
+
                         val workspaceEnv = workspaceSession.workspaceEnvStateFlow.value
                         if (file != null && row != null) {
                             val workspace = workspaceEnv.getWorkspace()
@@ -161,28 +157,41 @@ internal class CollectionRowStoreFactory(
                                     name = file.nameWithoutExtension,
                                     extension = file.extension
                                 ),
-                                parentPath = pathWrapper(
-                                    workspace.fullpath,
-                                    relativePath.toString()
-                                ).toString()
+                                workspaceFullPath = workspace.fullpath,
+                                parentRelativePath = relativePath.pathString
                             )
-//                            val sed = file.absolutePath()
-                            val sed = ""
                             workspaceEnv.copyFile(
-                                originalFullPath = sed,
                                 newFile = newFile,
                                 byteArray = file.readBytes()
                             )
+                            delay(1500L)
                             val relativePath2 = relativePathFile.toString()
+
+                            Logger.e { "row book: ${newFile.getFullPath()} " }
+                            val pdfResult = try {
+                                getPdfResult(newFile.getFullPath())
+                            } catch (exc: Exception) {
+                                null
+                            }
+                            var copiedRow = row.copy(
+                                fileRelativePath = relativePath2,
+//                                    progressMax = pdfResult.numberOfPages.toDouble(),
+                                modifiedTime = nowInMs()
+                            )
+                            if (pdfResult != null) {
+                                Logger.w { "row book: success: ${pdfResult.numberOfPages}" }
+                                copiedRow =
+                                    copiedRow.copy(progressMax = pdfResult.numberOfPages.toDouble())
+                            }
                             workspaceEnv.updateCollectionRow(
-                                row.copy(
-                                    fileRelativePath = relativePath2,
-                                    progressMax = pdfResult.numberOfPages.toDouble(),
-                                    modifiedTime = nowInMs()
-                                ).mapToUpdateRequest()
+                                copiedRow.mapToUpdateRequest()
                             )
                         }
                     }
+                }
+
+                is Intent.OpenWorkspaceSettings -> {
+                    openWorkspaceSettings(true)
                 }
 
                 is Intent.Rename -> {
@@ -236,8 +245,6 @@ internal class CollectionRowStoreFactory(
             return when (msg) {
                 is CollectionRowStore.Msg.SetCollectionRow -> copy(collectionRow = msg.value)
                 is CollectionRowStore.Msg.SetCollection -> copy(collection = msg.value)
-                is CollectionRowStore.Msg.SetWorkspace -> copy(workspace = msg.value)
-                is CollectionRowStore.Msg.SetConnectionsCount -> copy(connectionsCount = msg.value)
             }
         }
     }

@@ -1,5 +1,6 @@
 package com.moly3.cedarjam.pages.page_tab
 
+import com.arkivanov.decompose.Child
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.DelicateDecomposeApi
 import com.arkivanov.decompose.router.stack.ChildStack
@@ -11,27 +12,33 @@ import com.arkivanov.decompose.value.Value
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.moly3.cedarjam.navigation.IDecomposeScopeComponent
 import com.moly3.cedarjam.navigation.Route
-import com.moly3.cedarjam.navigation.componentScope
 import com.moly3.cedarjam.core.domain.model.navigation.input.CollectionPageInput
 import com.moly3.cedarjam.core.domain.model.navigation.input.CollectionRowPageInput
 import com.moly3.cedarjam.core.domain.model.navigation.input.FilePageInput
 import com.moly3.cedarjam.core.domain.model.navigation.input.TagPageInput
 import com.moly3.cedarjam.navigation.stateFlow
-import com.moly3.cedarjam.pages.page_collection.CollectionComponentImpl
-import com.moly3.cedarjam.pages.page_collection_row.CollectionRowComponentImpl
-import com.moly3.cedarjam.pages.page_file.FileComponentImpl
-import com.moly3.cedarjam.pages.page_graph.GraphComponentImpl
-import com.moly3.cedarjam.pages.page_home.HomeComponentImpl
-import com.moly3.cedarjam.ui.pages.tag.TagComponentImpl
-import com.moly3.cedarjam.ui.pages.tags.TagsComponentImpl
+import com.moly3.cedarjam.pages.page_collection.CollectionComponentFactory
+import com.moly3.cedarjam.pages.page_collection_row.CollectionRowComponentFactory
+import com.moly3.cedarjam.pages.page_file.FileComponentFactory
+import com.moly3.cedarjam.pages.page_graph.GraphComponentFactory
+import com.moly3.cedarjam.pages.page_home.HomeComponentFactory
+import com.moly3.cedarjam.ui.pages.tag.TagComponentFactory
+import com.moly3.cedarjam.ui.pages.tags.TagsComponentFactory
 import com.moly3.cedarjam.core.domain.func.doNothing
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
-import com.moly3.cedarjam.core.domain.model.PageNameData
+import com.moly3.cedarjam.core.ui.model.PageNameData
 import com.moly3.cedarjam.core.domain.func.nowInMs
 import com.moly3.cedarjam.core.domain.model.request.RenameDataCollectionRequest
 import com.moly3.cedarjam.core.domain.model.request.RenameDataCollectionRowRequest
 import com.moly3.cedarjam.core.domain.model.request.RenameTagRequest
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
+import com.moly3.cedarjam.core.ui.model.CJText
+import com.moly3.cedarjam.navigation.NavigationParent
+import com.moly3.cedarjam.pages.page_tab.Label.*
+import com.moly3.cedarjam.ui.Res
+import com.moly3.cedarjam.ui.graph
+import com.moly3.cedarjam.ui.home
+import com.moly3.cedarjam.ui.tags
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -42,87 +49,104 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
+import dev.zacsweers.metro.Assisted
+import dev.zacsweers.metro.AssistedInject
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.serialization.Serializable
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 
+@AssistedInject
 class TabComponentImpl(
-    private val workspaceSession: WorkspaceSession,
-    context: ComponentContext,
-    storeFactory: StoreFactory,
-    private val tabIndex: Int
-) : KoinComponent,
-    ComponentContext by context,
+    @Assisted private val workspaceSession: WorkspaceSession,
+    @Assisted context: ComponentContext,
+    @Assisted storeFactory: StoreFactory,
+    @Assisted private val openMenu: (Boolean) -> Unit,
+    @Assisted private val tabIndex: Int,
+    private val homeComponentFactory: HomeComponentFactory,
+    private val graphComponentFactory: GraphComponentFactory,
+    private val collectionRowComponentFactory: CollectionRowComponentFactory,
+    private val collectionComponentFactory: CollectionComponentFactory,
+    private val fileComponentFactory: FileComponentFactory,
+    private val tagComponentFactory: TagComponentFactory,
+    private val tagsComponentFactory: TagsComponentFactory,
+) : ComponentContext by context,
     IDecomposeScopeComponent,
-    TabComponent {
+    TabComponent,
+    NavigationParent {
 
-    private val coroutineScope: CoroutineScope by inject()
+    private val coroutineScope: CoroutineScope =
+        CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     val navigation = StackNavigation<Config>()
     private val _stateFlow = MutableStateFlow<State>(State())
-    private val router = context.childStack(
+    private val _children = context.childStack(
         source = navigation,
         serializer = Config.serializer(),
         initialConfiguration = Config.Empty(index = 0),
         childFactory = { g, childContext ->
             when (g) {
                 is Config.Empty -> TabComponent.Child.Home(
-                    HomeComponentImpl(
+                    homeComponentFactory.invoke(
                         componentContext = childContext,
                         storeFactory = storeFactory,
-                        workspaceSession = workspaceSession
-                    )
-                )
-
-                is Config.CollRow -> TabComponent.Child.CollectionRow(
-                    CollectionRowComponentImpl(
-                        componentContext = childContext,
-                        storeFactory = storeFactory,
-                        data = g.data,
-                        workspaceSession = workspaceSession
-                    )
-                )
-
-                is Config.Collection -> TabComponent.Child.Collection(
-                    CollectionComponentImpl(
-                        componentContext = childContext,
-                        storeFactory = storeFactory,
-                        data = g.data,
-                        workspaceSession = workspaceSession
-                    )
-                )
-
-                is Config.File -> TabComponent.Child.File(
-                    FileComponentImpl(
-                        componentContext = childContext,
-                        storeFactory = storeFactory,
-                        data = g.data,
-                        workspaceSession = workspaceSession
+                        workspaceSession = workspaceSession,
+                        openWorkspaceSettings = { openMenu(true) },
                     )
                 )
 
                 is Config.Graph -> TabComponent.Child.Graph(
-                    GraphComponentImpl(
+                    graphComponentFactory.invoke(
                         componentContext = childContext,
                         storeFactory = storeFactory,
-                        workspaceSession = workspaceSession
+                        workspaceSession = workspaceSession,
+                        openWorkspaceSettings = openMenu,
+                    )
+                )
+
+                is Config.CollRow -> TabComponent.Child.CollectionRow(
+                    collectionRowComponentFactory.invoke(
+                        workspaceSession = workspaceSession,
+                        componentContext = childContext,
+                        storeFactory = storeFactory,
+                        data = g.data,
+                        openWorkspaceSettings = { openMenu(true) },
+                    )
+                )
+
+                is Config.Collection -> TabComponent.Child.Collection(
+                    collectionComponentFactory.invoke(
+                        workspaceSession = workspaceSession,
+                        componentContext = childContext,
+                        storeFactory = storeFactory,
+                        data = g.data,
+                        openWorkspaceSettings = { openMenu(true) },
+                    )
+                )
+
+                is Config.File -> TabComponent.Child.File(
+                    fileComponentFactory.invoke(
+                        componentContext = childContext,
+                        storeFactory = storeFactory,
+                        openMenu = openMenu,
+                        data = g.data,
+                        workspaceSession = workspaceSession,
                     )
                 )
 
                 is Config.Tag -> TabComponent.Child.Tag(
-                    TagComponentImpl(
+                    tagComponentFactory.invoke(
+                        workspaceSession = workspaceSession,
                         componentContext = childContext,
                         storeFactory = storeFactory,
                         data = g.data,
-                        workspaceSession = workspaceSession
+                        openWorkspaceSettings = { openMenu(true) },
                     )
                 )
 
                 is Config.Tags -> TabComponent.Child.Tags(
-                    TagsComponentImpl(
+                    tagsComponentFactory.invoke(
+                        workspaceSession = workspaceSession,
                         componentContext = childContext,
                         storeFactory = storeFactory,
-                        workspaceSession = workspaceSession
                     )
                 )
             }
@@ -132,9 +156,9 @@ class TabComponentImpl(
 
     init {
 
-        router.subscribe {
+        _children.subscribe {
             val activeIndex = it.active.configuration.index
-            val indexes = router.value.items.map { d -> d.configuration.index }
+            val indexes = _children.value.items.map { d -> d.configuration.index }
             val minIndex = indexes.minOfOrNull { b -> b }
             val maxIndex = indexes.maxOfOrNull { b -> b }
             var canGoBack = false
@@ -157,20 +181,22 @@ class TabComponentImpl(
         }
     }
 
-    override val scope by componentScope()
+    override val children: Value<ChildStack<*, TabComponent.Child>>
+        get() = _children
 
-    override val childStack: Value<ChildStack<*, TabComponent.Child>>
-        get() = router
+    override fun getItems(): List<Child<*, *>> {
+        return _children.value.items
+    }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    override val nameFlow: Flow<PageNameData?> = router.stateFlow.flatMapLatest { childStack ->
+    override val nameFlow: Flow<PageNameData?> = _children.stateFlow.flatMapLatest { childStack ->
         val nameStateFlow = when (val instance = childStack.active.instance) {
             is TabComponent.Child.Collection -> instance.component.nameFlow
             is TabComponent.Child.CollectionRow -> instance.component.nameFlow
             is TabComponent.Child.File -> instance.component.nameFlow
             is TabComponent.Child.Graph -> flowOf(
                 PageNameData(
-                    name = "Graph",
+                    name = CJText.Res(Res.string.graph),
                     pageType = PageNameData.PageType.Graph,
                     modifiedTime = null
                 )
@@ -178,7 +204,7 @@ class TabComponentImpl(
 
             is TabComponent.Child.Home -> flowOf(
                 PageNameData(
-                    name = "Home",
+                    name = CJText.Res(Res.string.home),
                     pageType = PageNameData.PageType.Home,
                     modifiedTime = null
                 )
@@ -187,7 +213,7 @@ class TabComponentImpl(
             is TabComponent.Child.Tag -> instance.component.nameFlow
             is TabComponent.Child.Tags -> flowOf(
                 PageNameData(
-                    name = "Tags",
+                    name = CJText.Res(Res.string.tags),
                     pageType = PageNameData.PageType.Tags,
                     modifiedTime = null
                 )
@@ -204,7 +230,7 @@ class TabComponentImpl(
                 Route.Back -> back()
                 Route.Forward -> forward()
                 else -> {
-                    val nextIndex = router.value.active.configuration.index + 1
+                    val nextIndex = _children.value.active.configuration.index + 1
 
                     val config = when (route) {
                         is Route.CollRow -> Config.CollRow(nextIndex, route.data)
@@ -212,6 +238,7 @@ class TabComponentImpl(
                         is Route.File -> {
                             Config.File(nextIndex, route.data)
                         }
+
                         Route.MainGraph -> Config.Graph(nextIndex)
                         Route.MainHome -> Config.Empty(nextIndex)
                         is Route.Tag -> {
@@ -239,11 +266,11 @@ class TabComponentImpl(
         get() = _stateFlow
 
     private fun back() {
-        val activeIndex = router.value.active.configuration.index
-        val previousIndex = router.value.items.map { d -> d.configuration.index }
+        val activeIndex = _children.value.active.configuration.index
+        val previousIndex = _children.value.items.map { d -> d.configuration.index }
             .filter { d -> activeIndex > d }
             .maxOfOrNull { z -> z }
-        val config = router.value.items.firstOrNull { d -> d.configuration.index == previousIndex }
+        val config = _children.value.items.firstOrNull { d -> d.configuration.index == previousIndex }
 
         if (config != null) {
             navigation.pushToFront(config.configuration)
@@ -251,8 +278,8 @@ class TabComponentImpl(
     }
 
     private fun openNext(config: Config) {
-        val activeIndex = router.value.active.configuration.index
-        val currentConfig = router.value.active.configuration
+        val activeIndex = _children.value.active.configuration.index
+        val currentConfig = _children.value.active.configuration
         val isSame = when (config) {
             is Config.CollRow -> when (currentConfig) {
                 is Config.CollRow -> currentConfig.data == config.data
@@ -293,7 +320,7 @@ class TabComponentImpl(
             }
 
         } catch (exc: Exception) {
-            val indexes = router.value.items.map { d -> d.configuration.index }
+            val indexes = _children.value.items.map { d -> d.configuration.index }
                 .sortedBy { b -> b }
             co.touchlab.kermit.Logger.e {
                 "error navigate - allIndexes: ${indexes}. new config: ${config.index}"
@@ -302,11 +329,11 @@ class TabComponentImpl(
     }
 
     private fun forward() {
-        val activeIndex = router.value.active.configuration.index
-        val previousIndex = router.value.items.map { d -> d.configuration.index }
+        val activeIndex = _children.value.active.configuration.index
+        val previousIndex = _children.value.items.map { d -> d.configuration.index }
             .filter { d -> activeIndex < d }
             .minOfOrNull { z -> z }
-        val config = router.value.items.firstOrNull { d -> d.configuration.index == previousIndex }
+        val config = _children.value.items.firstOrNull { d -> d.configuration.index == previousIndex }
 
         if (config != null) {
             navigation.pushToFront(config.configuration)
@@ -374,8 +401,12 @@ class TabComponentImpl(
                         }
 
                     } catch (exc: IllegalArgumentException) {
-                        _labels.emit(Label.ReturnOriginalName(intent.oldName))
+                        _labels.emit(ReturnOriginalName(intent.oldName))
                     }
+                }
+
+                Intent.OpenWorkspaceSettings -> {
+                    openMenu(true)
                 }
             }
         }

@@ -26,52 +26,53 @@ import com.moly3.cedarjam.core.ui.uikit.CJButton
 import kotlinx.coroutines.launch
 
 @Composable
-fun DialogSelectTagUI(dialog: DialogSelectTagService, workspaceSession: WorkspaceSession) {
+fun DialogSelectTagUI(
+    dialog: DialogSelectTagService,
+    workspaceSession: WorkspaceSession
+) {
     val scope = rememberCoroutineScope()
 
-    CJDialogGeneric(dialog = dialog) {
-        val tags = workspaceSession.workspaceEnvStateFlow.value.getTagsFlow()
-            .collectAsState(listOf()).value
+    val tags = workspaceSession.workspaceEnvStateFlow.value.getTagsFlow()
+        .collectAsState(listOf()).value
 
-        val selectedTag = remember { mutableStateOf<TagDTO?>(null) }
-        Box(
-            Modifier.fillMaxSize().background(Color.Green.copy(alpha = 0.3f))
-                .clickable(interactionSource = null, onClick = {
-                    scope.launch {
-                        dialog.setResult(null)
-                    }
-                }),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(
-                Modifier.background(Color.Green, shape = RoundedCornerShape(24.dp))
-                    .padding(24.dp)
-            ) {
-                Row {
-                    SelectTagList(
-                        tags = tags,
-                        currentTag = selectedTag.value,
-                        currentTag2 = null,
-                        onSelectTag = {
-                            selectedTag.value = it
-                        }
-                    )
+    val selectedTag = remember { mutableStateOf<TagDTO?>(null) }
+    Box(
+        Modifier.fillMaxSize().background(Color.Green.copy(alpha = 0.3f))
+            .clickable(interactionSource = null, onClick = {
+                scope.launch {
+                    dialog.setResult(null)
                 }
-                Row(
-                    Modifier
+            }),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            Modifier.background(Color.Green, shape = RoundedCornerShape(24.dp))
+                .padding(24.dp)
+        ) {
+            Row {
+                SelectTagList(
+                    tags = tags,
+                    currentTag = selectedTag.value,
+                    currentTag2 = null,
+                    onSelectTag = {
+                        selectedTag.value = it
+                    }
+                )
+            }
+            Row(
+                Modifier
 
-                ) {
-                    CJButton(text = "Create") {
-                        scope.launch {
-                            val tag1 = selectedTag.value
+            ) {
+                CJButton(text = "Create") {
+                    scope.launch {
+                        val tag1 = selectedTag.value
 
-                            if (tag1 == null)
-                                return@launch
+                        if (tag1 == null)
+                            return@launch
 
-                            dialog.setResult(
-                                tag1
-                            )
-                        }
+                        dialog.setResult(
+                            tag1
+                        )
                     }
                 }
             }

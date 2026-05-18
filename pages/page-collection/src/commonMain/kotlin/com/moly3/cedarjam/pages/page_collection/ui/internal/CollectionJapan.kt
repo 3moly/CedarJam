@@ -49,7 +49,7 @@ internal fun CollectionJapan(
                                getPdfImage(
                                    Path("workspace?.fullpath", row.fileRelativePath!!).toString(),
                                    page = 0,
-                                   dpi = 100f
+                                   density = 1f
                                )
                            } else {
                                null

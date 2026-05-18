@@ -1,18 +1,26 @@
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.androidLibrary)
+    alias(libs.plugins.android.kotlin.multiplatform.library)
     alias(libs.plugins.compose)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.serialization)
 }
 
 kotlin {
-    androidTarget()
+    android {
+        namespace = "com.moly3.cedarjam.features.feature_file_view"
+        compileSdk = libs.versions.android.compileSdk.get().toInt()
+//        defaultConfig {
+//            minSdk = libs.versions.android.minSdk.get().toInt()
+//        }
+//        buildFeatures.compose = true
+//        compileOptions {
+//            sourceCompatibility = JavaVersion.VERSION_17
+//            targetCompatibility = JavaVersion.VERSION_17
+//        }
+    }
     jvm()
     listOf(iosArm64(), iosSimulatorArm64())
-    wasmJs {
-        browser()
-    }
     sourceSets {
         commonMain {
             dependencies {
@@ -35,10 +43,12 @@ kotlin {
             }
         }
         jvmMain.dependencies {
-            implementation(libs.compose.pdf)
+            implementation(libs.pdfbox)
+//            implementation(libs.compose.pdf)
             implementation(libs.icepdf.core)
-//            implementation(libs.pdfbox)
+////            implementation(libs.pdfbox)
             implementation(libs.jai.imageio.jpeg2000)
+
         }
         androidMain.dependencies {
             implementation(libs.compose.pdf)
@@ -47,15 +57,4 @@ kotlin {
     }
 }
 
-android {
-    namespace = "com.moly3.cedarjam.features.feature_file_view"
-    compileSdk = libs.versions.android.compileSdk.get().toInt()
-    defaultConfig {
-        minSdk = libs.versions.android.minSdk.get().toInt()
-    }
-    buildFeatures.compose = true
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-}
+

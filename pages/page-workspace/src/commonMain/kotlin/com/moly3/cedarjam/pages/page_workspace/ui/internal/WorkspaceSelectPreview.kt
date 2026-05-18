@@ -1,45 +1,38 @@
 package com.moly3.cedarjam.pages.page_workspace.ui.internal
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.moly3.cedarjam.core.domain.model.WorkspacePresentation
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.uikit.CJText
-import com.moly3.cedarjam.core.ui.uikit.CJIcon
-import com.moly3.cedarjam.core.ui.vectors.Bulb
-import com.moly3.cedarjam.core.ui.vectors.SettingsFuture
-import com.moly3.cedarjam.core.ui.vectors.WaterDrop
 import com.moly3.cedarjam.core.ui.volumedBorderStroke
-import org.jetbrains.compose.ui.tooling.preview.Preview
-
-@Preview
-@Composable
-fun WorkspaceSelectPreview() {
-    WorkspaceSelect(null, onChangeSettings = {}, onChangeWorkspace = {}, onChangeColors = {})
-}
 
 @Composable
 fun WorkspaceSelect(
+    modifier: Modifier = Modifier,
+    toUpload: Int,
+    toDownload: Int,
     activeWorkspace: WorkspacePresentation?,
     onChangeWorkspace: () -> Unit,
-    onChangeSettings: () -> Unit,
-    onChangeColors: () -> Unit,
 ) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .border(volumedBorderStroke, shape = RoundedCornerShape(8.dp)).padding(4.dp),
+            .border(volumedBorderStroke, shape = RoundedCornerShape(8.dp)),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
@@ -47,10 +40,11 @@ fun WorkspaceSelect(
             modifier = Modifier
                 .weight(1f)
                 .clip(RoundedCornerShape(4.dp))
-                .padding(horizontal = 8.dp, vertical = 2.dp)
                 .clickable {
                     onChangeWorkspace()
-                },
+                }
+                .padding(horizontal = 8.dp, vertical = 2.dp)
+                .padding(4.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -62,18 +56,21 @@ fun WorkspaceSelect(
                     softWrap = false
                 )
             }
+
+            if (toUpload > 0) {
+                Box(Modifier.size(15.dp).background(Color.Blue))
+                CJText(text = toUpload.toString())
+            }
+            if (toDownload > 0) {
+                Box(Modifier.size(15.dp).background(Color.Magenta))
+                CJText(text = toDownload.toString())
+            }
         }
-        CJIcon(
-            modifier = Modifier,
-            painter = rememberVectorPainter(WaterDrop),
-            isEnabled = true,
-            onClick = onChangeSettings
-        )
-        CJIcon(
-            modifier = Modifier,
-            painter = rememberVectorPainter(Bulb),
-            isEnabled = true,
-            onClick = onChangeColors
-        )
+//        CJIcon(
+//            modifier = Modifier.padding(top = 4.dp, end = 4.dp, bottom = 4.dp),
+//            painter = rememberVectorPainter(SettingsFuture),
+//            isEnabled = true,
+//            onClick = onChangeSettings
+//        )
     }
 }

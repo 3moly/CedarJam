@@ -1,11 +1,18 @@
 package com.moly3.cedarjam.pages.page_workspace
 
+import androidx.compose.runtime.Stable
 import androidx.compose.ui.geometry.Offset
+import com.moly3.cedarjam.core.domain.model.FileTreeNode
+import com.moly3.cedarjam.core.domain.model.IndexFileDto
 import com.moly3.cedarjam.pages.page_workspace.model.ContextMenuData
 import com.moly3.cedarjam.pages.page_workspace.model.RenameFileNodeData
 import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.domain.model.WorkspacePresentation
 import com.moly3.cedarjam.core.domain.model.error.DatabaseError
+import com.moly3.cedarjam.core.domain.model.settings.WorkspaceFont
+import com.moly3.cedarjam.core.domain.model.settings.WorkspaceSettings
+import com.moly3.cedarjam.core.domain.usecase.GetSyncStatus
+import com.moly3.cedarjam.core.domain.usecase.SyncStatus2
 import com.moly3.cedarjam.core.ui.model.FileTreeItemPresentation
 import com.moly3.cedarjam.pages.page_workspace.model.LockedMenuData
 import com.moly3.cedarjam.pages.page_workspace.model.TabWeightsData
@@ -19,6 +26,7 @@ import kotlinx.collections.immutable.toPersistentMap
 import kotlinx.collections.immutable.toPersistentSet
 import kotlinx.serialization.Serializable
 
+@Stable
 data class State(
     val isMenuOpened: Boolean = false,
     val activeTabsIndex: Int = 0,
@@ -35,7 +43,11 @@ data class State(
     val cursorPosition: Offset? = null,
     val menuWidth: Float = 400f,
     val menuCovered: Int? = null,
-    val lockedMenuCovered: LockedMenuData? = null
+    val lockedMenuCovered: LockedMenuData? = null,
+    val workspaceFont: WorkspaceFont? = null,
+    val settings: WorkspaceSettings = WorkspaceSettings.defaultSettings,
+    val indexes: ImmutableList<IndexFileDto> = persistentListOf(),
+    val syncStatus: UIState<GetSyncStatus, String> = UIState.Loading
 
 ) {
     @Serializable

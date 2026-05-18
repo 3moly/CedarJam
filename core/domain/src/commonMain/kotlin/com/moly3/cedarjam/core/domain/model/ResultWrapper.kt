@@ -126,7 +126,10 @@ class ResultRaiseImpl<E> : ResultRaise<E> {
     }
 }
 
-inline fun <S, E> resultBlock(block: ResultRaise<E>.() -> S): ResultWrapper<S, E> {
+inline fun <S, E> resultBlock(
+    onError: (Exception) -> E,
+    block: ResultRaise<E>.() -> S
+): ResultWrapper<S, E> {
     val raise = ResultRaiseImpl<E>()
     return try {
         val successValue = block(raise)
@@ -135,9 +138,12 @@ inline fun <S, E> resultBlock(block: ResultRaise<E>.() -> S): ResultWrapper<S, E
         @Suppress("UNCHECKED_CAST")
         ResultWrapper.Error(e.error as E)
     } catch (e: Exception) {
-        // Handle unexpected exceptions if necessary, e.g., mapping them to a default E
-        // For simplicity, we are assuming the original code only throws on 'raise' or 'try/catch'
-        // If your original 'raise' was used for Exception->E mapping, you'd do that here.
-        ResultWrapper.Error("Unexpected exception: ${e.message}" as E) // Cast might be risky if E is not String
+        ResultWrapper.Error(onError(e))
     }
+}
+
+inline fun <S> resultBlock(
+    block: ResultRaise<String>.() -> S
+): ResultWrapper<S, String> {
+    return resultBlock(onError = { it.toString() }, block)
 }

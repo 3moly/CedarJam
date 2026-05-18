@@ -1,5 +1,6 @@
 package com.moly3.cedarjam.pages.page_tabs
 
+import com.arkivanov.decompose.Child
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.StackNavigation
@@ -12,12 +13,15 @@ import com.arkivanov.decompose.value.Value
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.moly3.cedarjam.navigation.IDecomposeScopeComponent
 import com.moly3.cedarjam.navigation.Route
-import com.moly3.cedarjam.navigation.componentScope
 import com.moly3.cedarjam.navigation.stateFlow
-import com.moly3.cedarjam.pages.page_tab.TabComponentImpl
+import com.moly3.cedarjam.pages.page_tab.TabComponentFactory
 import com.moly3.cedarjam.pages.page_tabs.TabsComponentImpl.Config.Tab
-import com.moly3.cedarjam.core.domain.model.PageNameData
+import com.moly3.cedarjam.core.ui.model.PageNameData
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
+import com.moly3.cedarjam.navigation.NavigationParent
+import dev.zacsweers.metro.Assisted
+import dev.zacsweers.metro.AssistedInject
+import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -26,50 +30,57 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
+@AssistedInject
 class TabsComponentImpl(
-    context: ComponentContext,
-    storeFactory: StoreFactory,
-    workspaceSession: WorkspaceSession,
-    private val onSelfDestroy: () -> Unit,
-    private val onNewTabs: () -> Unit,
-    private val onFileReveal: (PageNameData.PageType) -> Unit,
-    override val index: Int
-) : KoinComponent,
-    ComponentContext by context,
+    @Assisted context: ComponentContext,
+    @Assisted storeFactory: StoreFactory,
+    @Assisted workspaceSession: WorkspaceSession,
+    @Assisted private val openMenu: (Boolean) -> Unit,
+    @Assisted private val onSelfDestroy: () -> Unit,
+    @Assisted private val onNewTabs: () -> Unit,
+    @Assisted private val onFileReveal: (PageNameData.PageType) -> Unit,
+    @Assisted override val index: Int,
+    private val tabComponentFactory: TabComponentFactory,
+) : ComponentContext by context,
     IDecomposeScopeComponent,
-    TabsComponent {
+    TabsComponent,
+    NavigationParent {
 
-    private val coroutineScope: CoroutineScope by inject()
+    private val coroutineScope: CoroutineScope =
+        CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
-    override val scope by componentScope()
     private val navigation = StackNavigation<Config>()
 
-    override val childStack: Value<ChildStack<*, TabsComponent.Child>>
-        get() = router
+    override val children: Value<ChildStack<*, TabsComponent.Child>>
+        get() = _children
 
-    private val router = context.childStack(
+    override fun getItems(): List<Child<*, *>> {
+        return _children.value.items
+    }
+
+    private val _children = context.childStack(
         source = navigation,
         serializer = Config.serializer(),
         initialConfiguration = Tab(index = 0),
         childFactory = { g, childContext ->
             TabsComponent.Child.Tab(
-                TabComponentImpl(
+                tabComponentFactory.invoke(
+                    workspaceSession = workspaceSession,
                     context = childContext,
                     storeFactory = storeFactory,
+                    openMenu = openMenu,
                     tabIndex = g.index,
-                    workspaceSession = workspaceSession
                 )
             )
         },
     )
 
-    override val activeTab: Flow<TabsState> = router.stateFlow.map {
+    override val activeTab: Flow<TabsState> = _children.stateFlow.map {
         TabsState(
             activeTabIndex = it.active.configuration.index,
             activeFlowName = it.active.instance.component.nameFlow
@@ -78,12 +89,12 @@ class TabsComponentImpl(
 
     override fun onNavigate(route: Route) {
         coroutineScope.launch(Dispatchers.Main.immediate) {
-            val activeConfig = router.active.configuration
+            val activeConfig = _children.active.configuration
             bringTabAndRoute(activeConfig, route)
         }
     }
 
-    override val state: StateFlow<State> = router.stateFlow.map {
+    override val state: StateFlow<State> = _children.stateFlow.map {
         val activeIndex = it.active.configuration.index
         State(
             currentTabIndex = activeIndex,
@@ -93,7 +104,7 @@ class TabsComponentImpl(
                     index = index,
                     nameFlow = it.instance.component.nameFlow
                 )
-            })
+            }.sortedBy { d -> d.index }.toPersistentList())
     }.stateIn(
         scope = coroutineScope,
         started = SharingStarted.Lazily,
@@ -117,7 +128,7 @@ class TabsComponentImpl(
 
             is Intent.CloseTab -> {
                 val activeIndex = state.value.currentTabIndex
-                if (router.value.backStack.isEmpty()) {
+                if (_children.value.backStack.isEmpty()) {
                     onSelfDestroy()
                 } else {
                     if (activeIndex != null) {
@@ -142,7 +153,7 @@ class TabsComponentImpl(
 
     private fun bringTabAndRoute(config: Config, route: Route) {
         navigation.pushToFront(config, onComplete = {
-            val component = router.value.active.instance.component
+            val component = _children.value.active.instance.component
             component.onNavigate(route)
         })
     }
