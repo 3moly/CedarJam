@@ -45,6 +45,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import com.moly3.cedarjam.core.domain.features.mdprops.DividerSyntax
 import com.moly3.cedarjam.core.domain.features.mdprops.MarkdownRow
 import com.moly3.cedarjam.core.domain.features.mdprops.RowFocusManager
 import com.moly3.cedarjam.core.domain.features.mdprops.RowType
@@ -67,14 +68,24 @@ fun MarkdownRowItem(
     focusManager: RowFocusManager,
     callbacks: RowCallbacks,
     modifier: Modifier = Modifier,
+    isSelected: Boolean = false,
 ) {
-    // Divider rows are not editable text — render & bail early.
-    if (row.type == RowType.Divider) {
-        Box(modifier = modifier.fillMaxWidth().padding(vertical = 10.dp)) {
-            Divider(color = MaterialTheme.colorScheme.outlineVariant)
+    // Tint applied to the whole row while it is part of a block selection.
+    val selectionModifier: Modifier =
+        if (isSelected) {
+            Modifier.background(
+                MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
+                RoundedCornerShape(4.dp),
+            )
+        } else {
+            Modifier
         }
-        return
-    }
+
+    // NOTE: divider rows are NOT special-cased away here any more. They flow
+    // through the same focus / navigation / key-handling path as every other
+    // row so arrows can land on them. A divider just renders differently when
+    // blurred (a horizontal line) vs focused (its raw "---" source) — see
+    // RowTextField's decorationBox.
 
     val requester = remember { FocusRequester() }
 
@@ -116,7 +127,7 @@ fun MarkdownRowItem(
         }
     }
 
-    Column(modifier = modifier.fillMaxWidth()) {
+    Column(modifier = modifier.fillMaxWidth().then(selectionModifier)) {
         Row(verticalAlignment = Alignment.Top, modifier = Modifier.fillMaxWidth()) {
 
             RowLeadingDecoration(row = row, index = index)
@@ -140,7 +151,31 @@ fun MarkdownRowItem(
                         slashQuery = result.slashQuery
                         fieldValue = result.value
                         if (result.value.text != row.text) {
+                            // Typing is an edit — drop any block selection.
+                            callbacks.onClearSelection()
                             callbacks.onTextChange(row.id, result.value.text)
+                        }
+                    },
+                    onFocusChange = { focused ->
+                        if (row.type == RowType.Divider) {
+                            if (focused) {
+                                // Reveal editable source. A divider decoded from
+                                // text already carries "---"; a freshly created
+                                // one may be blank — show the canonical rule so
+                                // there is something to edit.
+                                if (fieldValue.text.isBlank()) {
+                                    val seeded = DividerSyntax.CANONICAL
+                                    fieldValue = TextFieldValue(
+                                        text = seeded,
+                                        selection = TextRange(seeded.length),
+                                    )
+                                    callbacks.onTextChange(row.id, seeded)
+                                }
+                            } else {
+                                // Blurred: keep as divider if still valid syntax,
+                                // otherwise the editor demotes it to a paragraph.
+                                callbacks.onDividerBlur(row.id)
+                            }
                         }
                     },
                     onKeyEvent = { keyEvent ->
@@ -172,8 +207,21 @@ fun MarkdownRowItem(
                             val stripped = stripSlashToken(fieldValue)
                             slashActive = false
                             slashQuery = ""
-                            fieldValue = stripped
-                            callbacks.onTextChange(row.id, stripped.text)
+                            if (selectedType == RowType.Divider && stripped.text.isBlank()) {
+                                // A divider created via the slash menu seeds its
+                                // canonical "---" source immediately, so blurring
+                                // without typing keeps it a divider (instead of
+                                // demoting an empty row to a paragraph).
+                                val seeded = TextFieldValue(
+                                    text = DividerSyntax.CANONICAL,
+                                    selection = TextRange(DividerSyntax.CANONICAL.length),
+                                )
+                                fieldValue = seeded
+                                callbacks.onTextChange(row.id, seeded.text)
+                            } else {
+                                fieldValue = stripped
+                                callbacks.onTextChange(row.id, stripped.text)
+                            }
                             callbacks.onTypeChange(row.id, selectedType)
                         },
                         onDismiss = {
@@ -199,22 +247,24 @@ private fun RowTextField(
     requester: FocusRequester,
     onValueChange: (TextFieldValue) -> Unit,
     onKeyEvent: (androidx.compose.ui.input.key.KeyEvent) -> Boolean,
+    onFocusChange: (Boolean) -> Unit = {},
 ) {
     val isCode = row.type == RowType.Code
+    val isDivider = row.type == RowType.Divider
     val style = row.type.textStyle()
 
     var isFocused by remember { mutableStateOf(false) }
 
-    val container = if (isCode) {
-        Modifier
+    val container = when {
+        isCode -> Modifier
             .fillMaxWidth()
             .background(
                 MaterialTheme.colorScheme.surfaceVariant,
                 RoundedCornerShape(8.dp),
             )
             .padding(12.dp)
-    } else {
-        Modifier.fillMaxWidth().padding(vertical = 2.dp)
+
+        else -> Modifier.fillMaxWidth().padding(vertical = 2.dp)
     }
 
     Column(modifier = modifier.fillMaxWidth()) {
@@ -223,13 +273,22 @@ private fun RowTextField(
         }
 
         Box(modifier = container) {
+            // The text field is always present so it can hold focus and receive
+            // key events (this is what lets arrows land on a divider). For a
+            // blurred divider we visually replace its content with a rule line
+            // via the decorationBox.
             BasicTextField(
                 value = fieldValue,
                 onValueChange = onValueChange,
                 modifier = Modifier
                     .fillMaxWidth()
                     .focusRequester(requester)
-                    .onFocusChanged { isFocused = it.isFocused }
+                    .onFocusChanged {
+                        if (it.isFocused != isFocused) {
+                            isFocused = it.isFocused
+                            onFocusChange(it.isFocused)
+                        }
+                    }
                     .onPreviewKeyEvent(onKeyEvent),
                 textStyle = style,
                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
@@ -238,14 +297,35 @@ private fun RowTextField(
                     imeAction = if (row.type.isMultiline) ImeAction.Default else ImeAction.None,
                 ),
                 decorationBox = { inner ->
-                    if (fieldValue.text.isEmpty() && isFocused) {
-                        Text(
-                            text = row.type.placeholder(),
-                            style = style,
-                            color = MaterialTheme.colorScheme.outline,
-                        )
+                    when {
+                        // Blurred divider -> show the horizontal rule. The text
+                        // field's own content (inner) is still composed so the
+                        // field stays focusable & measurable, just hidden under
+                        // the line via a Box overlay.
+                        isDivider && !isFocused -> {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                // Hidden text content (kept for focus/measure).
+                                Box(Modifier.height(0.dp)) { inner() }
+                                Divider(color = MaterialTheme.colorScheme.outlineVariant)
+                            }
+                        }
+                        // Empty focused row -> placeholder hint behind the caret.
+                        fieldValue.text.isEmpty() && isFocused -> {
+                            Text(
+                                text = row.type.placeholder(),
+                                style = style,
+                                color = MaterialTheme.colorScheme.outline,
+                            )
+                            inner()
+                        }
+
+                        else -> inner()
                     }
-                    inner()
                 },
             )
         }
@@ -423,10 +503,20 @@ private fun handleKeyEvent(
     if (slashActive && keyEvent.key in setOf(Key.DirectionUp, Key.DirectionDown, Key.Enter)) {
         return false
     }
+
+    val ctrl = keyEvent.isCtrlPressed || keyEvent.isMetaPressed
+
+    // --- Copy block selection as raw Markdown (Ctrl/Cmd+C) ----------------------
+    // Only intercept when the field has NO in-row text selection; otherwise the
+    // user is copying text within the field and the platform should handle it.
+    if (ctrl && keyEvent.key == Key.C && fieldValue.selection.collapsed) {
+        callbacks.onCopySelection(row.id)
+        return true
+    }
+
     if (keyEvent.isShiftPressed && keyEvent.key == Key.Tab) {
         return handleShiftTab(fieldValue, callbacks, onLocalValueChange)
     }
-    val ctrl = keyEvent.isCtrlPressed || keyEvent.isMetaPressed
     if (ctrl && keyEvent.key == Key.Z) {
         if (keyEvent.isShiftPressed) callbacks.onRedo() else callbacks.onUndo()
         return true
@@ -438,15 +528,20 @@ private fun handleKeyEvent(
 
     return when (keyEvent.key) {
         Key.Tab -> handleTab(fieldValue, callbacks, onLocalValueChange)
-        Key.Enter -> handleEnter(
-            keyEvent.isShiftPressed,
-            row,
-            fieldValue,
-            callbacks,
-            onLocalValueChange
-        )
+        Key.Enter -> {
+            // Editing keys end any block selection.
+            callbacks.onClearSelection()
+            handleEnter(
+                keyEvent.isShiftPressed,
+                row,
+                fieldValue,
+                callbacks,
+                onLocalValueChange,
+            )
+        }
 
         Key.Backspace -> {
+            callbacks.onClearSelection()
             if (fieldValue.text.isEmpty() || fieldValue.caretAtDocumentStart()) {
                 callbacks.onMergeWithPrevious(row.id)
                 true
@@ -457,14 +552,22 @@ private fun handleKeyEvent(
 
         Key.DirectionUp -> {
             if (fieldValue.caretOnFirstLine()) {
-                callbacks.onNavigate(row.id, NavDirection.Up)
+                if (keyEvent.isShiftPressed) {
+                    callbacks.onExtendSelection(row.id, NavDirection.Up)
+                } else {
+                    callbacks.onNavigate(row.id, NavDirection.Up)
+                }
                 true
             } else false
         }
 
         Key.DirectionDown -> {
             if (fieldValue.caretOnLastLine()) {
-                callbacks.onNavigate(row.id, NavDirection.Down)
+                if (keyEvent.isShiftPressed) {
+                    callbacks.onExtendSelection(row.id, NavDirection.Down)
+                } else {
+                    callbacks.onNavigate(row.id, NavDirection.Down)
+                }
                 true
             } else false
         }
@@ -661,6 +764,11 @@ private fun RowType.textStyle(): TextStyle {
         )
 
         RowType.Code -> typo.bodyMedium.copy(fontFamily = FontFamily.Monospace)
+        // Divider source ("---") edits in a monospace face, like a code snippet.
+        RowType.Divider -> typo.bodyMedium.copy(
+            fontFamily = FontFamily.Monospace,
+            color = scheme.onSurfaceVariant,
+        )
         else -> typo.bodyLarge
     }
 }
@@ -675,5 +783,5 @@ private fun RowType.placeholder(): String = when (this) {
     RowType.Quote -> "Quote"
     RowType.Code -> "// code"
     RowType.Image -> "Paste image URL…"
-    RowType.Divider -> ""
+    RowType.Divider -> "--- (divider)"
 }

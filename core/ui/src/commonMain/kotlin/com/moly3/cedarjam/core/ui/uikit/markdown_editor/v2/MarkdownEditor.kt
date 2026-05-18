@@ -14,19 +14,33 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.moly3.cedarjam.core.domain.features.mdprops.DocumentHistory
+import com.moly3.cedarjam.core.domain.features.mdprops.DocumentProperty
+import com.moly3.cedarjam.core.domain.features.mdprops.DividerSyntax
 import com.moly3.cedarjam.core.domain.features.mdprops.FocusSnapshot
 import com.moly3.cedarjam.core.domain.features.mdprops.MarkdownDocument
+import com.moly3.cedarjam.core.domain.features.mdprops.MarkdownEncoder
 import com.moly3.cedarjam.core.domain.features.mdprops.MarkdownRow
 import com.moly3.cedarjam.core.domain.features.mdprops.RowFocusManager
 import com.moly3.cedarjam.core.domain.features.mdprops.RowType
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.uikit.CJText
+
+/**
+ * Number of non-row lazy items rendered before the body rows (the title editor
+ * and the properties section). A model row at index N is the lazy item at
+ * index N + [HEADER_ITEMS]. Keep this in sync with the [LazyColumn] below.
+ */
+private const val HEADER_ITEMS = 2
 
 /**
  * A Notion-/Obsidian-style Markdown editor for Compose Multiplatform.
@@ -65,6 +79,30 @@ fun MarkdownEditor(
 ) {
     val listState = rememberLazyListState()
     val focusManager = rememberRowFocusManager()
+    val selection = rememberRowSelection()
+    val clipboard = LocalClipboardManager.current
+    val scope = rememberCoroutineScope()
+
+    // There are 2 leading lazy items (title, properties) before the rows,
+    // so a row at model index N lives at lazy index N + HEADER_ITEMS.
+    val rowScroller: (Int) -> Unit = { rowIndex ->
+        scope.launch {
+            // Only scroll if the row isn't already fully visible; otherwise
+            // scrolling would yank the viewport on every arrow press.
+            val lazyIndex = rowIndex + HEADER_ITEMS
+            val visible = listState.layoutInfo.visibleItemsInfo
+            val info = visible.firstOrNull { it.index == lazyIndex }
+            val viewportEnd = listState.layoutInfo.viewportEndOffset
+            val viewportStart = listState.layoutInfo.viewportStartOffset
+            val needsScroll = info == null ||
+                    info.offset < viewportStart ||
+                    info.offset + info.size > viewportEnd
+            if (needsScroll) {
+                // Land the target with a little breathing room from the edge.
+                listState.animateScrollToItem(lazyIndex, scrollOffset = -48)
+            }
+        }
+    }
 
     val callbacks = remember(document, onDocumentChange, readOnly, history) {
         documentCallbacks(
@@ -72,7 +110,10 @@ fun MarkdownEditor(
             emit = onDocumentChange,
             focusManager = focusManager,
             readOnly = readOnly,
-            history = history
+            history = history,
+            scrollToRow = rowScroller,
+            selection = selection,
+            copyToClipboard = { text -> clipboard.setText(AnnotatedString(text)) },
         )
     }
 
@@ -100,9 +141,11 @@ fun MarkdownEditor(
         item(key = "properties") {
             PropertiesSection(
                 properties = document.properties,
-                onPropertiesChange = {
-                    if (!readOnly) onDocumentChange(document.copy(properties = it))
+                onPropertiesChange = { updated, coalesce ->
+                    if (!readOnly) callbacks.onPropertiesChange(updated, coalesce)
                 },
+                onUndo = callbacks::onUndo,
+                onRedo = callbacks::onRedo,
                 modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
             )
         }
@@ -124,6 +167,7 @@ fun MarkdownEditor(
                     isLast = index == document.rows.lastIndex,
                     focusManager = focusManager,
                     callbacks = callbacks,
+                    isSelected = selection.contains(row.id, document),
                     modifier = Modifier.weight(1f),   // was fillMaxWidth()
                 )
             }
@@ -143,6 +187,9 @@ private fun documentCallbacks(
     history: DocumentHistory,
     focusManager: RowFocusManager,
     readOnly: Boolean,
+    scrollToRow: (Int) -> Unit,
+    selection: RowSelection,
+    copyToClipboard: (String) -> Unit,
 ): RowCallbacks = object : RowCallbacks {
 
     private fun applyFocus(f: FocusSnapshot) {
@@ -153,6 +200,17 @@ private fun documentCallbacks(
         history.commit(next, focusAfter)
         emit(history.current)
         applyFocus(focusAfter)
+    }
+
+    /**
+     * Like [commit] but does NOT actively move focus. Used for edits triggered
+     * by losing focus (e.g. a divider blur): re-focusing would yank the caret
+     * back to the row the user just left. The snapshot is still recorded so
+     * undo restores a sensible caret.
+     */
+    private fun commitNoFocus(next: MarkdownDocument, focusAfter: FocusSnapshot) {
+        history.commit(next, focusAfter)
+        emit(history.current)
     }
 
     private fun commitTyping(next: MarkdownDocument, rowId: String) {
@@ -183,6 +241,23 @@ private fun documentCallbacks(
     override fun onTextChange(rowId: String, text: String) {
         if (readOnly) return
         commitTyping(current().replaceRow(rowId) { it.copy(text = text) }, rowId)
+    }
+
+    override fun onPropertiesChange(properties: List<DocumentProperty>, coalesce: Boolean) {
+        if (readOnly) return
+        val next = current().copy(properties = properties)
+        // Property edits don't move row focus — preserve whatever focus the
+        // history already has so undoing back past a property edit restores
+        // the caret to the row the user was last in.
+        val focus = history.currentFocus
+        if (coalesce) {
+            // A burst of typing in a property value collapses to one undo step.
+            history.commitCoalescing(next, focus)
+        } else {
+            // Add / remove / type-switch — a discrete, always-undoable step.
+            history.commit(next, focus)
+        }
+        emit(history.current)
     }
 
     override fun onTypeChange(rowId: String, type: RowType) {
@@ -245,6 +320,8 @@ private fun documentCallbacks(
     }
 
     override fun onNavigate(rowId: String, direction: NavDirection) {
+        // A plain arrow move ends any block selection.
+        selection.clear()
         val doc = current()
         val index = doc.indexOfRow(rowId)
         if (index < 0) return
@@ -260,7 +337,72 @@ private fun documentCallbacks(
         // Navigation is not an edit — but it MUST update currentFocus, so the
         // next commit records the right pre-edit caret.
         history.noteFocus(FocusSnapshot(target.id, caret))
+        // Scroll the target into view FIRST. If it is off-screen it is not
+        // composed, so it owns no FocusRequester; focus() would just park a
+        // pending request that never resolves because the list never moves.
+        // Scrolling forces the row to compose, and it then claims the pending
+        // focus in its LaunchedEffect.
+        scrollToRow(targetIndex)
         focusManager.focus(target.id, caret)
+    }
+
+    override fun onExtendSelection(rowId: String, direction: NavDirection) {
+        val doc = current()
+        val index = doc.indexOfRow(rowId)
+        if (index < 0) return
+        // First shift-arrow with no selection: anchor on the current row.
+        if (!selection.isActive) selection.startAt(rowId)
+        val targetIndex = when (direction) {
+            NavDirection.Up -> index - 1
+            NavDirection.Down -> index + 1
+        }
+        val target = doc.rows.getOrNull(targetIndex) ?: return
+        selection.extendTo(target.id)
+        // Keep the moving end visible and focused so further shift-arrows chain.
+        scrollToRow(targetIndex)
+        focusManager.focus(
+            target.id,
+            if (direction == NavDirection.Up) RowFocusManager.CaretTarget.Start
+            else RowFocusManager.CaretTarget.End,
+        )
+    }
+
+    override fun onCopySelection(rowId: String) {
+        val doc = current()
+        val ids = selection.selectedIds(doc).ifEmpty { listOf(rowId) }
+        val idSet = ids.toSet()
+        val rows = doc.rows.filter { it.id in idSet }
+        if (rows.isEmpty()) return
+        copyToClipboard(MarkdownEncoder.encodeRows(rows))
+    }
+
+    override fun onClearSelection() {
+        if (selection.isActive) selection.clear()
+    }
+
+    override fun onDividerBlur(rowId: String) {
+        if (readOnly) return
+        val doc = current()
+        val source = doc.rowOrNull(rowId) ?: return
+        if (source.type != RowType.Divider) return
+
+        if (DividerSyntax.isDivider(source.text)) {
+            // Still a valid rule. Normalize the stored source (blank -> "---")
+            // so the blurred row always has something to render and round-trip.
+            val normalized = DividerSyntax.normalize(source.text)
+            if (normalized != source.text) {
+                commitNoFocus(
+                    doc.replaceRow(rowId) { it.copy(text = normalized) },
+                    FocusSnapshot(rowId, RowFocusManager.CaretTarget.End),
+                )
+            }
+        } else {
+            // No longer a rule — demote to a plain paragraph keeping the text.
+            commitNoFocus(
+                doc.replaceRow(rowId) { it.copy(type = RowType.Paragraph) },
+                FocusSnapshot(rowId, RowFocusManager.CaretTarget.End),
+            )
+        }
     }
 }
 

@@ -189,7 +189,8 @@ object MarkdownDecoder {
     /** Classifies a single body line into a typed [MarkdownRow]. */
     private fun decodeLine(line: String): MarkdownRow {
         dividerRegex.matchEntire(line)?.let {
-            return MarkdownRow(type = RowType.Divider, text = "")
+            // Keep the raw rule source so the editor can reveal & edit it.
+            return MarkdownRow(type = RowType.Divider, text = it.groupValues[1].trim())
         }
         imageRegex.matchEntire(line)?.let {
             return MarkdownRow(type = RowType.Image, text = it.groupValues[1].trim())
@@ -369,6 +370,15 @@ object MarkdownEncoder {
     /* ---- body: List<MarkdownRow> -> Markdown text -------------------------------- */
 
     /**
+     * Renders an arbitrary list of [rows] to Markdown text, with no frontmatter
+     * or title. Used to copy a multi-row block selection to the clipboard as
+     * raw Markdown. The output is the same body text [encode] would produce for
+     * those rows, trimmed of trailing whitespace.
+     */
+    fun encodeRows(rows: List<MarkdownRow>): String =
+        encodeBody(rows).trimEnd()
+
+    /**
      * Renders rows to Markdown. Adjacent list items of the same kind stay on
      * consecutive lines; every other block is separated by a blank line, which
      * mirrors how [MarkdownDecoder] re-reads the text.
@@ -415,7 +425,7 @@ object MarkdownEncoder {
         RowType.Quote -> if (row.text.isEmpty()) ">" else "> ${row.text}"
         RowType.Code -> encodeCodeRow(row)
         RowType.Image -> "![](${row.text})"
-        RowType.Divider -> "---"
+        RowType.Divider -> if (row.text.isBlank()) DividerSyntax.CANONICAL else row.text.trim()
     }
 
     /** Fences a code row, widening the fence if the body itself contains backticks. */

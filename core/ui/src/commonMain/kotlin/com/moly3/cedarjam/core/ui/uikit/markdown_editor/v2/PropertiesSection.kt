@@ -28,38 +28,92 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.isMetaPressed
+import androidx.compose.ui.input.key.isShiftPressed
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.moly3.cedarjam.core.domain.features.mdprops.DocumentProperty
 import com.moly3.cedarjam.core.domain.features.mdprops.PropertyType
 
 /**
+ * Intercepts Ctrl/Cmd+Z (undo) and Ctrl/Cmd+Shift+Z / Ctrl+Y (redo) on a
+ * property field, so undo/redo works while a property is focused — not only
+ * while a body row is focused.
+ *
+ * Returns true when the event was consumed.
+ */
+private fun handlePropertyKeyEvent(
+    keyEvent: KeyEvent,
+    onUndo: () -> Unit,
+    onRedo: () -> Unit,
+): Boolean {
+    if (keyEvent.type != KeyEventType.KeyDown) return false
+    val ctrl = keyEvent.isCtrlPressed || keyEvent.isMetaPressed
+    if (!ctrl) return false
+    return when (keyEvent.key) {
+        Key.Z -> {
+            if (keyEvent.isShiftPressed) onRedo() else onUndo()
+            true
+        }
+        Key.Y -> {
+            onRedo()
+            true
+        }
+        else -> false
+    }
+}
+
+/**
  * Obsidian-style "Properties" panel — the frontmatter block at the top of a note.
  *
  * Each property is a [name → value] pair with a [com.moly3.cedarjam.core.domain.features.mdprops.PropertyType]. Clicking the type
  * glyph opens a menu to switch the type (Text / Number / Checkbox / Date / List …).
+ *
+ * @param onPropertiesChange invoked with the new list and a `coalesce` flag.
+ *   `coalesce = true` means a per-keystroke value edit that should merge into the
+ *   previous undo step; `coalesce = false` means a discrete structural change
+ *   (add / remove a property, switch a type, add / remove a list chip).
+ * @param onUndo / @param onRedo wired into every property field so Ctrl/Cmd+Z
+ *   works while a property — not just a body row — is focused.
  */
 @Composable
 fun PropertiesSection(
     properties: List<DocumentProperty>,
-    onPropertiesChange: (List<DocumentProperty>) -> Unit,
+    onPropertiesChange: (List<DocumentProperty>, coalesce: Boolean) -> Unit,
+    onUndo: () -> Unit,
+    onRedo: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
         properties.forEach { property ->
             PropertyRow(
                 property = property,
-                onChange = { updated ->
-                    onPropertiesChange(properties.map { if (it.id == updated.id) updated else it })
+                onChange = { updated, coalesce ->
+                    onPropertiesChange(
+                        properties.map { if (it.id == updated.id) updated else it },
+                        coalesce,
+                    )
                 },
                 onRemove = {
-                    onPropertiesChange(properties.filterNot { it.id == property.id })
+                    onPropertiesChange(
+                        properties.filterNot { it.id == property.id },
+                        false,
+                    )
                 },
+                onUndo = onUndo,
+                onRedo = onRedo,
             )
         }
 
         TextButton(
-            onClick = { onPropertiesChange(properties + DocumentProperty()) },
+            onClick = { onPropertiesChange(properties + DocumentProperty(), false) },
         ) {
             Text("+ Add property", style = MaterialTheme.typography.labelMedium)
         }
@@ -69,8 +123,10 @@ fun PropertiesSection(
 @Composable
 private fun PropertyRow(
     property: DocumentProperty,
-    onChange: (DocumentProperty) -> Unit,
+    onChange: (DocumentProperty, coalesce: Boolean) -> Unit,
     onRemove: () -> Unit,
+    onUndo: () -> Unit,
+    onRedo: () -> Unit,
 ) {
     Row(
         modifier = Modifier
@@ -82,7 +138,11 @@ private fun PropertyRow(
         PropertyTypeSelector(
             selected = property.type,
             onSelect = { newType ->
-                onChange(property.copy(type = newType, values = newType.coerceValues(property.values)))
+                // Type switch is structural — discrete undo step.
+                onChange(
+                    property.copy(type = newType, values = newType.coerceValues(property.values)),
+                    false,
+                )
             },
         )
 
@@ -91,8 +151,10 @@ private fun PropertyRow(
         // --- Property name ----------------------------------------------------
         BasicTextField(
             value = property.name,
-            onValueChange = { onChange(property.copy(name = it.replace("\n", ""))) },
-            modifier = Modifier.width(120.dp),
+            onValueChange = { onChange(property.copy(name = it.replace("\n", "")), true) },
+            modifier = Modifier
+                .width(120.dp)
+                .onPreviewKeyEvent { handlePropertyKeyEvent(it, onUndo, onRedo) },
             singleLine = true,
             textStyle = MaterialTheme.typography.bodyMedium.copy(
                 fontWeight = FontWeight.Medium,
@@ -115,7 +177,12 @@ private fun PropertyRow(
 
         // --- Property value (depends on type) ---------------------------------
         Box(modifier = Modifier.weight(1f)) {
-            PropertyValueEditor(property = property, onChange = onChange)
+            PropertyValueEditor(
+                property = property,
+                onChange = onChange,
+                onUndo = onUndo,
+                onRedo = onRedo,
+            )
         }
 
         // --- Remove -----------------------------------------------------------
@@ -177,13 +244,16 @@ private fun PropertyTypeSelector(
 @Composable
 private fun PropertyValueEditor(
     property: DocumentProperty,
-    onChange: (DocumentProperty) -> Unit,
+    onChange: (DocumentProperty, coalesce: Boolean) -> Unit,
+    onUndo: () -> Unit,
+    onRedo: () -> Unit,
 ) {
     when (property.type) {
         PropertyType.Checkbox -> {
             Switch(
                 checked = property.singleValue.equals("true", ignoreCase = true),
-                onCheckedChange = { onChange(property.withSingleValue(it.toString())) },
+                // A toggle is one discrete action, not a typing burst.
+                onCheckedChange = { onChange(property.withSingleValue(it.toString()), false) },
             )
         }
 
@@ -198,7 +268,10 @@ private fun PropertyValueEditor(
                     PropertyChip(
                         text = value,
                         onRemove = {
-                            onChange(property.copy(values = property.values.filterIndexed { i, _ -> i != index }))
+                            onChange(
+                                property.copy(values = property.values.filterIndexed { i, _ -> i != index }),
+                                false,
+                            )
                         },
                     )
                 }
@@ -209,7 +282,11 @@ private fun PropertyValueEditor(
                         if (input.endsWith("\n") || input.endsWith(",")) {
                             val token = input.dropLast(1).trim()
                             if (token.isNotEmpty()) {
-                                onChange(property.copy(values = property.values.filter { it.isNotBlank() } + token))
+                                // Committing a chip is a discrete step.
+                                onChange(
+                                    property.copy(values = property.values.filter { it.isNotBlank() } + token),
+                                    false,
+                                )
                             }
                             draft = ""
                         } else {
@@ -217,7 +294,9 @@ private fun PropertyValueEditor(
                         }
                     },
                     singleLine = true,
-                    modifier = Modifier.width(90.dp),
+                    modifier = Modifier
+                        .width(90.dp)
+                        .onPreviewKeyEvent { handlePropertyKeyEvent(it, onUndo, onRedo) },
                     textStyle = MaterialTheme.typography.bodyMedium,
                     cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                     decorationBox = { inner ->
@@ -239,8 +318,11 @@ private fun PropertyValueEditor(
             // a real app would swap in a date picker for the Date types.
             BasicTextField(
                 value = property.singleValue,
-                onValueChange = { onChange(property.withSingleValue(it.replace("\n", ""))) },
-                modifier = Modifier.fillMaxWidth(),
+                // Per-keystroke value edit — coalesce into one undo step.
+                onValueChange = { onChange(property.withSingleValue(it.replace("\n", "")), true) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .onPreviewKeyEvent { handlePropertyKeyEvent(it, onUndo, onRedo) },
                 singleLine = true,
                 textStyle = MaterialTheme.typography.bodyMedium,
                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
