@@ -34,7 +34,6 @@ import com.moly3.cedarjam.core.ui.compositions.LocalVideoPlayer
 import com.moly3.cedarjam.core.ui.onPointerEvent
 import com.moly3.cedarjam.core.ui.uikit.CJApplicationTheme
 import com.moly3.cedarjam.core.ui.uikit.NeumorphicShape
-import com.moly3.cedarjam.core.ui.uikit.markdown_editor.MarkdownEditorExample
 import com.moly3.cedarjam.navigation.Root
 import com.moly3.cedarjam.navigation.Route
 import com.moly3.cedarjam.pages.page_select_workspace.ui.SelectWorkspacePage
@@ -153,37 +152,6 @@ fun MainApp(root: Root) {
                         }
                     }
                 }
-//                Box(Modifier.fillMaxSize().background(Color.Black).padding(40.dp).flatClickable {}){
-//                    val editorState = rememberNotionEditorState(
-//                        initial = listOf(
-//                            NotionBlock(type = BlockType.H1, text = "My Document"),
-//                            NotionBlock(type = BlockType.Paragraph, text = "Start writing here..."),
-//                            NotionBlock(
-//                                type = BlockType.Custom,
-//                                customContent = {
-//                                    // Any composable you like
-//                                    Row(
-//                                        modifier = Modifier
-//                                            .fillMaxWidth()
-//                                            .background(Color(0xFFF5F5F5), RoundedCornerShape(8.dp))
-//                                            .padding(12.dp),
-//                                        verticalAlignment = Alignment.CenterVertically,
-//                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-//                                    ) {
-//                                        Icon(Icons.Default.Info, contentDescription = null, tint = Color(0xFF2383E2))
-//                                        Text("This is a custom block!", fontWeight = FontWeight.Medium)
-//                                    }
-//                                }
-//                            ),
-//                            NotionBlock(type = BlockType.Image), // placeholder until you supply an ImageBitmap
-//                        )
-//                    )
-//
-//                    NotionEditor(
-//                        state = editorState,
-//                        modifier = Modifier.fillMaxSize()
-//                    )
-//                }
             }
         }
     }
