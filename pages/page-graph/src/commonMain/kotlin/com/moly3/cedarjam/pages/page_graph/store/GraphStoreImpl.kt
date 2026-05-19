@@ -125,6 +125,17 @@ class GraphStoreImpl @AssistedInject constructor(
         override fun onStart(scopeFromStartToStop: CoroutineScope) {
             super.onStart(scopeFromStartToStop)
 
+            graphEco.setGroups(state().partConfig.groups)
+
+            // Collect the new node lands map
+            scopeFromStartToStop.launch {
+                graphEco.nodeLandsFlow
+                    .distinctUntilChanged()
+                    .collectLatest { landsMap ->
+                        dispatch(GraphStore.Msg.SetNodeLands(landsMap))
+                        // dispatch(SetNodeLands(landsMap.toPersistentMap())) // Add this Msg to your GraphStore.Msg
+                    }
+            }
             scopeFromStartToStop.launch {
                 _pendingSaveConfig
                     .debounce(300L)
@@ -251,6 +262,20 @@ class GraphStoreImpl @AssistedInject constructor(
                     }
                 }
 
+                is Intent.SetGroups -> {
+                    val groups = intent.value
+                    val partConfig = state().partConfig
+                    if (groups != partConfig.groups) {
+                        engine.reheat()
+                    }
+                    graphEco.setGroups(groups)
+                    dispatch(
+                        SetPartConfig(
+                            partConfig.copy(groups = groups)
+                        )
+                    )
+                }
+
                 is Intent.SetGraphSettings -> {
                     val config = intent.config
                     val partConfig = state().partConfig
@@ -274,6 +299,10 @@ class GraphStoreImpl @AssistedInject constructor(
                         engine.reheat()
                     }
                     graphEco.setGraphConfig(filter)
+
+                    // Ensure groups sync if you ever update partConfig
+                    graphEco.setGroups(partConfig.groups)
+
                     dispatch(
                         SetPartConfig(
                             partConfig.copy(filter = filter)
@@ -294,6 +323,7 @@ class GraphStoreImpl @AssistedInject constructor(
                 is SetGraphUserPosition -> copy(graphUserPosition = msg.value)
                 is SetCoordinates -> copy(coordinates = msg.value)
                 is SetPartConfig -> copy(partConfig = msg.value)
+                is SetNodeLands -> copy(nodeLands = msg.value)
             }
         }
     }

@@ -138,6 +138,11 @@ internal fun PageContent(
             atlasses
         }
 
+        //persistentMapOf(
+        //                "folder" to folder,
+        //                "tag" to tag,
+        //                "video" to video
+        //            ),
         val handle = rememberAtlasComposer(
             nodes = state.graphNodes,
             tiers = tiers,
@@ -147,11 +152,7 @@ internal fun PageContent(
             coordinates = state.coordinates,
             loader = if (state.partConfig.filter.isShowImages) loader else suspend { null },
             loaderKey = state.graphNodes.size,
-            staticIcons = persistentMapOf(
-                "folder" to folder,
-                "tag" to tag,
-                "video" to video
-            ),
+            staticIcons = persistentMapOf(),
             concurrencyLimit = 3,
             staticIconKey = { id, data ->
                 when (val dt = data) {
@@ -181,6 +182,7 @@ internal fun PageContent(
         )
         val graphUserPosition = remember { mutableStateOf(state.graphUserPosition) }
         val updatedZoom by rememberUpdatedState(state.zoom)
+
         Graph(
             userPosition = graphUserPosition.value,
             zoom = state.zoom,
@@ -189,43 +191,18 @@ internal fun PageContent(
             engine = engine,
             atlasLayers = handle.atlasLayers,
             getIconKey = handle::resolveIconKey,
-            getNodeGroups = { _, data ->
-
+            getNodeGroups = { id, data ->
                 if (settings.groupSettings.enabled) {
-                    when (data) {
-                        is ObsidianGraphData.Collection -> listOf("collection")
-                        is ObsidianGraphData.CollectionRow -> listOf("row")
-                        is ObsidianGraphData.File -> if (data.isDirectory)
-                            listOf("directory")
-                        else listOf("file")
-
-                        is ObsidianGraphData.Tag -> listOf("tag")
-                        is ObsidianGraphData.Annotation -> listOf("annotation")
-                    }
+                    state.nodeLands[id] ?: listOf()
                 } else
                     listOf()
             },
             getGroupColor = { groupName ->
-                when (groupName) {
-                    "directory" -> Color.LightGray
-                    "file" -> Color.Green
-                    "annotation" -> Color.Red
-                    "tag" -> Color.White
-                    "row" -> Color.Blue
-                    "collection" -> Color.Cyan
-                    else -> Color.Green
-                }
+                state.partConfig.groups.firstOrNull { d -> d.name == groupName }?.color
+                    ?: Color.Transparent
             },
             getGroupName = { groupName ->
-                when (groupName) {
-                    "directory" -> "Directory"
-                    "file" -> "Files"
-                    "annotation" -> "Annotations"
-                    "tag" -> "Tags"
-                    "row" -> "Rows"
-                    "collection" -> "Collections"
-                    else -> "File"
-                }
+                groupName
             },
             settings = settings,
             connections = state.connections,
@@ -245,7 +222,6 @@ internal fun PageContent(
 
                 onIntent(Intent.SetZoom(isGesture, newValue))
             },
-
             onNodeClick = { node ->
                 val data = node.data
                 if (data != null) onIntent(Intent.OpenNodeData(data))

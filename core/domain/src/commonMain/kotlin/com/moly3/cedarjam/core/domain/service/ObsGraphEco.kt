@@ -23,6 +23,7 @@ import com.moly3.cedarjam.core.domain.model.TagLinkDtoData
 import com.moly3.cedarjam.core.domain.model.TagToTagDTO
 import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.domain.model.bind
+import com.moly3.cedarjam.core.domain.model.config.GroupLogic
 import com.moly3.cedarjam.core.domain.model.getCollectionGraphId
 import com.moly3.cedarjam.core.domain.model.getCollectionRowGraphId
 import com.moly3.cedarjam.core.domain.model.getFileTreeNodeGraphId
@@ -58,10 +59,28 @@ class ObsGraphEco(
     startTargetId: String? = null,
     config: GraphFilter = GraphFilter.Companion.Default
 ) {
-
+    private val searchEngine = SearchEngine()
+    private val contentCache = HashMap<FileCacheKey, String>()
     private val _settingsStateFlow = MutableStateFlow(config)
     private val _targetId = MutableStateFlow(startTargetId)
     val graphState: StateFlow<GraphFilter> = _settingsStateFlow
+    // 1. Add StateFlow for the groups
+    private val _groupsStateFlow = MutableStateFlow<List<GroupLogic>>(emptyList())
+    /**
+     * Cache of extracted links keyed by file path + modifiedTime.
+     * When a file's content changes its modifiedTime changes, so the key
+     * changes and the stale entry is naturally bypassed. Bounded by pruning
+     * to whatever set of files is currently present (see fileLinkEdgesFlow).
+     *
+     * KMP-safe: this is a plain HashMap, NOT a concurrent map. It is only ever
+     * mutated from the single-threaded merge step of fileLinkEdgesFlow (after
+     * each async result is awaited), never from inside the async blocks. Since
+     * fileLinkEdgesFlow is shareIn'd, only one collector pass mutates it at a
+     * time, so no synchronization is required.
+     */
+    private val linkCache = HashMap<FileCacheKey, List<String>>()
+
+    private data class FileCacheKey(val path: String, val modifiedTime: Long)
 
     fun setGraphConfig(config: GraphFilter) {
         scope.launch(io) {
@@ -317,21 +336,7 @@ class ObsGraphEco(
         getOrPut(from) { ArrayList(to.size + 2) }.addAll(to)
     }
 
-    /**
-     * Cache of extracted links keyed by file path + modifiedTime.
-     * When a file's content changes its modifiedTime changes, so the key
-     * changes and the stale entry is naturally bypassed. Bounded by pruning
-     * to whatever set of files is currently present (see fileLinkEdgesFlow).
-     *
-     * KMP-safe: this is a plain HashMap, NOT a concurrent map. It is only ever
-     * mutated from the single-threaded merge step of fileLinkEdgesFlow (after
-     * each async result is awaited), never from inside the async blocks. Since
-     * fileLinkEdgesFlow is shareIn'd, only one collector pass mutates it at a
-     * time, so no synchronization is required.
-     */
-    private val linkCache = HashMap<FileCacheKey, List<String>>()
 
-    private data class FileCacheKey(val path: String, val modifiedTime: Long)
 
     /**
      * OPTIMIZED: file-link extraction is its own flow.
@@ -641,26 +646,6 @@ class ObsGraphEco(
         result as Map<String, String>
     }.scoping()
 
-    private val graphNodes2Flow: Flow<Pair<Set<Any>, List<ObsidianGraphNode>>> =
-        kotlinx.coroutines.flow.combine(
-            _settingsStateFlow.map { it.isGradations }.distinctUntilChanged(),
-            graphNodesFlow,
-            appEnvironment.getAppSettingsFlow().map { it.theme.primaryColor }
-                .distinctUntilChanged(),
-            appEnvironment.getAppSettingsFlow().map { it.theme.colors.primaryFont }
-                .distinctUntilChanged()
-        ) { gradations, triple, primaryColor, defaultColor ->
-            val nodes = if (gradations) {
-                makeGradation(
-                    triple.third,
-                    triple.second,
-                    primaryColor = primaryColor,
-                    defaultColor = defaultColor
-                )
-            } else triple.second
-            Pair(triple.first, nodes)
-        }.scoping()
-
     private val searchQueryFlow = _settingsStateFlow
         .map { it.search }
         .distinctUntilChanged()
@@ -774,13 +759,118 @@ class ObsGraphEco(
         }
         matched
     }.scoping()
+
+
+
+    fun setGroups(groups: List<GroupLogic>) {
+        scope.launch(io) {
+            if (_groupsStateFlow.value != groups) {
+                _groupsStateFlow.emit(groups)
+            }
+        }
+    }
+
+    // 2. Generate Map<GraphId, List<String>> containing the matched land names
+    val nodeLandsFlow: Flow<Map<String, List<String>>> = combine(
+        _groupsStateFlow,
+        searchablesWithIdFlow
+    ) { groups, searchables ->
+        val result = HashMap<String, MutableList<String>>()
+
+        for (group in groups) {
+            if (group.filter.isBlank()) continue
+
+            val compiled = try {
+                searchEngine.compile(group.filter)
+            } catch (e: SearchSyntaxException) {
+                continue // fail-open, skip invalid group filters
+            }
+
+            for ((graphId, searchable) in searchables) {
+                if (searchEngine.matches(compiled, searchable)) {
+                    result.getOrPut(graphId) { ArrayList(2) }.add(group.name)
+                }
+            }
+        }
+
+        @Suppress("UNCHECKED_CAST")
+        result as Map<String, List<String>>
+    }.scoping()
+
+    // 3. Generate the overriding colors for nodes (First match wins)
+    private val nodeGroupColorsFlow: Flow<Map<String, ULong>> = combine(
+        _groupsStateFlow,
+        searchablesWithIdFlow
+    ) { groups, searchables ->
+        val result = HashMap<String, ULong>()
+
+        for (group in groups) {
+            if (group.filter.isBlank()) continue
+
+            val compiled = try {
+                searchEngine.compile(group.filter)
+            } catch (e: SearchSyntaxException) {
+                continue
+            }
+
+            for ((graphId, searchable) in searchables) {
+                // Apply the color only if the node hasn't been colored by a prior, higher-priority group
+                if (!result.containsKey(graphId) && searchEngine.matches(compiled, searchable)) {
+                    result[graphId] = group.color.value
+                }
+            }
+        }
+        result
+    }.scoping()
+
+    // 4. Create an intermediate flow to inject the group colors into the graph nodes
+    private val coloredGraphNodesFlow: Flow<Triple<Set<Any>, List<ObsidianGraphNode>, Map<Any, Long>>> =
+        kotlinx.coroutines.flow.combine(
+            graphNodesFlow,        // raw nodes with static/type colors + modifiedTimes
+            nodeGroupColorsFlow
+        ) { (validIds, nodes, times), colorOverrides ->
+            val coloredNodes = if (colorOverrides.isEmpty()) {
+                nodes
+            } else {
+                nodes.map { node ->
+                    val key = node.id as? String ?: node.id.toString()
+                    val overrideColor = colorOverrides[key]
+                    if (overrideColor != null) node.copy(colorValue = overrideColor) else node
+                }
+            }
+            // Carry modifiedTimes through — the gradation step downstream needs them.
+            Triple(validIds, coloredNodes, times)
+        }.scoping()
+
     /**
-     * OPTIMIZED final nodes flow — graphNodes.first is already a Set built in
-     * graphNodesFlow, so the O(1) `contains` lookup needs no per-emission
-     * List->Set conversion.
+     * Optional final pass. When gradations are ON, recolors EVERY node by
+     * modifiedTime, discarding static colors AND group colors. When OFF,
+     * passes the group-colored nodes through untouched.
      */
+    private val gradatedGraphNodesFlow: Flow<Pair<Set<Any>, List<ObsidianGraphNode>>> =
+        kotlinx.coroutines.flow.combine(
+            _settingsStateFlow.map { it.isGradations }.distinctUntilChanged(),
+            coloredGraphNodesFlow,
+            appEnvironment.getAppSettingsFlow().map { it.theme.primaryColor }
+                .distinctUntilChanged(),
+            appEnvironment.getAppSettingsFlow().map { it.theme.colors.primaryFont }
+                .distinctUntilChanged()
+        ) { gradations, triple, primaryColor, defaultColor ->
+            val nodes = if (gradations) {
+                makeGradation(
+                    triple.third,          // modifiedTimes
+                    triple.second,         // group-colored nodes
+                    primaryColor = primaryColor,
+                    defaultColor = defaultColor
+                )
+            } else {
+                triple.second
+            }
+            Pair(triple.first, nodes)
+        }.scoping()
+
     val nodes = kotlinx.coroutines.flow.combine(
-        graphNodes2Flow,
+        gradatedGraphNodesFlow,   // <-- was coloredGraphNodesFlow
         connectionsFlow,
         _settingsStateFlow.map { Pair(it.isOrphans, it.maxNodes) }.distinctUntilChanged(),
         searchMatchIdsFlow,
@@ -820,29 +910,7 @@ class ObsGraphEco(
         nodes
     }.scoping()
 
-    private val searchEngine = SearchEngine()
-
-
-
-    val searchablesFlow: Flow<List<Searchable>> =
-        searchablesWithIdFlow.map { it.map { p -> p.value } }
-
-
-
-    // ── add near GraphSettingsConfig usage ──────────────────────────────
-// Assumes GraphSettingsConfig gains a flag; if you can't add one, replace
-// `isIndexFileContent` below with a hardcoded `true`/`false`.
-
-
-    // ── file-content cache, same pattern/threading rules as linkCache ───
-    private val contentCache = HashMap<FileCacheKey, String>()
-
-
-
-
     private companion object {
-        // OPTIMIZED: hoisted out of graphNodesFlow so they aren't recomputed
-        // on every emission.
         private val GREEN_COLOR = Color.Green.value
         private val RED_COLOR = Color.Red.value
         private val BLUE_COLOR = Color.Blue.value

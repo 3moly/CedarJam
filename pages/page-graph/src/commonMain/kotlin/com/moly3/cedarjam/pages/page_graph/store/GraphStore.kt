@@ -23,5 +23,6 @@ interface GraphStore : Store<Intent, State, Unit> {
         data class SetPartConfig(val value: GraphPartConfig) : Msg
         data class SetNodes(val value: List<ObsidianGraphNode>) : Msg
         data class SetConnections(val value: ImmutableMap<String, ImmutableList<String>>) : Msg
+        data class SetNodeLands(val value: Map<String, List<String>>) : Msg
     }
 }

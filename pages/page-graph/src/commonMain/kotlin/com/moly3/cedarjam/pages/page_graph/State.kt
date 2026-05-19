@@ -22,7 +22,8 @@ data class State(
     val graphUserPosition: Offset = Offset.Zero,
     val coordinates: ImmutableMap<String, Offset> = persistentMapOf(),
 
-    val partConfig: GraphPartConfig = GraphPartConfig.Default
+    val partConfig: GraphPartConfig = GraphPartConfig.Default,
+    val nodeLands: Map<String, List<String>> = mapOf()
 ) {
     @Serializable
     data class SaveableState(

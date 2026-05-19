@@ -7,6 +7,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -27,13 +28,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.moly3.cedarjam.core.domain.model.config.GraphPartConfig
+import com.moly3.cedarjam.core.domain.model.config.GroupLogic
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.func.navigationBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.func.wstatusBarsPaddingCJ
+import com.moly3.cedarjam.core.ui.uikit.CJButton
 import com.moly3.cedarjam.core.ui.uikit.CJButtonIcon
+import com.moly3.cedarjam.core.ui.uikit.CJIOSwitch
 import com.moly3.cedarjam.core.ui.uikit.CJSearchTextField
 import com.moly3.cedarjam.core.ui.uikit.CJText
 import com.moly3.cedarjam.core.ui.uikit.NeumorphicShape
@@ -67,7 +73,7 @@ fun BoxScope.SettingsPanel(
     partConfig: GraphPartConfig,
     onIntent: (Intent) -> Unit
 ) {
-    val filterSearch  = remember{
+    val filterSearch = remember {
         mutableStateOf(TextFieldValue(partConfig.filter.search))
     }
     Column(
@@ -130,7 +136,13 @@ fun BoxScope.SettingsPanel(
                                 text = "directories",
                                 value = partConfig.filter.isShowDirectories,
                                 onClick = {
-                                    onIntent(Intent.SetFilter(partConfig.filter.copy(isShowDirectories = !partConfig.filter.isShowDirectories)))
+                                    onIntent(
+                                        Intent.SetFilter(
+                                            partConfig.filter.copy(
+                                                isShowDirectories = !partConfig.filter.isShowDirectories
+                                            )
+                                        )
+                                    )
                                 }
                             )
                             EnableOption(
@@ -188,25 +200,130 @@ fun BoxScope.SettingsPanel(
                         SettingsSection(
                             title = "Groups"
                         ) {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                for (group in partConfig.groups) {
+                                    fun changeGroup(change: (GroupLogic) -> GroupLogic) {
+                                        val groups = partConfig.groups.toMutableList()
+                                        //  it.copy(isLand = !it.isLand)
+                                        onIntent(
+                                            Intent.SetGroups(
+                                                groups.map {
+                                                    if (it.name == group.name)
+                                                        change(it)
+                                                    else
+                                                        it
+                                                }
+                                            )
+                                        )
+                                    }
 
+                                    val groupSearch = remember {
+                                        mutableStateOf(TextFieldValue(group.name))
+                                    }
+                                    val filterGroupSearch = remember {
+                                        mutableStateOf(TextFieldValue(group.filter))
+                                    }
+                                    Column(
+                                        modifier = Modifier.border(
+                                            1.dp,
+                                            Color.White,
+                                            shape = RoundedCornerShape(8.dp)
+                                        ).padding(8.dp),
+                                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+
+                                        CJSearchTextField(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            isSearchIcon = false,
+                                            placeholderText = "Group name...",
+                                            value = groupSearch.value,
+                                            onValueChange = {
+                                                groupSearch.value = it
+                                                changeGroup {
+                                                    group.copy(name = groupSearch.value.text)
+                                                }
+                                            }
+                                        )
+                                        CJSearchTextField(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            isSearchIcon = false,
+                                            placeholderText = "Group name...",
+                                            value = filterGroupSearch.value,
+                                            onValueChange = {
+                                                filterGroupSearch.value = it
+                                                changeGroup {
+                                                    group.copy(filter = filterGroupSearch.value.text)
+                                                }
+                                            }
+                                        )
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            CJText(
+                                                text = "Is Land:",
+                                                fontSize = 12.sp,
+                                                modifier = Modifier.weight(1f)
+                                            )
+                                            CJIOSwitch(
+                                                modifier = Modifier,
+                                                height = 24,
+                                                isPressed = group.isLand,
+                                                onClick = {
+                                                    changeGroup {
+                                                        group.copy(isLand = !group.isLand)
+                                                    }
+                                                })
+                                        }
+                                    }
+                                }
+
+                                CJButton(
+                                    modifier = Modifier,
+                                    text = "Add group"
+                                ) {
+                                    val groups = partConfig.groups.toMutableList()
+                                    val uniqueName = ""
+                                    groups.add(
+                                        GroupLogic(
+                                            isLand = false,
+                                            name = "hoho",
+                                            filter = "type:tag",
+                                            color = Color.Yellow
+                                        )
+                                    )
+                                    onIntent(Intent.SetGroups(groups))
+                                }
+                            }
+
+//
                         }
                         GraphViewSettingsSection(
                             zoom = zoom,
                             settings = partConfig.config,
                             onIntent = onIntent
                         )
-                        GraphTextSettingsSection(settings =  partConfig.config, onIntent = onIntent)
+                        GraphTextSettingsSection(settings = partConfig.config, onIntent = onIntent)
                         EnableOption(
                             text = "groups",
-                            value =  partConfig.config.groupSettings.enabled,
+                            value = partConfig.config.groupSettings.enabled,
                             onClick = {
                                 val groups =
-                                    partConfig.config.groupSettings.copy(enabled = ! partConfig.config.groupSettings.enabled)
-                                onIntent(Intent.SetGraphSettings( partConfig.config.copy(groupSettings = groups)))
+                                    partConfig.config.groupSettings.copy(enabled = !partConfig.config.groupSettings.enabled)
+                                onIntent(
+                                    Intent.SetGraphSettings(
+                                        partConfig.config.copy(
+                                            groupSettings = groups
+                                        )
+                                    )
+                                )
                             }
                         )
-                        if ( partConfig.config.groupSettings.enabled) {
-                            GraphGroupSettingsSection(settings =  partConfig.config, onIntent = onIntent)
+                        if (partConfig.config.groupSettings.enabled) {
+                            GraphGroupSettingsSection(
+                                settings = partConfig.config,
+                                onIntent = onIntent
+                            )
                         }
                     }
                 }

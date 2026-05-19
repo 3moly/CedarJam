@@ -12,11 +12,12 @@ import kotlinx.coroutines.launch
 fun GraphPage(component: GraphComponent) {
     val state = component.state.collectAsState().value
     val scope = rememberCoroutineScope()
-    PageContent(state,
+    PageContent(
+        state = state,
         engine = component.engine,
         onIntent = {
-        scope.launch(Dispatchers.Main) {
-            component.onIntent(it)
-        }
-    })
+            scope.launch(Dispatchers.Main) {
+                component.onIntent(it)
+            }
+        })
 }
