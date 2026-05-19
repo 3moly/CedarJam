@@ -7,6 +7,7 @@ import com.arkivanov.mvikotlin.core.store.Reducer
 import com.arkivanov.mvikotlin.core.store.SimpleBootstrapper
 import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
+import com.moly3.cedarjam.core.domain.dialog.DialogColorPickerService
 import com.moly3.cedarjam.core.domain.func.hiddenDirectory
 import com.moly3.cedarjam.core.domain.func.isGraphSettingsNudge
 import com.moly3.cedarjam.core.domain.func.pathWrapper
@@ -15,8 +16,10 @@ import com.moly3.cedarjam.core.domain.model.FileName
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.bind
 import com.moly3.cedarjam.core.domain.model.config.GraphSaveConfig
+import com.moly3.cedarjam.core.domain.model.config.GroupLogic
 import com.moly3.cedarjam.core.domain.model.node.ObsidianGraphData
 import com.moly3.cedarjam.core.domain.model.resultBlock
+import com.moly3.cedarjam.core.domain.model.toKmpImmutableMap
 import com.moly3.cedarjam.core.domain.repository.IAppEnvironment
 import com.moly3.cedarjam.core.domain.repository.setNodeJson
 import com.moly3.cedarjam.core.domain.service.ObsGraphEco
@@ -43,10 +46,14 @@ import com.moly3.cedarjam.pages.page_graph.store.GraphStore.Msg.SetZoom
 import com.moly3.dataviz.core.graph.engine.IGraphEngine
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedInject
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.collections.immutable.toImmutableMap
 import kotlinx.collections.immutable.toPersistentMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -55,6 +62,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlin.collections.map
 
 class GraphStoreImpl @AssistedInject constructor(
     @Assisted storeFactory: StoreFactory,
@@ -67,6 +75,7 @@ class GraphStoreImpl @AssistedInject constructor(
     private val appEnvironment: IAppEnvironment,
     private val macTrackpadGestureService: MacTrackpadGestureService,
     private val openNodeDataUseCaseFactory: OpenNodeDataUseCaseFactory,
+    private val dialogColorPickerService: DialogColorPickerService,
 ) : GraphStore,
     Store<Intent, State, Unit> by storeFactory.create(
         name = GraphStore::class.simpleName,
@@ -85,7 +94,8 @@ class GraphStoreImpl @AssistedInject constructor(
                 macTrackpadGestureService = macTrackpadGestureService,
                 navigator = navigator,
                 openNodeDataUseCase = openNodeDataUseCaseFactory.invoke(fileManagerService = workspaceSession.fileManagerService),
-                openWorkspaceSettings = openWorkspaceSettings
+                openWorkspaceSettings = openWorkspaceSettings,
+                dialogColorPickerService = dialogColorPickerService
             )
         },
         reducer = ReducerImpl
@@ -105,7 +115,8 @@ class GraphStoreImpl @AssistedInject constructor(
         private val macTrackpadGestureService: MacTrackpadGestureService,
         private val openNodeDataUseCase: IOpenNodeDataUseCase,
         private val engine: IGraphEngine<String, ObsidianGraphData>,
-        private val openWorkspaceSettings: (Boolean) -> Unit
+        private val openWorkspaceSettings: (Boolean) -> Unit,
+        private val dialogColorPickerService: DialogColorPickerService,
     ) : BaseExecutor<Intent, Unit, State, GraphStore.Msg, Unit>(lifecycle) {
 
         private val _isMouseCapturedState = MutableStateFlow(false)
@@ -209,6 +220,33 @@ class GraphStoreImpl @AssistedInject constructor(
             }
         }
 
+        private fun setGroups(groups: List<GroupLogic>) {
+            val partConfig = state().partConfig
+            graphEco.setGroups(groups)
+
+            dispatch(
+                SetPartConfig(
+                    partConfig.copy(groups = groups)
+                )
+            )
+            scope.launch {
+                delay(500L)
+                engine.reheat()
+            }
+        }
+
+        private fun changeGroup(groupName: String, change: (GroupLogic) -> GroupLogic) {
+            val groups = state().partConfig.groups.toMutableList()
+            //  it.copy(isLand = !it.isLand)
+
+            setGroups(groups.map {
+                if (it.name == groupName)
+                    change(it)
+                else
+                    it
+            })
+        }
+
 
         override fun executeIntent(intent: Intent) {
             when (intent) {
@@ -263,17 +301,18 @@ class GraphStoreImpl @AssistedInject constructor(
                 }
 
                 is Intent.SetGroups -> {
-                    val groups = intent.value
-                    val partConfig = state().partConfig
-                    if (groups != partConfig.groups) {
-                        engine.reheat()
+                    setGroups(intent.value)
+                }
+
+                is Intent.SetGroupColor -> {
+                    scope.launch {
+                        val result = dialogColorPickerService.open(intent.color)
+                        if (result != null) {
+                            changeGroup(groupName = intent.groupName, change = {
+                                it.copy(color = result)
+                            })
+                        }
                     }
-                    graphEco.setGroups(groups)
-                    dispatch(
-                        SetPartConfig(
-                            partConfig.copy(groups = groups)
-                        )
-                    )
                 }
 
                 is Intent.SetGraphSettings -> {
@@ -323,7 +362,9 @@ class GraphStoreImpl @AssistedInject constructor(
                 is SetGraphUserPosition -> copy(graphUserPosition = msg.value)
                 is SetCoordinates -> copy(coordinates = msg.value)
                 is SetPartConfig -> copy(partConfig = msg.value)
-                is SetNodeLands -> copy(nodeLands = msg.value)
+                is SetNodeLands ->{
+                    copy(nodeLands = msg.value.toKmpImmutableMap())
+                }
             }
         }
     }

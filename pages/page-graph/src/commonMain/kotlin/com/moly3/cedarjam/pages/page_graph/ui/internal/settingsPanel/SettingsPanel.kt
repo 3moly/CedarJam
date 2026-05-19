@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -35,6 +36,7 @@ import androidx.compose.ui.unit.sp
 import com.moly3.cedarjam.core.domain.model.config.GraphPartConfig
 import com.moly3.cedarjam.core.domain.model.config.GroupLogic
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
+import com.moly3.cedarjam.core.ui.func.flatClickable
 import com.moly3.cedarjam.core.ui.func.navigationBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.func.wstatusBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.uikit.CJButton
@@ -201,26 +203,22 @@ fun BoxScope.SettingsPanel(
                             title = "Groups"
                         ) {
                             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                for (group in partConfig.groups) {
+                                for ((index, group) in partConfig.groups.withIndex()) {
                                     fun changeGroup(change: (GroupLogic) -> GroupLogic) {
-                                        val groups = partConfig.groups.toMutableList()
-                                        //  it.copy(isLand = !it.isLand)
                                         onIntent(
                                             Intent.SetGroups(
-                                                groups.map {
-                                                    if (it.name == group.name)
-                                                        change(it)
-                                                    else
-                                                        it
+                                                partConfig.groups.mapIndexed { i, g ->
+                                                    if (i == index) change(g) else g
                                                 }
                                             )
                                         )
                                     }
 
-                                    val groupSearch = remember {
+                                    // key the remembered state to index so it doesn't bind to the wrong row
+                                    val groupSearch = remember(index) {
                                         mutableStateOf(TextFieldValue(group.name))
                                     }
-                                    val filterGroupSearch = remember {
+                                    val filterGroupSearch = remember(index) {
                                         mutableStateOf(TextFieldValue(group.filter))
                                     }
                                     Column(
@@ -274,6 +272,25 @@ fun BoxScope.SettingsPanel(
                                                         group.copy(isLand = !group.isLand)
                                                     }
                                                 })
+                                        }
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Box(Modifier.weight(1f))
+                                            Box(
+                                                Modifier.size(24.dp).background(
+                                                    group.color,
+                                                    shape = RoundedCornerShape(24.dp)
+                                                ).flatClickable {
+                                                    onIntent(
+                                                        Intent.SetGroupColor(
+                                                            groupName = group.name,
+                                                            color = group.color
+                                                        )
+                                                    )
+                                                }
+                                            )
                                         }
                                     }
                                 }

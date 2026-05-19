@@ -1,6 +1,7 @@
 package com.moly3.cedarjam.pages.page_graph
 
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import com.moly3.cedarjam.core.domain.model.config.GroupLogic
 import com.moly3.cedarjam.core.domain.model.node.GraphFilter
 import com.moly3.cedarjam.core.domain.model.node.ObsidianGraphData
@@ -16,5 +17,6 @@ sealed interface Intent {
     data object OpenWorkspaceSettings : Intent
     data class SetGraphSettings(val config: GraphSettings) : Intent
     data class SetGroups(val value: List<GroupLogic>) : Intent
+    data class SetGroupColor(val groupName: String, val color: Color) : Intent
     data class SetFilter(val value: GraphFilter) : Intent
 }

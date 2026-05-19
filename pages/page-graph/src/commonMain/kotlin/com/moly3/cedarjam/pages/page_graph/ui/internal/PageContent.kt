@@ -1,8 +1,11 @@
 package com.moly3.cedarjam.pages.page_graph.ui.internal
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -17,6 +20,7 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
 import coil3.ImageLoader
 import coil3.compose.LocalPlatformContext
 import com.moly3.cedarjam.core.domain.func.getPlatform
@@ -28,10 +32,15 @@ import com.moly3.cedarjam.core.domain.model.toFileType
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
 import com.moly3.cedarjam.core.ui.onPointerEvent
+import com.moly3.cedarjam.core.ui.uikit.CJText
 import com.moly3.cedarjam.pages.page_graph.Intent
 import com.moly3.cedarjam.pages.page_graph.State
 import com.moly3.cedarjam.pages.page_graph.ui.internal.settingsPanel.SettingsPanel
 import com.moly3.dataviz.core.graph.engine.IGraphEngine
+import com.moly3.dataviz.core.graph.model.GroupHullDef
+import com.moly3.dataviz.core.graph.model.GroupId
+import com.moly3.dataviz.core.graph.model.GroupMembership
+import com.moly3.dataviz.core.graph.model.GroupModel
 import com.moly3.dataviz.graph.features.atlas.AtlasTier
 import com.moly3.dataviz.graph.ui.AtlasPainterLoader
 import com.moly3.dataviz.graph.ui.Graph
@@ -183,6 +192,37 @@ internal fun PageContent(
         val graphUserPosition = remember { mutableStateOf(state.graphUserPosition) }
         val updatedZoom by rememberUpdatedState(state.zoom)
 
+        val groupModel: GroupModel<String> = remember(
+            state.partConfig.config.groupSettings.enabled,
+            state.partConfig.groups,
+            state.nodeLands,
+        ) {
+            if (!state.partConfig.config.groupSettings.enabled) {
+                GroupModel.empty()
+            } else {
+                // defs: one hull per configured group, name doubles as identity
+                val defs = state.partConfig.groups.map { group ->
+                    GroupHullDef(
+                        id = GroupId(group.name),
+                        name = group.name,
+                        color = group.color,
+                    )
+                }
+
+                // memberships: flatten nodeLands (nodeId -> list of group names)
+                val memberships = state.nodeLands.flatMap { (nodeId, groupNames) ->
+                    groupNames.map { groupName ->
+                        GroupMembership(
+                            nodeId = nodeId,
+                            groupId = GroupId(groupName),
+                        )
+                    }
+                }
+
+                GroupModel(defs = defs, memberships = memberships)
+            }
+        }
+
         Graph(
             userPosition = graphUserPosition.value,
             zoom = state.zoom,
@@ -191,19 +231,7 @@ internal fun PageContent(
             engine = engine,
             atlasLayers = handle.atlasLayers,
             getIconKey = handle::resolveIconKey,
-            getNodeGroups = { id, data ->
-                if (settings.groupSettings.enabled) {
-                    state.nodeLands[id] ?: listOf()
-                } else
-                    listOf()
-            },
-            getGroupColor = { groupName ->
-                state.partConfig.groups.firstOrNull { d -> d.name == groupName }?.color
-                    ?: Color.Transparent
-            },
-            getGroupName = { groupName ->
-                groupName
-            },
+            groupModel = groupModel,
             settings = settings,
             connections = state.connections,
             stateNodes = state.graphNodes,

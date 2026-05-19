@@ -23,7 +23,7 @@ data class State(
     val coordinates: ImmutableMap<String, Offset> = persistentMapOf(),
 
     val partConfig: GraphPartConfig = GraphPartConfig.Default,
-    val nodeLands: Map<String, List<String>> = mapOf()
+    val nodeLands: ImmutableMap<String, ImmutableList<String>> = persistentMapOf()
 ) {
     @Serializable
     data class SaveableState(
