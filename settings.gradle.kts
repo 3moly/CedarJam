@@ -18,6 +18,7 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
         maven("https://jogamp.org/deployment/maven")
+        maven { url = uri("https://releases.aspose.com/java/repo/") }
     }
 }
 

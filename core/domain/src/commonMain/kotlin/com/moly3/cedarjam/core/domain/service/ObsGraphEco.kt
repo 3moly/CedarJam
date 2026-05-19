@@ -718,7 +718,7 @@ class ObsGraphEco(
             val graphId = item.getGraphId()
             out[graphId] = Searchable(
                 type = ItemType.FILE,
-                fileName = item.getShortName(),
+                fileName = item.getFullName(),
                 path = item.getRelativePath(),
                 // optional: empty when indexing is off or file isn't text
                 content = fileContent[graphId] ?: "",

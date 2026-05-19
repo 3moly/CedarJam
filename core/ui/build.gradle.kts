@@ -52,7 +52,7 @@ kotlin {
         }
         jvmMain.dependencies {
             implementation(libs.pdfbox)
-
+            implementation(libs.openize.heic)
         }
         androidMain.dependencies {
             implementation(libs.compose.ui.tooling)

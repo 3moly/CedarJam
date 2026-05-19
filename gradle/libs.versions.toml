@@ -38,6 +38,7 @@ localina = "1.0.0-beta2"
 material3 = "1.9.0"
 
 okio = "3.17.0"
+openizeHeic = "26.5"
 pdfmpCompose = "1.0.9"
 serialization = "1.11.0"
 datetime = "0.8.0"
@@ -115,6 +116,7 @@ lazytable = { module = "io.github.oleksandrbalan:lazytable", version.ref = "lazy
 liquid = { module = "io.github.fletchmckee.liquid:liquid", version.ref = "liquid" }
 localina = { module = "io.github.sudarshanmhasrup.localina:localina", version.ref = "localina" }
 okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
+openize-heic = { module = "com.aspose:openize-heic", version.ref = "openizeHeic" }
 serialization = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
 decompose = { group = "com.arkivanov.decompose", name = "decompose", version.ref = "decompose" }
 decompose-compose = { group = "com.arkivanov.decompose", name = "extensions-compose", version.ref = "decompose" }

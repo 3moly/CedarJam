@@ -47,68 +47,68 @@ private const val HEADER_PEEK_BYTES = 64L
  * Never rely on the file extension: many HEIC files arrive over the network
  * with no extension, or are mislabelled `.jpg` by camera apps.
  */
-fun isHeic(source: ImageSource): Boolean {
-    val bytes = try {
-        source.source().peek().use { peeked ->
-            peeked.require(HEADER_PEEK_BYTES) // throws if stream is shorter
-            peeked.readByteArray(HEADER_PEEK_BYTES)
-        }
-    } catch (_: Exception) {
-        // Stream shorter than HEADER_PEEK_BYTES, or otherwise unreadable.
-        // Retry with whatever is available — a valid ftyp box is only 12 bytes.
-        return isHeicLenient(source)
-    }
-    return bytes.matchesHeif()
-}
+//fun isHeic(source: ImageSource): Boolean {
+//    val bytes = try {
+//        source.source().peek().use { peeked ->
+//            peeked.require(HEADER_PEEK_BYTES) // throws if stream is shorter
+//            peeked.readByteArray(HEADER_PEEK_BYTES)
+//        }
+//    } catch (_: Exception) {
+//        // Stream shorter than HEADER_PEEK_BYTES, or otherwise unreadable.
+//        // Retry with whatever is available — a valid ftyp box is only 12 bytes.
+//        return isHeicLenient(source)
+//    }
+//    return bytes.matchesHeif()
+//}
 
-private fun isHeicLenient(source: ImageSource): Boolean {
-    val bytes = try {
-        source.source().peek().use { it.readByteArray() }
-    } catch (_: Exception) {
-        return false
-    }
-    return bytes.matchesHeif()
-}
+//private fun isHeicLenient(source: ImageSource): Boolean {
+//    val bytes = try {
+//        source.source().peek().use { it.readByteArray() }
+//    } catch (_: Exception) {
+//        return false
+//    }
+//    return bytes.matchesHeif()
+//}
 
-private fun ByteArray.matchesHeif(): Boolean {
-    if (size < 12) return false
-    // bytes 4..7 must spell "ftyp"
-    if (!regionEquals(offset = 4, ascii = FTYP)) return false
+//private fun ByteArray.matchesHeif(): Boolean {
+//    if (size < 12) return false
+//    // bytes 4..7 must spell "ftyp"
+//    if (!regionEquals(offset = 4, ascii = FTYP)) return false
+//
+//    // major brand at 8..11
+//    val major = asciiAt(8)
+//    if (major in HEIF_BRANDS) return true
+//
+//    // compatible brands run from offset 16 up to the declared ftyp box size.
+//    val boxSize = readUInt32BE(0)
+//    val end = minOf(boxSize, size)
+//    var offset = 16
+//    while (offset + 4 <= end) {
+//        if (asciiAt(offset) in HEIF_BRANDS) return true
+//        offset += 4
+//    }
+//    return false
+//}
 
-    // major brand at 8..11
-    val major = asciiAt(8)
-    if (major in HEIF_BRANDS) return true
-
-    // compatible brands run from offset 16 up to the declared ftyp box size.
-    val boxSize = readUInt32BE(0)
-    val end = minOf(boxSize, size)
-    var offset = 16
-    while (offset + 4 <= end) {
-        if (asciiAt(offset) in HEIF_BRANDS) return true
-        offset += 4
-    }
-    return false
-}
-
-private fun ByteArray.regionEquals(offset: Int, ascii: String): Boolean {
-    val target = ascii.encodeUtf8()
-    if (offset + target.size > size) return false
-    for (i in 0 until target.size) {
-        if (this[offset + i] != target[i]) return false
-    }
-    return true
-}
-
-private fun ByteArray.asciiAt(offset: Int): String {
-    if (offset + 4 > size) return ""
-    val chars = CharArray(4) { i -> (this[offset + i].toInt() and 0xFF).toChar() }
-    return chars.concatToString()
-}
-
-private fun ByteArray.readUInt32BE(offset: Int): Int {
-    if (offset + 4 > size) return size
-    return ((this[offset].toInt() and 0xFF) shl 24) or
-            ((this[offset + 1].toInt() and 0xFF) shl 16) or
-            ((this[offset + 2].toInt() and 0xFF) shl 8) or
-            (this[offset + 3].toInt() and 0xFF)
-}
+//private fun ByteArray.regionEquals(offset: Int, ascii: String): Boolean {
+//    val target = ascii.encodeUtf8()
+//    if (offset + target.size > size) return false
+//    for (i in 0 until target.size) {
+//        if (this[offset + i] != target[i]) return false
+//    }
+//    return true
+//}
+//
+//private fun ByteArray.asciiAt(offset: Int): String {
+//    if (offset + 4 > size) return ""
+//    val chars = CharArray(4) { i -> (this[offset + i].toInt() and 0xFF).toChar() }
+//    return chars.concatToString()
+//}
+//
+//private fun ByteArray.readUInt32BE(offset: Int): Int {
+//    if (offset + 4 > size) return size
+//    return ((this[offset].toInt() and 0xFF) shl 24) or
+//            ((this[offset + 1].toInt() and 0xFF) shl 16) or
+//            ((this[offset + 2].toInt() and 0xFF) shl 8) or
+//            (this[offset + 3].toInt() and 0xFF)
+//}
