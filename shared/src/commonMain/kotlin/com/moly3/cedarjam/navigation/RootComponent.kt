@@ -20,6 +20,7 @@ import com.moly3.cedarjam.core.domain.service.AlertService
 import com.moly3.cedarjam.core.domain.service.IMessageService
 import com.moly3.cedarjam.core.domain.usecase.ISyncUseCase
 import com.moly3.cedarjam.core.domain.usecase.SyncStatusChannel
+import com.moly3.cedarjam.core.ui.dialog.DialogRegistry
 import com.moly3.cedarjam.core.ui.service.MacTrackpadGestureService
 import com.moly3.cedarjam.di.metro.RootCoroutineScope
 import com.moly3.cedarjam.navigation.Root.Child.SelectWorkspace
@@ -50,6 +51,7 @@ class RootComponent(
     override val appEnvironment: IAppEnvironment,
     private val syncUseCase: ISyncUseCase,
     private val workspaceComponentFactory: WorkspaceComponentFactory,
+    override val dialogRegistry: DialogRegistry,
 ) : Root,
     ComponentContext by componentContext,
     IDecomposeScopeComponent,

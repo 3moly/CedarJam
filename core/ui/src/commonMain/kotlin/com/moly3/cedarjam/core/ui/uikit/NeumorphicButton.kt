@@ -59,17 +59,11 @@ data class NeumorphicShadowConfig(
     val darkShadowOffset: Offset = Offset(-1f, -1f),
 
     val pressedShadowAlpha: Float = 0.4f,
-    val pressedShadowRadius: Float = 40f,
-    val pressedShadowOffset: Offset = Offset(15f, 15f),
+    val pressedShadowRadius: Float = 8f,
+    val pressedShadowOffset: Offset = Offset(1f, 1f),
 
-    val elevationStrength: Float = 15f,
-) {
-    companion object {
-        val someShit = NeumorphicShadowConfig(
-            pressedShadowRadius = 1f
-        )
-    }
-}
+    val elevationStrength: Float = 1f,
+)
 
 @Composable
 fun NeumorphicShape(

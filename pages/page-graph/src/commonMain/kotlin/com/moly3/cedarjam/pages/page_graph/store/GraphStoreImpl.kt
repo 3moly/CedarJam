@@ -8,6 +8,7 @@ import com.arkivanov.mvikotlin.core.store.SimpleBootstrapper
 import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.moly3.cedarjam.core.domain.dialog.DialogColorPickerService
+import com.moly3.cedarjam.core.domain.dialog.DialogDeleteService
 import com.moly3.cedarjam.core.domain.func.hiddenDirectory
 import com.moly3.cedarjam.core.domain.func.isGraphSettingsNudge
 import com.moly3.cedarjam.core.domain.func.pathWrapper
@@ -76,6 +77,7 @@ class GraphStoreImpl @AssistedInject constructor(
     private val macTrackpadGestureService: MacTrackpadGestureService,
     private val openNodeDataUseCaseFactory: OpenNodeDataUseCaseFactory,
     private val dialogColorPickerService: DialogColorPickerService,
+    private val dialogDeleteService: DialogDeleteService
 ) : GraphStore,
     Store<Intent, State, Unit> by storeFactory.create(
         name = GraphStore::class.simpleName,
@@ -95,7 +97,8 @@ class GraphStoreImpl @AssistedInject constructor(
                 navigator = navigator,
                 openNodeDataUseCase = openNodeDataUseCaseFactory.invoke(fileManagerService = workspaceSession.fileManagerService),
                 openWorkspaceSettings = openWorkspaceSettings,
-                dialogColorPickerService = dialogColorPickerService
+                dialogColorPickerService = dialogColorPickerService,
+                dialogDeleteService = dialogDeleteService
             )
         },
         reducer = ReducerImpl
@@ -117,6 +120,7 @@ class GraphStoreImpl @AssistedInject constructor(
         private val engine: IGraphEngine<String, ObsidianGraphData>,
         private val openWorkspaceSettings: (Boolean) -> Unit,
         private val dialogColorPickerService: DialogColorPickerService,
+        private val dialogDeleteService: DialogDeleteService
     ) : BaseExecutor<Intent, Unit, State, GraphStore.Msg, Unit>(lifecycle) {
 
         private val _isMouseCapturedState = MutableStateFlow(false)
@@ -222,11 +226,17 @@ class GraphStoreImpl @AssistedInject constructor(
 
         private fun setGroups(groups: List<GroupLogic>) {
             val partConfig = state().partConfig
-            graphEco.setGroups(groups)
+            val grroups = if (partConfig.config.groupSettings.enabled) {
+                groups
+            } else {
+                listOf()
+            }
+
+            graphEco.setGroups(grroups)
 
             dispatch(
                 SetPartConfig(
-                    partConfig.copy(groups = groups)
+                    partConfig.copy(groups = grroups)
                 )
             )
             scope.launch {
@@ -237,7 +247,6 @@ class GraphStoreImpl @AssistedInject constructor(
 
         private fun changeGroup(groupName: String, change: (GroupLogic) -> GroupLogic) {
             val groups = state().partConfig.groups.toMutableList()
-            //  it.copy(isLand = !it.isLand)
 
             setGroups(groups.map {
                 if (it.name == groupName)
@@ -304,6 +313,24 @@ class GraphStoreImpl @AssistedInject constructor(
                     setGroups(intent.value)
                 }
 
+                is Intent.DeleteGroup -> {
+                    scope.launch {
+                        val groupCount =
+                            state().partConfig.groups.count { d -> d.name == intent.groupName }
+                        if (groupCount > 1) {
+                            //todo tell user that it has more 1 of the same Group name
+                            return@launch
+                        }
+                        val isDelete = dialogDeleteService.open(Unit)
+                        if (isDelete) {
+                            val partConfig = state().partConfig
+                            val config =
+                                partConfig.copy(groups = partConfig.groups.filter { d -> d.name != intent.groupName })
+                            dispatch(GraphStore.Msg.SetPartConfig(config))
+                        }
+                    }
+                }
+
                 is Intent.SetGroupColor -> {
                     scope.launch {
                         val result = dialogColorPickerService.open(intent.color)
@@ -324,6 +351,7 @@ class GraphStoreImpl @AssistedInject constructor(
                             engine.nudge()
                         }
                     }
+
                     dispatch(
                         SetPartConfig(
                             partConfig.copy(config = config)
@@ -362,7 +390,7 @@ class GraphStoreImpl @AssistedInject constructor(
                 is SetGraphUserPosition -> copy(graphUserPosition = msg.value)
                 is SetCoordinates -> copy(coordinates = msg.value)
                 is SetPartConfig -> copy(partConfig = msg.value)
-                is SetNodeLands ->{
+                is SetNodeLands -> {
                     copy(nodeLands = msg.value.toKmpImmutableMap())
                 }
             }

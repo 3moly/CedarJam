@@ -88,17 +88,32 @@ fun BoxScope.SettingsPanel(
             .background(LocalAppTheme.current.colors.backgroundSecondary)
             .verticalScroll(rememberScrollState())
     ) {
+        val isFullSettingsState = remember { mutableStateOf(false) }
         val settingsWidth by animateDpAsState(
             targetValue = if (isShowSettings) 250.dp else 48.dp,
             label = "settingsWidth"
         )
+        val isFullDef = remember(isFullSettingsState.value, isShowSettings) {
+            isShowSettings && isFullSettingsState.value
+        }
         Column(
-            modifier = Modifier.width(settingsWidth).padding(8.dp),
+            modifier = Modifier.let {
+                if (isFullDef)
+                    it.fillMaxWidth()
+                else
+                    it.width(settingsWidth)
+            }.padding(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalAlignment = Alignment.End
         ) {
-            Row(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 if (isShowSettings) {
+                    CJButtonIcon(imageVector = vector.ArrowLeft, onClick = {
+                        isFullSettingsState.value = !isFullSettingsState.value
+                    })
                     CJText(text = "Nodes: ${nodesCount}", modifier = Modifier.weight(1f))
                 }
                 CJButtonIcon(imageVector = Settings, onClick = {
@@ -115,7 +130,7 @@ fun BoxScope.SettingsPanel(
                 Column {
                     Column(
                         modifier = Modifier
-                            .requiredWidth(234.dp)
+//                            .requiredWidth(234.dp)
                             .fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
@@ -130,77 +145,117 @@ fun BoxScope.SettingsPanel(
                                 onIntent(Intent.SetFilter(partConfig.filter.copy(search = it.text)))
                             }
                         )
-                        FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
+
+                        SettingsSection(
+                            title = "Filter"
                         ) {
-                            EnableOption(
-                                text = "directories",
-                                value = partConfig.filter.isShowDirectories,
-                                onClick = {
-                                    onIntent(
-                                        Intent.SetFilter(
-                                            partConfig.filter.copy(
-                                                isShowDirectories = !partConfig.filter.isShowDirectories
+                            FlowRow(
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                EnableOption(
+                                    text = "directories",
+                                    value = partConfig.filter.isShowDirectories,
+                                    onClick = {
+                                        onIntent(
+                                            Intent.SetFilter(
+                                                partConfig.filter.copy(
+                                                    isShowDirectories = !partConfig.filter.isShowDirectories
+                                                )
                                             )
                                         )
-                                    )
-                                }
-                            )
-                            EnableOption(
-                                text = "tags",
-                                value = partConfig.filter.isTags,
+                                    }
+                                )
+                                EnableOption(
+                                    text = "tags",
+                                    value = partConfig.filter.isTags,
 
-                                onClick = {
-                                    onIntent(Intent.SetFilter(partConfig.filter.copy(isTags = !partConfig.filter.isTags)))
-                                }
-                            )
-                            EnableOption(
-                                text = "orphans",
-                                value = partConfig.filter.isOrphans,
+                                    onClick = {
+                                        onIntent(Intent.SetFilter(partConfig.filter.copy(isTags = !partConfig.filter.isTags)))
+                                    }
+                                )
+                                EnableOption(
+                                    text = "orphans",
+                                    value = partConfig.filter.isOrphans,
 
-                                onClick = {
-                                    onIntent(Intent.SetFilter(partConfig.filter.copy(isOrphans = !partConfig.filter.isOrphans)))
-                                }
-                            )
-                            EnableOption(
-                                text = "annotations",
-                                value = partConfig.filter.isAnnotations,
-                                onClick = {
-                                    onIntent(Intent.SetFilter(partConfig.filter.copy(isAnnotations = !partConfig.filter.isAnnotations)))
-                                }
-                            )
-                            EnableOption(
-                                text = "collections",
-                                value = partConfig.filter.isCollections,
-                                onClick = {
-                                    onIntent(Intent.SetFilter(partConfig.filter.copy(isCollections = !partConfig.filter.isCollections)))
-                                }
-                            )
-                            EnableOption(
-                                text = "rows",
-                                value = partConfig.filter.isRows,
-                                onClick = {
-                                    onIntent(Intent.SetFilter(partConfig.filter.copy(isRows = !partConfig.filter.isRows)))
-                                }
-                            )
-                            EnableOption(
-                                text = "real files only",
-                                value = partConfig.filter.isRealFiles,
-                                onClick = {
-                                    onIntent(Intent.SetFilter(partConfig.filter.copy(isRealFiles = !partConfig.filter.isRealFiles)))
-                                }
-                            )
-                            EnableOption(
-                                text = "gradations",
-                                value = partConfig.filter.isGradations,
-                                onClick = {
-                                    onIntent(Intent.SetFilter(partConfig.filter.copy(isGradations = !partConfig.filter.isGradations)))
-                                }
-                            )
+                                    onClick = {
+                                        onIntent(Intent.SetFilter(partConfig.filter.copy(isOrphans = !partConfig.filter.isOrphans)))
+                                    }
+                                )
+                                EnableOption(
+                                    text = "annotations",
+                                    value = partConfig.filter.isAnnotations,
+                                    onClick = {
+                                        onIntent(
+                                            Intent.SetFilter(
+                                                partConfig.filter.copy(
+                                                    isAnnotations = !partConfig.filter.isAnnotations
+                                                )
+                                            )
+                                        )
+                                    }
+                                )
+                                EnableOption(
+                                    text = "collections",
+                                    value = partConfig.filter.isCollections,
+                                    onClick = {
+                                        onIntent(
+                                            Intent.SetFilter(
+                                                partConfig.filter.copy(
+                                                    isCollections = !partConfig.filter.isCollections
+                                                )
+                                            )
+                                        )
+                                    }
+                                )
+                                EnableOption(
+                                    text = "rows",
+                                    value = partConfig.filter.isRows,
+                                    onClick = {
+                                        onIntent(Intent.SetFilter(partConfig.filter.copy(isRows = !partConfig.filter.isRows)))
+                                    }
+                                )
+                                EnableOption(
+                                    text = "real files only",
+                                    value = partConfig.filter.isRealFiles,
+                                    onClick = {
+                                        onIntent(Intent.SetFilter(partConfig.filter.copy(isRealFiles = !partConfig.filter.isRealFiles)))
+                                    }
+                                )
+                                EnableOption(
+                                    text = "gradations",
+                                    value = partConfig.filter.isGradations,
+                                    onClick = {
+                                        onIntent(
+                                            Intent.SetFilter(
+                                                partConfig.filter.copy(
+                                                    isGradations = !partConfig.filter.isGradations
+                                                )
+                                            )
+                                        )
+                                    }
+                                )
+                            }
                         }
                         SettingsSection(
-                            title = "Groups"
+                            title = "Groups ${partConfig.groups.size}",
+                            menuContent = {
+                                CJIOSwitch(
+                                    modifier = Modifier,
+                                    height = 24,
+                                    isPressed = partConfig.config.groupSettings.enabled,
+                                    onClick = {
+                                        val groups =
+                                            partConfig.config.groupSettings.copy(enabled = !partConfig.config.groupSettings.enabled)
+                                        onIntent(
+                                            Intent.SetGraphSettings(
+                                                partConfig.config.copy(
+                                                    groupSettings = groups
+                                                )
+                                            )
+                                        )
+                                    })
+                            }
                         ) {
                             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 for ((index, group) in partConfig.groups.withIndex()) {
@@ -221,76 +276,100 @@ fun BoxScope.SettingsPanel(
                                     val filterGroupSearch = remember(index) {
                                         mutableStateOf(TextFieldValue(group.filter))
                                     }
-                                    Column(
-                                        modifier = Modifier.border(
-                                            1.dp,
-                                            Color.White,
-                                            shape = RoundedCornerShape(8.dp)
-                                        ).padding(8.dp),
-                                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                                    ) {
 
-                                        CJSearchTextField(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            isSearchIcon = false,
-                                            placeholderText = "Group name...",
-                                            value = groupSearch.value,
-                                            onValueChange = {
-                                                groupSearch.value = it
-                                                changeGroup {
-                                                    group.copy(name = groupSearch.value.text)
-                                                }
-                                            }
-                                        )
-                                        CJSearchTextField(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            isSearchIcon = false,
-                                            placeholderText = "Group name...",
-                                            value = filterGroupSearch.value,
-                                            onValueChange = {
-                                                filterGroupSearch.value = it
-                                                changeGroup {
-                                                    group.copy(filter = filterGroupSearch.value.text)
-                                                }
-                                            }
-                                        )
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            CJText(
-                                                text = "Is Land:",
-                                                fontSize = 12.sp,
-                                                modifier = Modifier.weight(1f)
-                                            )
+                                    SettingsSection(
+                                        title = group.name,
+                                        accentColor = group.color,
+                                        menuContent = {
                                             CJIOSwitch(
                                                 modifier = Modifier,
                                                 height = 24,
-                                                isPressed = group.isLand,
+                                                isPressed = group.isVisible,
                                                 onClick = {
                                                     changeGroup {
-                                                        group.copy(isLand = !group.isLand)
+                                                        group.copy(isVisible = !group.isVisible)
                                                     }
                                                 })
                                         }
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column(
+                                            modifier = Modifier.border(
+                                                1.dp,
+                                                Color.White,
+                                                shape = RoundedCornerShape(8.dp)
+                                            ).padding(8.dp),
+                                            verticalArrangement = Arrangement.spacedBy(4.dp)
                                         ) {
-                                            Box(Modifier.weight(1f))
-                                            Box(
-                                                Modifier.size(24.dp).background(
-                                                    group.color,
-                                                    shape = RoundedCornerShape(24.dp)
-                                                ).flatClickable {
-                                                    onIntent(
-                                                        Intent.SetGroupColor(
-                                                            groupName = group.name,
-                                                            color = group.color
-                                                        )
-                                                    )
+
+                                            CJSearchTextField(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                isSearchIcon = false,
+                                                placeholderText = "Group name...",
+                                                value = groupSearch.value,
+                                                onValueChange = {
+                                                    groupSearch.value = it
+                                                    changeGroup {
+                                                        group.copy(name = groupSearch.value.text)
+                                                    }
                                                 }
                                             )
+                                            CJSearchTextField(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                isSearchIcon = false,
+                                                placeholderText = "Group name...",
+                                                value = filterGroupSearch.value,
+                                                onValueChange = {
+                                                    filterGroupSearch.value = it
+                                                    changeGroup {
+                                                        group.copy(filter = filterGroupSearch.value.text)
+                                                    }
+                                                }
+                                            )
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                CJText(
+                                                    text = "Is Land:",
+                                                    fontSize = 12.sp,
+                                                    modifier = Modifier.weight(1f)
+                                                )
+                                                CJIOSwitch(
+                                                    modifier = Modifier,
+                                                    height = 24,
+                                                    isPressed = group.isLand,
+                                                    onClick = {
+                                                        changeGroup {
+                                                            group.copy(isLand = !group.isLand)
+                                                        }
+                                                    })
+                                            }
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                CJButtonIcon(
+                                                    modifier = Modifier,
+                                                    imageVector = vector.TrashCan,
+                                                    onClick = {
+                                                        onIntent(Intent.DeleteGroup(groupName = group.name))
+                                                    }
+                                                )
+                                                Box(Modifier.weight(1f))
+                                                Box(
+                                                    Modifier.size(24.dp).background(
+                                                        group.color,
+                                                        shape = RoundedCornerShape(24.dp)
+                                                    ).flatClickable {
+                                                        onIntent(
+                                                            Intent.SetGroupColor(
+                                                                groupName = group.name,
+                                                                color = group.color
+                                                            )
+                                                        )
+                                                    }
+                                                )
+                                            }
                                         }
                                     }
                                 }
@@ -303,10 +382,11 @@ fun BoxScope.SettingsPanel(
                                     val uniqueName = ""
                                     groups.add(
                                         GroupLogic(
-                                            isLand = false,
+                                            isLand = true,
                                             name = "hoho",
                                             filter = "type:tag",
-                                            color = Color.Yellow
+                                            color = Color.Yellow,
+                                            isVisible = true
                                         )
                                     )
                                     onIntent(Intent.SetGroups(groups))
@@ -321,21 +401,7 @@ fun BoxScope.SettingsPanel(
                             onIntent = onIntent
                         )
                         GraphTextSettingsSection(settings = partConfig.config, onIntent = onIntent)
-                        EnableOption(
-                            text = "groups",
-                            value = partConfig.config.groupSettings.enabled,
-                            onClick = {
-                                val groups =
-                                    partConfig.config.groupSettings.copy(enabled = !partConfig.config.groupSettings.enabled)
-                                onIntent(
-                                    Intent.SetGraphSettings(
-                                        partConfig.config.copy(
-                                            groupSettings = groups
-                                        )
-                                    )
-                                )
-                            }
-                        )
+
                         if (partConfig.config.groupSettings.enabled) {
                             GraphGroupSettingsSection(
                                 settings = partConfig.config,

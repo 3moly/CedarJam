@@ -42,6 +42,8 @@ data class GraphPartConfig(
 
 @Serializable
 data class GroupLogic(
+    @SerialName("is_visible")
+    val isVisible: Boolean,
     @SerialName("is_land")
     val isLand: Boolean,
     @SerialName("name")

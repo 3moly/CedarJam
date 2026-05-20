@@ -29,6 +29,10 @@ object DialogBindings {
         DialogDeleteService(register)
 
     @Provides
+    fun provideDialogGraphConfigsService(register: IDialogRegister): DialogGraphConfigsService =
+        DialogGraphConfigsService(register)
+
+    @Provides
     fun provideDialogCreateWorkspaceService(register: IDialogRegister): DialogCreateWorkspaceService =
         DialogCreateWorkspaceService(register)
 

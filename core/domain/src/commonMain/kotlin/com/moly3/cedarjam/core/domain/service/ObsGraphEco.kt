@@ -64,8 +64,10 @@ class ObsGraphEco(
     private val _settingsStateFlow = MutableStateFlow(config)
     private val _targetId = MutableStateFlow(startTargetId)
     val graphState: StateFlow<GraphFilter> = _settingsStateFlow
+
     // 1. Add StateFlow for the groups
     private val _groupsStateFlow = MutableStateFlow<List<GroupLogic>>(emptyList())
+
     /**
      * Cache of extracted links keyed by file path + modifiedTime.
      * When a file's content changes its modifiedTime changes, so the key
@@ -335,7 +337,6 @@ class ObsGraphEco(
         if (to.isEmpty()) return
         getOrPut(from) { ArrayList(to.size + 2) }.addAll(to)
     }
-
 
 
     /**
@@ -761,11 +762,11 @@ class ObsGraphEco(
     }.scoping()
 
 
-
     fun setGroups(groups: List<GroupLogic>) {
+        val filteredGroups = groups.filter { d -> d.isVisible }
         scope.launch(io) {
-            if (_groupsStateFlow.value != groups) {
-                _groupsStateFlow.emit(groups)
+            if (_groupsStateFlow.value != filteredGroups) {
+                _groupsStateFlow.emit(filteredGroups)
             }
         }
     }

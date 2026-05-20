@@ -201,7 +201,8 @@ internal fun PageContent(
                 GroupModel.empty()
             } else {
                 // defs: one hull per configured group, name doubles as identity
-                val defs = state.partConfig.groups.map { group ->
+                val defs = state.partConfig.groups.filter { d -> d.isVisible && d.isLand }.map { group ->
+
                     GroupHullDef(
                         id = GroupId(group.name),
                         name = group.name,

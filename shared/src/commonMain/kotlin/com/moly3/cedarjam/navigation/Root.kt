@@ -9,6 +9,7 @@ import com.moly3.cedarjam.core.domain.repository.IAppEnvironment
 import com.moly3.cedarjam.core.domain.service.AlertService
 import com.moly3.cedarjam.core.domain.service.IMessageService
 import com.moly3.cedarjam.core.domain.usecase.SyncStatusChannel
+import com.moly3.cedarjam.core.ui.dialog.DialogRegistry
 import com.moly3.cedarjam.pages.page_select_workspace.ISelectWorkspaceComponent
 import com.moly3.cedarjam.pages.page_workspace.WorkspaceComponent
 import dev.zacsweers.metro.AssistedFactory
@@ -20,6 +21,7 @@ import kotlinx.coroutines.flow.StateFlow
 interface Root : NavigationComponent<Root.Child> {
 
     val isRelease: Boolean
+    val dialogRegistry: DialogRegistry
     val messageService: IMessageService
     val appEnvironment: IAppEnvironment
 

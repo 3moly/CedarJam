@@ -24,6 +24,7 @@ import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import com.moly3.cedarjam.core.domain.dialog.DialogColorPickerService
 import com.moly3.cedarjam.core.domain.dialog.DialogCreateWorkspaceService
 import com.moly3.cedarjam.core.domain.dialog.DialogDeleteService
+import com.moly3.cedarjam.core.domain.dialog.DialogGraphConfigsService
 import com.moly3.cedarjam.core.domain.dialog.DialogSelectOptionsService
 import com.moly3.cedarjam.core.domain.dialog.DialogSelectTagService
 import com.moly3.cedarjam.core.domain.dialog.DialogTagToTagService
@@ -47,13 +48,14 @@ import com.moly3.cedarjam.ui.dialog.DialogDeleteUI
 import com.moly3.cedarjam.ui.dialog.DialogSelectOptionsUI
 import com.moly3.cedarjam.ui.dialog.SuccessSnackbarComponent
 import com.moly3.cedarjam.di.metro.CedarJamGraph
+import com.moly3.cedarjam.ui.dialog.DialogGraphConfigsUI
 import io.github.kdroidfilter.composemediaplayer.rememberVideoPlayerState
 
 @OptIn(ExperimentalDecomposeApi::class)
 @Composable
 fun MainApp(root: Root) {
     val registry = remember {
-        CedarJamGraph.deps.dialogRegistry.apply {
+        root.dialogRegistry.apply {
             registerUI { dialog: DialogSelectOptionsService, input: DialogSelectOptionsServiceInput ->
                 DialogSelectOptionsUI(dialog, input)
             }
@@ -62,6 +64,9 @@ fun MainApp(root: Root) {
             }
             registerUI { dialog: DialogCreateWorkspaceService, input: Unit ->
                 DialogCreateWorkspaceUI(dialog)
+            }
+            registerUI { dialog: DialogGraphConfigsService, input: Unit ->
+                DialogGraphConfigsUI(dialog)
             }
             registerUI { dialog: DialogDeleteService, input: Unit ->
                 DialogDeleteUI(dialog)

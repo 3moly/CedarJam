@@ -34,7 +34,7 @@ import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
 fun CJButton(
     modifier: Modifier = Modifier,
     text: String,
-    backColor: Color = Color.Black,
+    backColor: Color = LocalAppTheme.current.colors.backgroundSecondary,
     fontColor: Color = LocalAppTheme.current.colors.primaryFont,
     onClick: () -> Unit
 ) {

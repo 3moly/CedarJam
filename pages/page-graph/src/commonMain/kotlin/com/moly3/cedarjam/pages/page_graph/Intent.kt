@@ -18,5 +18,6 @@ sealed interface Intent {
     data class SetGraphSettings(val config: GraphSettings) : Intent
     data class SetGroups(val value: List<GroupLogic>) : Intent
     data class SetGroupColor(val groupName: String, val color: Color) : Intent
+    data class DeleteGroup(val groupName: String) : Intent
     data class SetFilter(val value: GraphFilter) : Intent
 }

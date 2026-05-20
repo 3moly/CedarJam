@@ -150,6 +150,7 @@ kotlin {
 
             implementation(libs.dnd)
             implementation(libs.webview)
+            implementation(libs.compose.data.viz)
 
         }
         commonTest.dependencies {

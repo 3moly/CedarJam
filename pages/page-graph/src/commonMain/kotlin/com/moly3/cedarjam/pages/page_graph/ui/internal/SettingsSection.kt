@@ -38,6 +38,7 @@ fun SettingsSection(
     title: String,
     initiallyExpanded: Boolean = false,
     accentColor: Color = Color(0xFF7E57C2),
+    menuContent: (@Composable () -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
     var expanded by remember { mutableStateOf(initiallyExpanded) }
@@ -67,9 +68,13 @@ fun SettingsSection(
                         text = title,
                         modifier = Modifier.weight(1f),
                     )
-                    CJText(
-                        text = if (expanded) "−" else "+",
-                    )
+                    if (menuContent != null) {
+                        menuContent()
+                    } else {
+                        CJText(
+                            text = if (expanded) "−" else "+",
+                        )
+                    }
                 }
                 AnimatedVisibility(
                     visible = expanded,
