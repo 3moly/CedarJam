@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.moly3.cedarjam.core.domain.model.TagLinkDtoData
+import com.moly3.cedarjam.core.domain.model.getValueOrNull
 import com.moly3.cedarjam.core.domain.repository.IFilesRepository
 import com.moly3.cedarjam.core.domain.service.IUtilsService
 import com.moly3.cedarjam.core.domain.service.WorkspaceSession
@@ -61,14 +62,25 @@ internal fun PageContent(
                         modifier = Modifier,
                         fileNode = state.fileType,
                         contentFileEdit = { fileType ->
+                            val text = remember {
+                                val editText = try {
+                                    val text = filesRepository.getNodeText(fileType.fileNode)
+                                    text.getValueOrNull() ?: ""
+                                } catch (exc: Exception) {
+                                    //show fallback
+                                    ""
+                                }
+                                editText
+                            }
                             FileEdit(
                                 modifier = Modifier.wstatusBarsPaddingCJ(),
-                                text = fileType.value,
+                                text = text,
                                 isCompact = false,
                                 onSave = {
                                     onIntent(Intent.ChangeTextNode(fileType, it))
                                 }
                             )
+
                         },
                         contentCanvas = { fileType -> },
                         backPage = {

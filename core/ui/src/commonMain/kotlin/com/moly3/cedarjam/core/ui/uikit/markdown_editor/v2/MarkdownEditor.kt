@@ -110,7 +110,14 @@ fun MarkdownEditor(
     val callbacks = remember(document, onDocumentChange, readOnly, history) {
         documentCallbacks(
             current = { document },
-            emit = onDocumentChange,
+            emit = { updated ->
+                val lastRow = updated.rows.lastOrNull()
+                val rows = updated.rows.toMutableList()
+                if (lastRow != null && !lastRow.text.isEmpty()) {
+                    rows.add(MarkdownRow())
+                }
+                onDocumentChange(updated.copy(rows = rows))
+            },
             focusManager = focusManager,
             readOnly = readOnly,
             history = history,
@@ -167,6 +174,25 @@ fun MarkdownEditor(
                 )
             }
         }
+//
+//        // Trailing empty line: shown only when the last real row has content,
+//        // so an "always one blank line below" affordance appears in the gutter.
+//        if (showLineNumbers && document.rows.lastOrNull()?.text?.isNotEmpty() == true) {
+//            item(key = "trailing_empty_line") {
+//                Row(modifier = Modifier.fillMaxWidth()) {
+//                    val lastIndex = document.rows.lastIndex
+//                    val trailingNumber =
+//                        lineNumbers[lastIndex] + rowLineCount(document.rows[lastIndex])
+//                    LineNumberGutter(
+//                        number = trailingNumber,
+//                        width = gutterWidth,
+//                    )
+//                    // Empty body cell — placeholder for the implicit next line.
+//                    Box(modifier = Modifier.weight(1f))
+//                }
+//            }
+//        }
+
         item("markdown_bottom") {
             Column {
                 Box(

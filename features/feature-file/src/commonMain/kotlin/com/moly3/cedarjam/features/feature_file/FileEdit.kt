@@ -15,6 +15,8 @@ import androidx.compose.ui.Modifier
 import com.moly3.cedarjam.core.domain.features.mdprops.DocumentHistory
 import com.moly3.cedarjam.core.domain.features.mdprops.MarkdownDecoder
 import com.moly3.cedarjam.core.domain.features.mdprops.MarkdownEncoder
+import com.moly3.cedarjam.core.domain.features.mdprops.MarkdownRow
+import com.moly3.cedarjam.core.domain.features.mdprops.RowType
 import com.moly3.cedarjam.core.ui.uikit.CJIOSwitch
 import com.moly3.cedarjam.core.ui.uikit.markdown_editor.v2.MarkdownEditor
 import kotlinx.coroutines.FlowPreview
@@ -53,6 +55,7 @@ fun FileEdit(
                     modifier = Modifier.fillMaxSize(),
                     document = doc,
                     onDocumentChange = { updated ->
+
                         doc = updated
                         updatedTimingState = System.now().toEpochMilliseconds()
                     },
