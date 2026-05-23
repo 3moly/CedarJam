@@ -78,7 +78,8 @@ fun MarkdownEditor(
     contentPadding: PaddingValues = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
     history: DocumentHistory,
     readOnly: Boolean = false,
-    showLineNumbers: Boolean = true,          // <-- new toggle
+    showLineNumbers: Boolean = true,
+    onWikiLinkClick: (String) -> Unit = {},
 ) {
     val listState = rememberLazyListState()
     val focusManager = rememberRowFocusManager()
@@ -123,7 +124,8 @@ fun MarkdownEditor(
             history = history,
             scrollToRow = rowScroller,
             selection = selection,
-            copyToClipboard = { text -> clipboard.setText(AnnotatedString(text)) },
+            copyToClipboard = { clipboard.setText(AnnotatedString(it)) },
+            onWikiLinkClick = onWikiLinkClick,   // <-- new
         )
     }
 
@@ -174,25 +176,6 @@ fun MarkdownEditor(
                 )
             }
         }
-//
-//        // Trailing empty line: shown only when the last real row has content,
-//        // so an "always one blank line below" affordance appears in the gutter.
-//        if (showLineNumbers && document.rows.lastOrNull()?.text?.isNotEmpty() == true) {
-//            item(key = "trailing_empty_line") {
-//                Row(modifier = Modifier.fillMaxWidth()) {
-//                    val lastIndex = document.rows.lastIndex
-//                    val trailingNumber =
-//                        lineNumbers[lastIndex] + rowLineCount(document.rows[lastIndex])
-//                    LineNumberGutter(
-//                        number = trailingNumber,
-//                        width = gutterWidth,
-//                    )
-//                    // Empty body cell — placeholder for the implicit next line.
-//                    Box(modifier = Modifier.weight(1f))
-//                }
-//            }
-//        }
-
         item("markdown_bottom") {
             Column {
                 Box(
@@ -220,6 +203,7 @@ private fun documentCallbacks(
     scrollToRow: (Int) -> Unit,
     selection: RowSelection,
     copyToClipboard: (String) -> Unit,
+    onWikiLinkClick: (String) -> Unit,
 ): RowCallbacks = object : RowCallbacks {
 
     private fun applyFocus(f: FocusSnapshot) {
@@ -434,6 +418,8 @@ private fun documentCallbacks(
             )
         }
     }
+
+    override fun onWikiLinkClick(target: String) { onWikiLinkClick(target) }
 }
 
 /** Left-gutter cell showing a single line's number. */

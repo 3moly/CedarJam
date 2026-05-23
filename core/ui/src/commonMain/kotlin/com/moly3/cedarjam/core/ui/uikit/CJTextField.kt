@@ -15,10 +15,13 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation.Companion
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
 
@@ -32,7 +35,9 @@ fun CJTextField(
     textStyle: TextStyle = LocalTextStyle.current,
     imeAction: ImeAction = ImeAction.Unspecified,
     onAnyAction: KeyboardActionScope.() -> Unit = {},
+    visualTransformation: VisualTransformation = VisualTransformation.None,
     onValueChange: (TextFieldValue) -> Unit,
+    onTextLayout: (TextLayoutResult) -> Unit = {},
     decorationBox: @Composable (innerTextField: @Composable () -> Unit) -> Unit =
         @Composable { innerTextField -> innerTextField() },
 ) {
@@ -50,12 +55,14 @@ fun CJTextField(
             } else
                 false
         }),
+        visualTransformation = visualTransformation,
         value = value,
         readOnly = readOnly,
         textStyle = textStyle,
         onValueChange = onValueChange,
         singleLine = singleLine,
         maxLines = maxLines,
+        onTextLayout = onTextLayout,
         cursorBrush = SolidColor(appTheme.primaryColor),
         keyboardActions = KeyboardActions(onAnyAction),
         keyboardOptions = KeyboardOptions(imeAction = imeAction),

@@ -30,12 +30,19 @@ import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.isCtrlPressed
+import androidx.compose.ui.input.pointer.isMetaPressed
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -43,6 +50,7 @@ import com.moly3.cedarjam.core.domain.features.mdprops.DividerSyntax
 import com.moly3.cedarjam.core.domain.features.mdprops.MarkdownRow
 import com.moly3.cedarjam.core.domain.features.mdprops.RowFocusManager
 import com.moly3.cedarjam.core.domain.features.mdprops.RowType
+import com.moly3.cedarjam.core.domain.features.mdprops.WikiLinkSyntax
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
 import com.moly3.cedarjam.core.ui.uikit.CJDivider
@@ -155,6 +163,7 @@ fun MarkdownRowItem(
                             callbacks.onTextChange(row.id, result.value.text)
                         }
                     },
+                    onWikiLinkClick = { target -> callbacks.onWikiLinkClick(target) },
                     onFocusChange = { focused ->
                         if (row.type == RowType.Divider) {
                             if (focused) {
@@ -247,28 +256,38 @@ private fun RowTextField(
     onValueChange: (TextFieldValue) -> Unit,
     onKeyEvent: (androidx.compose.ui.input.key.KeyEvent) -> Boolean,
     onFocusChange: (Boolean) -> Unit = {},
+    onWikiLinkClick: (String) -> Unit = {},
 ) {
     val theme = LocalAppTheme.current
     val isCode = row.type == RowType.Code
     val isDivider = row.type == RowType.Divider
+    val isImage = row.type == RowType.Image
     val style = row.type.textStyle()
+    val linkColor = theme.primaryColor
 
     var isFocused by remember { mutableStateOf(false) }
+    var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
+
+    val supportsWikiLinks = !isCode && !isImage && !isDivider
+
+    // Pre-compute wiki-link ranges for hit-testing on Ctrl/Cmd+click.
+    val wikiRanges = remember(fieldValue.text, supportsWikiLinks) {
+        if (!supportsWikiLinks) emptyList()
+        else WikiLinkSyntax.findAll(fieldValue.text)
+            .map { it.range.first..(it.range.last) to it.target }
+            .toList()
+    }
 
     val container = when {
         isCode -> Modifier
             .fillMaxWidth()
-            .background(
-                theme.colors.backgroundPrimary,
-                RoundedCornerShape(8.dp),
-            )
+            .background(theme.colors.backgroundPrimary, RoundedCornerShape(8.dp))
             .padding(12.dp)
-
         else -> Modifier.fillMaxWidth().padding(vertical = 2.dp)
     }
 
     Column(modifier = modifier.fillMaxWidth()) {
-        if (row.type == RowType.Image && fieldValue.text.isNotBlank()) {
+        if (isImage && fieldValue.text.isNotBlank()) {
             ImagePreview(url = fieldValue.text)
         }
 
@@ -285,16 +304,40 @@ private fun RowTextField(
                             onFocusChange(it.isFocused)
                         }
                     }
-                    .onPreviewKeyEvent(onKeyEvent),
+                    .onPreviewKeyEvent(onKeyEvent)
+                    .then(
+                        if (supportsWikiLinks && wikiRanges.isNotEmpty()) {
+                            Modifier.pointerInput(wikiRanges) {
+                                awaitPointerEventScope {
+                                    while (true) {
+                                        val event = awaitPointerEvent(PointerEventPass.Initial)
+                                        if (event.type != PointerEventType.Press) continue
+                                        val mods = event.keyboardModifiers
+                                        if (!(mods.isCtrlPressed || mods.isMetaPressed)) continue
+                                        val change = event.changes.firstOrNull() ?: continue
+                                        val l = layout ?: continue
+                                        val offset = l.getOffsetForPosition(change.position)
+                                        val hit = wikiRanges.firstOrNull { (r, _) -> offset in r }
+                                        if (hit != null) {
+                                            change.consume()
+                                            onWikiLinkClick(hit.second)
+                                        }
+                                    }
+                                }
+                            }
+                        } else Modifier
+                    ),
                 textStyle = style,
                 singleLine = false,
                 imeAction = if (row.type.isMultiline) ImeAction.Default else ImeAction.None,
+                visualTransformation = if (supportsWikiLinks) {
+                    WikiLinkVisualTransformation(linkColor)
+                } else {
+                    VisualTransformation.None
+                },
+                onTextLayout = { layout = it },
                 decorationBox = { inner ->
                     when {
-                        // Blurred divider -> show the horizontal rule. The text
-                        // field's own content (inner) is still composed so the
-                        // field stays focusable & measurable, just hidden under
-                        // the line via a Box overlay.
                         isDivider && !isFocused -> {
                             Box(
                                 modifier = Modifier
@@ -302,13 +345,10 @@ private fun RowTextField(
                                     .padding(vertical = 8.dp),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                // Hidden text content (kept for focus/measure).
                                 Box(Modifier.height(0.dp)) { inner() }
-
                                 CJDivider(color = theme.colors.backgroundPrimary)
                             }
                         }
-                        // Empty focused row -> placeholder hint behind the caret.
                         fieldValue.text.isEmpty() && isFocused -> {
                             CJText(
                                 text = row.type.placeholder(),
@@ -317,7 +357,6 @@ private fun RowTextField(
                             )
                             inner()
                         }
-
                         else -> inner()
                     }
                 },

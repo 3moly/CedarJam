@@ -12,6 +12,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
+import co.touchlab.kermit.Logger
 import com.moly3.cedarjam.core.domain.features.mdprops.DocumentHistory
 import com.moly3.cedarjam.core.domain.features.mdprops.MarkdownDecoder
 import com.moly3.cedarjam.core.domain.features.mdprops.MarkdownEncoder
@@ -60,6 +61,10 @@ fun FileEdit(
                         updatedTimingState = System.now().toEpochMilliseconds()
                     },
                     history = history,
+                    onWikiLinkClick = {
+                        val msg = "" + it
+                        Logger.w{"onWikiLinkClick ${it}"}
+                    }
                 )
             } else {
                 val rawText = remember {

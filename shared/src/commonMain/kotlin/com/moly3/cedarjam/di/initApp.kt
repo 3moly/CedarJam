@@ -22,7 +22,7 @@ fun initApp(
         Logger.setLogWriters(listOf())
         Logger.setMinSeverity(Severity.Assert)
     } else {
-        Logger.addLogWriter(CommonWriter())
+        Logger.setLogWriters(CommonWriter())
     }
     FileKit.init(context)
     PlatformAndroidContext.init(context)

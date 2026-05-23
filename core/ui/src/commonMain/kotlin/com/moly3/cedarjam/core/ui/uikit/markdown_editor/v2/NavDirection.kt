@@ -72,4 +72,5 @@ interface RowCallbacks {
      * again; otherwise it is demoted to a plain paragraph carrying that text.
      */
     fun onDividerBlur(rowId: String)
+    fun onWikiLinkClick(target: String)
 }
