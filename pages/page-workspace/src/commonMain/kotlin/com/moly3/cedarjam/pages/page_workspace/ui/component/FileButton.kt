@@ -52,6 +52,7 @@ import com.moly3.cedarjam.core.ui.compositions.LocalHazeState
 import com.moly3.cedarjam.core.ui.compositions.LocalHazeStyle
 import com.moly3.cedarjam.core.ui.onPointerEvent
 import com.moly3.cedarjam.core.ui.uikit.CJText
+import com.moly3.cedarjam.core.ui.uikit.CJTextField
 import vector.ChevronDownDuo
 import vector.FileAdd
 import vector.FolderAdd
@@ -191,22 +192,21 @@ fun FileButton(
                 mutableStateOf(TextFieldValue(title, selection = TextRange(title.length)))
             }
             val focusRequester = remember { FocusRequester() }
-            BasicTextField(
+            CJTextField(
                 modifier = Modifier.weight(1f).focusRequester(focusRequester),
                 value = renameTextField.value,
                 onValueChange = {
                     renameTextField.value = it
                 },
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = {
+                imeAction = ImeAction.Done,
+                onAnyAction = {
                     onRename(renameTextField.value.text)
-                }),
+                },
                 textStyle = TextStyle.Default.copy(
                     LocalAppTheme.current.colors.primaryFont,
                     fontSize = 14.sp
                 ),
                 singleLine = true,
-                cursorBrush = SolidColor(primaryColor)
             )
             LaunchedEffect(Unit) {
                 focusRequester.requestFocus()

@@ -55,7 +55,7 @@ fun DialogCreateWorkspaceUI(dialog: DialogCreateWorkspaceService) {
 //                    serverNameState = it
 //                })
         if (getPlatform() is Platform.Jvm) {
-            CJIOSwitch(height = 24, isPressed = isSelectedFullPath, onClick = {
+            CJIOSwitch(height = 24, checked = isSelectedFullPath, onCheckedChange = {
                 isSelectedFullPath = !isSelectedFullPath
             })
             if (isSelectedFullPath) {

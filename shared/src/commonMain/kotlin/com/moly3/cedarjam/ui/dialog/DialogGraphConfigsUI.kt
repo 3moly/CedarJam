@@ -14,19 +14,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
-import com.moly3.cedarjam.core.domain.dialog.DialogCreateWorkspaceService
 import com.moly3.cedarjam.core.domain.dialog.DialogGraphConfigsService
 import com.moly3.cedarjam.core.domain.dialog.openDirectory
 import com.moly3.cedarjam.core.domain.func.getPlatform
-import com.moly3.cedarjam.core.domain.func.pathWrapper
 import com.moly3.cedarjam.core.domain.model.Platform
-import com.moly3.cedarjam.core.domain.model.Workspace
 import com.moly3.cedarjam.core.ui.uikit.CJButton
 import com.moly3.cedarjam.core.ui.uikit.CJIOSwitch
 import com.moly3.cedarjam.core.ui.uikit.CJSearchTextField
 import com.moly3.cedarjam.core.ui.uikit.CJText
-import io.github.vinceglb.filekit.FileKit
-import io.github.vinceglb.filekit.filesDir
 import io.github.vinceglb.filekit.name
 import kotlinx.coroutines.launch
 
@@ -56,7 +51,7 @@ fun DialogGraphConfigsUI(dialog: DialogGraphConfigsService) {
 //                    serverNameState = it
 //                })
         if (getPlatform() is Platform.Jvm) {
-            CJIOSwitch(height = 24, isPressed = isSelectedFullPath, onClick = {
+            CJIOSwitch(height = 24, checked = isSelectedFullPath, onCheckedChange = {
                 isSelectedFullPath = !isSelectedFullPath
             })
             if (isSelectedFullPath) {

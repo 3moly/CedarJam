@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -243,8 +242,8 @@ fun BoxScope.SettingsPanel(
                                 CJIOSwitch(
                                     modifier = Modifier,
                                     height = 24,
-                                    isPressed = partConfig.config.groupSettings.enabled,
-                                    onClick = {
+                                    checked = partConfig.config.groupSettings.enabled,
+                                    onCheckedChange = {
                                         val groups =
                                             partConfig.config.groupSettings.copy(enabled = !partConfig.config.groupSettings.enabled)
                                         onIntent(
@@ -284,8 +283,8 @@ fun BoxScope.SettingsPanel(
                                             CJIOSwitch(
                                                 modifier = Modifier,
                                                 height = 24,
-                                                isPressed = group.isVisible,
-                                                onClick = {
+                                                checked = group.isVisible,
+                                                onCheckedChange = {
                                                     changeGroup {
                                                         group.copy(isVisible = !group.isVisible)
                                                     }
@@ -337,8 +336,8 @@ fun BoxScope.SettingsPanel(
                                                 CJIOSwitch(
                                                     modifier = Modifier,
                                                     height = 24,
-                                                    isPressed = group.isLand,
-                                                    onClick = {
+                                                    checked = group.isLand,
+                                                    onCheckedChange = {
                                                         changeGroup {
                                                             group.copy(isLand = !group.isLand)
                                                         }

@@ -43,19 +43,19 @@ fun FileEdit(
     val history = remember { DocumentHistory(document) }
     var doc by remember { mutableStateOf(history.current) }
     var updatedTimingState by remember { mutableStateOf(0L) }
-    Column(Modifier.fillMaxSize()) {
-        CJIOSwitch(modifier = Modifier, height = 24, isPressed = isRawMode.value, onClick = {
+    Column(modifier.fillMaxSize()) {
+        CJIOSwitch(modifier = Modifier, height = 24, checked = isRawMode.value, onCheckedChange = {
             isRawMode.value = !isRawMode.value
         })
         Box(Modifier.weight(1f).fillMaxWidth()) {
             if (!isRawMode.value) {
                 MarkdownEditor(
+                    modifier = Modifier.fillMaxSize(),
                     document = doc,
                     onDocumentChange = { updated ->
                         doc = updated
                         updatedTimingState = System.now().toEpochMilliseconds()
                     },
-                    modifier = Modifier.fillMaxSize(),
                     history = history,
                 )
             } else {
@@ -63,7 +63,7 @@ fun FileEdit(
                     MarkdownEncoder.encode(doc)
                 }
                 RawEdit(
-                    modifier = modifier,
+                    modifier = Modifier,
                     text = rawText,
                     isFocusFirstTime = isFocusFirstTime,
                     startFontSize = startFontSize,

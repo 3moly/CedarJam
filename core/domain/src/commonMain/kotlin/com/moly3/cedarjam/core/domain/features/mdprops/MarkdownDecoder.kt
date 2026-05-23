@@ -136,7 +136,9 @@ object MarkdownDecoder {
     private fun decodeBody(body: String): List<MarkdownRow> {
         if (body.isBlank()) return emptyList()
 
-        val lines = body.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+        val raw = body.replace("\r\n", "\n").replace("\r", "\n")
+        val normalized = if (raw.endsWith("\n")) raw.dropLast(1) else raw
+        val lines = normalized.split("\n")
         val rows = ArrayList<MarkdownRow>()
 
         var pendingBlankLines = 0
@@ -154,8 +156,7 @@ object MarkdownDecoder {
                 return
             }
 
-            // Leading blank lines (before any block) are frontmatter/title artifacts,
-            // not user-authored empty rows. Discard them.
+            // Leading blank lines (before any block) are frontmatter/title artifacts.
             if (prevBlock == null) {
                 pendingBlankLines = 0
                 return
@@ -291,7 +292,8 @@ object MarkdownEncoder {
         }
 
         sb.append(encodeBody(doc.rows))
-        return sb.toString().trimEnd() + "\n"
+        val s = sb.toString()
+        return if (s.endsWith("\n")) s else "$s\n"
     }
 
     /* ---- frontmatter: List<DocumentProperty> -> YAML ----------------------------- */

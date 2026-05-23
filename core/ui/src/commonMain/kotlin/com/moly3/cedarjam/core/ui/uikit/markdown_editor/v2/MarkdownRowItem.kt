@@ -10,11 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Divider
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material.Divider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -45,10 +41,16 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.moly3.cedarjam.core.domain.features.mdprops.DividerSyntax
 import com.moly3.cedarjam.core.domain.features.mdprops.MarkdownRow
 import com.moly3.cedarjam.core.domain.features.mdprops.RowFocusManager
 import com.moly3.cedarjam.core.domain.features.mdprops.RowType
+import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
+import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
+import com.moly3.cedarjam.core.ui.uikit.CJDivider
+import com.moly3.cedarjam.core.ui.uikit.CJText
+import com.moly3.cedarjam.core.ui.uikit.CJTextField
 
 /**
  * One editable block in the document. This is the heart of the editor and owns:
@@ -74,7 +76,7 @@ fun MarkdownRowItem(
     val selectionModifier: Modifier =
         if (isSelected) {
             Modifier.background(
-                MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
+                LocalAppTheme.current.colors.backgroundPrimary.copy(alpha = 0.14f),
                 RoundedCornerShape(4.dp),
             )
         } else {
@@ -249,6 +251,7 @@ private fun RowTextField(
     onKeyEvent: (androidx.compose.ui.input.key.KeyEvent) -> Boolean,
     onFocusChange: (Boolean) -> Unit = {},
 ) {
+    val theme = LocalAppTheme.current
     val isCode = row.type == RowType.Code
     val isDivider = row.type == RowType.Divider
     val style = row.type.textStyle()
@@ -259,7 +262,7 @@ private fun RowTextField(
         isCode -> Modifier
             .fillMaxWidth()
             .background(
-                MaterialTheme.colorScheme.surfaceVariant,
+                theme.colors.backgroundPrimary,
                 RoundedCornerShape(8.dp),
             )
             .padding(12.dp)
@@ -273,11 +276,7 @@ private fun RowTextField(
         }
 
         Box(modifier = container) {
-            // The text field is always present so it can hold focus and receive
-            // key events (this is what lets arrows land on a divider). For a
-            // blurred divider we visually replace its content with a rule line
-            // via the decorationBox.
-            BasicTextField(
+            CJTextField(
                 value = fieldValue,
                 onValueChange = onValueChange,
                 modifier = Modifier
@@ -291,11 +290,8 @@ private fun RowTextField(
                     }
                     .onPreviewKeyEvent(onKeyEvent),
                 textStyle = style,
-                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                 singleLine = false,
-                keyboardOptions = KeyboardOptions(
-                    imeAction = if (row.type.isMultiline) ImeAction.Default else ImeAction.None,
-                ),
+                imeAction = if (row.type.isMultiline) ImeAction.Default else ImeAction.None,
                 decorationBox = { inner ->
                     when {
                         // Blurred divider -> show the horizontal rule. The text
@@ -311,15 +307,16 @@ private fun RowTextField(
                             ) {
                                 // Hidden text content (kept for focus/measure).
                                 Box(Modifier.height(0.dp)) { inner() }
-                                Divider(color = MaterialTheme.colorScheme.outlineVariant)
+
+                                CJDivider(color = theme.colors.backgroundPrimary)
                             }
                         }
                         // Empty focused row -> placeholder hint behind the caret.
                         fieldValue.text.isEmpty() && isFocused -> {
-                            Text(
+                            CJText(
                                 text = row.type.placeholder(),
                                 style = style,
-                                color = MaterialTheme.colorScheme.outline,
+                                color = theme.colors.secondaryFont
                             )
                             inner()
                         }
@@ -370,15 +367,13 @@ private fun ImagePreview(url: String) {
                     .fillMaxWidth()
                     .height(120.dp)
                     .background(
-                        MaterialTheme.colorScheme.surfaceVariant,
+                        LocalAppTheme.current.colors.backgroundPrimary,
                         RoundedCornerShape(8.dp),
                     ),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(
+                CJText(
                     "🖼  $url",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -393,19 +388,19 @@ private fun ImagePreview(url: String) {
 private fun RowLeadingDecoration(row: MarkdownRow, index: Int) {
     when (row.type) {
         RowType.BulletList -> {
-            Text(
+            CJText(
                 "•",
                 modifier = Modifier.padding(end = 8.dp, top = 2.dp),
-                style = MaterialTheme.typography.bodyLarge,
+//                style = typography.bodyLarge,
             )
         }
 
         RowType.NumberedList -> {
-            Text(
+            CJText(
                 "${index + 1}.",
                 modifier = Modifier.padding(end = 8.dp, top = 2.dp),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+//                style = typography.bodyMedium,
+//                color = colorScheme.onSurfaceVariant,
             )
         }
 
@@ -415,7 +410,7 @@ private fun RowLeadingDecoration(row: MarkdownRow, index: Int) {
                     .padding(end = 10.dp)
                     .width(3.dp)
                     .height(24.dp)
-                    .background(MaterialTheme.colorScheme.primary),
+                    .background(LocalAppTheme.current.primaryColor),
             )
         }
 
@@ -752,24 +747,36 @@ private fun handleEnter(
 
 @Composable
 private fun RowType.textStyle(): TextStyle {
-    val scheme = MaterialTheme.colorScheme
-    val typo = MaterialTheme.typography
+    val textStyle = LocalTextStyle.current
+
     return when (this) {
-        RowType.Heading1 -> typo.headlineMedium.copy(fontWeight = FontWeight.Bold)
-        RowType.Heading2 -> typo.headlineSmall.copy(fontWeight = FontWeight.Bold)
-        RowType.Heading3 -> typo.titleLarge.copy(fontWeight = FontWeight.SemiBold)
-        RowType.Quote -> typo.bodyLarge.copy(
-            fontWeight = FontWeight.Normal,
-            color = scheme.onSurfaceVariant,
+        RowType.Heading1 -> textStyle.copy(
+            fontWeight = FontWeight.Bold,
+            fontSize = 32.sp
         )
 
-        RowType.Code -> typo.bodyMedium.copy(fontFamily = FontFamily.Monospace)
-        // Divider source ("---") edits in a monospace face, like a code snippet.
-        RowType.Divider -> typo.bodyMedium.copy(
-            fontFamily = FontFamily.Monospace,
-            color = scheme.onSurfaceVariant,
+        RowType.Heading2 -> textStyle.copy(
+            fontWeight = FontWeight.Bold,
+            fontSize = 24.sp
         )
-        else -> typo.bodyLarge
+
+        RowType.Heading3 -> textStyle.copy(
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 18.sp
+        )
+
+        RowType.Quote -> textStyle.copy(
+            fontWeight = FontWeight.Normal,
+//            color = scheme.onSurfaceVariant,
+        )
+
+        RowType.Code -> textStyle.copy()
+        // Divider source ("---") edits in a monospace face, like a code snippet.
+        RowType.Divider -> textStyle.copy(
+//            color = scheme.onSurfaceVariant,
+        )
+
+        else -> textStyle
     }
 }
 

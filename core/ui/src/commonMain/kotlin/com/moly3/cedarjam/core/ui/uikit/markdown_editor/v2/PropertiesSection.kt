@@ -27,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
@@ -38,9 +39,17 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import com.moly3.cedarjam.core.domain.features.mdprops.DocumentProperty
 import com.moly3.cedarjam.core.domain.features.mdprops.PropertyType
+import com.moly3.cedarjam.core.domain.model.ColorsType
+import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
+import com.moly3.cedarjam.core.ui.func.darker
+import com.moly3.cedarjam.core.ui.uikit.CJButton
+import com.moly3.cedarjam.core.ui.uikit.CJIOSwitch
+import com.moly3.cedarjam.core.ui.uikit.CJText
+import com.moly3.cedarjam.core.ui.uikit.CJTextField
 
 /**
  * Intercepts Ctrl/Cmd+Z (undo) and Ctrl/Cmd+Shift+Z / Ctrl+Y (redo) on a
@@ -62,10 +71,12 @@ private fun handlePropertyKeyEvent(
             if (keyEvent.isShiftPressed) onRedo() else onUndo()
             true
         }
+
         Key.Y -> {
             onRedo()
             true
         }
+
         else -> false
     }
 }
@@ -112,11 +123,10 @@ fun PropertiesSection(
             )
         }
 
-        TextButton(
+        CJButton(
             onClick = { onPropertiesChange(properties + DocumentProperty(), false) },
-        ) {
-            Text("+ Add property", style = MaterialTheme.typography.labelMedium)
-        }
+            text = "+ Add property"
+        )
     }
 }
 
@@ -149,24 +159,18 @@ private fun PropertyRow(
         Spacer(Modifier.width(8.dp))
 
         // --- Property name ----------------------------------------------------
-        BasicTextField(
-            value = property.name,
-            onValueChange = { onChange(property.copy(name = it.replace("\n", "")), true) },
+        CJTextField(
+            value = TextFieldValue(property.name),
+            onValueChange = { onChange(property.copy(name = it.text.replace("\n", "")), true) },
             modifier = Modifier
                 .width(120.dp)
                 .onPreviewKeyEvent { handlePropertyKeyEvent(it, onUndo, onRedo) },
             singleLine = true,
-            textStyle = MaterialTheme.typography.bodyMedium.copy(
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            ),
-            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
             decorationBox = { inner ->
                 if (property.name.isEmpty()) {
-                    Text(
+                    CJText(
                         "Property",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.outline,
+                        color = LocalAppTheme.current.colors.secondaryFont
                     )
                 }
                 inner()
@@ -190,9 +194,7 @@ private fun PropertyRow(
             text = "✕",
             modifier = Modifier
                 .clickable(onClick = onRemove)
-                .padding(horizontal = 6.dp),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.outline,
+                .padding(horizontal = 6.dp)
         )
     }
 }
@@ -208,17 +210,16 @@ private fun PropertyTypeSelector(
         Box(
             modifier = Modifier
                 .size(26.dp)
-                .border(
-                    1.dp,
-                    MaterialTheme.colorScheme.outlineVariant,
-                    RoundedCornerShape(6.dp),
-                )
+//                .border(
+//                    1.dp,
+//                    colorScheme.outlineVariant,
+//                    RoundedCornerShape(6.dp),
+//                )
                 .clickable { expanded = true },
             contentAlignment = Alignment.Center,
         ) {
-            Text(
+            CJText(
                 text = selected.glyph,
-                style = MaterialTheme.typography.labelMedium,
             )
         }
 
@@ -227,8 +228,8 @@ private fun PropertyTypeSelector(
                 DropdownMenuItem(
                     text = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(type.glyph, modifier = Modifier.width(28.dp))
-                            Text(type.label)
+                            CJText(type.glyph, modifier = Modifier.width(28.dp))
+                            CJText(type.label)
                         }
                     },
                     onClick = {
@@ -250,10 +251,11 @@ private fun PropertyValueEditor(
 ) {
     when (property.type) {
         PropertyType.Checkbox -> {
-            Switch(
+            CJIOSwitch(
                 checked = property.singleValue.equals("true", ignoreCase = true),
                 // A toggle is one discrete action, not a typing burst.
                 onCheckedChange = { onChange(property.withSingleValue(it.toString()), false) },
+                height = 24
             )
         }
 
@@ -276,11 +278,11 @@ private fun PropertyValueEditor(
                     )
                 }
                 var draft by remember(property.id) { mutableStateOf("") }
-                BasicTextField(
-                    value = draft,
+                CJTextField(
+                    value = TextFieldValue(draft),
                     onValueChange = { input ->
-                        if (input.endsWith("\n") || input.endsWith(",")) {
-                            val token = input.dropLast(1).trim()
+                        if (input.text.endsWith("\n") || input.text.endsWith(",")) {
+                            val token = input.text.dropLast(1).trim()
                             if (token.isNotEmpty()) {
                                 // Committing a chip is a discrete step.
                                 onChange(
@@ -290,21 +292,20 @@ private fun PropertyValueEditor(
                             }
                             draft = ""
                         } else {
-                            draft = input
+                            draft = input.text
                         }
                     },
                     singleLine = true,
                     modifier = Modifier
                         .width(90.dp)
                         .onPreviewKeyEvent { handlePropertyKeyEvent(it, onUndo, onRedo) },
-                    textStyle = MaterialTheme.typography.bodyMedium,
-                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+//                    textStyle = typography.bodyMedium,
+//                    cursorBrush = SolidColor(colorScheme.primary),
                     decorationBox = { inner ->
                         if (draft.isEmpty()) {
-                            Text(
+                            CJText(
                                 "Add…",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.outline,
+                                color = LocalAppTheme.current.colors.secondaryFont
                             )
                         }
                         inner()
@@ -316,26 +317,28 @@ private fun PropertyValueEditor(
         else -> {
             // Text / Number / Date / DateTime — all single-line text inputs;
             // a real app would swap in a date picker for the Date types.
-            BasicTextField(
-                value = property.singleValue,
+            CJTextField(
+                value = TextFieldValue(property.singleValue),
                 // Per-keystroke value edit — coalesce into one undo step.
-                onValueChange = { onChange(property.withSingleValue(it.replace("\n", "")), true) },
+                onValueChange = {
+                    onChange(
+                        property.withSingleValue(it.text.replace("\n", "")),
+                        true
+                    )
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .onPreviewKeyEvent { handlePropertyKeyEvent(it, onUndo, onRedo) },
                 singleLine = true,
-                textStyle = MaterialTheme.typography.bodyMedium,
-                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                decorationBox = { inner ->
-                    if (property.singleValue.isEmpty()) {
-                        Text(
-                            property.type.placeholder,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.outline,
-                        )
-                    }
-                    inner()
-                },
+//                decorationBox = { inner ->
+//                    if (property.singleValue.isEmpty()) {
+//                        CJText(
+//                            property.type.placeholder,
+//                            color = LocalAppTheme.current.colors.secondaryFont
+//                        )
+//                    }
+//                    inner()
+//                },
             )
         }
     }
@@ -343,23 +346,30 @@ private fun PropertyValueEditor(
 
 @Composable
 private fun PropertyChip(text: String, onRemove: () -> Unit) {
+    val isDark = LocalAppTheme.current.currentTheme == ColorsType.Dark
+    val color1 = LocalAppTheme.current.primaryColor.darker(factor = 0.5f)
+    val color2 = LocalAppTheme.current.primaryColor
+    val background = if (isDark) color1 else color2
+    val fontColor = if (isDark) color2 else color1
     Row(
         modifier = Modifier
             .background(
-                MaterialTheme.colorScheme.surfaceVariant,
-                RoundedCornerShape(6.dp),
+                color = background,
+                shape = RoundedCornerShape(6.dp),
             )
             .padding(horizontal = 6.dp, vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(text, style = MaterialTheme.typography.labelSmall)
-        Text(
+        CJText(
+            text = text,
+            color = fontColor
+        )
+        CJText(
             "✕",
             modifier = Modifier
                 .padding(start = 4.dp)
                 .clickable(onClick = onRemove),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.outline,
+            color = fontColor
         )
     }
 }

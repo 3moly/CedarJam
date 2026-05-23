@@ -11,13 +11,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
@@ -25,8 +23,8 @@ import androidx.compose.ui.unit.dp
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
 import com.moly3.cedarjam.core.ui.func.darker
-import vector.SearchMagnifyingGlass
 import com.moly3.cedarjam.core.ui.volumedBorderStroke
+import vector.SearchMagnifyingGlass
 
 @Composable
 fun CJSearchTextField(
@@ -42,10 +40,11 @@ fun CJSearchTextField(
     val isShowPlaceholder = remember(value.text) {
         value.text.isEmpty()
     }
-    BasicTextField(
+    CJTextField(
         modifier = modifier,
         value = value,
         onValueChange = onValueChange,
+        maxLines = 1,
         textStyle = textStyle.copy(color = primaryFontColor),
         decorationBox = { innerContent ->
             Row(
@@ -79,8 +78,8 @@ fun CJSearchTextField(
                 }
             }
         },
-        cursorBrush = SolidColor(primaryColor),
-        maxLines = 1
+//        cursorBrush = SolidColor(primaryColor),
+//        maxLines = 1
     )
 }
 

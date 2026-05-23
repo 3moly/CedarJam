@@ -2,10 +2,12 @@ package com.moly3.cedarjam.core.ui.uikit.markdown_editor.v2
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -30,9 +32,12 @@ import com.moly3.cedarjam.core.domain.features.mdprops.FocusSnapshot
 import com.moly3.cedarjam.core.domain.features.mdprops.MarkdownDocument
 import com.moly3.cedarjam.core.domain.features.mdprops.MarkdownEncoder
 import com.moly3.cedarjam.core.domain.features.mdprops.MarkdownRow
+import com.moly3.cedarjam.core.domain.features.mdprops.PropertyType
 import com.moly3.cedarjam.core.domain.features.mdprops.RowFocusManager
 import com.moly3.cedarjam.core.domain.features.mdprops.RowType
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
+import com.moly3.cedarjam.core.ui.func.imePaddingCJ
+import com.moly3.cedarjam.core.ui.func.navigationBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.uikit.CJText
 
 /**
@@ -82,7 +87,7 @@ fun MarkdownEditor(
     val selection = rememberRowSelection()
     val clipboard = LocalClipboardManager.current
     val scope = rememberCoroutineScope()
-
+    val lineNumbers = remember(document) { document.rowLineNumbers() }
     // There are 2 leading lazy items (title, properties) before the rows,
     // so a row at model index N lives at lazy index N + HEADER_ITEMS.
     val rowScroller: (Int) -> Unit = { rowIndex ->
@@ -124,20 +129,12 @@ fun MarkdownEditor(
     } else 0.dp
 
     LazyColumn(
-        modifier = modifier.fillMaxSize()
+        modifier = modifier
+            .fillMaxSize()
             .background(LocalAppTheme.current.colors.backgroundSecondary),
         state = listState,
         contentPadding = contentPadding,
     ) {
-//        item(key = "title") {
-//            TitleEditor(
-//                title = document.title,
-//                onTitleChange = { if (!readOnly) onDocumentChange(document.copy(title = it)) },
-//                onSubmit = { document.rows.firstOrNull()?.let { focusManager.focus(it.id) } },
-//                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-//            )
-//        }
-
         item(key = "properties") {
             PropertiesSection(
                 properties = document.properties,
@@ -157,7 +154,7 @@ fun MarkdownEditor(
             Row(modifier = Modifier.fillMaxWidth()) {
                 if (showLineNumbers) {
                     LineNumberGutter(
-                        number = index + 1,
+                        number = lineNumbers[index],
                         width = gutterWidth,
                     )
                 }
@@ -168,13 +165,22 @@ fun MarkdownEditor(
                     focusManager = focusManager,
                     callbacks = callbacks,
                     isSelected = selection.contains(row.id, document),
-                    modifier = Modifier.weight(1f),   // was fillMaxWidth()
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+        item("markdown_bottom") {
+            Column {
+                Box(
+                    Modifier
+                        .height(100.dp)
+                        .imePaddingCJ()
+                        .navigationBarsPaddingCJ()
                 )
             }
         }
     }
 }
-
 
 
 /* ----------------------------------------------------------------------------------
@@ -420,4 +426,49 @@ private fun LineNumberGutter(number: Int, width: Dp) {
             color = LocalAppTheme.current.colors.secondaryFont
         )
     }
+}
+
+/**
+ * Returns the 1-based file line number where each body row starts, accounting
+ * for frontmatter, the blank line after frontmatter, the title H1 and its
+ * trailing blank, and multi-line code blocks. The result is parallel to
+ * [MarkdownDocument.rows].
+ */
+fun MarkdownDocument.rowLineNumbers(): List<Int> {
+    var line = 1
+
+    // Frontmatter: ---, one line per property, ---, then a blank separator.
+    if (properties.isNotEmpty()) {
+        line += 1                       // opening ---
+        line += properties.sumOf { encodedPropertyLineCount(it) }
+        line += 1                       // closing ---
+        line += 1                       // blank line after ---
+    }
+
+    // Title H1 and its trailing blank separator.
+    if (title.isNotBlank()) {
+        line += 1                       // "# title"
+        line += 1                       // blank line
+    }
+
+    val starts = ArrayList<Int>(rows.size)
+    for (row in rows) {
+        starts.add(line)
+        line += rowLineCount(row)
+    }
+    return starts
+}
+
+private fun encodedPropertyLineCount(p: DocumentProperty): Int = when (p.type) {
+    PropertyType.List -> if (p.values.isEmpty()) 1 else 1 + p.values.size
+    else -> 1
+}
+
+private fun rowLineCount(row: MarkdownRow): Int = when (row.type) {
+    RowType.Code -> {
+        val bodyLines = if (row.text.isEmpty()) 0 else row.text.count { it == '\n' } + 1
+        2 + bodyLines
+    }
+
+    else -> 1
 }

@@ -12,13 +12,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
 import com.moly3.cedarjam.core.ui.uikit.CJIcon
-import com.moly3.cedarjam.core.ui.uikit.CJTextField2
+import com.moly3.cedarjam.core.ui.uikit.CJTextField
 import vector.ArrowLeft
 import vector.ArrowRight
 
@@ -36,7 +37,7 @@ internal fun TabControlsContent(
     Box(Modifier.padding(vertical = 6.dp, horizontal = 12.dp).fillMaxWidth()) {
         ConstraintLayout(modifier = Modifier.fillMaxWidth()) {
             val (text) = createRefs()
-            CJTextField2(
+            CJTextField(
                 modifier = Modifier
                     .widthIn(min = 100.dp)
                     .constrainAs(text) {
@@ -45,15 +46,16 @@ internal fun TabControlsContent(
                         top.linkTo(parent.top)
                         bottom.linkTo(parent.bottom)
                     },
-                iconPainter = tabNameIcon,
+//                iconPainter = tabNameIcon,
                 textStyle = LocalTextStyle.current.copy(
                     fontSize = 12.sp,
                     textAlign = TextAlign.Start
                 ),
-                text = textNameState,
-                onDone = { onRename() },
-                onLostFocus = { onRename() },
-                enabled = isEditEnabled
+                value = TextFieldValue(textNameState.text.toString()),
+                onValueChange = {}
+//                onDone = { onRename() },
+//                onLostFocus = { onRename() },
+//                enabled = isEditEnabled
             )
         }
         Row(

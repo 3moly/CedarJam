@@ -31,6 +31,7 @@ import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
 import com.moly3.cedarjam.core.ui.func.navigationBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.uikit.CJText
+import com.moly3.cedarjam.core.ui.uikit.CJTextField
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 
@@ -152,7 +153,7 @@ fun RawEdit(
                 style = lineNumberTextStyle.copy(textAlign = TextAlign.End)
             )
 
-            BasicTextField(
+            CJTextField(
                 modifier = Modifier
                     .focusRequester(focusRequester)
                     .weight(1f)
@@ -164,10 +165,10 @@ fun RawEdit(
                     onTextEdit(it.text)
                 },
                 singleLine = false,
-                onTextLayout = { layoutResult ->
-                    textLayoutResult = layoutResult
-                },
-                cursorBrush = SolidColor(appTheme.primaryColor),
+//                onTextLayout = { layoutResult ->
+//                    textLayoutResult = layoutResult
+//                },
+//                cursorBrush = SolidColor(appTheme.primaryColor),
                 decorationBox = {
                     it()
                 }
