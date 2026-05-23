@@ -102,6 +102,7 @@ internal fun PageContent(
                     workspaceFullPath = workspaceFullPath,
                     scrollState = scrollState,
                     list = filtered,
+
                     onClick = {
                         onIntent(Intent.OpenTimeMachine(it))
                     }

@@ -163,6 +163,7 @@ internal class FileStoreFactory(
                         val fileType = fileNode.toGetFileType(
                             filesRepository = filesRepository
                         )
+                        val pdfInputData = data.type as? FilePageInput.FilePageType.Pdf
                         when (fileType) {
                             is FileType.Canvas -> {
                                 showCanvasDialog(fileType.fileNode)
@@ -173,7 +174,7 @@ internal class FileStoreFactory(
                                 if (state.fileType == null) {
                                     dispatch(
                                         FileStore.Msg.SetFile(
-                                            FileType.PDF(fileType.fileNode, 1)
+                                            FileType.PDF(fileType.fileNode, pdfInputData?.page ?: 1)
                                         )
                                     )
                                 }

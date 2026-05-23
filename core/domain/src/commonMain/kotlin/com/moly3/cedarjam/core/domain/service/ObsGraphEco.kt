@@ -240,7 +240,11 @@ class ObsGraphEco(
                     id = graphId,
                     name = "annotation: page ${item.dataPoint}",
                     colorValue = RED_COLOR,
-                    data = ObsidianGraphData.Annotation(id = item.id)
+                    data = ObsidianGraphData.Annotation(
+                        id = item.id,
+                        dataPath = item.dataPath,
+                        dataPoint = item.dataPoint
+                    )
                 )
             )
             ids.add(graphId)

@@ -129,14 +129,14 @@ fun MarkdownEditor(
         state = listState,
         contentPadding = contentPadding,
     ) {
-        item(key = "title") {
-            TitleEditor(
-                title = document.title,
-                onTitleChange = { if (!readOnly) onDocumentChange(document.copy(title = it)) },
-                onSubmit = { document.rows.firstOrNull()?.let { focusManager.focus(it.id) } },
-                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-            )
-        }
+//        item(key = "title") {
+//            TitleEditor(
+//                title = document.title,
+//                onTitleChange = { if (!readOnly) onDocumentChange(document.copy(title = it)) },
+//                onSubmit = { document.rows.firstOrNull()?.let { focusManager.focus(it.id) } },
+//                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+//            )
+//        }
 
         item(key = "properties") {
             PropertiesSection(

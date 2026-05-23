@@ -19,7 +19,8 @@ sealed class ObsidianGraphData {
 
 
     @Serializable
-    data class Annotation(val id: Long) : ObsidianGraphData()
+    data class Annotation(val id: Long, val dataPath: String, val dataPoint: Double) :
+        ObsidianGraphData()
 
     @Serializable
     data class CollectionRow(val id: Long, val collectionId: Long) : ObsidianGraphData()

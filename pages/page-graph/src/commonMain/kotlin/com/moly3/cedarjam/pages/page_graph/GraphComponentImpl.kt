@@ -29,7 +29,10 @@ class GraphComponentImpl(
             config = UltraFastEngineConfig.Default.copy(
                 antiStickDistanceMultiplier = 0f,
                 antiStickForceMultiplier = 0f,
-                minRepelAlpha = 0f
+                minRepelAlpha = 0f,
+                dragReheatAlpha = 0f,
+                deStackRadius = 50f,
+                startAlpha = 0f
             )
         )
 

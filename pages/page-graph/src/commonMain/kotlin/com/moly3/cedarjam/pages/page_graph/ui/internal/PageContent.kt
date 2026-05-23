@@ -201,14 +201,15 @@ internal fun PageContent(
                 GroupModel.empty()
             } else {
                 // defs: one hull per configured group, name doubles as identity
-                val defs = state.partConfig.groups.filter { d -> d.isVisible && d.isLand }.map { group ->
+                val defs =
+                    state.partConfig.groups.filter { d -> d.isVisible && d.isLand }.map { group ->
 
-                    GroupHullDef(
-                        id = GroupId(group.name),
-                        name = group.name,
-                        color = group.color,
-                    )
-                }
+                        GroupHullDef(
+                            id = GroupId(group.name),
+                            name = group.name,
+                            color = group.color,
+                        )
+                    }
 
                 // memberships: flatten nodeLands (nodeId -> list of group names)
                 val memberships = state.nodeLands.flatMap { (nodeId, groupNames) ->
@@ -220,7 +221,10 @@ internal fun PageContent(
                     }
                 }
 
-                GroupModel(defs = defs, memberships = memberships)
+                GroupModel(
+                    defs = defs,
+                    memberships = memberships
+                )
             }
         }
 
@@ -238,6 +242,7 @@ internal fun PageContent(
             stateNodes = state.graphNodes,
             coordinates = state.coordinates,
             velocities = mapOf(),
+            isImmediateReheatOnUpdate = false,
             onWatchPosition = { nodePosition ->
                 graphUserPosition.value = nodePosition
                 onIntent(Intent.SetGraphUserPosition(nodePosition))

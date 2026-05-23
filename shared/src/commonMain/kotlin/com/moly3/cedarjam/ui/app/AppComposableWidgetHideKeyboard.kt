@@ -18,7 +18,9 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
 import com.moly3.cedarjam.core.domain.func.getPlatform
 import com.moly3.cedarjam.core.domain.model.Platform
+import com.moly3.cedarjam.core.ui.func.imePaddingCJ
 import com.moly3.cedarjam.core.ui.func.keyboardAsState
+import com.moly3.cedarjam.core.ui.func.navigationBarsPaddingCJ
 import vector.CommonIcHideKeyboard
 
 @Composable
@@ -29,6 +31,8 @@ fun BoxScope.AppComposableWidgetHideKeyboard() {
     AnimatedVisibility(
         visible = isKeyboardShowed && getPlatform() == Platform.Ios,
         modifier = Modifier
+            .imePaddingCJ()
+            .navigationBarsPaddingCJ()
             .padding(end = 24.dp)
             .align(Alignment.BottomEnd) // attach here instead
     ) {
