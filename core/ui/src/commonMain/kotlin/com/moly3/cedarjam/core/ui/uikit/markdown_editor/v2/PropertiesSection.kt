@@ -1,7 +1,6 @@
 package com.moly3.cedarjam.core.ui.uikit.markdown_editor.v2
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,13 +12,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.MenuItemColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -28,7 +23,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
@@ -38,9 +32,9 @@ import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.PopupProperties
 import com.moly3.cedarjam.core.domain.features.mdprops.DocumentProperty
 import com.moly3.cedarjam.core.domain.features.mdprops.PropertyType
 import com.moly3.cedarjam.core.domain.model.ColorsType
@@ -158,24 +152,21 @@ private fun PropertyRow(
 
         Spacer(Modifier.width(8.dp))
 
-        // --- Property name ----------------------------------------------------
         CJTextField(
-            value = TextFieldValue(property.name),
-            onValueChange = { onChange(property.copy(name = it.text.replace("\n", "")), true) },
+            value = property.name,
+            onValueChange = { onChange(property.copy(name = it.replace("\n", "")), true) },
             modifier = Modifier
                 .width(120.dp)
                 .onPreviewKeyEvent { handlePropertyKeyEvent(it, onUndo, onRedo) },
             singleLine = true,
             decorationBox = { inner ->
                 if (property.name.isEmpty()) {
-                    CJText(
-                        "Property",
-                        color = LocalAppTheme.current.colors.secondaryFont
-                    )
+                    CJText("Property", color = LocalAppTheme.current.colors.secondaryFont)
                 }
                 inner()
             },
         )
+
 
         Spacer(Modifier.width(12.dp))
 
@@ -190,7 +181,7 @@ private fun PropertyRow(
         }
 
         // --- Remove -----------------------------------------------------------
-        Text(
+        CJText(
             text = "✕",
             modifier = Modifier
                 .clickable(onClick = onRemove)
@@ -223,12 +214,32 @@ private fun PropertyTypeSelector(
             )
         }
 
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+        val theme = LocalAppTheme.current
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            containerColor = theme.colors.backgroundPrimary,
+            properties = PopupProperties(),
+            shadowElevation = 0.dp,
+            tonalElevation = 0.dp
+        ) {
             PropertyType.entries.forEach { type ->
                 DropdownMenuItem(
+                    colors = MenuItemColors(
+                        textColor = theme.colors.primaryFont,
+                        leadingIconColor = Color.Magenta,
+                        trailingIconColor = Color.Magenta,
+                        disabledTextColor = Color.Red,
+                        disabledLeadingIconColor = Color.Blue,
+                        disabledTrailingIconColor = Color.Cyan
+                    ),
                     text = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            CJText(type.glyph, modifier = Modifier.width(28.dp))
+                            CJText(
+                                text = type.glyph,
+                                modifier = Modifier.width(28.dp),
+                                textAlign = TextAlign.Center
+                            )
                             CJText(type.label)
                         }
                     },
@@ -279,12 +290,11 @@ private fun PropertyValueEditor(
                 }
                 var draft by remember(property.id) { mutableStateOf("") }
                 CJTextField(
-                    value = TextFieldValue(draft),
+                    value = draft,
                     onValueChange = { input ->
-                        if (input.text.endsWith("\n") || input.text.endsWith(",")) {
-                            val token = input.text.dropLast(1).trim()
+                        if (input.endsWith("\n") || input.endsWith(",")) {
+                            val token = input.dropLast(1).trim()
                             if (token.isNotEmpty()) {
-                                // Committing a chip is a discrete step.
                                 onChange(
                                     property.copy(values = property.values.filter { it.isNotBlank() } + token),
                                     false,
@@ -292,21 +302,16 @@ private fun PropertyValueEditor(
                             }
                             draft = ""
                         } else {
-                            draft = input.text
+                            draft = input
                         }
                     },
                     singleLine = true,
                     modifier = Modifier
                         .width(90.dp)
                         .onPreviewKeyEvent { handlePropertyKeyEvent(it, onUndo, onRedo) },
-//                    textStyle = typography.bodyMedium,
-//                    cursorBrush = SolidColor(colorScheme.primary),
                     decorationBox = { inner ->
                         if (draft.isEmpty()) {
-                            CJText(
-                                "Add…",
-                                color = LocalAppTheme.current.colors.secondaryFont
-                            )
+                            CJText("Add…", color = LocalAppTheme.current.colors.secondaryFont)
                         }
                         inner()
                     },
@@ -318,27 +323,21 @@ private fun PropertyValueEditor(
             // Text / Number / Date / DateTime — all single-line text inputs;
             // a real app would swap in a date picker for the Date types.
             CJTextField(
-                value = TextFieldValue(property.singleValue),
-                // Per-keystroke value edit — coalesce into one undo step.
-                onValueChange = {
-                    onChange(
-                        property.withSingleValue(it.text.replace("\n", "")),
-                        true
-                    )
-                },
+                value = property.singleValue,
+                onValueChange = { onChange(property.withSingleValue(it.replace("\n", "")), true) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .onPreviewKeyEvent { handlePropertyKeyEvent(it, onUndo, onRedo) },
                 singleLine = true,
-//                decorationBox = { inner ->
-//                    if (property.singleValue.isEmpty()) {
-//                        CJText(
-//                            property.type.placeholder,
-//                            color = LocalAppTheme.current.colors.secondaryFont
-//                        )
-//                    }
-//                    inner()
-//                },
+                decorationBox = { inner ->
+                    if (property.singleValue.isEmpty()) {
+                        CJText(
+                            property.type.placeholder,
+                            color = LocalAppTheme.current.colors.secondaryFont
+                        )
+                    }
+                    inner()
+                },
             )
         }
     }

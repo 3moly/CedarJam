@@ -13,21 +13,18 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.AnnotatedString
-import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.moly3.cedarjam.core.domain.features.mdprops.DividerSyntax
 import com.moly3.cedarjam.core.domain.features.mdprops.DocumentHistory
 import com.moly3.cedarjam.core.domain.features.mdprops.DocumentProperty
-import com.moly3.cedarjam.core.domain.features.mdprops.DividerSyntax
 import com.moly3.cedarjam.core.domain.features.mdprops.FocusSnapshot
 import com.moly3.cedarjam.core.domain.features.mdprops.MarkdownDocument
 import com.moly3.cedarjam.core.domain.features.mdprops.MarkdownEncoder
@@ -39,6 +36,7 @@ import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.func.imePaddingCJ
 import com.moly3.cedarjam.core.ui.func.navigationBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.uikit.CJText
+import kotlinx.coroutines.launch
 
 /**
  * Number of non-row lazy items rendered before the body rows (the title editor

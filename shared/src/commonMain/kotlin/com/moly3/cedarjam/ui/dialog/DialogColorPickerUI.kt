@@ -26,7 +26,6 @@ import com.moly3.cedarjam.core.domain.dialog.DialogColorPickerService
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.shader.ColorPickerShader
 import com.moly3.cedarjam.core.ui.uikit.CJButton
-import com.moly3.cedarjam.core.ui.uikit.CJButton2
 import com.moly3.cedarjam.core.ui.uikit.CJSlider
 import com.moly3.cedarjam.core.ui.uikit.CJText
 import com.moly3.shaders.shaderBackground
