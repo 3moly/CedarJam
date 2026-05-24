@@ -6,6 +6,7 @@ import com.moly3.cedarjam.core.domain.func.dbRelativePath
 import com.moly3.cedarjam.core.domain.func.nowInMs
 import com.moly3.cedarjam.core.domain.model.getFileTreeNodeGraphId
 import com.moly3.cedarjam.core.domain.model.isSuccess
+import com.moly3.cedarjam.core.domain.model.request.CreateCollectionRequest
 import com.moly3.cedarjam.core.domain.model.request.CreateTagRequest
 import com.moly3.cedarjam.core.domain.model.request.CreateTagToTagRequest
 import com.moly3.cedarjam.core.domain.model.shouldBeSuccess
@@ -78,5 +79,20 @@ class ConnectionsTest : UITest() {
 
         val connections = workspaceSession.graphEco.connectionsFlow.first()
         connections.shouldHaveSize(1)
+    }
+
+    @Test
+    fun `nodes 2 connections 1 tag`() = runUITest(beforeSetContent = {}) {
+        val workspace = getWorkspace("connections")
+        val instance = createWorkspace(workspace)
+        val workspaceSession = instance.component.workspaceSession
+        val workspaceEnv = workspaceSession.workspaceEnvStateFlow.value
+        workspaceEnv.createCollection(CreateCollectionRequest(
+            name = "123",
+            createdTime = nowInMs()
+        )).shouldBeSuccess()
+
+        val nodes = workspaceSession.graphEco.nodesFlow.first()
+        nodes.shouldHaveSize(2)
     }
 }
