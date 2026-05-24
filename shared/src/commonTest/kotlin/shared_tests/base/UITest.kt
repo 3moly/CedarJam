@@ -68,7 +68,7 @@ abstract class UITest : BaseTest() {
     fun before() = runTest {
         val testAppContext = getTestApplicationContext()
         FileKit.init(testAppContext)
-        val fs = initApp(testAppContext, isTest = true)
+        initApp(testAppContext, isTest = true)
         systemFileManager.deleteNodeHeavy(buildPath)
         Logger.setLogWriters(CommonWriter())
         Logger.setMinSeverity(Severity.Verbose)
@@ -170,6 +170,7 @@ abstract class UITest : BaseTest() {
                     MainApp(component!!)
                 }
             }
+            waitForIdle()
             kotlinx.coroutines.runBlocking {
                 run(component!!)
             }
