@@ -2,6 +2,7 @@ package shared_tests.base
 
 import com.moly3.cedarjam.core.domain.model.AndroidApplicationContext
 import org.robolectric.RuntimeEnvironment
+import androidx.test.core.app.ApplicationProvider
 
 actual fun getTestApplicationContext(): AndroidApplicationContext {
     return RuntimeEnvironment.getApplication()

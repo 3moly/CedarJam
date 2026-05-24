@@ -17,13 +17,11 @@ import com.moly3.cedarjam.core.storage.ISystemFilesManager
 import com.moly3.cedarjam.core.storage.func.createSystemFilesManager
 import com.moly3.cedarjam.core.storage.func.filesDirPath
 import com.moly3.cedarjam.core.storage.func.init
+import com.moly3.cedarjam.di.metro.CedarJamGraph
 import io.github.vinceglb.filekit.FileKit
 import io.kotest.matchers.collections.shouldHaveSize
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
-import org.koin.core.context.stopKoin
-import org.koin.core.parameter.parametersOf
-import org.koin.mp.KoinPlatform.getKoin
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 
@@ -82,15 +80,17 @@ abstract class AppEnvironmentTest : BaseTest() {
         )
     }
 
+
     fun createWorkspaceEnv(): IWorkspaceEnvironment {
         val workspace = getWorkspace()
+        val appEnvironment = CedarJamGraph.instance.cedarJamDependencies.appEnvironment
+        val sd = CedarJamGraph.instance.cedarJamDependencies.workspaceFactory
 
-        return getKoin().get {
-            parametersOf(
-                WorkspaceInput(workspace.name,workspace.name),
-                FileManagerService(workspace, FileManagerService.OpenedFiles())
-            )
-        }
+        return sd.invoke(
+            appEnvironment = appEnvironment,
+            workspaceInput = WorkspaceInput(workspace.name, workspace.name),
+            fileManagerService = FileManagerService(FileManagerService.OpenedFiles())
+        )
     }
 
     @BeforeTest
@@ -100,7 +100,8 @@ abstract class AppEnvironmentTest : BaseTest() {
 
         initApp(getTestApplicationContext(), isTest = true)
 
-        val sd = getKoin().get<IAppEnvironment>()
+
+        val sd = CedarJamGraph.instance.cedarJamDependencies.appEnvironment
         val workspace = getWorkspace()
         sd.createWorkspace(
             Workspace(
@@ -128,7 +129,7 @@ abstract class AppEnvironmentTest : BaseTest() {
 
     @AfterTest
     fun afterTest() {
-        stopKoin()
+        //stopKoin()
     }
 
 }

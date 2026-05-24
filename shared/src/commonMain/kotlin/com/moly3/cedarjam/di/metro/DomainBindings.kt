@@ -5,6 +5,7 @@ import com.moly3.cedarjam.core.data.AnkiEnvironment
 import com.moly3.cedarjam.core.data.AppEnvironment
 import com.moly3.cedarjam.core.data.FilesRepository
 import com.moly3.cedarjam.core.data.WorkspaceEnvironment
+import com.moly3.cedarjam.core.data.di.WorkspaceEnvironmentFactory
 import com.moly3.cedarjam.core.domain.model.WorkspaceInput
 import com.moly3.cedarjam.core.domain.SyncServerConfig
 import com.moly3.cedarjam.core.domain.repository.IAnkiEnvironment
@@ -88,16 +89,17 @@ object DomainBindings {
         filesRepository: IFilesRepository,
         syncNetRepository: IRemoteSyncRepository,
         sqlStorageFactory: SqlStorageFactory,
-    ): WorkspaceEnvironmentFactory = WorkspaceEnvironmentFactory { appEnvironment, workspaceInput, fileManagerService ->
-        val workspace = appEnvironment.getWorkspace(name = workspaceInput.name)
-        WorkspaceEnvironment(
-            sqlStorageFactory = { sqlStorageFactory(workspace.absolutePath) },
-            workspace = workspace,
-            filesRepository = filesRepository,
-            fileManagerService = fileManagerService,
-            syncNetRepository = syncNetRepository,
-        )
-    }
+    ): WorkspaceEnvironmentFactory =
+        WorkspaceEnvironmentFactory { appEnvironment, workspaceInput, fileManagerService ->
+            val workspace = appEnvironment.getWorkspace(name = workspaceInput.name)
+            WorkspaceEnvironment(
+                sqlStorageFactory = { sqlStorageFactory(workspace.absolutePath) },
+                workspace = workspace,
+                filesRepository = filesRepository,
+                fileManagerService = fileManagerService,
+                syncNetRepository = syncNetRepository,
+            )
+        }
 
     @Provides
     fun provideNavigateToFileUseCaseFactory(

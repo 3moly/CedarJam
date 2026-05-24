@@ -12,6 +12,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import com.moly3.cedarjam.core.domain.dialog.DialogCreateWorkspaceService
@@ -42,6 +43,7 @@ fun DialogCreateWorkspaceUI(dialog: DialogCreateWorkspaceService) {
     ) {
         CJText("create workspace")
         CJSearchTextField(
+            modifier = Modifier.testTag("workspace_name_input"),
             value = nameState,
             placeholderText = "workspace name",
             onValueChange = {
@@ -55,13 +57,17 @@ fun DialogCreateWorkspaceUI(dialog: DialogCreateWorkspaceService) {
 //                    serverNameState = it
 //                })
         if (getPlatform() is Platform.Jvm) {
-            CJIOSwitch(height = 24, checked = isSelectedFullPath, onCheckedChange = {
-                isSelectedFullPath = !isSelectedFullPath
-            })
+            CJIOSwitch(
+                modifier = Modifier.testTag("fullpath_check_box"),
+                height = 24,
+                checked = isSelectedFullPath,
+                onCheckedChange = {
+                    isSelectedFullPath = !isSelectedFullPath
+                })
             if (isSelectedFullPath) {
                 Row(Modifier.fillMaxWidth()) {
                     CJSearchTextField(
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f).testTag("workspace_fullpath_input"),
                         value = fullpathState,
                         placeholderText = "workspace fullpath",
                         onValueChange = {
@@ -82,7 +88,7 @@ fun DialogCreateWorkspaceUI(dialog: DialogCreateWorkspaceService) {
                 }
             }
         }
-        CJButton(text = "Create") {
+        CJButton(modifier = Modifier.testTag("workspace_name_button"), text = "Create") {
             scope.launch {
                 dialog.setResult(
                     Workspace(

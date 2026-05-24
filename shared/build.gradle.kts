@@ -32,14 +32,17 @@ kotlin {
     sourceSets.all {
         languageSettings.optIn("androidx.compose.animation.ExperimentalSharedTransitionApi")
     }
+
     applyDefaultHierarchyTemplate()
     android {
+        androidResources.enable = true
 //        withDeviceTest {
 //            instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 //            execution = "HOST"
 //        }
         withHostTest {
             isIncludeAndroidResources = true
+            isReturnDefaultValues = true
         }
 //        testOptions {
 //            unitTests {
@@ -158,6 +161,19 @@ kotlin {
             implementation(libs.coroutines.test)
             implementation(libs.ui.test)
             implementation(libs.kotest.property)
+        }
+        // to (if your source set is actually androidHostTest):
+//        getByName("androidHostTest").dependencies {
+//            implementation(libs.robolectric)
+//            implementation(libs.android.videoplayer.contextprovider)
+//            implementation("androidx.test:core:1.7.0")
+//        }
+        getByName("androidHostTest").dependencies {
+            implementation(libs.robolectric)
+            implementation(libs.android.videoplayer.contextprovider)
+            implementation("androidx.test:core:1.7.0")
+            implementation("androidx.test.ext:junit:1.3.0")
+            implementation("androidx.activity:activity-compose:1.13.0")
         }
         jvmMain.dependencies {
 

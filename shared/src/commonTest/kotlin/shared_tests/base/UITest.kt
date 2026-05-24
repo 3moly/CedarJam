@@ -40,11 +40,9 @@ abstract class UITest : BaseTest() {
     @OptIn(ExperimentalCoroutinesApi::class)
     @BeforeTest
     fun before() = runTest {
-//        cleanupState()
-//        Dispatchers.setMain(dispatcher)
-//        Logger.setLogWriters(CommonWriter())
-        FileKit.init(getTestApplicationContext())
-        initApp(getTestApplicationContext(), isTest = true)
+        val testAppContext = getTestApplicationContext()
+        FileKit.init(testAppContext)
+        initApp(testAppContext, isTest = true)
         runBlocking(Dispatchers.Main.immediate) {
             lifecycle = LifecycleRegistry()
             component = createRootComponent(
@@ -137,7 +135,7 @@ abstract class UITest : BaseTest() {
         beforeSetContent: suspend ComposeUiTest.() -> Unit,
         run: suspend ComposeUiTest.(Root) -> Unit
     ) =
-        runComposeUiTest {
+        androidx.compose.ui.test.v2.runComposeUiTest {
             beforeSetContent()
             setContent {
                 CompositionLocalProvider(LocalUITestScope provides true) {

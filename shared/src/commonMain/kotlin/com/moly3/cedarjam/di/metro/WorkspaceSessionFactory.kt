@@ -2,6 +2,7 @@ package com.moly3.cedarjam.di.metro
 
 import co.touchlab.kermit.Logger
 import com.arkivanov.essenty.statekeeper.StateKeeper
+import com.moly3.cedarjam.core.data.di.WorkspaceEnvironmentFactory
 import com.moly3.cedarjam.core.domain.model.WorkspaceInput
 import com.moly3.cedarjam.core.domain.repository.IAppEnvironment
 import com.moly3.cedarjam.core.domain.repository.IFilesRepository

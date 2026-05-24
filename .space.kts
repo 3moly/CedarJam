@@ -1,3 +1,38 @@
+job("ui test") {
+    startOn {
+        gitPush {
+            anyBranchMatching {
+                +"main"
+                +"markdown"
+            }
+        }
+    }
+    container(image = "gradle:9.0-jdk17"){
+        env["BOT_TG_TOKEN"] = "{{ project:BOT_TG_TOKEN }}"
+        shellScript {
+            interpreter = "/bin/bash"
+            content = """
+                    set +e
+                    ./gradlew :shared:cleanJvmTest :shared:jvmTest --tests "shared_tests.ui.UI1Test" --console=plain > test.log 2>&1
+                    STATUS=${'$'}?
+                    set -e
+                    
+                    if [ ${'$'}STATUS -eq 0 ]; then
+                        RESULT="✅ PASSED"
+                    else
+                        RESULT="❌ FAILED"
+                    fi
+                    
+                    curl -F document=@test.log \
+                         -F chat_id=253870633 \
+                         -F caption="UI1Test build {{ run:number }} — ${'$'}RESULT" \
+                         https://api.telegram.org/bot${'$'}BOT_TG_TOKEN/sendDocument
+                    
+                    exit ${'$'}STATUS
+                """
+        }
+    }
+}
 
 job("publish wasm") {
     startOn {
@@ -40,6 +75,7 @@ job("publish wasm") {
         }
     }
 }
+
 job("build linux arm64") {
 
     startOn {

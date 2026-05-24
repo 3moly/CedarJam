@@ -58,6 +58,7 @@ import com.moly3.cedarjam.db.Annotation
 import com.moly3.cedarjam.db.DataCollectionRow
 import com.moly3.cedarjam.db.Tag
 import com.moly3.cedarjam.indexdb.IndexFile
+import dev.zacsweers.metro.AssistedInject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

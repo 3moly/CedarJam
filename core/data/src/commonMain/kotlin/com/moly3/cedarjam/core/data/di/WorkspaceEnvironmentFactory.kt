@@ -1,4 +1,4 @@
-package com.moly3.cedarjam.di.metro
+package com.moly3.cedarjam.core.data.di
 
 import com.moly3.cedarjam.core.domain.model.WorkspaceInput
 import com.moly3.cedarjam.core.domain.repository.IAppEnvironment

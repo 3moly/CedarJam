@@ -2,10 +2,6 @@ package shared_tests
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.ExperimentalTestApi
-import shared_tests.base.AppEnvironmentTest
-import shared_tests.base.getTestApplicationContext
-import com.moly3.cedarjam.core.domain.model.navigation.input.TagPageInput
-import com.moly3.cedarjam.pages.page_tab.TabComponentImpl
 import com.moly3.cedarjam.core.data.FilesRepository
 import com.moly3.cedarjam.core.domain.func.nowInMs
 import com.moly3.cedarjam.core.domain.model.FileName
@@ -14,19 +10,21 @@ import com.moly3.cedarjam.core.domain.model.Workspace
 import com.moly3.cedarjam.core.domain.model.fold
 import com.moly3.cedarjam.core.domain.model.getValueOrNull
 import com.moly3.cedarjam.core.domain.model.isSuccess
-import com.moly3.cedarjam.core.domain.model.shouldBeSuccess
-import com.moly3.cedarjam.core.domain.repository.IAppEnvironment
-import com.moly3.cedarjam.core.domain.repository.IWorkspaceEnvironment
+import com.moly3.cedarjam.core.domain.model.navigation.input.TagPageInput
 import com.moly3.cedarjam.core.domain.model.request.CreateCollectionRequest
 import com.moly3.cedarjam.core.domain.model.request.CreateCollectionRowRequest
 import com.moly3.cedarjam.core.domain.model.request.CreateTagRequest
 import com.moly3.cedarjam.core.domain.model.request.UpdateDataCollectionRowRequest
+import com.moly3.cedarjam.core.domain.model.shouldBeSuccess
+import com.moly3.cedarjam.core.domain.repository.IWorkspaceEnvironment
 import com.moly3.cedarjam.core.domain.service.AppContextProvider
 import com.moly3.cedarjam.core.storage.func.createSqlStorage
 import com.moly3.cedarjam.core.storage.func.createSystemFilesManager
+import com.moly3.cedarjam.pages.page_tab.TabComponentImpl
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
-import org.koin.mp.KoinPlatform.getKoin
+import shared_tests.base.AppEnvironmentTest
+import shared_tests.base.getTestApplicationContext
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
@@ -51,8 +49,8 @@ class dbTest : AppEnvironmentTest() {
 
     @Test
     fun appEnvTest() = runTest {
-        val appEnvironment: IAppEnvironment = getKoin().get()
-        val settings = appEnvironment.getAppSettingsFlow().value
+//        val appEnvironment: IAppEnvironment = getKoin().get()
+//        val settings = appEnvironment.getAppSettingsFlow().value
 //    todo    assertTrue(settings.currentWorkspaceFullPath == null)
 //        appEnvironment.setAppSettings(settings.copy(currentWorkspaceFullPath = "123123"))
 
