@@ -12,6 +12,7 @@ job("ui test") {
         env["SYNC_SERVER_URL"]   = "{{ project:CEDAR_SYNC_SERVER_URL }}"
         env["SYNC_SERVER_TOKEN"] = "{{ project:CEDAR_SYNC_SERVER_TOKEN }}"
         env["IS_RELEASE"]        = "{{ project:CEDAR_IS_RELEASE }}"
+        env["CI"] = "true"
         shellScript {
             interpreter = "/bin/bash"
             content = """
