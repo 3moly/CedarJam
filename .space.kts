@@ -35,7 +35,7 @@ job("ui test") {
                     
                     set +e
                     xvfb-run -a --server-args="-screen 0 1280x1024x24" \
-                        gradle :shared:cleanJvmTest :shared:jvmTest --tests "shared_tests.ui.UI1Test shared_tests.ui.offline.ConnectionsTest" --console=plain > test.log 2>&1
+                        gradle :shared:cleanJvmTest :shared:jvmTest --tests "shared_tests.ui*" --console=plain > test.log 2>&1
                     STATUS=${'$'}?
                     set -e
                     

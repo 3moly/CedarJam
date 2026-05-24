@@ -82,7 +82,7 @@ abstract class AppEnvironmentTest : BaseTest() {
 
 
     fun createWorkspaceEnv(): IWorkspaceEnvironment {
-        val workspace = getWorkspace()
+        val workspace = getWorkspace("hehe")
         val appEnvironment = CedarJamGraph.instance.cedarJamDependencies.appEnvironment
         val sd = CedarJamGraph.instance.cedarJamDependencies.workspaceFactory
 

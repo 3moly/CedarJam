@@ -33,15 +33,15 @@ abstract class BaseTest : MultiplatformTest() {
             "_1_unit_tests"
         ).pathString
 
-    fun getWorkspace(): Workspace {
+    fun getWorkspace(name: String): Workspace {
         return Workspace(
-            name = "hehe",
+            name = name,
             platformPath = pathWrapper(
                 buildPath,
                 "workspaces",
-                "hehe"
+                name
             ).pathString,
-            serverName = "hehe"
+            serverName = name
         )
     }
 

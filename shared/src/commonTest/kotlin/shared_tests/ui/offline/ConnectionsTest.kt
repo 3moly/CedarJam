@@ -22,7 +22,7 @@ class ConnectionsTest : UITest() {
 
     @Test
     fun nodes_1_connections_0() = runUITest(beforeSetContent = {}) {
-        val workspace = getWorkspace()
+        val workspace = getWorkspace("connections")
         val instance = createWorkspace(workspace)
         val workspaceSession = instance.component.workspaceSession
         val nodes = workspaceSession.graphEco.nodesFlow.first()
@@ -45,7 +45,7 @@ class ConnectionsTest : UITest() {
 
     @Test
     fun `nodes 2 connections 0 create_tag`() = runUITest(beforeSetContent = {}) {
-        val workspace = getWorkspace()
+        val workspace = getWorkspace("connections")
         val instance = createWorkspace(workspace)
         val workspaceSession = instance.component.workspaceSession
         val workspaceEnv = workspaceSession.workspaceEnvStateFlow.value
@@ -58,7 +58,7 @@ class ConnectionsTest : UITest() {
 
     @Test
     fun `nodes 2 connections 1`() = runUITest(beforeSetContent = {}) {
-        val workspace = getWorkspace()
+        val workspace = getWorkspace("connections")
         val instance = createWorkspace(workspace)
         val workspaceSession = instance.component.workspaceSession
         val workspaceEnv = workspaceSession.workspaceEnvStateFlow.value
