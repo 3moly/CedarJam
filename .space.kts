@@ -42,7 +42,7 @@ job("ui test") {
                         curl -F document=@/tmp/report.zip \
                              -F chat_id=253870633 \
                              -F caption="UI1Test report {{ run:number }}" \
-                             https://api.telegram.org/bot${'$'}{'$'}BOT_TG_TOKEN/sendDocument
+                             https://api.telegram.org/bot${'$'}BOT_TG_TOKEN/sendDocument
                     fi
                     
                     exit ${'$'}STATUS
