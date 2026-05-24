@@ -7,35 +7,24 @@ job("ui test") {
             }
         }
     }
-    container(image = "3moly/cedar-ui-test:latest"){
+    container(image = "3moly/cedar-ui-test:latest") {
         env["BOT_TG_TOKEN"] = "{{ project:BOT_TG_TOKEN }}"
         env["SYNC_SERVER_URL"]   = "{{ project:CEDAR_SYNC_SERVER_URL }}"
         env["SYNC_SERVER_TOKEN"] = "{{ project:CEDAR_SYNC_SERVER_TOKEN }}"
         env["IS_RELEASE"]        = "{{ project:CEDAR_IS_RELEASE }}"
         env["CI"] = "true"
+
         shellScript {
             interpreter = "/bin/bash"
             content = """
-                    which gradle
-                    apt-get update
-                    apt-get install -y --no-install-recommends \
-                        libfreetype6 fontconfig fonts-dejavu \
-                        libgl1 libglu1-mesa \
-                        libx11-6 libxext6 libxrender1 libxtst6 libxi6 \
-                        xvfb \
-                        zip \
-                        libgstreamer1.0-0 \
-                        libgstreamer-plugins-base1.0-0 \
-                        gstreamer1.0-plugins-base \
-                        gstreamer1.0-plugins-good \
-                        gstreamer1.0-plugins-bad \
-                        gstreamer1.0-plugins-ugly \
-                        gstreamer1.0-libav \
-                        gstreamer1.0-tools
+                    # Dependencies are pre-installed in the custom image
                     
                     set +e
+                    # Added --build-cache and --no-daemon for speed and reliability
                     xvfb-run -a --server-args="-screen 0 1280x1024x24" \
-                        gradle :shared:cleanJvmTest :shared:jvmTest --tests "shared_tests.ui*" --console=plain > test.log 2>&1
+                        ./gradlew :shared:cleanJvmTest :shared:jvmTest --tests "shared_tests.ui*" \
+                        --build-cache --no-daemon --console=plain > test.log 2>&1
+                    
                     STATUS=${'$'}?
                     set -e
                     
@@ -45,10 +34,12 @@ job("ui test") {
                         RESULT="❌ FAILED"
                     fi
                     
+                    # Reporting remains the same
                     curl -F document=@test.log \
                          -F chat_id=253870633 \
                          -F caption="UI1Test build {{ run:number }} — ${'$'}RESULT" \
                          https://api.telegram.org/bot${'$'}BOT_TG_TOKEN/sendDocument
+                    
                     if [ -d shared/build/reports/tests/jvmTest ]; then
                         (cd shared/build/reports/tests/jvmTest && zip -r /tmp/report.zip .)
                         curl -F document=@/tmp/report.zip \
