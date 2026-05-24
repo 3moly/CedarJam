@@ -3,7 +3,6 @@ job("ui test") {
         gitPush {
             anyBranchMatching {
                 +"main"
-                +"markdown"
             }
         }
     }
@@ -12,8 +11,16 @@ job("ui test") {
         shellScript {
             interpreter = "/bin/bash"
             content = """
+                    apt-get update
+                    apt-get install -y --no-install-recommends \
+                        libfreetype6 fontconfig fonts-dejavu \
+                        libgl1 libglu1-mesa \
+                        libx11-6 libxext6 libxrender1 libxtst6 libxi6 \
+                        xvfb
+                    
                     set +e
-                    ./gradlew :shared:cleanJvmTest :shared:jvmTest --tests "shared_tests.ui.UI1Test" --console=plain > test.log 2>&1
+                    xvfb-run -a --server-args="-screen 0 1280x1024x24" \
+                        ./gradlew :shared:cleanJvmTest :shared:jvmTest --tests "shared_tests.ui.UI1Test" --console=plain > test.log 2>&1
                     STATUS=${'$'}?
                     set -e
                     
