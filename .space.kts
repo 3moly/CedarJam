@@ -9,6 +9,9 @@ job("ui test") {
     }
     container(image = "gradle:9.5.1-jdk21"){
         env["BOT_TG_TOKEN"] = "{{ project:BOT_TG_TOKEN }}"
+        env["SYNC_SERVER_URL"]   = "{{ project:CEDAR_SYNC_SERVER_URL }}"
+        env["SYNC_SERVER_TOKEN"] = "{{ project:CEDAR_SYNC_SERVER_TOKEN }}"
+        env["IS_RELEASE"]        = "{{ project:CEDAR_IS_RELEASE }}"
         shellScript {
             interpreter = "/bin/bash"
             content = """
@@ -19,8 +22,15 @@ job("ui test") {
                         libgl1 libglu1-mesa \
                         libx11-6 libxext6 libxrender1 libxtst6 libxi6 \
                         xvfb \
-                        vlc libvlc-dev \
-                        zip
+                        zip \
+                        libgstreamer1.0-0 \
+                        libgstreamer-plugins-base1.0-0 \
+                        gstreamer1.0-plugins-base \
+                        gstreamer1.0-plugins-good \
+                        gstreamer1.0-plugins-bad \
+                        gstreamer1.0-plugins-ugly \
+                        gstreamer1.0-libav \
+                        gstreamer1.0-tools
                     
                     set +e
                     xvfb-run -a --server-args="-screen 0 1280x1024x24" \
