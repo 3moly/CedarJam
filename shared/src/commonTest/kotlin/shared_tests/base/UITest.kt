@@ -4,7 +4,9 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.runComposeUiTest
+import co.touchlab.kermit.CommonWriter
 import co.touchlab.kermit.Logger
+import co.touchlab.kermit.Severity
 import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.decompose.router.stack.active
 import com.arkivanov.essenty.lifecycle.Lifecycle
@@ -43,6 +45,8 @@ abstract class UITest : BaseTest() {
         val testAppContext = getTestApplicationContext()
         FileKit.init(testAppContext)
         initApp(testAppContext, isTest = true)
+        Logger.setLogWriters(CommonWriter())
+        Logger.setMinSeverity(Severity.Verbose)
         runBlocking(Dispatchers.Main.immediate) {
             lifecycle = LifecycleRegistry()
             component = createRootComponent(
@@ -136,6 +140,7 @@ abstract class UITest : BaseTest() {
         run: suspend ComposeUiTest.(Root) -> Unit
     ) =
         androidx.compose.ui.test.v2.runComposeUiTest {
+
             beforeSetContent()
             setContent {
                 CompositionLocalProvider(LocalUITestScope provides true) {

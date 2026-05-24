@@ -112,9 +112,14 @@ class UI1Test : UITest() {
 
     @Test
     fun testUITestAdvance() = runUITest(beforeSetContent = {}) { root ->
+        Logger.i { "testUITestAdvance step 1" }
         val workspace = Workspace(
             name = "hehe",
-            platformPath = pathWrapper(FileKit.projectDir.absolutePath(),"build",".test_workspace_hehe").pathString,
+            platformPath = pathWrapper(
+                FileKit.projectDir.absolutePath(),
+                "build",
+                ".test_workspace_hehe"
+            ).pathString,
             serverName = "hehe"
         )
         val koin = CedarJamGraph.instance
@@ -122,10 +127,12 @@ class UI1Test : UITest() {
         val fs = koin.cedarJamDependencies.systemFileManager
         fs.deleteNodeHeavy(workspace.platformPath)
 
-
+        Logger.i { "testUITestAdvance step 2" }
         remoteSync.deleteWorkspace(userName = "bulat", workspace.serverName).shouldBeSuccess()
 
+        Logger.i { "testUITestAdvance step 3" }
         val instance1 = waitAndGetComponent<Root.Child.SelectWorkspace>()
+        Logger.i { "testUITestAdvance step 4" }
         instance1.component.onIntent(com.moly3.cedarjam.pages.page_select_workspace.Intent.CreateWorkspace)
         waitUntilAtLeastOneExists(hasText("create workspace"))
         onNode(hasTestTag("fullpath_check_box")).performClick()
