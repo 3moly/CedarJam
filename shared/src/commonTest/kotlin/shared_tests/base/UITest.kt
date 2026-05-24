@@ -139,8 +139,7 @@ abstract class UITest : BaseTest() {
         beforeSetContent: suspend ComposeUiTest.() -> Unit,
         run: suspend ComposeUiTest.(Root) -> Unit
     ) =
-        androidx.compose.ui.test.v2.runComposeUiTest {
-
+        runComposeUiTest() {
             beforeSetContent()
             setContent {
                 CompositionLocalProvider(LocalUITestScope provides true) {
