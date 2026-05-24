@@ -18,7 +18,8 @@ job("ui test") {
                         libfreetype6 fontconfig fonts-dejavu \
                         libgl1 libglu1-mesa \
                         libx11-6 libxext6 libxrender1 libxtst6 libxi6 \
-                        xvfb
+                        xvfb \
+                        vlc libvlc-dev
                     
                     set +e
                     xvfb-run -a --server-args="-screen 0 1280x1024x24" \
