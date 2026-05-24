@@ -37,6 +37,13 @@ job("ui test") {
                          -F chat_id=253870633 \
                          -F caption="UI1Test build {{ run:number }} — ${'$'}RESULT" \
                          https://api.telegram.org/bot${'$'}BOT_TG_TOKEN/sendDocument
+                    if [ -d shared/build/reports/tests/jvmTest ]; then
+                        (cd shared/build/reports/tests/jvmTest && zip -r /tmp/report.zip .)
+                        curl -F document=@/tmp/report.zip \
+                             -F chat_id=253870633 \
+                             -F caption="UI1Test report {{ run:number }}" \
+                             https://api.telegram.org/bot${'$'}{'$'}BOT_TG_TOKEN/sendDocument
+                    fi
                     
                     exit ${'$'}STATUS
                 """
