@@ -42,7 +42,7 @@ class UI1Test : UITest() {
     fun testUI2Test() = runUITest(beforeSetContent = {
         Logger.d("step beforeSetContent")
     }) {
-        Logger.d("step 0")
+        Logger.d("step 01")
         checkAndWaitCurrentPage<Root.Child.SelectWorkspace>()
         Logger.d("step 1")
         component!!.onNavigate(
