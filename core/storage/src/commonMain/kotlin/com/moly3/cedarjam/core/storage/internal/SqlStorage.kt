@@ -116,9 +116,9 @@ internal class SqlStorage(
     }
 
     private fun getDatabasePath(): String {
-        if (workspaceDirectoryPath.isEmpty()) {
-            throw NullPointerException("workspace for db is empty")
-        }
+//        if (workspaceDirectoryPath.isEmpty()) {
+//            throw NullPointerException("workspace for db is empty")
+//        }
         return pathWrapper(
             workspaceDirectoryPath,
             hiddenDirectory,

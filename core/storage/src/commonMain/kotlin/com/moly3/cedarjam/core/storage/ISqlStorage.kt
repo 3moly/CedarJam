@@ -111,9 +111,4 @@ interface ISqlStorage {
     fun deleteTagToTag(id: Long)
     fun deleteTagCollectionRow(id: Long)
 
-    fun interface Factory {
-        operator fun invoke(
-            workspacePath: String
-        ): ISqlStorage
-    }
 }
