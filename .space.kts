@@ -19,7 +19,8 @@ job("ui test") {
                         libgl1 libglu1-mesa \
                         libx11-6 libxext6 libxrender1 libxtst6 libxi6 \
                         xvfb \
-                        vlc libvlc-dev
+                        vlc libvlc-dev \
+                        zip
                     
                     set +e
                     xvfb-run -a --server-args="-screen 0 1280x1024x24" \
