@@ -12,6 +12,7 @@ job("ui test") {
         shellScript {
             interpreter = "/bin/bash"
             content = """
+                    which gradle
                     apt-get update
                     apt-get install -y --no-install-recommends \
                         libfreetype6 fontconfig fonts-dejavu \
@@ -21,7 +22,7 @@ job("ui test") {
                     
                     set +e
                     xvfb-run -a --server-args="-screen 0 1280x1024x24" \
-                        ./gradlew :shared:cleanJvmTest :shared:jvmTest --tests "shared_tests.ui.UI1Test" --console=plain > test.log 2>&1
+                        gradle :shared:cleanJvmTest :shared:jvmTest --tests "shared_tests.ui.UI1Test" --console=plain > test.log 2>&1
                     STATUS=${'$'}?
                     set -e
                     
