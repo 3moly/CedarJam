@@ -7,7 +7,7 @@ job("ui test") {
             }
         }
     }
-    container(image = "gradle:9.5.1-jdk21"){
+    container(image = "3moly/cedar-ui-test:latest"){
         env["BOT_TG_TOKEN"] = "{{ project:BOT_TG_TOKEN }}"
         env["SYNC_SERVER_URL"]   = "{{ project:CEDAR_SYNC_SERVER_URL }}"
         env["SYNC_SERVER_TOKEN"] = "{{ project:CEDAR_SYNC_SERVER_TOKEN }}"
