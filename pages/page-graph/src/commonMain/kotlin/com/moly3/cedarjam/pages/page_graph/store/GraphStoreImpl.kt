@@ -47,10 +47,7 @@ import com.moly3.cedarjam.pages.page_graph.store.GraphStore.Msg.SetZoom
 import com.moly3.dataviz.core.graph.engine.IGraphEngine
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedInject
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.collections.immutable.toImmutableList
-import kotlinx.collections.immutable.toImmutableMap
 import kotlinx.collections.immutable.toPersistentMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.FlowPreview
@@ -190,10 +187,14 @@ class GraphStoreImpl @AssistedInject constructor(
             }
             scopeFromStartToStop.launch {
                 graphEco.connectionsFlow
-                    .map {
-                        it
-                            .map { d -> d.key to d.value.toImmutableList() }
-                            .toMap()
+//                    .map {
+//                        it
+//                            .map { d -> d.key to d.value.toImmutableList() }
+//                            .toMap()
+//                            .toPersistentMap()
+//                    }
+                    .map { m ->
+                        m.mapValues { (_, v) -> v.toImmutableList() }
                             .toPersistentMap()
                     }
                     .flowOn(io)
@@ -205,7 +206,7 @@ class GraphStoreImpl @AssistedInject constructor(
                     }
             }
             scopeFromStartToStop.launch {
-                graphEco.nodes
+                graphEco.nodesFlow
                     .distinctUntilChanged()
                     .collectLatest {
                         if (state().coordinates.isEmpty()) {

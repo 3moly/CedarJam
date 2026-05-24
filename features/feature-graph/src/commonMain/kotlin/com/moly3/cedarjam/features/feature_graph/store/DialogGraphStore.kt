@@ -11,6 +11,7 @@ import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.features.feature_graph.Intent
 import com.moly3.cedarjam.features.feature_graph.State
 import com.moly3.cedarjam.features.feature_graph.model.GraphPage
+import com.moly3.dataviz.core.graph.model.Connection
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableMap
 
@@ -24,7 +25,7 @@ internal interface DialogGraphStore : Store<Intent, State, Unit> {
         data class SetNodes(val value: ImmutableList<ObsidianGraphNode>) : Msg
         data class SetCoordinates(val value: ImmutableMap<String, Offset>) : Msg
         data class SetVelocities(val value: ImmutableMap<String, Offset>) : Msg
-        data class SetConnections(val value: ImmutableMap<String, ImmutableList<String>>) : Msg
+        data class SetConnections(val value: ImmutableMap<String, ImmutableList<Connection<String>>>) : Msg
         data class SetZoom(val value: Float) : Msg
         data class SetIsShowContent(val value: Boolean) : Msg
         data class SetAnnotationsScrollState(val value: Int) : Msg

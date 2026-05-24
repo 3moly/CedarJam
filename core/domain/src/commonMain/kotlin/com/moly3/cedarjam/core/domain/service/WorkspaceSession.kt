@@ -191,31 +191,31 @@ class WorkspaceSession(
         )
     }
 
-    fun getConnectionPresentations(graphNodeTagId: String): Flow<List<ObsidianGraphPresentation>> {
-        return com.moly3.cedarjam.core.domain.func.combine(
-            graphEco.nodes,
-            graphEco.connectionsFlow,
-            tagsFlow,
-            collectionsFlow,
-            collectionRowsFlow,
-            filesFlow
-        ) { nodes, connections, tags, collections, rows, filesState ->
-            val found = connections[graphNodeTagId]
-            val list = if (found != null) {
-                nodes.filter { d -> found.contains(d.id) }.map { x -> x.data }
-            } else null
-            val files = mutableListOf<FileTreeNode>()
-            filesState.map {
-                files.addAll(files)
-            }
-            list?.toPresentation(
-                tags = tags,
-                collections = collections,
-                rows = rows,
-                files = files
-            ) ?: listOf()
-        }
-    }
+//    fun getConnectionPresentations(graphNodeTagId: String): Flow<List<ObsidianGraphPresentation>> {
+//        return com.moly3.cedarjam.core.domain.func.combine(
+//            graphEco.nodesFlow,
+//            graphEco.connectionsFlow,
+//            tagsFlow,
+//            collectionsFlow,
+//            collectionRowsFlow,
+//            filesFlow
+//        ) { nodes, connections, tags, collections, rows, filesState ->
+//            val found = connections[graphNodeTagId]
+//            val list = if (found != null) {
+//                nodes.filter { d -> found.contains(d.id) }.map { x -> x.data }
+//            } else null
+//            val files = mutableListOf<FileTreeNode>()
+//            filesState.map {
+//                files.addAll(files)
+//            }
+//            list?.toPresentation(
+//                tags = tags,
+//                collections = collections,
+//                rows = rows,
+//                files = files
+//            ) ?: listOf()
+//        }
+//    }
 
     private val _workspaceFont = MutableStateFlow<WorkspaceFont?>(null)
     val workspaceFont = _workspaceFont.asStateFlow()

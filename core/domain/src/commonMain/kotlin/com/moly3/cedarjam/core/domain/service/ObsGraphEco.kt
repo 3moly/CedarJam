@@ -15,6 +15,8 @@ import com.moly3.cedarjam.core.domain.model.CollectionRowDTO
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.FileTreeNode.Companion.getAll
 import com.moly3.cedarjam.core.domain.model.FileTypeExt
+import com.moly3.cedarjam.core.domain.model.GraphEdge
+import com.moly3.cedarjam.core.domain.model.GraphEdgeType
 import com.moly3.cedarjam.core.domain.model.ObsidianGraphNode
 import com.moly3.cedarjam.core.domain.model.TagCollectionRowDTO
 import com.moly3.cedarjam.core.domain.model.TagDTO
@@ -34,7 +36,11 @@ import com.moly3.cedarjam.core.domain.model.node.ObsidianGraphData
 import com.moly3.cedarjam.core.domain.model.resultBlock
 import com.moly3.cedarjam.core.domain.model.toFileType
 import com.moly3.cedarjam.core.domain.repository.IAppEnvironment
+import com.moly3.dataviz.core.graph.model.ArrowHead
+import com.moly3.dataviz.core.graph.model.ArrowStyle
+import com.moly3.dataviz.core.graph.model.Connection
 import com.moly3.dataviz.core.graph.model.GraphNode
+import com.moly3.dataviz.core.graph.model.LineStyle
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
@@ -65,7 +71,6 @@ class ObsGraphEco(
     private val _targetId = MutableStateFlow(startTargetId)
     val graphState: StateFlow<GraphFilter> = _settingsStateFlow
 
-    // 1. Add StateFlow for the groups
     private val _groupsStateFlow = MutableStateFlow<List<GroupLogic>>(emptyList())
 
     /**
@@ -95,28 +100,52 @@ class ObsGraphEco(
         }
     }
 
-    /**
-     * OPTIMIZED: builds bidirectional adjacency in a single pass using HashSet
-     * to dedupe, then converts to lists.
-     */
-    private fun makeBidirectional(connections: Map<String, List<String>>): Map<String, List<String>> {
-        val approxSize = connections.size * 2
-        val adjacency = HashMap<String, HashSet<String>>(approxSize)
+    // ---------------------------------------------------------------------
+    // Edge style policy.
+    //
+    // styleFor maps each GraphEdgeType to the ArrowStyle used when rendering
+    // a Connection of that type. This is the single place to tune per-edge
+    // visual identity — colors are left Unspecified so the theme's
+    // resolvedEdgeColor wins by default; set explicit colors here only when
+    // an edge type warrants its own hue regardless of theme.
+    //
+    // isMutual decides whether an edge contributes one Connection (A -> B)
+    // or two (A -> B AND B -> A). Edges that are mutual in meaning — e.g.
+    // a directory containing a file, or a free-form link between two notes —
+    // are mirrored so both endpoints surface them. Directional edges
+    // (annotations attached to files, tags applied to things, tag-to-tag
+    // relations) stay one-way and the arrowhead conveys direction.
+    // ---------------------------------------------------------------------
+    private fun styleFor(type: GraphEdgeType): ArrowStyle = when (type) {
+        GraphEdgeType.DirectoryContainsFile -> ArrowStyle.Default
+        GraphEdgeType.RowInCollection       -> ArrowStyle.Default
 
-        for ((node, neighbors) in connections) {
-            val nodeSet = adjacency.getOrPut(node) { HashSet(neighbors.size + 4) }
-            for (target in neighbors) {
-                if (target == node) continue // skip self-loops
-                nodeSet.add(target)
-                adjacency.getOrPut(target) { HashSet(4) }.add(node)
-            }
-        }
+        is GraphEdgeType.FileLink -> ArrowStyle(
+            head = ArrowHead.Open,
+            line = LineStyle.Solid,
+        )
 
-        val result = HashMap<String, List<String>>(adjacency.size)
-        for ((k, v) in adjacency) {
-            result[k] = v.toList()
-        }
-        return result
+        GraphEdgeType.AnnotationOnFile -> ArrowStyle(head = ArrowHead.Open)
+        GraphEdgeType.AnnotationOnRow  -> ArrowStyle(head = ArrowHead.Open)
+
+        GraphEdgeType.TagOnFile -> ArrowStyle(
+            head = ArrowHead.Open,
+            line = LineStyle.Dashed,
+        )
+        GraphEdgeType.TagOnRow -> ArrowStyle(
+            head = ArrowHead.Open,
+            line = LineStyle.Dashed,
+        )
+
+        GraphEdgeType.RowOnFile -> ArrowStyle(head = ArrowHead.Open)
+
+        GraphEdgeType.TagToTag -> ArrowStyle(head = ArrowHead.FilledTriangle)
+    }
+
+    private fun isMutual(type: GraphEdgeType): Boolean = when (type) {
+        GraphEdgeType.DirectoryContainsFile -> true
+        is GraphEdgeType.FileLink           -> true
+        else                                -> false
     }
 
     private val isShowTagsFlow = _settingsStateFlow
@@ -330,219 +359,37 @@ class ObsGraphEco(
         }
     }
 
-    private inline fun MutableMap<String, MutableList<String>>.addEdge(from: String, to: String) {
-        getOrPut(from) { ArrayList(4) }.add(to)
-    }
-
-    private inline fun MutableMap<String, MutableList<String>>.addEdges(
+    private inline fun MutableList<GraphEdge>.add(
         from: String,
-        to: List<String>
+        to: String,
+        type: GraphEdgeType,
     ) {
-        if (to.isEmpty()) return
-        getOrPut(from) { ArrayList(to.size + 2) }.addAll(to)
+        if (from == to) return // skip self-loops at the source
+        add(GraphEdge(from, to, type))
     }
 
-
     /**
-     * OPTIMIZED: file-link extraction is its own flow.
+     * Reachability filter for the directional Connection adjacency.
      *
-     * Previously this lived inside oldConnectionsFlow, which combined SEVEN
-     * sources — so flipping a tag toggle (tagLinksFlow etc.) re-ran every
-     * disk read. Now disk I/O reacts ONLY to filesFlow + workspaceFlow.
+     * Same two-phase walk as before:
+     *   1. Walk backwards from targetId through reverse edges to gather every
+     *      node that can reach the target ("sources").
+     *   2. Walk forwards from those sources to gather every node reachable
+     *      from them ("visibleNodes").
+     *   3. Keep only Connections whose source AND target are visible.
      *
-     * On top of that, each text file's links are cached by path+mtime, so an
-     * unchanged file skips getNodeText entirely on subsequent emissions
-     * (e.g. when only ONE file changed, the other N-1 are served from cache).
-     */
-    private val fileLinkEdgesFlow: Flow<Map<String, List<String>>> = combine(
-        filesFlow,
-        workspaceSession.workspaceFlow,
-    ) { files, workspace ->
-        val ws = workspaceSession.workspaceEnvStateFlow.value
-        val workspacePathPrefix = "filenode: ${workspace.fullpath}/"
-
-        val connections = HashMap<String, MutableList<String>>(files.size + 16)
-
-        // Track keys seen this pass so we can prune the cache of deleted files.
-        val liveKeys = HashSet<FileCacheKey>()
-
-        coroutineScope {
-            // Each async returns (cacheKey, fileGraphId, extracted links).
-            // The cache is written ONLY in the sequential await loop below,
-            // so the HashMap is never touched concurrently.
-            val deferreds =
-                ArrayList<Deferred<Triple<FileCacheKey, String, List<String>>?>>()
-
-            for (directory in files) {
-                if (!directory.isDirectory()) continue
-                val children = directory.getChildrenOrNull() ?: continue
-                val dirGraphId = directory.getGraphId()
-
-                for (file in children) {
-                    val fileGraphId = file.getGraphId()
-                    // Directory -> file edge needs no I/O.
-                    connections.addEdge(dirGraphId, fileGraphId)
-
-                    if (file is FileTreeNode.File &&
-                        file.name.extension.toFileType() == FileTypeExt.Text
-                    ) {
-                        val cacheKey = FileCacheKey(file.getFullPath(), file.modifiedTime)
-                        liveKeys.add(cacheKey)
-
-                        val cached = linkCache[cacheKey]
-                        if (cached != null) {
-                            // Cache hit — no disk read, no parsing.
-                            if (cached.isNotEmpty()) {
-                                connections.addEdges(fileGraphId, cached)
-                            }
-                            continue
-                        }
-
-                        deferreds.add(async(io) {
-                            val result = resultBlock(onError = { "" }) {
-                                val textResult = ws.getNodeText(file)
-                                val text = bind(textResult)
-                                val links = text.extractLinks()
-                                if (links.isEmpty()) {
-                                    emptyList<String>()
-                                } else {
-                                    val ssLinks = ArrayList<String>(links.size)
-                                    for (link in links) {
-                                        ssLinks.add(workspacePathPrefix + link)
-                                    }
-                                    ssLinks
-                                }
-                            }
-
-                            @Suppress("UNCHECKED_CAST")
-                            val list = result as? List<String> ?: return@async null
-                            Triple(cacheKey, fileGraphId, list)
-                        })
-                    }
-                }
-            }
-
-            for (d in deferreds) {
-                val triple = d.await() ?: continue
-                // Single-threaded: safe to write the plain HashMap here.
-                // Store even empty results to avoid re-reading link-free files.
-                linkCache[triple.first] = triple.third
-                if (triple.third.isNotEmpty()) {
-                    connections.addEdges(triple.second, triple.third)
-                }
-            }
-        }
-
-        // Prune cache entries for files no longer present (or changed mtime),
-        // keeping memory bounded to the current file set.
-        if (linkCache.size > liveKeys.size) {
-            linkCache.keys.retainAll(liveKeys)
-        }
-
-        @Suppress("UNCHECKED_CAST")
-        connections as Map<String, List<String>>
-    }.scoping()
-
-    /**
-     * OPTIMIZED: cheap in-memory edges (annotations, rows, tag links, tag-to-tag).
-     * No disk I/O — re-runs in microseconds when a tag toggle flips, instead
-     * of dragging every file read along with it.
-     */
-    private val metadataEdgesFlow: Flow<Map<String, List<String>>> =
-        com.moly3.cedarjam.core.domain.func.combine(
-            collectionRowsFlow,
-            tagToTagsFlow,
-            tagLinksFlow,
-            tagRowsFlow,
-            annotationsFlow,
-        ) { rows, tagToTags, tagLinks, tagRows, annotations ->
-            val connections = HashMap<String, MutableList<String>>(
-                rows.size + tagToTags.size + tagLinks.size + annotations.size + 16
-            )
-
-            // 1) Annotations
-            for (item in annotations) {
-                val annId = item.getGraphId()
-                val keys = if (item.rowId != null) ArrayList<String>(2) else ArrayList<String>(1)
-                keys.add(item.dataPath.getFileTreeNodeGraphId())
-                if (item.rowId != null) {
-                    keys.add(item.rowId.getCollectionRowGraphId())
-                }
-                connections.addEdges(annId, keys)
-            }
-
-            // 2) Collection rows
-            for (item in rows) {
-                val rowId = item.getGraphId()
-                connections.addEdge(rowId, item.collectionId.getCollectionGraphId())
-                val rel = item.fileRelativePath
-                if (!rel.isNullOrEmpty()) {
-                    connections.addEdge(rowId, rel.getFileTreeNodeGraphId())
-                }
-            }
-
-            // 3) Tag-row links
-            for (item in tagRows) {
-                connections.addEdge(
-                    item.tagId.getTagGraphId(),
-                    item.rowId.getCollectionRowGraphId()
-                )
-            }
-
-            // 4) Tag links (file nodes)
-            for (tagLink in tagLinks) {
-                val tagGraphId = tagLink.tagId.getTagGraphId()
-                when (val data = tagLink.data) {
-                    is TagLinkDtoData.FileNode -> {
-                        connections.addEdge(tagGraphId, data.relativePath.getFileTreeNodeGraphId())
-                    }
-                }
-            }
-
-            // 5) Tag-to-tag
-            for (item in tagToTags) {
-                connections.addEdge(
-                    item.secondTagId.getTagGraphId(),
-                    item.firstTagId.getTagGraphId()
-                )
-            }
-
-            @Suppress("UNCHECKED_CAST")
-            connections as Map<String, List<String>>
-        }.scoping()
-
-    /**
-     * Merges the (expensive, I/O-bound) file edges with the (cheap) metadata
-     * edges, then makes the graph bidirectional. A tag toggle only re-runs
-     * this merge + makeBidirectional, reusing the shared file-edges emission.
-     */
-    private val oldConnectionsFlow: Flow<Map<String, List<String>>> = combine(
-        fileLinkEdgesFlow,
-        metadataEdgesFlow,
-    ) { fileEdges, metaEdges ->
-        val merged = HashMap<String, MutableList<String>>(fileEdges.size + metaEdges.size)
-        for ((k, v) in fileEdges) {
-            merged.getOrPut(k) { ArrayList(v.size) }.addAll(v)
-        }
-        for ((k, v) in metaEdges) {
-            merged.getOrPut(k) { ArrayList(v.size + 2) }.addAll(v)
-        }
-        @Suppress("UNCHECKED_CAST")
-        makeBidirectional(merged as Map<String, List<String>>)
-    }.scoping()
-
-    /**
-     * OPTIMIZED filterConnections — single-pass reverse graph, ArrayDeque BFS,
-     * single-pass final filter.
+     * Styles ride along untouched — the walk only cares about node identity.
      */
     fun filterConnections(
-        connections: Map<String, List<String>>,
-        targetId: String
-    ): Map<String, List<String>> {
+        connections: Map<String, List<Connection<String>>>,
+        targetId: String,
+    ): Map<String, List<Connection<String>>> {
+
         val reverse = HashMap<String, MutableList<String>>(connections.size)
-        for ((from, tos) in connections) {
-            for (to in tos) {
-                reverse.getOrPut(to) { ArrayList(2) }.add(from)
+        for ((from, conns) in connections) {
+            for (c in conns) {
+                if (c.target == from) continue
+                reverse.getOrPut(c.target) { ArrayList(2) }.add(from)
             }
         }
 
@@ -565,16 +412,16 @@ class ObsGraphEco(
             val node = forwardStack.removeLast()
             if (visibleNodes.add(node)) {
                 val nexts = connections[node] ?: continue
-                for (n in nexts) forwardStack.addLast(n)
+                for (c in nexts) forwardStack.addLast(c.target)
             }
         }
 
-        val result = HashMap<String, List<String>>(visibleNodes.size)
+        val result = HashMap<String, List<Connection<String>>>(visibleNodes.size)
         for ((k, v) in connections) {
             if (k !in visibleNodes) continue
-            val filtered = ArrayList<String>(v.size)
-            for (item in v) {
-                if (item in visibleNodes) filtered.add(item)
+            val filtered = ArrayList<Connection<String>>(v.size)
+            for (c in v) {
+                if (c.target in visibleNodes) filtered.add(c)
             }
             result[k] = filtered
         }
@@ -582,15 +429,8 @@ class ObsGraphEco(
     }
 
     private val isIndexContentFlow = _settingsStateFlow
-        .map { it.isIndexFileContent }   // <-- add this Boolean to GraphSettingsConfig
+        .map { it.isIndexFileContent }
         .distinctUntilChanged()
-
-    val connectionsFlow = combine(
-        oldConnectionsFlow,
-        _targetId
-    ) { connections, targetId ->
-        if (targetId != null) filterConnections(connections, targetId) else connections
-    }.scoping()
 
     /**
      * Optional file-content extraction. When [isIndexContentFlow] is false this
@@ -671,7 +511,6 @@ class ObsGraphEco(
     ) { collections, rows, tags, files, annotations, fileContent ->
 
         val total = collections.size + rows.size + tags.size + files.size + annotations.size
-        // FIX: Build a HashMap to match the Map<String, Searchable> return type
         val out = HashMap<String, Searchable>(total)
 
         for (item in collections) {
@@ -725,7 +564,6 @@ class ObsGraphEco(
                 type = ItemType.FILE,
                 fileName = item.getFullName(),
                 path = item.getRelativePath(),
-                // optional: empty when indexing is off or file isn't text
                 content = fileContent[graphId] ?: "",
             )
         }
@@ -740,13 +578,10 @@ class ObsGraphEco(
      * - Blank query  -> null  (sentinel for "no filtering", avoids matching every node)
      * - Invalid query -> null (fail-open; the half-typed query shouldn't empty the graph)
      * - Valid query  -> Set of matching graphIds
-     *
-     * Depends on searchablesFlow, which is why each Searchable must be paired
-     * with its graphId — Searchable.path is NOT the graphId for files/rows/annotations.
      */
     private val searchMatchIdsFlow: Flow<Set<Any>?> = combine(
         searchQueryFlow,
-        searchablesWithIdFlow,            // see change #2 — now emits Pair<Any, Searchable>
+        searchablesWithIdFlow,
     ) { query, searchables ->
         if (query.isBlank()) return@combine null
 
@@ -775,7 +610,6 @@ class ObsGraphEco(
         }
     }
 
-    // 2. Generate Map<GraphId, List<String>> containing the matched land names
     val nodeLandsFlow: Flow<Map<String, List<String>>> = combine(
         _groupsStateFlow,
         searchablesWithIdFlow
@@ -788,7 +622,7 @@ class ObsGraphEco(
             val compiled = try {
                 searchEngine.compile(group.filter)
             } catch (e: SearchSyntaxException) {
-                continue // fail-open, skip invalid group filters
+                continue
             }
 
             for ((graphId, searchable) in searchables) {
@@ -802,7 +636,6 @@ class ObsGraphEco(
         result as Map<String, List<String>>
     }.scoping()
 
-    // 3. Generate the overriding colors for nodes (First match wins)
     private val nodeGroupColorsFlow: Flow<Map<String, ULong>> = combine(
         _groupsStateFlow,
         searchablesWithIdFlow
@@ -819,7 +652,6 @@ class ObsGraphEco(
             }
 
             for ((graphId, searchable) in searchables) {
-                // Apply the color only if the node hasn't been colored by a prior, higher-priority group
                 if (!result.containsKey(graphId) && searchEngine.matches(compiled, searchable)) {
                     result[graphId] = group.color.value
                 }
@@ -828,10 +660,9 @@ class ObsGraphEco(
         result
     }.scoping()
 
-    // 4. Create an intermediate flow to inject the group colors into the graph nodes
     private val coloredGraphNodesFlow: Flow<Triple<Set<Any>, List<ObsidianGraphNode>, Map<Any, Long>>> =
         kotlinx.coroutines.flow.combine(
-            graphNodesFlow,        // raw nodes with static/type colors + modifiedTimes
+            graphNodesFlow,
             nodeGroupColorsFlow
         ) { (validIds, nodes, times), colorOverrides ->
             val coloredNodes = if (colorOverrides.isEmpty()) {
@@ -843,7 +674,6 @@ class ObsGraphEco(
                     if (overrideColor != null) node.copy(colorValue = overrideColor) else node
                 }
             }
-            // Carry modifiedTimes through — the gradation step downstream needs them.
             Triple(validIds, coloredNodes, times)
         }.scoping()
 
@@ -863,8 +693,8 @@ class ObsGraphEco(
         ) { gradations, triple, primaryColor, defaultColor ->
             val nodes = if (gradations) {
                 makeGradation(
-                    triple.third,          // modifiedTimes
-                    triple.second,         // group-colored nodes
+                    triple.third,
+                    triple.second,
                     primaryColor = primaryColor,
                     defaultColor = defaultColor
                 )
@@ -874,8 +704,180 @@ class ObsGraphEco(
             Pair(triple.first, nodes)
         }.scoping()
 
-    val nodes = kotlinx.coroutines.flow.combine(
-        gradatedGraphNodesFlow,   // <-- was coloredGraphNodesFlow
+    private val fileLinkEdgesFlow: Flow<List<GraphEdge>> = combine(
+        filesFlow,
+        workspaceSession.workspaceFlow,
+    ) { files, workspace ->
+        val ws = workspaceSession.workspaceEnvStateFlow.value
+        val workspacePathPrefix = "filenode: ${workspace.fullpath}/"
+
+        val edges = ArrayList<GraphEdge>(files.size + 16)
+        val liveKeys = HashSet<FileCacheKey>()
+
+        coroutineScope {
+            val deferreds = ArrayList<Deferred<Triple<FileCacheKey, String, List<String>>?>>()
+
+            for (directory in files) {
+                if (!directory.isDirectory()) continue
+                val children = directory.getChildrenOrNull() ?: continue
+                val dirGraphId = directory.getGraphId()
+
+                for (file in children) {
+                    val fileGraphId = file.getGraphId()
+                    edges.add(dirGraphId, fileGraphId, GraphEdgeType.DirectoryContainsFile)
+
+                    if (file is FileTreeNode.File &&
+                        file.name.extension.toFileType() == FileTypeExt.Text
+                    ) {
+                        val cacheKey = FileCacheKey(file.getFullPath(), file.modifiedTime)
+                        liveKeys.add(cacheKey)
+
+                        val cached = linkCache[cacheKey]
+                        if (cached != null) {
+                            for (target in cached) {
+                                edges.add(fileGraphId, target, GraphEdgeType.FileLink())
+                            }
+                            continue
+                        }
+
+                        deferreds.add(async(io) {
+                            val result = resultBlock(onError = { "" }) {
+                                val textResult = ws.getNodeText(file)
+                                val text = bind(textResult)
+                                val links = text.extractLinks()
+                                if (links.isEmpty()) {
+                                    emptyList<String>()
+                                } else {
+                                    val ssLinks = ArrayList<String>(links.size)
+                                    for (link in links) ssLinks.add(workspacePathPrefix + link)
+                                    ssLinks
+                                }
+                            }
+                            @Suppress("UNCHECKED_CAST")
+                            val list = result as? List<String> ?: return@async null
+                            Triple(cacheKey, fileGraphId, list)
+                        })
+                    }
+                }
+            }
+
+            for (d in deferreds) {
+                val triple = d.await() ?: continue
+                linkCache[triple.first] = triple.third
+                for (target in triple.third) {
+                    edges.add(triple.second, target, GraphEdgeType.FileLink())
+                }
+            }
+        }
+
+        if (linkCache.size > liveKeys.size) {
+            linkCache.keys.retainAll(liveKeys)
+        }
+
+        edges
+    }.scoping()
+
+
+    private val metadataEdgesFlow: Flow<List<GraphEdge>> =
+        com.moly3.cedarjam.core.domain.func.combine(
+            collectionRowsFlow,
+            tagToTagsFlow,
+            tagLinksFlow,
+            tagRowsFlow,
+            annotationsFlow,
+        ) { rows, tagToTags, tagLinks, tagRows, annotations ->
+            val edges = ArrayList<GraphEdge>(
+                rows.size * 2 + tagToTags.size + tagLinks.size + annotations.size * 2 + 16
+            )
+
+            // 1) Annotations
+            for (item in annotations) {
+                val annId = item.getGraphId()
+                edges.add(annId, item.dataPath.getFileTreeNodeGraphId(), GraphEdgeType.AnnotationOnFile)
+                if (item.rowId != null) {
+                    edges.add(annId, item.rowId.getCollectionRowGraphId(), GraphEdgeType.AnnotationOnRow)
+                }
+            }
+
+            // 2) Collection rows
+            for (item in rows) {
+                val rowId = item.getGraphId()
+                edges.add(rowId, item.collectionId.getCollectionGraphId(), GraphEdgeType.RowInCollection)
+                val rel = item.fileRelativePath
+                if (!rel.isNullOrEmpty()) {
+                    edges.add(rowId, rel.getFileTreeNodeGraphId(), GraphEdgeType.RowOnFile)
+                }
+            }
+
+            // 3) Tag-row links
+            for (item in tagRows) {
+                edges.add(
+                    item.tagId.getTagGraphId(),
+                    item.rowId.getCollectionRowGraphId(),
+                    GraphEdgeType.TagOnRow,
+                )
+            }
+
+            // 4) Tag links to files
+            for (tagLink in tagLinks) {
+                val tagGraphId = tagLink.tagId.getTagGraphId()
+                when (val data = tagLink.data) {
+                    is TagLinkDtoData.FileNode -> {
+                        edges.add(
+                            tagGraphId,
+                            data.relativePath.getFileTreeNodeGraphId(),
+                            GraphEdgeType.TagOnFile,
+                        )
+                    }
+                }
+            }
+
+            // 5) Tag-to-tag (note: original code put secondTagId as "from")
+            for (item in tagToTags) {
+                edges.add(
+                    item.secondTagId.getTagGraphId(),
+                    item.firstTagId.getTagGraphId(),
+                    GraphEdgeType.TagToTag,
+                )
+            }
+
+            edges
+        }.scoping()
+
+
+    private val oldConnectionsFlow: Flow<List<GraphEdge>> = combine(
+        fileLinkEdgesFlow,
+        metadataEdgesFlow,
+    ) { fileEdges, metaEdges ->
+        val merged = ArrayList<GraphEdge>(fileEdges.size + metaEdges.size)
+        merged.addAll(fileEdges)
+        merged.addAll(metaEdges)
+        merged
+    }.scoping()
+
+    /**
+     * Directional Connection adjacency.
+     *
+     * Each GraphEdge becomes at least one Connection, styled via [styleFor].
+     * Edges whose type is [isMutual] also contribute the reverse Connection,
+     * so both endpoints surface them in the rendered graph. Other edge types
+     * stay one-way and the arrowhead conveys direction.
+     *
+     * Dedupe key is (target, edgeType): two edges of different types between
+     * the same pair survive as two distinct Connections, which is exactly
+     * the "two types of connections" case the directional Connection model
+     * was designed for.
+     */
+    val connectionsFlow: Flow<Map<String, List<Connection<String>>>> = combine(
+        oldConnectionsFlow,
+        _targetId,
+    ) { edges, targetId ->
+        val adjacency = edgesToConnectionAdjacency(edges)
+        if (targetId != null) filterConnections(adjacency, targetId) else adjacency
+    }.scoping()
+
+    val nodesFlow = kotlinx.coroutines.flow.combine(
+        gradatedGraphNodesFlow,
         connectionsFlow,
         _settingsStateFlow.map { Pair(it.isOrphans, it.maxNodes) }.distinctUntilChanged(),
         searchMatchIdsFlow,
@@ -897,11 +899,13 @@ class ObsGraphEco(
                 val neighbors = connections[node.id]
                 if (neighbors != null) {
                     var hasValidNeighbor = false
-                    for (n in neighbors) {
-                        // FIX: A neighbor is only valid if it exists in the graph
-                        // AND it survived the active search filter.
-                        val isNeighborInGraph = n in validIds
-                        val doesNeighborSurviveSearch = searchIds == null || n in searchIds
+                    for (c in neighbors) {
+                        // A neighbor counts only if it exists in the graph
+                        // AND it survives the active search filter.
+                        val target = c.target
+                        val isNeighborInGraph = target in validIds
+                        val doesNeighborSurviveSearch =
+                            searchIds == null || target in searchIds
 
                         if (isNeighborInGraph && doesNeighborSurviveSearch) {
                             hasValidNeighbor = true
@@ -914,6 +918,41 @@ class ObsGraphEco(
         }
         nodes
     }.scoping()
+
+
+    private fun edgesToConnectionAdjacency(
+        edges: List<GraphEdge>,
+    ): Map<String, List<Connection<String>>> {
+
+        // (from -> ((target, edgeType) -> Connection))
+        // LinkedHashMap on the inner bucket preserves edge insertion order,
+        // which keeps render order stable across emissions for a given source
+        // — useful when overlapping styled lines stack predictably.
+        val acc = HashMap<String, LinkedHashMap<Pair<String, GraphEdgeType>, Connection<String>>>(edges.size)
+
+        fun addOne(from: String, to: String, type: GraphEdgeType) {
+            if (from == to) return
+            val bucket = acc.getOrPut(from) { LinkedHashMap(4) }
+            val key = to to type
+            if (key !in bucket) {
+                bucket[key] = Connection(target = to, style = styleFor(type))
+            }
+        }
+
+        for (e in edges) {
+            addOne(e.target1, e.target2, e.type)
+            if (isMutual(e.type)) {
+                addOne(e.target2, e.target1, e.type)
+            }
+        }
+
+        val out = HashMap<String, List<Connection<String>>>(acc.size)
+        for ((from, bucket) in acc) {
+            out[from] = bucket.values.toList()
+        }
+        return out
+    }
+
 
     private companion object {
         private val GREEN_COLOR = Color.Green.value

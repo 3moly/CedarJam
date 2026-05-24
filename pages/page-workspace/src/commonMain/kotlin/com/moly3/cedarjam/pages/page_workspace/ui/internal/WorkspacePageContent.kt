@@ -93,7 +93,7 @@ internal fun WorkspacePageContent(
                         DatabaseError.NotExist -> {
                             CJText(text = "database is not created")
                             CJButton(text = "create database for this workspace") {
-                                onIntent(Intent.CreateWorkspace)
+                                onIntent(Intent.CreateWorkspaceDatabaseFiles)
                             }
                         }
 

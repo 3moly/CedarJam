@@ -10,6 +10,7 @@ val ignoredExportShareArchive: String = pathWrapper(hiddenDirectory, "exportShar
 const val sqlDatabaseName = "sqlite"
 const val indexSqlDatabaseName = "indexes"
 const val imgCache = "image_cache"
+val dbRelativePath = pathWrapper(hiddenDirectory, "$sqlDatabaseName.db").pathString
 val ignoreIndexSqlDatabaseName: String = pathWrapper(hiddenDirectory, "$indexSqlDatabaseName.db").pathString
 val ignoredDbShm: String = pathWrapper(hiddenDirectory, "$sqlDatabaseName.db-shm").pathString
 val ignoredDbWal: String = pathWrapper(hiddenDirectory, "$sqlDatabaseName.db-wal").pathString

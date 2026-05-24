@@ -8,8 +8,6 @@ import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.waitUntilAtLeastOneExists
 import shared_tests.base.UITest
 import co.touchlab.kermit.Logger
-import com.arkivanov.decompose.router.stack.active
-import com.moly3.cedarjam.core.domain.dialog.DialogCreateWorkspaceService
 import com.moly3.cedarjam.core.domain.func.pathWrapper
 import com.moly3.cedarjam.core.domain.model.FileName
 import com.moly3.cedarjam.core.domain.model.SyncStatus
@@ -19,9 +17,6 @@ import com.moly3.cedarjam.navigation.Route
 import com.moly3.cedarjam.core.domain.model.WorkspaceInput
 import com.moly3.cedarjam.core.domain.model.shouldBeSuccess
 import com.moly3.cedarjam.core.domain.repository.IWorkspaceEnvironment
-import com.moly3.cedarjam.core.domain.usecase.ISyncUseCase
-import com.moly3.cedarjam.core.net.IRemoteSyncRepository
-import com.moly3.cedarjam.core.storage.ISystemFilesManager
 import com.moly3.cedarjam.di.metro.CedarJamGraph
 import com.moly3.cedarjam.pages.page_tab.TabComponent
 import com.moly3.cedarjam.pages.page_workspace.Intent
@@ -30,7 +25,6 @@ import io.github.vinceglb.filekit.absolutePath
 import io.github.vinceglb.filekit.projectDir
 import io.kotest.matchers.collections.shouldHaveSize
 import kotlinx.coroutines.delay
-import kotlinx.io.files.Path
 import shared_tests.func.checkFlowListSize
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -145,7 +139,7 @@ class UI1Test : UITest() {
         onNode(hasTestTag("workspace_name_button")).performClick()
 
         val instance = waitAndGetComponent<Root.Child.Workspace>(30_000L)
-        instance.component.onIntent(Intent.CreateWorkspace)
+        instance.component.onIntent(Intent.CreateWorkspaceDatabaseFiles)
         val workspaceSession = instance.component.workspaceSession
         val workspaceEnv = workspaceSession.workspaceEnvStateFlow.value
         workspaceEnv.deleteWorkspaceInServer().shouldBeSuccess()

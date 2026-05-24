@@ -63,7 +63,7 @@ colorpicker-compose = "1.1.4"
 
 video-player = "0.10.0"
 jewelDecoratedWindow = "0.35.0-261.23567.138"
-compose-data-viz = "0.1.51"
+compose-data-viz = "0.1.54"
 dnd = "0.4.0"
 webview = "2.0.3"
 moko-resources = "0.26.4"

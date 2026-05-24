@@ -8,6 +8,7 @@ import com.moly3.cedarjam.pages.page_graph.Intent
 import com.moly3.cedarjam.pages.page_graph.State
 import com.moly3.cedarjam.core.domain.model.node.ObsidianGraphData
 import com.moly3.dataviz.core.graph.engine.IGraphEngine
+import com.moly3.dataviz.core.graph.model.Connection
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableMap
 
@@ -22,7 +23,7 @@ interface GraphStore : Store<Intent, State, Unit> {
         data class SetZoom(val value: Float) : Msg
         data class SetPartConfig(val value: GraphPartConfig) : Msg
         data class SetNodes(val value: List<ObsidianGraphNode>) : Msg
-        data class SetConnections(val value: ImmutableMap<String, ImmutableList<String>>) : Msg
+        data class SetConnections(val value: ImmutableMap<String, ImmutableList<Connection<String>>>) : Msg
         data class SetNodeLands(val value: Map<String, List<String>>) : Msg
     }
 }

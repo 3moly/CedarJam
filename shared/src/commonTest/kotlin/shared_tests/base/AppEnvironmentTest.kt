@@ -71,7 +71,7 @@ abstract class AppEnvironmentTest : BaseTest() {
         }
     }
 
-    private fun getWorkspace(): WorkspacePresentation {
+    private fun getWorkspacePresentation(): WorkspacePresentation {
         val fullPath = getWorkspaceDirectory().getFullPath()
         return WorkspacePresentation(
             name = "test_env2",
@@ -102,7 +102,7 @@ abstract class AppEnvironmentTest : BaseTest() {
 
 
         val sd = CedarJamGraph.instance.cedarJamDependencies.appEnvironment
-        val workspace = getWorkspace()
+        val workspace = getWorkspacePresentation()
         sd.createWorkspace(
             Workspace(
                 name = workspace.name,

@@ -150,15 +150,18 @@ internal class SystemFilesManager : ISystemFilesManager, IFileHasher {
     }
 
     override fun deleteNodeHeavy(nodePath: String) {
-        val path = Path(nodePath)
-        //val files = fs.list(path)
-        val meta = fs.metadataOrNull(path) ?: return
-        if (meta.isDirectory) {
-            for (child in fs.list(path)) {
-                deleteNodeHeavy(child.toString())
+        try {
+            val path = Path(nodePath)
+            if (!fs.exists(path)) return
+            if (fs.metadataOrNull(path)!!.isDirectory) {
+                val child = fs.list(Path(nodePath))
+                for (childPath in child) {
+                    deleteNodeHeavy(childPath.toString())
+                }
             }
+            fs.delete(Path(nodePath), true)
+        } catch (exc: Exception) {
         }
-        fs.delete(path, mustExist = false)
     }
 
     override fun moveNode(

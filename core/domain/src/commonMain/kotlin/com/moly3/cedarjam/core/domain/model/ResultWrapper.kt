@@ -8,6 +8,8 @@ sealed class ResultWrapper<out S, out E> {
     data class Error<out E>(val error: E) : ResultWrapper<Nothing, E>()
 }
 
+fun <S, E> ResultWrapper<S, E>.success(): S = (this as ResultWrapper.Success).value
+fun <S, E> ResultWrapper<S, E>.error(): E = (this as ResultWrapper.Error).error
 fun <S, E> ResultWrapper<S, E>.isSuccess(): Boolean = this is ResultWrapper.Success
 fun <S, E> ResultWrapper<S, E>.isError(): Boolean = this is ResultWrapper.Error
 

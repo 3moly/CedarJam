@@ -6,6 +6,7 @@ import com.moly3.cedarjam.core.domain.model.OffsetData
 import com.moly3.cedarjam.core.domain.model.config.GraphPartConfig
 import com.moly3.cedarjam.core.domain.model.mapToOffset
 import com.moly3.cedarjam.core.domain.model.mapToOffsetData
+import com.moly3.dataviz.core.graph.model.Connection
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.collections.immutable.persistentListOf
@@ -17,7 +18,7 @@ import kotlinx.serialization.Serializable
 data class State(
     val isShowSettings: Boolean = false,
     val graphNodes: ImmutableList<ObsidianGraphNode> = persistentListOf(),
-    val connections: ImmutableMap<String, ImmutableList<String>> = persistentMapOf(),
+    val connections: ImmutableMap<String, ImmutableList<Connection<String>>> = persistentMapOf(),
     val zoom: Float = 1f,
     val graphUserPosition: Offset = Offset.Zero,
     val coordinates: ImmutableMap<String, Offset> = persistentMapOf(),
@@ -29,7 +30,7 @@ data class State(
     data class SaveableState(
         val isShowSettings: Boolean = false,
         val graphNodes: List<ObsidianGraphNode> = listOf(),
-        val connections: Map<String, List<String>> = mapOf(),
+        val connections: Map<String, List<Connection<String>>> = mapOf(),
         val zoom: Float = 1f,
         val graphUserPosition: OffsetData = OffsetData.Zero,
         val coordinates: Map<String, OffsetData> = mapOf(),
