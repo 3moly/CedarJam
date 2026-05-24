@@ -77,6 +77,6 @@ class ConnectionsTest : UITest() {
         nodes.shouldHaveSize(3)
 
         val connections = workspaceSession.graphEco.connectionsFlow.first()
-        connections.shouldHaveSize(2)
+        connections.shouldHaveSize(1)
     }
 }

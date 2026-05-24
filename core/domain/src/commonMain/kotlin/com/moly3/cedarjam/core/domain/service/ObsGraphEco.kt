@@ -116,30 +116,33 @@ class ObsGraphEco(
     // (annotations attached to files, tags applied to things, tag-to-tag
     // relations) stay one-way and the arrowhead conveys direction.
     // ---------------------------------------------------------------------
-    private fun styleFor(type: GraphEdgeType): ArrowStyle = when (type) {
-        GraphEdgeType.DirectoryContainsFile -> ArrowStyle.Default
-        GraphEdgeType.RowInCollection       -> ArrowStyle.Default
+    private fun styleFor(type: GraphEdgeType): ArrowStyle {
+        return ArrowStyle(head = ArrowHead.None, line = LineStyle.Solid, color = Color.Green)
+        return when (type) {
+            GraphEdgeType.DirectoryContainsFile -> ArrowStyle.Default
+            GraphEdgeType.RowInCollection       -> ArrowStyle.Default
 
-        is GraphEdgeType.FileLink -> ArrowStyle(
-            head = ArrowHead.Open,
-            line = LineStyle.Solid,
-        )
+            is GraphEdgeType.FileLink -> ArrowStyle(
+                head = ArrowHead.Open,
+                line = LineStyle.Solid,
+            )
 
-        GraphEdgeType.AnnotationOnFile -> ArrowStyle(head = ArrowHead.Open)
-        GraphEdgeType.AnnotationOnRow  -> ArrowStyle(head = ArrowHead.Open)
+            GraphEdgeType.AnnotationOnFile -> ArrowStyle(head = ArrowHead.Open)
+            GraphEdgeType.AnnotationOnRow  -> ArrowStyle(head = ArrowHead.Open)
 
-        GraphEdgeType.TagOnFile -> ArrowStyle(
-            head = ArrowHead.Open,
-            line = LineStyle.Dashed,
-        )
-        GraphEdgeType.TagOnRow -> ArrowStyle(
-            head = ArrowHead.Open,
-            line = LineStyle.Dashed,
-        )
+            GraphEdgeType.TagOnFile -> ArrowStyle(
+                head = ArrowHead.Open,
+                line = LineStyle.Dashed,
+            )
+            GraphEdgeType.TagOnRow -> ArrowStyle(
+                head = ArrowHead.Open,
+                line = LineStyle.Dashed,
+            )
 
-        GraphEdgeType.RowOnFile -> ArrowStyle(head = ArrowHead.Open)
+            GraphEdgeType.RowOnFile -> ArrowStyle(head = ArrowHead.Open)
 
-        GraphEdgeType.TagToTag -> ArrowStyle(head = ArrowHead.FilledTriangle)
+            GraphEdgeType.TagToTag -> ArrowStyle(head = ArrowHead.FilledTriangle)
+        }
     }
 
     private fun isMutual(type: GraphEdgeType): Boolean = when (type) {
