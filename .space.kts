@@ -3,6 +3,7 @@ job("ui test") {
         gitPush {
             anyBranchMatching {
                 +"main"
+                +"markdown"
             }
         }
     }
