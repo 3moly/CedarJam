@@ -21,6 +21,8 @@ import com.moly3.cedarjam.core.domain.model.TagLinkDTO
 import com.moly3.cedarjam.core.domain.model.TagToTagDTO
 import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.domain.model.WorkspacePresentation
+import com.moly3.cedarjam.core.domain.model.config.GraphSaveConfig
+import com.moly3.cedarjam.core.domain.model.config.GraphSaveConfigs
 import com.moly3.cedarjam.core.domain.model.error.DatabaseError
 import com.moly3.cedarjam.core.domain.model.request.CreateAnnotationRequest
 import com.moly3.cedarjam.core.domain.model.request.CreateCollectionRequest
@@ -42,6 +44,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 
 interface IWorkspaceEnvironment {
+
+    fun getGraphConfigs(): Flow<List<GraphSaveConfig>>
+    suspend fun insertNewGraphConfigs(config: GraphSaveConfigs)
     fun getWorkspaceSettingsFlow(): StateFlow<WorkspaceSettings>
 
     suspend fun initConfigAndFiles()

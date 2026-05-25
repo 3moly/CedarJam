@@ -119,6 +119,16 @@ fun BoxScope.SettingsPanel(
                     onIntent(Intent.SetIsShowSettings(!isShowSettings))
                 })
             }
+            if (isShowSettings) {
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CJButton(text = "Configs", onClick = {
+                        onIntent(Intent.OpenConfigs)
+                    })
+                }
+            }
 
             AnimatedVisibility(
                 visible = isShowSettings,
@@ -133,6 +143,21 @@ fun BoxScope.SettingsPanel(
                             .fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
+                        Row(modifier = Modifier.fillMaxWidth()) {
+                            CJText(text = "is moving nodes:", modifier = Modifier.weight(1f))
+                            CJIOSwitch(
+                                modifier = Modifier,
+                                height = 24,
+                                checked = partConfig.config.isMoving,
+                                onCheckedChange = {
+                                    onIntent(
+                                        Intent.SetGraphSettings(
+                                            partConfig.config.copy(isMoving = !partConfig.config.isMoving)
+                                        )
+                                    )
+                                })
+                        }
+
                         CJSearchTextField(
                             modifier = Modifier
                                 .fillMaxWidth(),

@@ -49,7 +49,7 @@ class DialogGraphComponentImpl(
     }
 
     override val engine: IGraphEngine<String, ObsidianGraphData> by lazy {
-        UltraFastEngine(config = UltraFastEngineConfig.Default.copy(startAlpha = 0f))
+        UltraFastEngine(UltraFastEngineConfig.Default.copy(startAlpha = 0f))
     }
 
     override val state: StateFlow<State> = store.stateFlow

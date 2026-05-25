@@ -1,7 +1,9 @@
 package com.moly3.cedarjam.di.metro
 
 import com.moly3.cedarjam.core.domain.dialog.*
+import com.moly3.cedarjam.core.domain.service.WorkspaceSession
 import com.moly3.cedarjam.core.ui.dialog.DialogRegistry
+import com.moly3.cedarjam.pages.page_workspace.di.WorkspaceScope
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.ContributesTo
@@ -14,8 +16,10 @@ object DialogBindings {
     @SingleIn(AppScope::class)
     @Provides
     fun provideDialogRegistry(): DialogRegistry = DialogRegistry()
+
     @Provides
     fun provideIDialogRegister(registry: DialogRegistry): IDialogRegister = registry
+
     @Provides
     fun provideDialogSelectTagService(register: IDialogRegister): DialogSelectTagService =
         DialogSelectTagService(register)
@@ -27,10 +31,6 @@ object DialogBindings {
     @Provides
     fun provideDialogDeleteService(register: IDialogRegister): DialogDeleteService =
         DialogDeleteService(register)
-
-    @Provides
-    fun provideDialogGraphConfigsService(register: IDialogRegister): DialogGraphConfigsService =
-        DialogGraphConfigsService(register)
 
     @Provides
     fun provideDialogCreateWorkspaceService(register: IDialogRegister): DialogCreateWorkspaceService =

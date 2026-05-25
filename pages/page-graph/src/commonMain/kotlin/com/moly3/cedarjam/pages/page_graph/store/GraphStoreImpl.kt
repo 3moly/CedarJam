@@ -9,6 +9,7 @@ import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.moly3.cedarjam.core.domain.dialog.DialogColorPickerService
 import com.moly3.cedarjam.core.domain.dialog.DialogDeleteService
+import com.moly3.cedarjam.core.domain.dialog.DialogGraphConfigsService
 import com.moly3.cedarjam.core.domain.func.hiddenDirectory
 import com.moly3.cedarjam.core.domain.func.isGraphSettingsNudge
 import com.moly3.cedarjam.core.domain.func.pathWrapper
@@ -74,7 +75,8 @@ class GraphStoreImpl @AssistedInject constructor(
     private val macTrackpadGestureService: MacTrackpadGestureService,
     private val openNodeDataUseCaseFactory: OpenNodeDataUseCaseFactory,
     private val dialogColorPickerService: DialogColorPickerService,
-    private val dialogDeleteService: DialogDeleteService
+    private val dialogDeleteService: DialogDeleteService,
+    private val dialogGraphConfigsService: DialogGraphConfigsService
 ) : GraphStore,
     Store<Intent, State, Unit> by storeFactory.create(
         name = GraphStore::class.simpleName,
@@ -95,7 +97,8 @@ class GraphStoreImpl @AssistedInject constructor(
                 openNodeDataUseCase = openNodeDataUseCaseFactory.invoke(fileManagerService = workspaceSession.fileManagerService),
                 openWorkspaceSettings = openWorkspaceSettings,
                 dialogColorPickerService = dialogColorPickerService,
-                dialogDeleteService = dialogDeleteService
+                dialogDeleteService = dialogDeleteService,
+                dialogGraphConfigsService = dialogGraphConfigsService
             )
         },
         reducer = ReducerImpl
@@ -117,7 +120,8 @@ class GraphStoreImpl @AssistedInject constructor(
         private val engine: IGraphEngine<String, ObsidianGraphData>,
         private val openWorkspaceSettings: (Boolean) -> Unit,
         private val dialogColorPickerService: DialogColorPickerService,
-        private val dialogDeleteService: DialogDeleteService
+        private val dialogDeleteService: DialogDeleteService,
+        private val dialogGraphConfigsService: DialogGraphConfigsService
     ) : BaseExecutor<Intent, Unit, State, GraphStore.Msg, Unit>(lifecycle) {
 
         private val _isMouseCapturedState = MutableStateFlow(false)
@@ -207,17 +211,18 @@ class GraphStoreImpl @AssistedInject constructor(
             }
             scopeFromStartToStop.launch {
                 graphEco.nodesFlow
-                    .distinctUntilChanged()
-                    .collectLatest {
+                    .map {
+                        it.toImmutableList()
+
+                    }     // copy on IO
+                    .distinctUntilChanged()           // equality on IO
+                    .flowOn(io)
+                    .collectLatest { immutableNodes ->
                         if (state().coordinates.isEmpty()) {
                             val mutMap = mutableMapOf<String, Offset>()
-                            placeNodesCircular(
-                                stateNodes = it,
-                                changeCoords = mutMap
-                            )
+                            placeNodesCircular(stateNodes = immutableNodes, changeCoords = mutMap)
                             dispatch(SetCoordinates(mutMap.toPersistentMap()))
                         }
-                        val immutableNodes = it.toImmutableList()
                         if (immutableNodes != state().graphNodes) {
                             dispatch(SetNodes(immutableNodes))
                         }
@@ -327,7 +332,7 @@ class GraphStoreImpl @AssistedInject constructor(
                             val partConfig = state().partConfig
                             val config =
                                 partConfig.copy(groups = partConfig.groups.filter { d -> d.name != intent.groupName })
-                            dispatch(GraphStore.Msg.SetPartConfig(config))
+                            dispatch(SetPartConfig(config))
                         }
                     }
                 }
@@ -376,6 +381,18 @@ class GraphStoreImpl @AssistedInject constructor(
                             partConfig.copy(filter = filter)
                         )
                     )
+                }
+
+                Intent.OpenConfigs -> scope.launch {
+                    val config = state().partConfig
+                    val result =
+                        dialogGraphConfigsService.open(DialogGraphConfigsService.Input(config))
+                    if (result != null) {
+                        engine.reheat()
+                        graphEco.setGraphConfig(result.part.filter)
+                        graphEco.setGroups(result.part.groups)
+                        dispatch(GraphStore.Msg.SetPartConfig(result.part))
+                    }
                 }
             }
         }

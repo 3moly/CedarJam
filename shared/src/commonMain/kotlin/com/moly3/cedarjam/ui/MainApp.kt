@@ -65,8 +65,8 @@ fun MainApp(root: Root) {
             registerUI { dialog: DialogCreateWorkspaceService, input: Unit ->
                 DialogCreateWorkspaceUI(dialog)
             }
-            registerUI { dialog: DialogGraphConfigsService, input: Unit ->
-                DialogGraphConfigsUI(dialog)
+            registerUI { dialog: DialogGraphConfigsService, input: DialogGraphConfigsService.Input ->
+                DialogGraphConfigsUI(dialog = dialog, input = input)
             }
             registerUI { dialog: DialogDeleteService, input: Unit ->
                 DialogDeleteUI(dialog)

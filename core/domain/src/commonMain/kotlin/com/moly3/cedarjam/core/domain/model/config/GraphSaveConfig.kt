@@ -9,6 +9,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
+@Stable
 data class GraphSaveConfig(
     @SerialName("is_pinned")
     val isPinned: Boolean,

@@ -29,9 +29,12 @@ import com.moly3.cedarjam.core.domain.model.TagToTagDTO
 import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.domain.model.WorkspacePresentation
 import com.moly3.cedarjam.core.domain.model.bind
+import com.moly3.cedarjam.core.domain.model.config.GraphSaveConfig
+import com.moly3.cedarjam.core.domain.model.config.GraphSaveConfigs
 import com.moly3.cedarjam.core.domain.model.ensure
 import com.moly3.cedarjam.core.domain.model.error.DatabaseError
 import com.moly3.cedarjam.core.domain.model.fold
+import com.moly3.cedarjam.core.domain.model.getGraphConfigs
 import com.moly3.cedarjam.core.domain.model.getSettingsJsonFile
 import com.moly3.cedarjam.core.domain.model.request.CreateAnnotationRequest
 import com.moly3.cedarjam.core.domain.model.resultBlock
@@ -62,6 +65,10 @@ import dev.zacsweers.metro.AssistedInject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
@@ -73,11 +80,11 @@ import kotlin.collections.set
 import kotlin.time.ExperimentalTime
 
 class WorkspaceEnvironment(
-    private val sqlStorageFactory: () -> ISqlStorage,//core:data
+    private val sqlStorageFactory: () -> ISqlStorage,
     private val workspace: WorkspacePresentation,
-    private val filesRepository: IFilesRepository,//core:data
-    private val fileManagerService: FileManagerService, //core:data
-    private val syncNetRepository: IRemoteSyncRepository, //-> core:net,
+    private val filesRepository: IFilesRepository,
+    private val fileManagerService: FileManagerService,
+    private val syncNetRepository: IRemoteSyncRepository
 ) : IWorkspaceEnvironment {
 
     private val fileNodesState: MutableStateFlow<UIState<List<FileTreeNode>, String>> =
@@ -100,6 +107,38 @@ class WorkspaceEnvironment(
                 walkInFiles(item.children, watch = watch)
             }
             watch(item)
+        }
+    }
+    private val _configsState = MutableStateFlow<GraphSaveConfigs?>(null)
+    private val loadMutex = Mutex()
+
+    override fun getGraphConfigs(): Flow<List<GraphSaveConfig>> = flow {
+        if (_configsState.value == null) {
+            loadMutex.withLock {
+                if (_configsState.value == null) {
+                    _configsState.value = loadFromDisk()
+                }
+            }
+        }
+        emitAll(_configsState.filterNotNull().map { it.configs })
+    }.flowOn(io)
+
+    private suspend fun loadFromDisk(): GraphSaveConfigs = try {
+        filesRepository.getNodeText(workspace.getGraphConfigs()).fold(
+            onFailure = { GraphSaveConfigs(emptyList()) },
+            onSuccess = { DefaultJson.decodeFromString<GraphSaveConfigs>(it) }
+        )
+    } catch (e: Exception) {
+        GraphSaveConfigs(emptyList())
+    }
+
+    override suspend fun insertNewGraphConfigs(config: GraphSaveConfigs) {
+        try {
+            val json = DefaultJson.encodeToString(config)
+            filesRepository.setNodeText(workspace.getGraphConfigs(), json)
+            _configsState.value = config
+        } catch (e: Exception) {
+            // at least log it
         }
     }
 
