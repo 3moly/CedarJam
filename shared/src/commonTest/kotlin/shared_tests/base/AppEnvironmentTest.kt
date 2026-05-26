@@ -2,7 +2,6 @@ package shared_tests.base
 
 import co.touchlab.kermit.CommonWriter
 import co.touchlab.kermit.Logger
-import com.moly3.cedarjam.di.initApp
 import com.moly3.cedarjam.core.domain.func.getPlatform
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.Platform
@@ -15,7 +14,8 @@ import com.moly3.cedarjam.core.storage.ISystemFilesManager
 import com.moly3.cedarjam.core.storage.func.createSystemFilesManager
 import com.moly3.cedarjam.core.storage.func.filesDirPath
 import com.moly3.cedarjam.core.storage.func.init
-import com.moly3.cedarjam.di.metro.CedarJamGraph
+import com.moly3.cedarjam.shared.di.initApp
+import com.moly3.cedarjam.shared.di.metro.CedarJamGraph
 import io.github.vinceglb.filekit.FileKit
 import io.kotest.matchers.collections.shouldHaveSize
 import kotlinx.coroutines.flow.first
@@ -97,7 +97,6 @@ abstract class AppEnvironmentTest : BaseTest() {
         FileKit.init(getTestApplicationContext())
 
         initApp(getTestApplicationContext(), isTest = true)
-
 
         val sd = CedarJamGraph.instance.cedarJamDependencies.appEnvironment
         val workspace = getWorkspacePresentation()

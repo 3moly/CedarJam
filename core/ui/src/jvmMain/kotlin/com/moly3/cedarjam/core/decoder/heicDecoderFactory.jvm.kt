@@ -21,11 +21,11 @@ import org.jetbrains.skia.ImageInfo
 import org.jetbrains.skia.Image as SkiaImage
 import java.io.File
 import java.security.MessageDigest
-import openize.heic.decoder.HeicImage
-import openize.heic.decoder.HeicImageFrame
-import openize.heic.decoder.PixelFormat
-import openize.io.IOFileStream
-import openize.io.IOMode
+//import openize.heic.decoder.HeicImage
+//import openize.heic.decoder.HeicImageFrame
+//import openize.heic.decoder.PixelFormat
+//import openize.io.IOFileStream
+//import openize.io.IOMode
 
 /*
  * jvmMain
@@ -83,37 +83,39 @@ class JvmHeicDecoder(
     private val cacheDir: File?,
 ) : Decoder {
 
-    override suspend fun decode(): DecodeResult =
-        HEIC_DECODE_GATE.withPermit {
-            runInterruptible(Dispatchers.IO) { decodeBlocking() }
-        }
-
-    private fun decodeBlocking(): DecodeResult {
-        // 1. Resolve a complete file for Openize (its API is file-backed).
-        val heicFile: File = okioPathToFile(source.file())
-        val fileLen = heicFile.length()
-        check(fileLen > 0) { "HEIC source file was empty (${heicFile.absolutePath})" }
-
-        // 2. PNG cache fast path. If a transcoded PNG already exists, decode
-        //    that and skip Openize entirely.
-        val pngFile: File? = cachePngFileFor(heicFile, fileLen)
-        if (pngFile != null && pngFile.isFile && pngFile.length() > 0) {
-            decodeCachedPng(pngFile)?.let { return it }
-            // Cache file present but unreadable/corrupt — drop it and fall
-            // through to a fresh Openize decode.
-            runCatching { pngFile.delete() }
-        }
-
-        // 3. Slow path: decode with Openize.
-        val bitmap = decodeWithOpenize(heicFile, fileLen)
-
-        // 4. Populate the cache for next time (best-effort; never fatal).
-        if (pngFile != null) {
-            runCatching { writePngAtomically(bitmap, pngFile) }
-        }
-
-        return DecodeResult(image = bitmap.asImage(), isSampled = false)
+    override suspend fun decode(): DecodeResult {
+        TODO()
     }
+//        HEIC_DECODE_GATE.withPermit {
+//            runInterruptible(Dispatchers.IO) { decodeBlocking() }
+//        }
+
+//    private fun decodeBlocking(): DecodeResult {
+//        // 1. Resolve a complete file for Openize (its API is file-backed).
+//        val heicFile: File = okioPathToFile(source.file())
+//        val fileLen = heicFile.length()
+//        check(fileLen > 0) { "HEIC source file was empty (${heicFile.absolutePath})" }
+//
+//        // 2. PNG cache fast path. If a transcoded PNG already exists, decode
+//        //    that and skip Openize entirely.
+//        val pngFile: File? = cachePngFileFor(heicFile, fileLen)
+//        if (pngFile != null && pngFile.isFile && pngFile.length() > 0) {
+//            decodeCachedPng(pngFile)?.let { return it }
+//            // Cache file present but unreadable/corrupt — drop it and fall
+//            // through to a fresh Openize decode.
+//            runCatching { pngFile.delete() }
+//        }
+//
+//        // 3. Slow path: decode with Openize.
+//        val bitmap = decodeWithOpenize(heicFile, fileLen)
+//
+//        // 4. Populate the cache for next time (best-effort; never fatal).
+//        if (pngFile != null) {
+//            runCatching { writePngAtomically(bitmap, pngFile) }
+//        }
+//
+//        return DecodeResult(image = bitmap.asImage(), isSampled = false)
+//    }
 
     /** Decodes a previously cached PNG. Returns null if it can't be read. */
     private fun decodeCachedPng(pngFile: File): DecodeResult? = runCatching {
@@ -127,56 +129,56 @@ class JvmHeicDecoder(
     }.getOrNull()
 
     /** Full Openize decode of [heicFile] into a Skia [Bitmap]. */
-    private fun decodeWithOpenize(heicFile: File, fileLen: Long): Bitmap {
-        // The stream must stay open through getInt32Array() — close in finally.
-        val fs = IOFileStream(heicFile.absolutePath, IOMode.READ)
-        try {
-            val image: HeicImage = try {
-                HeicImage.load(fs)
-            } catch (e: IndexOutOfBoundsException) {
-                // Openize's box parser ran past EOF on a known-complete file —
-                // this Openize version cannot parse this file (often iOS18+
-                // containers). Bumping the openize-heic dependency is the fix.
-                error(
-                    "Openize.HEIC crashed parsing the HEIC container " +
-                            "(file is $fileLen bytes, not truncated). Try a newer " +
-                            "openize-heic release. Cause: $e",
-                )
-            } ?: error("Openize.HEIC could not parse the HEIC container")
-
-            val frame: HeicImageFrame = selectImageFrame(image)
-
-            val width = frame.width.toInt()
-            val height = frame.height.toInt()
-            check(width > 0 && height > 0) {
-                "Openize.HEIC reported invalid frame dimensions: ${width}x$height"
-            }
-
-            val argb: IntArray = frame.getInt32Array(PixelFormat.Argb32)
-                ?: error(
-                    "Openize.HEIC returned no pixels for the selected frame " +
-                            "(id=${frame.id}, ${width}x$height). " + describeFrames(image),
-                )
-            check(argb.size >= width * height) {
-                "Openize.HEIC pixel buffer too small: ${argb.size} < ${width * height}"
-            }
-
-            return Bitmap().apply {
-                allocPixels(
-                    ImageInfo(
-                        width = width,
-                        height = height,
-                        colorType = ColorType.RGBA_8888,
-                        alphaType = ColorAlphaType.UNPREMUL,
-                    ),
-                )
-                installPixels(argbIntsToRgbaBytes(argb, width, height))
-                setImmutable()
-            }
-        } finally {
-            runCatching { fs.close() }
-        }
-    }
+//    private fun decodeWithOpenize(heicFile: File, fileLen: Long): Bitmap {
+//        // The stream must stay open through getInt32Array() — close in finally.
+//        val fs = IOFileStream(heicFile.absolutePath, IOMode.READ)
+//        try {
+//            val image: HeicImage = try {
+//                HeicImage.load(fs)
+//            } catch (e: IndexOutOfBoundsException) {
+//                // Openize's box parser ran past EOF on a known-complete file —
+//                // this Openize version cannot parse this file (often iOS18+
+//                // containers). Bumping the openize-heic dependency is the fix.
+//                error(
+//                    "Openize.HEIC crashed parsing the HEIC container " +
+//                            "(file is $fileLen bytes, not truncated). Try a newer " +
+//                            "openize-heic release. Cause: $e",
+//                )
+//            } ?: error("Openize.HEIC could not parse the HEIC container")
+//
+//            val frame: HeicImageFrame = selectImageFrame(image)
+//
+//            val width = frame.width.toInt()
+//            val height = frame.height.toInt()
+//            check(width > 0 && height > 0) {
+//                "Openize.HEIC reported invalid frame dimensions: ${width}x$height"
+//            }
+//
+//            val argb: IntArray = frame.getInt32Array(PixelFormat.Argb32)
+//                ?: error(
+//                    "Openize.HEIC returned no pixels for the selected frame " +
+//                            "(id=${frame.id}, ${width}x$height). " + describeFrames(image),
+//                )
+//            check(argb.size >= width * height) {
+//                "Openize.HEIC pixel buffer too small: ${argb.size} < ${width * height}"
+//            }
+//
+//            return Bitmap().apply {
+//                allocPixels(
+//                    ImageInfo(
+//                        width = width,
+//                        height = height,
+//                        colorType = ColorType.RGBA_8888,
+//                        alphaType = ColorAlphaType.UNPREMUL,
+//                    ),
+//                )
+//                installPixels(argbIntsToRgbaBytes(argb, width, height))
+//                setImmutable()
+//            }
+//        } finally {
+//            runCatching { fs.close() }
+//        }
+//    }
 
     /**
      * Resolves the PNG cache file for this image, or null if caching is off.
@@ -241,7 +243,8 @@ class JvmHeicDecoder(
  * To enable the PNG transcode cache, use the [heicDecoderFactory] overload
  * that takes a cache directory.
  */
-actual fun heicDecoderFactory(): Decoder.Factory? = JvmHeicDecoder.Factory(appCacheDir())
+//actual fun heicDecoderFactory(): Decoder.Factory? = JvmHeicDecoder.Factory(appCacheDir())
+actual fun heicDecoderFactory(): Decoder.Factory? = null
 
 /**
  * JVM HEIC decoder factory WITH a PNG transcode cache.
@@ -276,21 +279,21 @@ fun appCacheDir(): File {
  * (depth maps, alpha) carry no standalone pixel data, which is why the
  * default frame alone is not trustworthy.
  */
-private fun selectImageFrame(image: HeicImage): HeicImageFrame {
-    val default: HeicImageFrame? = runCatching { image.defaultFrame }.getOrNull()
-    if (default != null && default.isImage && !default.isHidden) return default
-
-    val frames = runCatching { image.frames }.getOrNull()?.values.orEmpty()
-
-    frames.firstOrNull { it.isImage && !it.isHidden && !it.isDerived }
-        ?.let { return it }
-    frames.firstOrNull { it.isImage && !it.isHidden }
-        ?.let { return it }
-    frames.firstOrNull { it.isImage }
-        ?.let { return it }
-
-    error("Openize.HEIC found no decodable image frame. " + describeFrames(image))
-}
+//private fun selectImageFrame(image: HeicImage): HeicImageFrame {
+//    val default: HeicImageFrame? = runCatching { image.defaultFrame }.getOrNull()
+//    if (default != null && default.isImage && !default.isHidden) return default
+//
+//    val frames = runCatching { image.frames }.getOrNull()?.values.orEmpty()
+//
+//    frames.firstOrNull { it.isImage && !it.isHidden && !it.isDerived }
+//        ?.let { return it }
+//    frames.firstOrNull { it.isImage && !it.isHidden }
+//        ?.let { return it }
+//    frames.firstOrNull { it.isImage }
+//        ?.let { return it }
+//
+//    error("Openize.HEIC found no decodable image frame. " + describeFrames(image))
+//}
 
 /** SHA-256 of [input], lowercase hex — used for stable cache filenames. */
 private fun sha256Hex(input: String): String {
@@ -310,17 +313,17 @@ private fun okioPathToFile(path: okio.Path): File = File(path.toString())
  * Builds a short human-readable inventory of every frame Openize parsed.
  * Used only in error messages, to make an undecodable file diagnosable.
  */
-private fun describeFrames(image: HeicImage): String {
-    val frames = runCatching { image.frames }.getOrNull()?.values.orEmpty()
-    if (frames.isEmpty()) return "No frames were parsed."
-    val rows = frames.joinToString("; ") { f ->
-        runCatching {
-            "id=${f.id} type=${f.imageType} ${f.width}x${f.height} " +
-                    "image=${f.isImage} hidden=${f.isHidden} derived=${f.isDerived}"
-        }.getOrElse { "id=? (frame inspection failed)" }
-    }
-    return "Frames parsed: $rows"
-}
+//private fun describeFrames(image: HeicImage): String {
+//    val frames = runCatching { image.frames }.getOrNull()?.values.orEmpty()
+//    if (frames.isEmpty()) return "No frames were parsed."
+//    val rows = frames.joinToString("; ") { f ->
+//        runCatching {
+//            "id=${f.id} type=${f.imageType} ${f.width}x${f.height} " +
+//                    "image=${f.isImage} hidden=${f.isHidden} derived=${f.isDerived}"
+//        }.getOrElse { "id=? (frame inspection failed)" }
+//    }
+//    return "Frames parsed: $rows"
+//}
 
 /**
  * Converts a row-major array of packed `0xAARRGGBB` ints into tightly packed

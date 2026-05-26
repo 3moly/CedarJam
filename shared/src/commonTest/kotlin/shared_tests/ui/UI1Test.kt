@@ -6,12 +6,12 @@ import com.moly3.cedarjam.core.domain.func.pathWrapper
 import com.moly3.cedarjam.core.domain.model.FileName
 import com.moly3.cedarjam.core.domain.model.SyncStatus
 import com.moly3.cedarjam.core.domain.model.Workspace
-import com.moly3.cedarjam.navigation.Root
+import com.moly3.cedarjam.shared.navigation.Root
 import com.moly3.cedarjam.navigation.Route
 import com.moly3.cedarjam.core.domain.model.WorkspaceInput
 import com.moly3.cedarjam.core.domain.model.shouldBeSuccess
 import com.moly3.cedarjam.core.domain.repository.IWorkspaceEnvironment
-import com.moly3.cedarjam.di.metro.CedarJamGraph
+import com.moly3.cedarjam.shared.di.metro.CedarJamGraph
 import com.moly3.cedarjam.pages.page_tab.TabComponent
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.absolutePath

@@ -18,6 +18,7 @@ kotlin {
     listOf(iosArm64(), iosSimulatorArm64())
     sourceSets {
         commonMain.dependencies {
+
             implementation(projects.core.domain)
 
             implementation(libs.shared.logger.kermit)
@@ -51,14 +52,14 @@ kotlin {
             implementation(libs.kotlin.test)
         }
         jvmMain.dependencies {
+            implementation(libs.skiko)
             implementation(libs.pdfbox)
-            implementation(libs.openize.heic)
         }
         androidMain.dependencies {
             implementation(libs.compose.ui.tooling)
         }
         iosMain.dependencies {
-
+            implementation(libs.skiko)
         }
     }
 }

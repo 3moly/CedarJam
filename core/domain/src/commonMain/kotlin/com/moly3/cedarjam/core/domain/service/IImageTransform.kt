@@ -17,4 +17,5 @@ interface IImageTransform {
         width: Float,
         height: Float
     ): ImageBitmap
+    fun convertToWebp(inputBytes: ByteArray, quality: Int): ByteArray?
 }

@@ -1,9 +1,8 @@
 package shared_tests
 
-import com.moly3.cedarjam.core.net.IRemoteSyncRepository
 import com.moly3.cedarjam.core.domain.model.FileName
 import com.moly3.cedarjam.core.domain.model.shouldBeSuccess
-import com.moly3.cedarjam.di.metro.CedarJamGraph
+import com.moly3.cedarjam.shared.di.metro.CedarJamGraph
 import kotlinx.coroutines.test.runTest
 import shared_tests.base.AppEnvironmentTest
 import kotlin.test.Test
