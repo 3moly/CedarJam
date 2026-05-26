@@ -35,6 +35,8 @@
          
 </p>
 
+![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/3moly/21bb475e30bc7e70c959617158f134d4/raw/kover-coverage.json)
+
 ## Pitfalls
 
 - **No community plugins.** Maybe in the future — if anything like the Minecraft mod ecosystem becomes possible (likely on ![badge][badge-jvm]).
