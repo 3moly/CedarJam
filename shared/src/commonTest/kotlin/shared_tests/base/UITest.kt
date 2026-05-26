@@ -158,6 +158,8 @@ abstract class UITest : BaseTest() {
 
         val instance = waitAndGetComponent<Root.Child.Workspace>(30_000L)
         instance.component.onIntent(Intent.CreateWorkspaceDatabaseFiles)
+        delay(500L)
+        waitForIdle()
         return instance
     }
 

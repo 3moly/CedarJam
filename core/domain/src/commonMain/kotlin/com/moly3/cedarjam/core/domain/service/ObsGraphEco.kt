@@ -8,6 +8,7 @@ import com.moly3.cedarjam.core.domain.features.search.SearchSyntaxException
 import com.moly3.cedarjam.core.domain.features.search.Searchable
 import com.moly3.cedarjam.core.domain.func.combine
 import com.moly3.cedarjam.core.domain.func.extractLinks
+import com.moly3.cedarjam.core.domain.func.shareScope
 import com.moly3.cedarjam.core.domain.io
 import com.moly3.cedarjam.core.domain.model.AnnotationDTO
 import com.moly3.cedarjam.core.domain.model.CollectionDTO
@@ -49,14 +50,12 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.launch
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
@@ -156,11 +155,7 @@ class ObsGraphEco(
     private fun <T> Flow<T>.scoping(): Flow<T> {
         return this
             .flowOn(io)
-            .shareIn(
-                scope = scope,
-                started = SharingStarted.Lazily,
-                replay = 1
-            )
+            .shareScope(scope)
     }
 
     // OPTIMIZED: when toggle is off, emit emptyList() (shared singleton, zero alloc).

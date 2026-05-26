@@ -9,6 +9,7 @@ import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.moly3.cedarjam.core.domain.func.combine
 import com.moly3.cedarjam.core.domain.func.ignoreSearchByRelativePath
+import com.moly3.cedarjam.core.domain.func.shareScope
 import com.moly3.cedarjam.core.domain.io
 import com.moly3.cedarjam.core.domain.model.CollectionRowDTO
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
@@ -48,11 +49,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.launch
 
 internal class HomeStoreFactory(
@@ -120,11 +119,7 @@ internal class HomeStoreFactory(
                     )
                 }
                 timeMachines.toPersistentList()
-            }.shareIn(
-                scope = scope,
-                started = SharingStarted.Lazily,
-                replay = 1
-            )
+            }.shareScope(scope)
 
         private val tagsFlow: Flow<ImmutableList<TimeMachine>> =
             kotlinx.coroutines.flow.combine(
@@ -149,11 +144,7 @@ internal class HomeStoreFactory(
                     )
                 }
                 timeMachines.toPersistentList()
-            }.shareIn(
-                scope = scope,
-                started = SharingStarted.Lazily,
-                replay = 1
-            )
+            }.shareScope(scope)
 
         private val rowsFlow: Flow<ImmutableList<TimeMachine>> =
             kotlinx.coroutines.flow.combine(
@@ -178,11 +169,7 @@ internal class HomeStoreFactory(
                     )
                 }
                 timeMachines.toPersistentList()
-            }.shareIn(
-                scope = scope,
-                started = SharingStarted.Lazily,
-                replay = 1
-            )
+            }.shareScope(scope)
 
         private val annotationsFlow: Flow<ImmutableList<TimeMachine>> =
             kotlinx.coroutines.flow.combine(
@@ -207,11 +194,7 @@ internal class HomeStoreFactory(
                     )
                 }
                 timeMachines.toPersistentList()
-            }.shareIn(
-                scope = scope,
-                started = SharingStarted.Lazily,
-                replay = 1
-            )
+            }.shareScope(scope)
 
         private val filesFlow: Flow<ImmutableList<TimeMachine>> =
             kotlinx.coroutines.flow.combine(
@@ -291,11 +274,7 @@ internal class HomeStoreFactory(
                     }
                 }
                 timeMachines.toPersistentList()
-            }.shareIn(
-                scope = scope,
-                started = SharingStarted.Lazily,
-                replay = 1
-            )
+            }.shareScope(scope)
 
 
         override fun executeAction(action: Unit) {

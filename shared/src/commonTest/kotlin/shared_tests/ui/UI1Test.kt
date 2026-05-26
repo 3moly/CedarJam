@@ -110,22 +110,22 @@ class UI1Test : UITest() {
         fs.deleteNodeHeavy(workspace.platformPath)
 
         remoteSync.deleteWorkspace(userName = "bulat", workspace.serverName).shouldBeSuccess()
-
-        val instance1 = waitAndGetComponent<Root.Child.SelectWorkspace>()
-        instance1.component.onIntent(com.moly3.cedarjam.pages.page_select_workspace.Intent.CreateWorkspace)
-        waitUntilAtLeastOneExists(hasText(getString(Res.string.create_new_workspace)))
-
-        onNode(hasTestTag("fullpath_check_box")).performClick()
-        onNode(hasTestTag("workspace_name_input")).performTextInput(workspace.serverName)
-        waitUntilAtLeastOneExists(hasText(workspace.serverName))
-        val sm = hasTestTag("workspace_fullpath_input")
-        waitUntilAtLeastOneExists(sm)
-        onNode(sm).performTextInput(workspace.platformPath)
-
-        onNode(hasTestTag("workspace_name_button")).performClick()
-
-        val instance = waitAndGetComponent<Root.Child.Workspace>(30_000L)
-        instance.component.onIntent(Intent.CreateWorkspaceDatabaseFiles)
+        val instance = createWorkspace(workspace)
+//        val instance1 = waitAndGetComponent<Root.Child.SelectWorkspace>()
+//        instance1.component.onIntent(com.moly3.cedarjam.pages.page_select_workspace.Intent.CreateWorkspace)
+//        waitUntilAtLeastOneExists(hasText(getString(Res.string.create_new_workspace)))
+//
+//        onNode(hasTestTag("fullpath_check_box")).performClick()
+//        onNode(hasTestTag("workspace_name_input")).performTextInput(workspace.serverName)
+//        waitUntilAtLeastOneExists(hasText(workspace.serverName))
+//        val sm = hasTestTag("workspace_fullpath_input")
+//        waitUntilAtLeastOneExists(sm)
+//        onNode(sm).performTextInput(workspace.platformPath)
+//
+//        onNode(hasTestTag("workspace_name_button")).performClick()
+//
+//        val instance = waitAndGetComponent<Root.Child.Workspace>(30_000L)
+//        instance.component.onIntent(Intent.CreateWorkspaceDatabaseFiles)
         val workspaceSession = instance.component.workspaceSession
         val workspaceEnv = workspaceSession.workspaceEnvStateFlow.value
         workspaceEnv.deleteWorkspaceInServer().shouldBeSuccess()
