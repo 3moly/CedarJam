@@ -21,48 +21,49 @@ job("coverage badge") {
             content = """
                 set -e
 
-                #  Run tests + Kover XML report (xvfb for any UI-touching tests)
+                # Run tests + Kover XML report
                 xvfb-run -a --server-args="-screen 0 1280x1024x24" \
-                    ./gradlew :shared:cleanJvmTest :shared:jvmTest --tests "shared_tests.ui.MarkdownTest" :shared:koverXmlReportCustom \
+                    ./gradlew :shared:cleanJvmTest :shared:jvmTest --tests "shared_tests.*" :shared:koverXmlReportCustomJvm \
                     --build-cache --no-daemon --console=plain
 
-                # Parse coverage XML
-                read PERCENT COLOR < <(python3 -c "
+                # Parse coverage XML and write JSON + payload in one Python call
+                python3 <<'PYEOF'
                 import xml.etree.ElementTree as ET
-                root = ET.parse('shared/build/reports/kover/reportCustom.xml').getroot()
+                import json, os
+
+                root = ET.parse('shared/build/reports/kover/customJvm/report.xml').getroot()
                 line = next(c for c in root.findall('counter') if c.get('type') == 'LINE')
                 covered = int(line.get('covered'))
                 missed  = int(line.get('missed'))
                 pct = (covered / (covered + missed)) * 100
                 color = 'brightgreen' if pct >= 80 else 'yellow' if pct >= 60 else 'red'
-                print(f'{pct:.2f} {color}')
-                ")
 
-                echo "Coverage: ${'$'}PERCENT% (${'$'}COLOR)"
-
-                # Build shields.io endpoint JSON
-                cat > kover-coverage.json <<EOF
-                {
-                  "schemaVersion": 1,
-                  "label": "Coverage",
-                  "message": "${'$'}PERCENT%",
-                  "color": "${'$'}COLOR"
+                badge = {
+                    "schemaVersion": 1,
+                    "label": "Coverage",
+                    "message": f"{pct:.2f}%",
+                    "color": color
                 }
-                EOF
 
-                # PATCH the gist directly via GitHub API
-                # GIST_SECRET must be a GitHub PAT with `gist` scope
-                PAYLOAD=${'$'}(python3 -c "
-                import json, sys
-                with open('kover-coverage.json') as f:
-                    content = f.read()
-                print(json.dumps({'files': {'kover-coverage.json': {'content': content}}}))
-                ")
+                with open('kover-coverage.json', 'w') as f:
+                    json.dump(badge, f)
 
+                payload = {"files": {"kover-coverage.json": {"content": json.dumps(badge)}}}
+                with open('payload.json', 'w') as f:
+                    json.dump(payload, f)
+
+                with open('pct.txt', 'w') as f:
+                    f.write(f"{pct:.2f}")
+                PYEOF
+
+                PERCENT=${'$'}(cat pct.txt)
+                echo "Coverage: ${'$'}PERCENT%"
+
+                # PATCH the gist via GitHub API
                 curl -sS -X PATCH \
                     -H "Authorization: token ${'$'}GIST_SECRET" \
                     -H "Accept: application/vnd.github+json" \
-                    -d "${'$'}PAYLOAD" \
+                    --data @payload.json \
                     "https://api.github.com/gists/${'$'}GIST_ID"
 
                 # Telegram notification
