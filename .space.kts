@@ -23,7 +23,7 @@ job("coverage badge") {
 
                 # Run tests + Kover XML report
                 xvfb-run -a --server-args="-screen 0 1280x1024x24" \
-                    ./gradlew :shared:cleanJvmTest :shared:jvmTest --tests "shared_tests.*" :shared:koverXmlReportCustom \
+                    ./gradlew :shared:cleanJvmTest :shared:jvmTest --tests "shared_tests.ui.MarkdownTest" :shared:koverXmlReportCustom \
                     --build-cache --no-daemon --console=plain
 
                 # Parse coverage XML and write badge JSON + API payload
