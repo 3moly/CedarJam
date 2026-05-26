@@ -1,3 +1,78 @@
+job("coverage badge") {
+    startOn {
+        gitPush {
+            anyBranchMatching {
+                +"main"
+                +"work_markdown"
+            }
+        }
+    }
+    container(image = "3moly/cedar-ui-test:latest") {
+        env["BOT_TG_TOKEN"]      = "{{ project:BOT_TG_TOKEN }}"
+        env["SYNC_SERVER_URL"]   = "{{ project:CEDAR_SYNC_SERVER_URL }}"
+        env["SYNC_SERVER_TOKEN"] = "{{ project:CEDAR_SYNC_SERVER_TOKEN }}"
+        env["IS_RELEASE"]        = "{{ project:CEDAR_IS_RELEASE }}"
+        env["GIST_SECRET"]       = "{{ project:GIST_SECRET }}"
+        env["GIST_ID"]           = "{{ project:GIST_ID }}"
+        env["CI"] = "true"
+
+        shellScript {
+            interpreter = "/bin/bash"
+            content = """
+                set -e
+
+                # Run tests + Kover XML report (xvfb for any UI-touching tests)
+                xvfb-run -a --server-args="-screen 0 1280x1024x24" \
+                    ./gradlew :shared:cleanJvmTest :shared:jvmTest --tests "shared_tests.*" :shared:koverXmlReportCustomJvm \
+                    --build-cache --no-daemon --console=plain
+
+                # Parse coverage XML
+                read PERCENT COLOR < <(python3 -c "
+                import xml.etree.ElementTree as ET
+                root = ET.parse('shared/build/reports/kover/customJvm/report.xml').getroot()
+                line = next(c for c in root.findall('counter') if c.get('type') == 'LINE')
+                covered = int(line.get('covered'))
+                missed  = int(line.get('missed'))
+                pct = (covered / (covered + missed)) * 100
+                color = 'brightgreen' if pct >= 80 else 'yellow' if pct >= 60 else 'red'
+                print(f'{pct:.2f} {color}')
+                ")
+
+                echo "Coverage: ${'$'}PERCENT% (${'$'}COLOR)"
+
+                # Build shields.io endpoint JSON
+                cat > kover-coverage.json <<EOF
+                {
+                  "schemaVersion": 1,
+                  "label": "Coverage",
+                  "message": "${'$'}PERCENT%",
+                  "color": "${'$'}COLOR"
+                }
+                EOF
+
+                # PATCH the gist directly via GitHub API
+                # GIST_SECRET must be a GitHub PAT with `gist` scope
+                PAYLOAD=${'$'}(python3 -c "
+                import json, sys
+                with open('kover-coverage.json') as f:
+                    content = f.read()
+                print(json.dumps({'files': {'kover-coverage.json': {'content': content}}}))
+                ")
+
+                curl -sS -X PATCH \
+                    -H "Authorization: token ${'$'}GIST_SECRET" \
+                    -H "Accept: application/vnd.github+json" \
+                    -d "${'$'}PAYLOAD" \
+                    "https://api.github.com/gists/${'$'}GIST_ID"
+
+                # Telegram notification
+                curl -F chat_id=253870633 \
+                     -F text="Coverage badge updated: ${'$'}PERCENT% (build {{ run:number }})" \
+                     https://api.telegram.org/bot${'$'}BOT_TG_TOKEN/sendMessage
+            """
+        }
+    }
+}
 job("ui test") {
     startOn {
         gitPush {
