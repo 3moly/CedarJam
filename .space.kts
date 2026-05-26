@@ -23,7 +23,7 @@ job("coverage badge") {
 
                 # Run tests + Kover XML report
                 xvfb-run -a --server-args="-screen 0 1280x1024x24" \
-                    ./gradlew :shared:cleanJvmTest :shared:jvmTest --tests "shared_tests.*" :shared:koverXmlReportCustomJvm \
+                    ./gradlew :shared:cleanJvmTest :shared:jvmTest --tests "shared_tests.*" :shared:koverXmlReportCustom \
                     --build-cache --no-daemon --console=plain
 
                 # Parse coverage XML and write JSON + payload in one Python call
@@ -31,7 +31,7 @@ job("coverage badge") {
                 import xml.etree.ElementTree as ET
                 import json, os
 
-                root = ET.parse('shared/build/reports/kover/customJvm/report.xml').getroot()
+                root = ET.parse('shared/build/reports/kover/reportCustom.xml').getroot()
                 line = next(c for c in root.findall('counter') if c.get('type') == 'LINE')
                 covered = int(line.get('covered'))
                 missed  = int(line.get('missed'))
