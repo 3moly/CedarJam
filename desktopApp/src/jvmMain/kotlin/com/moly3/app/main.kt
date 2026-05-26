@@ -21,6 +21,7 @@ import com.moly3.cedarjam.shared.di.metro.CedarJamGraph
 import com.moly3.cedarjam.shared.di.metro.createRootComponent
 import com.moly3.cedarjam.shared.navigation.Root
 import com.moly3.cedarjam.shared.navigation.createComponentContext
+import com.moly3.cedarjam.shared.navigation.createRootComponentSafe
 import dev.datlag.kcef.KCEF
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.filesDir
@@ -37,7 +38,7 @@ private const val SAVED_STATE_FILE_NAME = "saved_state.dat"
 fun main() {
     overrideSchedulers(main = Dispatchers.Main::asScheduler)
 
-    _root_ide_package_.com.moly3.cedarjam.shared.di.initApp(AndroidApplicationContext())
+    initApp(AndroidApplicationContext())
 
     DecomposeSettings.update {
         DecomposeSettings.settings.copy(
@@ -67,29 +68,22 @@ fun main() {
     //                saveState()
     //            },
 
-    val root: com.moly3.cedarjam.shared.navigation.Root = runOnUiThread {
+    val root: Root = runOnUiThread {
         runOnUiThread {
-            _root_ide_package_.com.moly3.cedarjam.shared.di.metro.createRootComponent(
-                componentContext = _root_ide_package_.com.moly3.cedarjam.shared.navigation.createComponentContext(
-                    lifecycle = lifecycle,
-                    stateKeeper = stateKeeper,
-                    backDispatcher = backDispatcher,
-                    onErrorInit = {
-                        saveFile.delete()
-                        stateKeeper =
-                            StateKeeperDispatcher(saveFile.readSerializableContainer())
-                        stateKeeper
-                    }
-                ),
-                graph = _root_ide_package_.com.moly3.cedarjam.shared.di.metro.CedarJamGraph.instance,
-                onDestroy = {
-                    saveState()
-                }
+            createRootComponentSafe(
+                lifecycle = lifecycle,
+                stateKeeper = stateKeeper,
+                backDispatcher = backDispatcher,
+                onErrorInit = {
+                    saveFile.delete()
+                    stateKeeper =
+                        StateKeeperDispatcher(saveFile.readSerializableContainer())
+                    stateKeeper
+                },
+                onDestroy = {}
             )
         }
     }
-
-//    }
 
     Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
         val errorMessage = "💥 Uncaught exception in thread ${thread.name}: ${throwable.message}"

@@ -14,14 +14,25 @@ fun createRootComponentSafe(
     onDestroy: () -> Unit,
     onErrorInit: (Exception) -> StateKeeperDispatcher
 ): Root {
-    return createRootComponent(
-        componentContext = createComponentContext(
-            lifecycle = lifecycle,
-            stateKeeper = stateKeeper,
-            backDispatcher = backDispatcher,
-            onErrorInit = onErrorInit
-        ),
-        graph = CedarJamGraph.instance,
-        onDestroy = onDestroy
-    )
+    return try {
+        createRootComponent(
+            componentContext = DefaultComponentContext(
+                lifecycle = lifecycle,
+                stateKeeper = stateKeeper,
+                backHandler = backDispatcher
+            ),
+            graph = CedarJamGraph.instance,
+            onDestroy = onDestroy
+        )
+    } catch (exc: Exception) {
+        createRootComponent(
+            componentContext = DefaultComponentContext(
+                lifecycle = lifecycle,
+                stateKeeper = onErrorInit(exc),
+                backHandler = backDispatcher
+            ),
+            graph = CedarJamGraph.instance,
+            onDestroy = onDestroy
+        )
+    }
 }

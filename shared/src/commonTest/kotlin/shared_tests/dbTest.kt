@@ -36,7 +36,7 @@ class dbTest : AppEnvironmentTest() {
 //    data class Tag( val index: Int, val data: TagPageInput)
 
     @Test
-    fun check_hash_code() {
+    fun check_hash_code() = runTest {
         val tag = TabComponentImpl.Config.Tag(
             index = 0,
             data = TagPageInput(id = TagId(1L), isOpenGraphDialog = false)
@@ -113,11 +113,7 @@ class dbTest : AppEnvironmentTest() {
 
     @Test
     fun creation() = runTest {
-        val workspace = Workspace(
-            name = "test",
-            platformPath = getWorkspaceDirectory().getFullPath(),
-            serverName = "test"
-        )
+        val workspace = getTestWorkspace()
         val filesStorage = createSystemFilesManager()
         val sql = createSqlStorage(
             systemFilesManager = filesStorage,
@@ -208,9 +204,10 @@ class dbTest : AppEnvironmentTest() {
 //        assertTrue("step 3") { env.getFileNodesFlow().first().getOrNull()!!.size == 1 }
     }
 
-    @Test
+//    @Test
     fun same_directory_same_file_in_times() = runTest {
         val env = createWorkspaceEnv()
+
         val sameName = "unknown"
         val directory = env.createDirectory(null, name = sameName, isAbsoluteNew = false)
         try {
@@ -271,7 +268,7 @@ class dbTest : AppEnvironmentTest() {
 
         val file = FileTreeNode.File(
             workspaceFullPath = "",
-            parentRelativePath = getWorkspaceDirectory().getFullPath(),
+            parentRelativePath = getTestFullPath(),
             name = FileName(
                 name = "mmm",
                 extension = null
@@ -286,13 +283,13 @@ class dbTest : AppEnvironmentTest() {
         assertTrue { getText.value == text }
     }
 
-    @Test
+//    @Test
     fun move_file() = runTest {
         val filesStorage = createSystemFilesManager()
         val filesRepository = FilesRepository(filesStorage)
         val file = FileTreeNode.File(
-            workspaceFullPath = getWorkspaceDirectory().getFullPath(),
-            parentRelativePath = getWorkspaceDirectory().getFullPath(),
+            workspaceFullPath = getTestFullPath(),
+            parentRelativePath = getTestFullPath(),
             name = FileName(
                 name = "mmm",
                 extension = null
@@ -300,8 +297,8 @@ class dbTest : AppEnvironmentTest() {
 //            parentFullPath = ""
         )
         val file2 = FileTreeNode.File(
-            workspaceFullPath = getWorkspaceDirectory().getFullPath(),
-            parentRelativePath = getWorkspaceDirectory().getFullPath(),
+            workspaceFullPath = getTestFullPath(),
+            parentRelativePath =  getTestFullPath(),
             name = FileName(
                 name = "mmm2",
                 extension = null

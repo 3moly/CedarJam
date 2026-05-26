@@ -27,7 +27,7 @@ class ConnectionsTest : UITest() {
 
     @Test
     fun nodes_1_connections_0() = runUITest(beforeSetContent = {}) {
-        val workspace = getWorkspace("connections")
+        val workspace = getTestWorkspace()
         val instance = createWorkspace(workspace)
         val workspaceSession = instance.component.workspaceSession
         val nodes = workspaceSession.graphEco.nodesFlow.checkFlowListSize(1)
@@ -71,7 +71,7 @@ class ConnectionsTest : UITest() {
 
     @Test
     fun `nodes 2 connections 0 create_tag`() = runUITest {
-        val workspace = getWorkspace("connections")
+        val workspace = getTestWorkspace()
         val instance = createWorkspace(workspace)
         val workspaceSession = instance.component.workspaceSession
         val workspaceEnv = workspaceSession.workspaceEnvStateFlow.value
@@ -83,7 +83,7 @@ class ConnectionsTest : UITest() {
 
     @Test
     fun `nodes 2 connections 1 tag`() = runUITest {
-        val workspace = getWorkspace("connections")
+        val workspace = getTestWorkspace()
         val instance = createWorkspace(workspace)
         val workspaceSession = instance.component.workspaceSession
         val workspaceEnv = workspaceSession.workspaceEnvStateFlow.value
@@ -98,7 +98,7 @@ class ConnectionsTest : UITest() {
 
     @Test
     fun `tag-to-tag add-delete`() = runUITest {
-        val workspace = getWorkspace("connections")
+        val workspace = getTestWorkspace()
         val instance = createWorkspace(workspace)
         val workspaceSession = instance.component.workspaceSession
         val workspaceEnv = workspaceSession.workspaceEnvStateFlow.value
@@ -123,7 +123,7 @@ class ConnectionsTest : UITest() {
 
     @Test
     fun `tag-annotation add-delete`() = runUITest {
-        val workspace = getWorkspace("connections")
+        val workspace = getTestWorkspace()
         val instance = createWorkspace(workspace)
         val workspaceSession = instance.component.workspaceSession
         val workspaceEnv = workspaceSession.workspaceEnvStateFlow.value
@@ -151,7 +151,7 @@ class ConnectionsTest : UITest() {
 
     @Test
     fun `tag-row add-delete`() = runUITest {
-        val workspace = getWorkspace("connections")
+        val workspace = getTestWorkspace()
         val instance = createWorkspace(workspace)
         val workspaceSession = instance.component.workspaceSession
         val workspaceEnv = workspaceSession.workspaceEnvStateFlow.value

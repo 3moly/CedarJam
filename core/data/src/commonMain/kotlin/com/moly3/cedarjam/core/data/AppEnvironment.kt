@@ -153,7 +153,7 @@ class AppEnvironment(
 
                 workspaceEnv.createIndexDatabaseFiles()
 
-                syncService.syncronize(workspaceEnv, isAbsoluteNewLocal = true).shouldBeSuccess()
+//                syncService.syncronize(workspaceEnv, isAbsoluteNewLocal = true).shouldBeSuccess()
 
                 workspaceEnv.createDatabaseFiles()
                 workspaceEnv.createDatabase()

@@ -9,20 +9,20 @@ import kotlin.test.Test
 
 class TextAnalyzer {
 
-    @Test
-    fun awd() = runTest {
-        val filesStorage = createSystemFilesManager()
-        val se = SystemFileSystem.list(Path("/Users/{user_name}/Desktop/generated")) //todo replace
-        val links = mutableMapOf<String, List<String>>()
-        for (item in se) {
-            val meta = SystemFileSystem.metadataOrNull(item)
-            if (meta != null && !meta.isDirectory) {
-                val text = filesStorage.getNodeText(item.toString())
-                links[item.toString()] = text.extractLinks()
-            }
-        }
-        val msg = "" + links
-    }
+//    @Test
+//    fun awd() = runTest {
+//        val filesStorage = createSystemFilesManager()
+//        val se = SystemFileSystem.list(Path("/Users/{user_name}/Desktop/generated")) //todo replace
+//        val links = mutableMapOf<String, List<String>>()
+//        for (item in se) {
+//            val meta = SystemFileSystem.metadataOrNull(item)
+//            if (meta != null && !meta.isDirectory) {
+//                val text = filesStorage.getNodeText(item.toString())
+//                links[item.toString()] = text.extractLinks()
+//            }
+//        }
+//        val msg = "" + links
+//    }
 
     @Test
     fun extractLinksTest() {

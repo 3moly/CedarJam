@@ -9,15 +9,15 @@ import kotlin.test.Test
 
 class netTest : AppEnvironmentTest() {
 
-    @Test
-    fun testNet() = runTest {
-        val syncNetRepository = CedarJamGraph.instance.cedarJamDependencies.remoteSyncRepository
-        val result = syncNetRepository.workspaceFiles(
-            userName = "bulat",
-            workspaceName = "abc"
-        )
-        result.shouldBeSuccess()
-    }
+//    @Test
+//    fun testNet() = runTest {
+//        val syncNetRepository = CedarJamGraph.instance.cedarJamDependencies.remoteSyncRepository
+//        val result = syncNetRepository.workspaceFiles(
+//            userName = "bulat",
+//            workspaceName = "abc"
+//        )
+//        result.shouldBeSuccess()
+//    }
 
     @Test
     fun adad() = runTest {

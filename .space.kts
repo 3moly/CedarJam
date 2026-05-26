@@ -22,7 +22,7 @@ job("ui test") {
                     set +e
                     # Added --build-cache and --no-daemon for speed and reliability
                     xvfb-run -a --server-args="-screen 0 1280x1024x24" \
-                        ./gradlew :shared:cleanJvmTest :shared:jvmTest --tests "shared_tests.ui*" \
+                        ./gradlew :shared:cleanJvmTest :shared:jvmTest --tests "shared_tests.*" :shared:koverHtmlReportJvm \
                         --build-cache --no-daemon --console=plain > test.log 2>&1
                     
                     STATUS=${'$'}?

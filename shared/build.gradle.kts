@@ -13,6 +13,7 @@ plugins {
     alias(libs.plugins.serialization)
     kotlin("native.cocoapods")
     alias(libs.plugins.metro)
+    id("org.jetbrains.kotlinx.kover") version "0.9.8"
 }
 
 kotlin {

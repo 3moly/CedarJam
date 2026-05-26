@@ -2,6 +2,9 @@ package shared_tests.ui
 
 import com.moly3.cedarjam.core.domain.features.mdprops.MarkdownDecoder
 import com.moly3.cedarjam.core.domain.features.mdprops.MarkdownEncoder
+import com.moly3.cedarjam.core.domain.func.formatFileSize
+import com.moly3.cedarjam.core.storage.func.createSystemFilesManager
+import com.moly3.cedarjam.shared.func.convertToWebp
 import com.moly3.cedarjam.ui.Res
 import com.moly3.cedarjam.ui.create_new_workspace
 import io.kotest.matchers.shouldBe
@@ -11,11 +14,7 @@ import kotlin.test.Test
 
 class MarkdownTest {
 
-    @Test
-    fun test2() = runTest {
-        val text = getString(Res.string.create_new_workspace)
 
-    }
 
     @Test
     fun test() {
