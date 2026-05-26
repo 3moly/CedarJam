@@ -22,7 +22,8 @@ class RecalculateTabWeightsTest {
             draggedTabIndex = 1,
             dragMovementInWidth = 50f,
             minWidthOfTab = minWidthOfTab,
-            tabWeights = initialWeights1
+            tabWeights = initialWeights1,
+            grabPositionRatio = 0f
         )
         println("New weights: $result1")
         println("New widths: ${calculateWidths(result1, screenWidth)}")
@@ -39,7 +40,8 @@ class RecalculateTabWeightsTest {
             draggedTabIndex = 0,
             dragMovementInWidth = 100f,
             minWidthOfTab = minWidthOfTab,
-            tabWeights = initialWeights2
+            tabWeights = initialWeights2,
+            grabPositionRatio = 0f
         )
         println("New weights: $result2")
         println("New widths: ${calculateWidths(result2, screenWidth)}")
@@ -56,7 +58,8 @@ class RecalculateTabWeightsTest {
             draggedTabIndex = 3,
             dragMovementInWidth = -75f,
             minWidthOfTab = minWidthOfTab,
-            tabWeights = initialWeights3
+            tabWeights = initialWeights3,
+            grabPositionRatio = 0f
         )
         println("New weights: $result3")
         println("New widths: ${calculateWidths(result3, screenWidth)}")
@@ -73,7 +76,8 @@ class RecalculateTabWeightsTest {
             draggedTabIndex = 1,
             dragMovementInWidth = -200f,
             minWidthOfTab = minWidthOfTab,
-            tabWeights = initialWeights4
+            tabWeights = initialWeights4,
+            grabPositionRatio = 0f
         )
         println("New weights: $result4")
         println("New widths: ${calculateWidths(result4, screenWidth)}")

@@ -5,6 +5,15 @@ plugins {
     alias(libs.plugins.compose)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.metro)
+    alias(libs.plugins.kover)
+}
+
+kover {
+    currentProject {
+        createVariant("custom") {
+            add("jvm")
+        }
+    }
 }
 
 kotlin {
@@ -13,7 +22,7 @@ kotlin {
         compileSdk = libs.versions.android.compileSdk.get().toInt()
     }
     jvm()
-    
+
     listOf(iosArm64(), iosSimulatorArm64())
     sourceSets {
         commonMain.dependencies {

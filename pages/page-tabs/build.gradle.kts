@@ -5,6 +5,15 @@ plugins {
     alias(libs.plugins.compose)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.metro)
+    alias(libs.plugins.kover)
+}
+
+kover {
+    currentProject {
+        createVariant("custom") {
+            add("jvm")
+        }
+    }
 }
 
 kotlin {
@@ -31,7 +40,7 @@ kotlin {
 
             implementation(libs.decompose.compose)
             implementation(libs.decompose.compose.experimental)
-            
+
             implementation(projects.pages.pageTab)
 
         }

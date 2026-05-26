@@ -14,7 +14,7 @@ plugins {
     alias(libs.plugins.android.kotlin.multiplatform.library).apply(false)
     alias(libs.plugins.android.lint) apply false
     alias(libs.plugins.metro).apply(false)
-    id("org.jetbrains.kotlinx.kover") version "0.9.8" apply false
+    alias(libs.plugins.kover).apply(false)
 }
 
 buildscript {
