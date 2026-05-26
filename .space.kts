@@ -29,7 +29,7 @@ job("coverage badge") {
                 # Parse coverage XML
                 read PERCENT COLOR < <(python3 -c "
                 import xml.etree.ElementTree as ET
-                root = ET.parse('shared/build/reports/kover/customJvm/report.xml').getroot()
+                root = ET.parse('shared/build/reports/kover/custom/report.xml').getroot()
                 line = next(c for c in root.findall('counter') if c.get('type') == 'LINE')
                 covered = int(line.get('covered'))
                 missed  = int(line.get('missed'))
