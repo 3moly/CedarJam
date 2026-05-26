@@ -1,8 +1,8 @@
 package com.moly3.cedarjam.core.domain.model
 
 data class TagLinkDTO(
-    val id: Long,
-    val tagId: Long,
+    val id: TagLinkId,
+    val tagId: TagId,
     val data: TagLinkDtoData
 )
 

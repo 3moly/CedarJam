@@ -1,8 +1,10 @@
 package com.moly3.cedarjam.core.domain.model.request
 
+import com.moly3.cedarjam.core.domain.model.CollectionId
+
 data class CreateCollectionRowRequest(
     val name: String,
-    val collectionId: Long,
+    val collectionId: CollectionId,
     val fileRelativePath: String? = null,
     val imgRelativePath: String? = null,
     val webLink: String? = null,

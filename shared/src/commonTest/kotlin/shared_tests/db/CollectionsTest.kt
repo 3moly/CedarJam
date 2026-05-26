@@ -46,18 +46,15 @@ class CollectionsTest : AppEnvironmentTest() {
         val workspaceEnvironment = createWorkspaceEnv()
 
         val createRequest = getDefaultCreateRequest()
-        val createResult = workspaceEnvironment.createCollection(createRequest)
-        createResult.shouldBeSuccess()
-
-        val createRowResult = workspaceEnvironment.createCollectionRow(
+        val collectionId = workspaceEnvironment.createCollection(createRequest).shouldBeSuccess()
+        workspaceEnvironment.createRow(
             CreateCollectionRowRequest(
                 name = "row1",
-                collectionId = createResult.value,
+                collectionId = collectionId,
                 createdTime = nowInMs()
             )
-        )
-        createRowResult.shouldBeSuccess()
-        val row = workspaceEnvironment.getCollectionRows(collectionId = createRowResult.value).first()
+        ).shouldBeSuccess()
+        val row = workspaceEnvironment.getCollectionRows(collectionId = collectionId).first()
         workspaceEnvironment.updateCollectionRow(row.mapToUpdateRequest())
     }
 
@@ -67,7 +64,7 @@ class CollectionsTest : AppEnvironmentTest() {
         val createRequest = getDefaultCreateRequest()
         val createResult = env.createCollection(createRequest)
         createResult.shouldBeSuccess()
-        val row = env.createCollectionRow(
+        val row = env.createRow(
             CreateCollectionRowRequest(
                 name = "row1",
                 collectionId = createResult.value,

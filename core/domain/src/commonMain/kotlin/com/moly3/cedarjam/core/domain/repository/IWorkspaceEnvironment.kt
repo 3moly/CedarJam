@@ -1,6 +1,14 @@
 package com.moly3.cedarjam.core.domain.repository
 
 import com.moly3.cedarjam.core.domain.DefaultJson
+import com.moly3.cedarjam.core.domain.model.AnnotationId
+import com.moly3.cedarjam.core.domain.model.CollectionId
+import com.moly3.cedarjam.core.domain.model.RowId
+import com.moly3.cedarjam.core.domain.model.TagAnnotationId
+import com.moly3.cedarjam.core.domain.model.TagRowId
+import com.moly3.cedarjam.core.domain.model.TagId
+import com.moly3.cedarjam.core.domain.model.TagLinkId
+import com.moly3.cedarjam.core.domain.model.TagToTagId
 import com.moly3.cedarjam.core.domain.func.hiddenDirectory
 import com.moly3.cedarjam.core.domain.func.pathWrapper
 import com.moly3.cedarjam.core.domain.model.AnnotationDTO
@@ -67,23 +75,23 @@ interface IWorkspaceEnvironment {
     suspend fun getServerFiles(): ResultWrapper<FileStructure, String>
     suspend fun deleteWorkspaceInServer(): ResultWrapper<Unit, String>
     fun getTagsFlow(): Flow<List<TagDTO>>
-    fun getTagFlow(id: Long): Flow<TagDTO?>
+    fun getTagFlow(id: TagId): Flow<TagDTO?>
     fun getTagFilesFlow(): Flow<List<TagLinkDTO>>
     fun getTagAnnotationsFlow(): Flow<List<TagAnnotationDTO>>
     fun getTagToTagsFlow(): Flow<List<TagToTagDTO>>
     fun getTagCollectionRowsFlow(): Flow<List<TagCollectionRowDTO>>
     fun getCollectionsFlow(): Flow<List<CollectionDTO>>
-    fun getCollectionFlow(collectionId: Long): Flow<CollectionDTO?>
-    fun getCollectionRowsFlow(collectionId: Long?): Flow<List<CollectionRowDTO>>
+    fun getCollectionFlow(collectionId: CollectionId): Flow<CollectionDTO?>
+    fun getCollectionRowsFlow(collectionId: CollectionId?): Flow<List<CollectionRowDTO>>
     fun getCollectionRowsFlowByFileRelativePath(relativePath: String): Flow<List<CollectionRowDTO>>
-    fun getCollectionRowFlow(rowId: Long): Flow<CollectionRowDTO?>
+    fun getCollectionRowFlow(rowId: RowId): Flow<CollectionRowDTO?>
     fun getIndexFilesFlow(): Flow<List<IndexFileDto>>
     fun getIndexFiles(): List<IndexFileDto>
-    fun getCollectionRowsCount(collectionId: Long?): Flow<Long>
+    fun getCollectionRowsCount(collectionId: CollectionId?): Flow<Long>
     fun getCollectionRowsPaginated(
         offset: Long,
         pageSize: Long,
-        collectionId: Long
+        collectionId: CollectionId
     ): Flow<List<CollectionRowDTO>>
 
     fun getAnnotationsFlow(): Flow<List<AnnotationDTO>>
@@ -129,14 +137,14 @@ interface IWorkspaceEnvironment {
 
     fun getNodeText(node: FileTreeNode.File): ResultWrapper<String, String>
     suspend fun setNodeText(node: FileTreeNode.File, text: String): ResultWrapper<Unit, String>
-    suspend fun createAnnotation(data: CreateAnnotationRequest): ResultWrapper<Long, String>
-    fun createTag(request: CreateTagRequest): ResultWrapper<Long, String>
-    fun createTagAnnotation(request: CreateTagAnnotationRequest): ResultWrapper<Long, String>
-    fun createTagToTag(request: CreateTagToTagRequest): ResultWrapper<Long, String>
-    fun createCollection(request: CreateCollectionRequest): ResultWrapper<Long, String>
-    fun createCollectionRow(request: CreateCollectionRowRequest): ResultWrapper<Long, String>
+    suspend fun createAnnotation(data: CreateAnnotationRequest): ResultWrapper<AnnotationId, String>
+    fun createTag(request: CreateTagRequest): ResultWrapper<TagId, String>
+    fun createTagAnnotation(request: CreateTagAnnotationRequest): ResultWrapper<TagAnnotationId, String>
+    fun createTagToTag(request: CreateTagToTagRequest): ResultWrapper<TagToTagId, String>
+    fun createCollection(request: CreateCollectionRequest): ResultWrapper<CollectionId, String>
+    fun createRow(request: CreateCollectionRowRequest): ResultWrapper<RowId, String>
     fun createTagLink(request: CreateTagLinkRequest)
-    fun createTagCollectionRow(request: CreateTagCollectionRowRequest)
+    fun createTagRow(request: CreateTagCollectionRowRequest): ResultWrapper<TagRowId, String>
     suspend fun copyFile(
         newFile: FileTreeNode.File,
         byteArray: ByteArray?
@@ -155,15 +163,15 @@ interface IWorkspaceEnvironment {
     fun renameTag(request: RenameTagRequest)
     fun renameCollectionRow(request: RenameDataCollectionRowRequest)
 
-    fun deleteCollectionRow(id: Long)
-    fun deleteCollection(id: Long)
+    fun deleteCollectionRow(id: RowId)
+    fun deleteCollection(id: CollectionId)
     suspend fun deleteNode(node: FileTreeNode)
-    fun deleteTag(id: Long)
-    fun deleteTagLink(id: Long)
-    fun deleteAnnotation(id: Long)
-    fun deleteTagToTag(id: Long)
-    fun deleteTagAnnotation(id: Long)
-    fun deleteTagCollectionRow(id: Long)
+    fun deleteTag(id: TagId)
+    fun deleteTagLink(id: TagLinkId)
+    fun deleteAnnotation(id: AnnotationId)
+    fun deleteTagToTag(id: TagToTagId)
+    fun deleteTagAnnotation(id: TagAnnotationId)
+    fun deleteTagCollectionRow(id: TagRowId)
     suspend fun createDatabase()
     suspend fun createDatabaseFiles()
     suspend fun createIndexDatabaseFiles()
@@ -212,7 +220,7 @@ suspend fun IWorkspaceEnvironment.getCollections(): List<CollectionDTO> {
     return getCollectionsFlow().first()
 }
 
-suspend fun IWorkspaceEnvironment.getCollectionRows(collectionId: Long?): List<CollectionRowDTO> {
+suspend fun IWorkspaceEnvironment.getCollectionRows(collectionId: CollectionId?): List<CollectionRowDTO> {
     return getCollectionRowsFlow(collectionId = collectionId).first()
 }
 

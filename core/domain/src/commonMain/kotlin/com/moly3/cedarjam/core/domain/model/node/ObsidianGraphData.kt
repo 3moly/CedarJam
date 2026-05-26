@@ -1,6 +1,10 @@
 package com.moly3.cedarjam.core.domain.model.node
 
 import androidx.compose.runtime.Stable
+import com.moly3.cedarjam.core.domain.model.AnnotationId
+import com.moly3.cedarjam.core.domain.model.CollectionId
+import com.moly3.cedarjam.core.domain.model.RowId
+import com.moly3.cedarjam.core.domain.model.TagId
 import com.moly3.cedarjam.core.domain.model.CollectionDTO
 import com.moly3.cedarjam.core.domain.model.CollectionRowDTO
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
@@ -12,18 +16,18 @@ import kotlinx.serialization.Serializable
 @Stable
 sealed class ObsidianGraphData {
     @Serializable
-    data class Tag(val id: Long) : ObsidianGraphData()
+    data class Tag(val id: TagId) : ObsidianGraphData()
 
     @Serializable
-    data class Collection(val id: Long) : ObsidianGraphData()
+    data class Collection(val id: CollectionId) : ObsidianGraphData()
 
 
     @Serializable
-    data class Annotation(val id: Long, val dataPath: String, val dataPoint: Double) :
+    data class Annotation(val id: AnnotationId, val dataPath: String, val dataPoint: Double) :
         ObsidianGraphData()
 
     @Serializable
-    data class CollectionRow(val id: Long, val collectionId: Long) : ObsidianGraphData()
+    data class CollectionRow(val id: RowId, val collectionId: CollectionId) : ObsidianGraphData()
 
     @Serializable
     data class File(

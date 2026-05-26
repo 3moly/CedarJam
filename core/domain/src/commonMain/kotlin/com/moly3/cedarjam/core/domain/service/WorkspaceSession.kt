@@ -24,8 +24,6 @@ import com.moly3.cedarjam.core.domain.model.WorkspacePresentation
 import com.moly3.cedarjam.core.domain.model.error.DatabaseError
 import com.moly3.cedarjam.core.domain.model.isSuccess
 import com.moly3.cedarjam.core.domain.model.node.GraphFilter
-import com.moly3.cedarjam.core.domain.model.node.ObsidianGraphPresentation
-import com.moly3.cedarjam.core.domain.model.node.toPresentation
 import com.moly3.cedarjam.core.domain.model.settings.WorkspaceFont
 import com.moly3.cedarjam.core.domain.model.settings.WorkspaceSettings
 import com.moly3.cedarjam.core.domain.repository.IAppEnvironment

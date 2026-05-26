@@ -1,13 +1,7 @@
 package shared_tests.ui
 
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.hasTestTag
-import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performTextInput
-import androidx.compose.ui.test.waitUntilAtLeastOneExists
 import shared_tests.base.UITest
-import co.touchlab.kermit.Logger
 import com.moly3.cedarjam.core.domain.func.pathWrapper
 import com.moly3.cedarjam.core.domain.model.FileName
 import com.moly3.cedarjam.core.domain.model.SyncStatus
@@ -19,15 +13,11 @@ import com.moly3.cedarjam.core.domain.model.shouldBeSuccess
 import com.moly3.cedarjam.core.domain.repository.IWorkspaceEnvironment
 import com.moly3.cedarjam.di.metro.CedarJamGraph
 import com.moly3.cedarjam.pages.page_tab.TabComponent
-import com.moly3.cedarjam.pages.page_workspace.Intent
-import com.moly3.cedarjam.ui.Res
-import com.moly3.cedarjam.ui.create_new_workspace
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.absolutePath
 import io.github.vinceglb.filekit.projectDir
 import io.kotest.matchers.collections.shouldHaveSize
 import kotlinx.coroutines.delay
-import org.jetbrains.compose.resources.getString
 import shared_tests.func.checkFlowListSize
 import kotlin.test.Test
 import kotlin.test.assertEquals

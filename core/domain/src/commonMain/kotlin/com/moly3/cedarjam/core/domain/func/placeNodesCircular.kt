@@ -1,4 +1,4 @@
-package com.moly3.cedarjam.core.domain.model
+package com.moly3.cedarjam.core.domain.func
 
 import androidx.compose.ui.geometry.Offset
 import com.moly3.dataviz.core.graph.model.GraphNode

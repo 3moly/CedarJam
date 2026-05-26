@@ -8,8 +8,6 @@ sealed class ResultWrapper<out S, out E> {
     data class Error<out E>(val error: E) : ResultWrapper<Nothing, E>()
 }
 
-fun <S, E> ResultWrapper<S, E>.success(): S = (this as ResultWrapper.Success).value
-fun <S, E> ResultWrapper<S, E>.error(): E = (this as ResultWrapper.Error).error
 fun <S, E> ResultWrapper<S, E>.isSuccess(): Boolean = this is ResultWrapper.Success
 fun <S, E> ResultWrapper<S, E>.isError(): Boolean = this is ResultWrapper.Error
 
@@ -17,14 +15,13 @@ fun <S, E> success(value: S): ResultWrapper<S, E> = ResultWrapper.Success(value)
 fun <S, E> error(error: E): ResultWrapper<S, E> = ResultWrapper.Error(error)
 
 @OptIn(ExperimentalContracts::class)
-inline fun <reified S, E> ResultWrapper<S, E>.shouldBeSuccess() {
+inline fun <reified S, E> ResultWrapper<S, E>.shouldBeSuccess(): S {
     contract {
         returns() implies (this@shouldBeSuccess is ResultWrapper.Success<S>)
     }
-    when (this) {
+    return when (this) {
         is ResultWrapper.Error -> throw IllegalArgumentException(this.error.toString())
-        is ResultWrapper.Success -> { /* Success case - do nothing */
-        }
+        is ResultWrapper.Success -> this.value
     }
 }
 

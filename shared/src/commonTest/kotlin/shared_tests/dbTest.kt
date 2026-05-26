@@ -3,6 +3,7 @@ package shared_tests
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.ExperimentalTestApi
 import com.moly3.cedarjam.core.data.FilesRepository
+import com.moly3.cedarjam.core.domain.model.TagId
 import com.moly3.cedarjam.core.domain.func.nowInMs
 import com.moly3.cedarjam.core.domain.model.FileName
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
@@ -38,11 +39,11 @@ class dbTest : AppEnvironmentTest() {
     fun check_hash_code() {
         val tag = TabComponentImpl.Config.Tag(
             index = 0,
-            data = TagPageInput(id = 1L, isOpenGraphDialog = false)
+            data = TagPageInput(id = TagId(1L), isOpenGraphDialog = false)
         )
         val tag2 = TabComponentImpl.Config.Tag(
             index = 1,
-            data = TagPageInput(id = 1L, isOpenGraphDialog = false)
+            data = TagPageInput(id = TagId(1L), isOpenGraphDialog = false)
         )
         assertTrue(tag.hashCode().toString(radix = 36) != tag2.hashCode().toString(radix = 36))
     }
@@ -69,7 +70,7 @@ class dbTest : AppEnvironmentTest() {
             )
         )
         collectionId.shouldBeSuccess()
-        val createRowResult = workspaceEnvironment.createCollectionRow(
+        val createRowResult = workspaceEnvironment.createRow(
             CreateCollectionRowRequest(
                 name = "are",
                 collectionId = collectionId.value,
@@ -107,7 +108,7 @@ class dbTest : AppEnvironmentTest() {
     @Test
     fun asKet() = runTest {
         val workspaceEnvironment: IWorkspaceEnvironment = createWorkspaceEnv()
-        workspaceEnvironment.deleteTag(1)
+        workspaceEnvironment.deleteTag(TagId(1L))
     }
 
     @Test
@@ -335,7 +336,7 @@ class dbTest : AppEnvironmentTest() {
         val list2 = env.getCollectionsFlow().first()
         assertTrue("first is empty") { list2.count() == 1 }
         val createdTime = nowInMs()
-        val rowId = env.createCollectionRow(
+        val rowId = env.createRow(
             request = CreateCollectionRowRequest(
                 name = "new",
                 collectionId = collectionId.value,

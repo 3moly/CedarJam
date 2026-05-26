@@ -2,6 +2,7 @@ package com.moly3.cedarjam.core.ui.model
 
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.graphics.Color
+import com.moly3.cedarjam.core.domain.model.CollectionId
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.SyncStatus
 import com.moly3.cedarjam.core.domain.model.TagDTO
@@ -32,7 +33,7 @@ data class FileTreeItemPresentation(
         data class File(val fileNode: FileTreeNode.File, val syncStatus: SyncStatus?) :
             FileTreeItemPresentationData()
 
-        data class Collection(val id: Long) : FileTreeItemPresentationData()
+        data class Collection(val id: CollectionId) : FileTreeItemPresentationData()
         data class Tag(val tag: TagDTO) : FileTreeItemPresentationData()
     }
 }

@@ -2,7 +2,6 @@ package shared_tests.base
 
 import co.touchlab.kermit.CommonWriter
 import co.touchlab.kermit.Logger
-import co.touchlab.kermit.Severity
 import com.moly3.cedarjam.di.initApp
 import com.moly3.cedarjam.core.domain.func.getPlatform
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
@@ -10,7 +9,6 @@ import com.moly3.cedarjam.core.domain.model.Platform
 import com.moly3.cedarjam.core.domain.model.Workspace
 import com.moly3.cedarjam.core.domain.model.WorkspaceInput
 import com.moly3.cedarjam.core.domain.model.WorkspacePresentation
-import com.moly3.cedarjam.core.domain.repository.IAppEnvironment
 import com.moly3.cedarjam.core.domain.repository.IWorkspaceEnvironment
 import com.moly3.cedarjam.core.domain.service.FileManagerService
 import com.moly3.cedarjam.core.storage.ISystemFilesManager

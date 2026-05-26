@@ -6,6 +6,14 @@ import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.db.SqlSchema
 import co.touchlab.kermit.Logger
+import com.moly3.cedarjam.core.domain.model.AnnotationId
+import com.moly3.cedarjam.core.domain.model.CollectionId
+import com.moly3.cedarjam.core.domain.model.RowId
+import com.moly3.cedarjam.core.domain.model.TagAnnotationId
+import com.moly3.cedarjam.core.domain.model.TagRowId
+import com.moly3.cedarjam.core.domain.model.TagId
+import com.moly3.cedarjam.core.domain.model.TagLinkId
+import com.moly3.cedarjam.core.domain.model.TagToTagId
 import com.moly3.cedarjam.core.storage.ISqlStorage
 import com.moly3.cedarjam.core.storage.ISystemFilesManager
 import com.moly3.cedarjam.core.storage.exception.DbNotCreatedException
@@ -361,11 +369,11 @@ internal class SqlStorage(
     }
 
 
-    override fun getTagFlow(id: Long): Flow<Tag?> {
+    override fun getTagFlow(id: TagId): Flow<Tag?> {
         return dbFlow.flatMapLatest { db ->
             if (db != null) {
                 db.tagQueries
-                    .findOne(id = id)
+                    .findOne(id = id.value)
                     .mapFlowAsOneOrNull()
 //                    .asFlow()
 //                    .mapToOneOrNull(mapContext)
@@ -407,10 +415,10 @@ internal class SqlStorage(
         }
     }
 
-    override fun getCollection(id: Long): Flow<DataCollection?> {
+    override fun getCollection(id: CollectionId): Flow<DataCollection?> {
         return dbFlow.flatMapLatest {
             it?.dataCollectionQueries
-                ?.selectById(id = id)
+                ?.selectById(id = id.value)
                 ?.mapFlowAsOneOrNull() ?: flowOf(null)
         }
     }
@@ -423,12 +431,11 @@ internal class SqlStorage(
         }
     }
 
-    override fun getCollectionRows(collectionId: Long?): Flow<List<DataCollectionRow>> {
+    override fun getCollectionRows(collectionId: CollectionId?): Flow<List<DataCollectionRow>> {
         return dbFlow.flatMapLatest { db ->
             if (db != null) {
                 val prepare = if (collectionId != null)
-                    db.dataCollectionRowQueries
-                        .selectByCollectionId(collectionId)
+                    db.dataCollectionRowQueries.selectByCollectionId(collectionId.value)
                 else
                     db.dataCollectionRowQueries.selectAll()
 
@@ -451,12 +458,12 @@ internal class SqlStorage(
         }
     }
 
-    override fun getCollectionRowsCount(collectionId: Long?): Flow<Long> {
+    override fun getCollectionRowsCount(collectionId: CollectionId?): Flow<Long> {
         return dbFlow.flatMapLatest {
             it?.dataCollectionRowQueries
                 ?.let {
                     if (collectionId != null) {
-                        it.getCountByCollectionId(collectionId)
+                        it.getCountByCollectionId(collectionId.value)
                     } else {
                         it.getCount()
                     }
@@ -468,13 +475,13 @@ internal class SqlStorage(
     override fun getCollectionRowsPaginated(
         offset: Long,
         pageSize: Long,
-        collectionId: Long
+        collectionId: CollectionId
     ): Flow<List<DataCollectionRow>> {
         return dbFlow.flatMapLatest { db ->
             if (db != null) {
                 db.dataCollectionRowQueries
                     .getPaginatedItemsByCollectionId(
-                        id = collectionId,
+                        id = collectionId.value,
                         pageSize = pageSize,
                         offset = offset
                     )
@@ -487,11 +494,11 @@ internal class SqlStorage(
         }
     }
 
-    override fun getCollectionRow(rowId: Long): Flow<DataCollectionRow?> {
+    override fun getCollectionRow(rowId: RowId): Flow<DataCollectionRow?> {
         return dbFlow.flatMapLatest {
             if (it != null) {
                 it.dataCollectionRowQueries
-                    .selectById(id = rowId)
+                    .selectById(id = rowId.value)
                     .mapFlowAsOneOrNull()
 //                    .asFlow()
 //                    .mapToOneOrNull(mapContext)
@@ -586,12 +593,12 @@ internal class SqlStorage(
         }
     }
 
-    override fun createAnnotation(annotation: Annotation): ResultWrapper<Long, String> {
+    override fun createAnnotation(annotation: Annotation): ResultWrapper<AnnotationId, String> {
         return runQueryOrThrow { db ->
             resultBlock {
                 db.annotationQueries.transactionWithResult() {
                     db.annotationQueries.insertNew(annotation)
-                    db.annotationQueries.lastInsertId().executeAsOne()
+                    AnnotationId(db.annotationQueries.lastInsertId().executeAsOne())
                 }
             }
         }
@@ -612,7 +619,7 @@ internal class SqlStorage(
         }
     }
 
-    override fun createCollection(request: CreateCollectionRequest): ResultWrapper<Long, String> {
+    override fun createCollection(request: CreateCollectionRequest): ResultWrapper<CollectionId, String> {
         return runQueryOrThrow { db ->
             resultBlock {
                 val db = db.transactionWithResult {
@@ -628,12 +635,12 @@ internal class SqlStorage(
                     val id = db.dataCollectionQueries.lastInsertId().executeAsOneOrNull()
                     id!!
                 }
-                db
+                CollectionId(db)
             }
         }
     }
 
-    override fun createCollectionRow(request: CreateCollectionRowRequest): ResultWrapper<Long, String> {
+    override fun createRow(request: CreateCollectionRowRequest): ResultWrapper<RowId, String> {
         return runQueryOrThrow { db ->
             db.transactionWithResult {
                 resultBlock {
@@ -641,7 +648,7 @@ internal class SqlStorage(
 
                     val existedRows = db.dataCollectionRowQueries.searchByCollectionId(
                         name = request.name,
-                        collectionId = request.collectionId
+                        collectionId = request.collectionId.value
                     ).executeAsOne()
                     ensure(existedRows == 0L) { "row with this name is exists" }
 
@@ -649,7 +656,7 @@ internal class SqlStorage(
                         DataCollectionRow = DataCollectionRow(
                             id = 0L,
                             name = request.name,
-                            collectionId = request.collectionId,
+                            collectionId = request.collectionId.value,
                             createdTime = request.createdTime,
                             modifiedTime = request.createdTime,
                             currentProgress = request.currentProgress,
@@ -664,13 +671,13 @@ internal class SqlStorage(
                             points = 0
                         )
                     )
-                    db.dataCollectionRowQueries.lastInsertId().executeAsOne()
+                    RowId(db.dataCollectionRowQueries.lastInsertId().executeAsOne())
                 }
             }
         }
     }
 
-    override fun createTag(tag: Tag): ResultWrapper<Long, String> {
+    override fun createTag(tag: Tag): ResultWrapper<TagId, String> {
         return runQueryOrThrow { db ->
             resultBlock {
                 db.transactionWithResult {
@@ -679,6 +686,7 @@ internal class SqlStorage(
                     db.tagQueries.insertObject(tag)
                     val tagId = db.tagQueries.lastInsertId().executeAsOneOrNull()
                     ensureNotNull(tagId) { "tag id is null" }
+                    TagId(tagId!!)
                 }
             }
         }
@@ -687,10 +695,10 @@ internal class SqlStorage(
     override fun updateTag(request: UpdateTagRequest): ResultWrapper<Unit, String> {
         return runQueryOrThrow { db ->
             resultBlock {
-                val foundTagId = db.tagQueries.findOneForId(request.id).executeAsOneOrNull()
+                val foundTagId = db.tagQueries.findOneForId(request.id.value).executeAsOneOrNull()
                 ensureNotNull(foundTagId) { "when updating tag. tag is not exists (id: ${foundTagId})" }
                 db.tagQueries.update(
-                    id = request.id,
+                    id = request.id.value,
                     color = request.color.toHexString(),
                     modifiedTime = request.modifiedTime
                 )
@@ -699,7 +707,7 @@ internal class SqlStorage(
         }
     }
 
-    override fun createTagAnnotation(request: CreateTagAnnotationRequest): ResultWrapper<Long, String> {
+    override fun createTagAnnotation(request: CreateTagAnnotationRequest): ResultWrapper<TagAnnotationId, String> {
         return runQueryOrThrow { db ->
             resultBlock {
                 db.transactionWithResult {
@@ -710,47 +718,48 @@ internal class SqlStorage(
                     db.tagAnnotationQueries.insertObject(
                         TagAnnotation(
                             id = 1L,
-                            tagId = request.tagId,
-                            annotationId = request.annotationId,
+                            tagId = request.tagId.value,
+                            annotationId = request.annotationId.value,
                             createdTime = request.createdTime
                         )
                     )
                     val tagId = db.tagAnnotationQueries.lastInsertId().executeAsOneOrNull()
-                    tagId!!
+                    TagAnnotationId(tagId!!)
                 }
             }
         }
     }
 
-    override fun createTagToTag(request: CreateTagToTagRequest): ResultWrapper<Long, String> {
+    override fun createTagToTag(request: CreateTagToTagRequest): ResultWrapper<TagToTagId, String> {
         return runQueryOrThrow { db ->
             resultBlock {
                 db.transactionWithResult {
                     val tags =
-                        db.tagToTagQueries.search(request.tagId, request.tag2Id).executeAsList()
+                        db.tagToTagQueries.search(request.tagId.value, request.tag2Id.value)
+                            .executeAsList()
                     ensure(tags.isEmpty()) { "" }
 
                     db.tagToTagQueries.insertObject(
                         TagToTag(
                             id = 1L,
-                            firstTagId = request.tagId,
-                            secondTagId = request.tag2Id,
+                            firstTagId = request.tagId.value,
+                            secondTagId = request.tag2Id.value,
                             createdTime = request.createdTime
                         )
                     )
                     val tagId = db.tagToTagQueries.lastInsertId().executeAsOneOrNull()
-                    tagId!!
+                    TagToTagId(tagId!!)
                 }
             }
         }
     }
 
-    override fun addTagLink(relativePath: String, tagId: Long) {
+    override fun addTagLink(relativePath: String, tagId: TagId) {
         runQueryOrThrow { db ->
             db.tagFileNodeQueries.insertObject(
                 TagFileNode(
                     id = 1L,
-                    tagId = tagId,
+                    tagId = tagId.value,
                     fileNodeRelativePath = relativePath,
                     createdTime = nowInMs()
                 )
@@ -758,16 +767,22 @@ internal class SqlStorage(
         }
     }
 
-    override fun createTagCollectionRow(request: CreateTagCollectionRowRequest) {
-        runQueryOrThrow { db ->
-            db.tagCollectionRowQueries.insertObject(
-                TagCollectionRow(
-                    id = 0L,
-                    tagId = request.tagId,
-                    rowId = request.rowId,
-                    createdTime = request.createdTime
-                )
-            )
+    override fun createTagCollectionRow(request: CreateTagCollectionRowRequest): ResultWrapper<TagRowId, String> {
+        return runQueryOrThrow { db ->
+            resultBlock {
+                db.transactionWithResult {
+                    db.tagCollectionRowQueries.insertObject(
+                        TagCollectionRow(
+                            id = 0L,
+                            tagId = request.tagId.value,
+                            rowId = request.rowId.value,
+                            createdTime = request.createdTime
+                        )
+                    )
+                    val tagId = db.tagCollectionRowQueries.lastInsertId().executeAsOneOrNull()
+                    TagRowId(tagId!!)
+                }
+            }
         }
     }
 
@@ -778,11 +793,12 @@ internal class SqlStorage(
 
             } else {
                 db.tagQueries.rename(
-                    id = request.id,
+                    id = request.id.value,
                     newName = request.newName,
                     modifiedTime = request.modifiedTime
                 )
             }
+
         }
     }
 
@@ -823,7 +839,7 @@ internal class SqlStorage(
                 doNothing()
             } else {
                 db.dataCollectionRowQueries.rename(
-                    id = request.rowId,
+                    id = request.rowId.value,
                     newName = request.newName,
                     modifiedTime = request.modifiedTime
                 )
@@ -835,7 +851,7 @@ internal class SqlStorage(
     override fun renameCollection(request: RenameDataCollectionRequest) {
         runQueryOrThrow { db ->
             db.dataCollectionQueries.rename(
-                id = request.id,
+                id = request.id.value,
                 newName = request.newName,
                 modifiedTime = request.modifiedTime
             )
@@ -847,7 +863,7 @@ internal class SqlStorage(
             db.dataCollectionQueries.updateViewType(
                 viewType = request.viewType.num,
                 modifiedTime = request.modifiedTime,
-                id = request.id
+                id = request.id.value
             )
         }
     }
@@ -855,7 +871,7 @@ internal class SqlStorage(
     override fun updateCollectionRow(request: UpdateDataCollectionRowRequest) {
         runQueryOrThrow { db ->
             db.dataCollectionRowQueries.updateObject(
-                id = request.id,
+                id = request.id.value,
                 currentProgress = request.currentProgress,
                 progressMax = request.progressMax,
                 webLink = request.webLink,
@@ -882,51 +898,51 @@ internal class SqlStorage(
         }
     }
 
-    override fun deleteTag(id: Long) {
+    override fun deleteTag(id: TagId) {
         runQueryOrThrow { db ->
-            db.tagQueries.delete(id = id)
+            db.tagQueries.delete(id = id.value)
         }
     }
 
-    override fun deleteTagLink(id: Long) {
+    override fun deleteTagLink(id: TagLinkId) {
         runQueryOrThrow { db ->
-            db.tagFileNodeQueries.delete(id = id)
+            db.tagFileNodeQueries.delete(id = id.value)
         }
     }
 
-    override fun deleteCollectionRow(id: Long) {
+    override fun deleteCollectionRow(id: RowId) {
         runQueryOrThrow { db ->
-            db.dataCollectionRowQueries.delete(id = id)
+            db.dataCollectionRowQueries.delete(id = id.value)
         }
     }
 
-    override fun deleteCollection(id: Long) {
+    override fun deleteCollection(id: CollectionId) {
         runQueryOrThrow { db ->
-            db.dataCollectionQueries.delete(id = id)
+            db.dataCollectionQueries.delete(id = id.value)
         }
     }
 
-    override fun deleteAnnotation(id: Long) {
+    override fun deleteAnnotation(id: AnnotationId) {
         runQueryOrThrow { db ->
-            db.annotationQueries.delete(id = id)
+            db.annotationQueries.delete(id = id.value)
         }
     }
 
-    override fun deleteTagToTag(id: Long) {
+    override fun deleteTagToTag(id: TagToTagId) {
         runQueryOrThrow { db ->
-            db.tagToTagQueries.delete(id = id)
+            db.tagToTagQueries.delete(id = id.value)
         }
     }
 
-    override fun deleteTagCollectionRow(id: Long) {
+    override fun deleteTagCollectionRow(id: TagRowId) {
         runQueryOrThrow { db ->
-            db.tagCollectionRowQueries.delete(id = id)
+            db.tagCollectionRowQueries.delete(id = id.value)
         }
     }
 
-    override fun deleteTagAnnotation(id: Long) {
+    override fun deleteTagAnnotation(id: TagAnnotationId) {
         runQueryOrThrow { db ->
-            db.tagAnnotationQueries.delete(id = id)
+            db.tagAnnotationQueries.delete(id = id.value)
         }
     }
 }

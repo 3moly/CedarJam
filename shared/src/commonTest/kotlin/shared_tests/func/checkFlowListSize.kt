@@ -1,25 +1,70 @@
 package shared_tests.func
 
-import io.kotest.matchers.collections.shouldHaveSize
+import io.ktor.util.internal.initCauseBridge
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeout
 
-suspend fun <T> Flow<List<T>>.checkFlowListSize(
+suspend inline fun <T> Flow<List<T>>.checkFlowListSize(
     expectedSize: Int,
     timeoutMs: Long = 2000L
 ): List<T> {
-    return withTimeout(timeoutMs) {
-        first { it.size == expectedSize }
+    // Capture call site BEFORE suspending
+    val callSite = Throwable("checkFlowListSize called here")
+
+    var lastSeen: List<T>? = null
+    return try {
+        withTimeout(timeoutMs) {
+            first { list ->
+                lastSeen = list
+                list.size == expectedSize
+            }
+        }
+    } catch (e: TimeoutCancellationException) {
+        val seen = lastSeen
+        val error = if (seen != null) {
+            buildSizeError(seen, expectedSize, timeoutMs)
+        } else {
+            AssertionError("Flow timed out after ${timeoutMs}ms waiting for size $expectedSize, but never emitted any lists.")
+        }
+        error.initCauseBridge(callSite)
+        throw error
     }
 }
 
-suspend fun <T, D> Flow<Map<T, D>>.checkFlowMapSize(
+inline fun <T> buildSizeError(list: List<T>, expectedSize: Int, timeoutMs: Long): AssertionError {
+    val items = list.mapIndexed { i, item -> "  [$i] $item" }.joinToString("\n")
+    return AssertionError(
+        """
+        |Expected size: $expectedSize, but was: ${list.size} (after ${timeoutMs}ms)
+        |Items (${list.size}):
+        |$items
+        """.trimMargin()
+    )
+}
+
+suspend inline fun <T, D> Flow<Map<T, D>>.checkFlowMapSize(
     expectedSize: Int,
     timeoutMs: Long = 2000L
 ): Map<T, D> {
-    return withTimeout(timeoutMs) {
-        first { it.size == expectedSize }
+    var lastSeen: Map<T, D>? = null
+    return try {
+        withTimeout(timeoutMs) {
+            first { map ->
+                lastSeen = map
+                map.size == expectedSize
+            }
+        }
+    } catch (e: TimeoutCancellationException) {
+        // If the flow emitted at least one item, trigger the explanation method
+        lastSeen?.shouldHaveSizeAndExplain(expectedSize)
+
+        // Fallback if the flow timed out without emitting absolutely anything
+        throw AssertionError(
+            "Flow timed out after ${timeoutMs}ms waiting for size $expectedSize, but never emitted any maps.",
+            e
+        )
     }
 }
 
@@ -37,7 +82,7 @@ fun <T> List<T>.shouldHaveSizeAndExplain(expectedSize: Int) {
     }
 }
 
-fun <T, D> Map<T, D>.shouldHaveSizeAndExplain(expectedSize: Int) {
+inline fun <T, D> Map<T, D>.shouldHaveSizeAndExplain(expectedSize: Int) {
     if (expectedSize != this.size) {
         val entries = this.entries.mapIndexed { index, (key, value) -> "  [$index] $key -> $value" }
             .joinToString(separator = "\n")

@@ -337,7 +337,7 @@ internal class CollectionStoreFactory(
 
                 is Intent.CreateCollectionRow -> {
                     val workspaceEnv = workspaceSession.workspaceEnvStateFlow.value
-                    workspaceEnv.createCollectionRow(
+                    workspaceEnv.createRow(
                         request = CreateCollectionRowRequest(
                             name = intent.name,
                             collectionId = pageData.collectionId,
@@ -392,7 +392,7 @@ internal class CollectionStoreFactory(
                             val workspaceEnv = workspaceSession.workspaceEnvStateFlow.value
                             val tag = dialogSelectTagService.open(workspaceSession)
                             if (tag != null) {
-                                workspaceEnv.createTagCollectionRow(
+                                workspaceEnv.createTagRow(
                                     request = CreateTagCollectionRowRequest(
                                         tagId = tag.id,
                                         rowId = intent.oldData.id,

@@ -26,7 +26,7 @@ import com.moly3.cedarjam.core.domain.model.getCollectionRowGraphId
 import com.moly3.cedarjam.core.domain.model.getFileTreeNodeGraphId
 import com.moly3.cedarjam.core.domain.model.getGraphId
 import com.moly3.cedarjam.core.domain.model.getTagGraphId
-import com.moly3.cedarjam.core.domain.model.placeNodesCircular
+import com.moly3.cedarjam.core.domain.func.placeNodesCircular
 import com.moly3.cedarjam.core.domain.model.request.CreateTagCollectionRowRequest
 import com.moly3.cedarjam.core.domain.model.request.CreateTagLinkRequest
 import com.moly3.cedarjam.core.domain.model.request.CreateTagToTagRequest
@@ -333,7 +333,7 @@ internal class DialogGraphStoreFactory(
                                 }
 
                                 is GraphDialogInput.Row -> {
-                                    workspaceEnv.createTagCollectionRow(
+                                    workspaceEnv.createTagRow(
                                         CreateTagCollectionRowRequest(
                                             tagId = tag.id,
                                             rowId = targetInput.id,

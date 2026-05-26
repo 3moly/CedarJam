@@ -4,7 +4,7 @@ import androidx.compose.runtime.Stable
 
 @Stable
 data class AnnotationDTO(
-    val id: Long,
+    val id: AnnotationId,
     val dataPath: String,
     val dataPoint: Double,
     val description: String,
@@ -13,5 +13,5 @@ data class AnnotationDTO(
     val width: Float,
     val height: Float,
     val modifiedTime: Long,
-    val rowId: Long?
+    val rowId: RowId?
 )
