@@ -5,10 +5,11 @@ on:
     branches:
       - markdown
       - main
+  workflow_dispatch:
 
 jobs:
   coverage:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux]
     steps:
       - name: Checkout Code2
         uses: actions/checkout@v4
