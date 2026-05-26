@@ -24,7 +24,7 @@
 > Cedar jam is made from small cedar cones simmered with sugar or honey.<br/> 
 > Definitely, you should try!
 
-![badge][badge-wasm] demo, less features & not ready for production: https://cedarjamdemo.3moly.com/
+![badge][badge-wasm] demo,, less features & not ready for production: https://cedarjamdemo.3moly.com/
 
 </header>
 
