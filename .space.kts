@@ -26,35 +26,20 @@ job("coverage badge") {
                     ./gradlew :shared:cleanJvmTest :shared:jvmTest --tests "shared_tests.*" :shared:koverXmlReportCustom \
                     --build-cache --no-daemon --console=plain
 
-                # Parse coverage XML and write JSON + payload in one Python call
-                python3 <<'PYEOF'
-                import xml.etree.ElementTree as ET
-                import json, os
-
+                # Parse coverage XML and write badge JSON + API payload
+                python3 -c "
+                import xml.etree.ElementTree as ET, json
                 root = ET.parse('shared/build/reports/kover/reportCustom.xml').getroot()
                 line = next(c for c in root.findall('counter') if c.get('type') == 'LINE')
                 covered = int(line.get('covered'))
                 missed  = int(line.get('missed'))
                 pct = (covered / (covered + missed)) * 100
                 color = 'brightgreen' if pct >= 80 else 'yellow' if pct >= 60 else 'red'
-
-                badge = {
-                    "schemaVersion": 1,
-                    "label": "Coverage",
-                    "message": f"{pct:.2f}%",
-                    "color": color
-                }
-
-                with open('kover-coverage.json', 'w') as f:
-                    json.dump(badge, f)
-
-                payload = {"files": {"kover-coverage.json": {"content": json.dumps(badge)}}}
-                with open('payload.json', 'w') as f:
-                    json.dump(payload, f)
-
-                with open('pct.txt', 'w') as f:
-                    f.write(f"{pct:.2f}")
-                PYEOF
+                badge = {'schemaVersion': 1, 'label': 'Coverage', 'message': f'{pct:.2f}%', 'color': color}
+                open('kover-coverage.json', 'w').write(json.dumps(badge))
+                open('payload.json', 'w').write(json.dumps({'files': {'kover-coverage.json': {'content': json.dumps(badge)}}}))
+                open('pct.txt', 'w').write(f'{pct:.2f}')
+                "
 
                 PERCENT=${'$'}(cat pct.txt)
                 echo "Coverage: ${'$'}PERCENT%"
