@@ -8,8 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
@@ -21,13 +19,13 @@ import androidx.compose.ui.layout.onLayoutRectChanged
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import com.moly3.cedarjam.core.domain.model.CollectionId
+import com.moly3.cedarjam.core.domain.model.RowId
 import com.moly3.cedarjam.core.domain.func.formatEpochMillis
 import com.moly3.cedarjam.core.domain.model.CollectionDTO
 import com.moly3.cedarjam.core.domain.model.CollectionRowDTO
 import com.moly3.cedarjam.core.domain.model.CollectionViewType
-import com.moly3.cedarjam.core.ui.func.isCompactUI
 import com.moly3.cedarjam.core.ui.func.rememberPdfBitmap
-import com.moly3.cedarjam.core.ui.func.statusBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.func.wstatusBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.uikit.AppThemePreview
 import com.moly3.cedarjam.pages.page_collection_row.Intent
@@ -138,16 +136,16 @@ private fun PageContentPreview() {
         PageContent(
             state = State(
                 collection = CollectionDTO(
-                    id = 1,
+                    id = CollectionId(1L),
                     name = "japanese words",
                     viewType = CollectionViewType.Word,
                     createdTime = 0,
                     modifiedTime = 0
                 ),
                 collectionRow = CollectionRowDTO(
-                    id = 1L,
+                    id = RowId(1L),
                     name = "アニメ",
-                    collectionId = 1,
+                    collectionId = CollectionId(1L),
                     fileRelativePath = null,
                     imgRelativePath = null,
                     webLink = null,

@@ -13,6 +13,7 @@ plugins {
     alias(libs.plugins.serialization)
     kotlin("native.cocoapods")
     alias(libs.plugins.metro)
+    alias(libs.plugins.kover)
 }
 
 kotlin {
@@ -32,20 +33,14 @@ kotlin {
     sourceSets.all {
         languageSettings.optIn("androidx.compose.animation.ExperimentalSharedTransitionApi")
     }
+
     applyDefaultHierarchyTemplate()
     android {
-//        withDeviceTest {
-//            instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-//            execution = "HOST"
-//        }
+        androidResources.enable = true
         withHostTest {
             isIncludeAndroidResources = true
+            isReturnDefaultValues = true
         }
-//        testOptions {
-//            unitTests {
-//                isIncludeAndroidResources = true
-//            }
-//        }
         namespace = "com.moly3.cedarjam"
         compileSdk = 36
     }
@@ -75,18 +70,6 @@ kotlin {
         xcodeConfigurationToNativeBuildType["beta"] = NativeBuildType.DEBUG
         xcodeConfigurationToNativeBuildType["betarelease"] = NativeBuildType.RELEASE
     }
-
-//    @OptIn(ExperimentalWasmDsl::class)
-//    wasmJs {
-//        browser {
-//            commonWebpackConfig {
-//                outputFileName = "composeApp.js"
-//            }
-//        }
-//        binaries.executable()
-//    }
-
-
     sourceSets {
         commonMain.dependencies {
 
@@ -150,6 +133,7 @@ kotlin {
 
             implementation(libs.dnd)
             implementation(libs.webview)
+            implementation(libs.compose.data.viz)
 
         }
         commonTest.dependencies {
@@ -158,8 +142,20 @@ kotlin {
             implementation(libs.ui.test)
             implementation(libs.kotest.property)
         }
+        // to (if your source set is actually androidHostTest):
+//        getByName("androidHostTest").dependencies {
+//            implementation(libs.robolectric)
+//            implementation(libs.android.videoplayer.contextprovider)
+//            implementation("androidx.test:core:1.7.0")
+//        }
+        getByName("androidHostTest").dependencies {
+            implementation(libs.robolectric)
+            implementation(libs.android.videoplayer.contextprovider)
+            implementation("androidx.test:core:1.7.0")
+            implementation("androidx.test.ext:junit:1.3.0")
+            implementation("androidx.activity:activity-compose:1.13.0")
+        }
         jvmMain.dependencies {
-
             implementation(libs.ktor.cio)
             implementation(libs.ktor)
             implementation(libs.ktor.serialization)
@@ -195,19 +191,46 @@ kotlin {
             implementation(libs.robolectric)
             implementation(libs.android.videoplayer.contextprovider)
         }
-        linuxX64Main.dependencies {
-            implementation("org.jetbrains.compose.desktop:desktop-jvm-linux-x64:1.10.1")
-        }
-        macosX64Main.dependencies {
-            implementation("org.jetbrains.compose.desktop:desktop-jvm-macos-x64:1.10.1")
-        }
-        macosArm64Main.dependencies {
-            implementation("org.jetbrains.compose.desktop:desktop-jvm-macos-arm64:1.10.1")
-        }
-        mingwX64Main.dependencies {
-            implementation("org.jetbrains.compose.desktop:desktop-jvm-windows-x64:1.10.1")
+    }
+}
+
+kover {
+    currentProject {
+        createVariant("custom") {
+            add("jvm")
         }
     }
+}
+
+tasks.withType<Test>().configureEach {
+    failOnNoDiscoveredTests = false
+}
+
+dependencies {
+    kover(projects.core.domain)
+    kover(projects.core.storage)
+    kover(projects.core.net)
+    kover(projects.core.ui)
+    kover(projects.core.navigation)
+    kover(projects.core.data)
+    kover(projects.core.coordinator)
+    kover(projects.features.featureBrowser)
+    kover(projects.features.featureCanvas)
+    kover(projects.features.featureFile)
+    kover(projects.features.featureFileView)
+    kover(projects.features.featureGraph)
+    kover(projects.features.featureSettings)
+    kover(projects.pages.pageCollection)
+    kover(projects.pages.pageCollectionRow)
+    kover(projects.pages.pageFile)
+    kover(projects.pages.pageGraph)
+    kover(projects.pages.pageHome)
+    kover(projects.pages.pageSelectWorkspace)
+    kover(projects.pages.pageWorkspace)
+    kover(projects.pages.pageTags)
+    kover(projects.pages.pageTag)
+    kover(projects.pages.pageTabs)
+    kover(projects.pages.pageTab)
 }
 
 dependencies {

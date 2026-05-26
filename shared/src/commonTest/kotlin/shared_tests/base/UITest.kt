@@ -3,8 +3,15 @@ package shared_tests.base
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.ui.test.waitUntilAtLeastOneExists
+import co.touchlab.kermit.CommonWriter
 import co.touchlab.kermit.Logger
+import co.touchlab.kermit.Severity
 import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.decompose.router.stack.active
 import com.arkivanov.essenty.lifecycle.Lifecycle
@@ -12,24 +19,33 @@ import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import com.arkivanov.essenty.lifecycle.destroy
 import com.arkivanov.essenty.lifecycle.resume
 import com.arkivanov.essenty.lifecycle.stop
-import com.moly3.cedarjam.di.initApp
-import com.moly3.cedarjam.navigation.Root
-import com.moly3.cedarjam.navigation.RootComponent
-import com.moly3.cedarjam.ui.MainApp
+import com.moly3.cedarjam.shared.di.initApp
+import com.moly3.cedarjam.shared.navigation.Root
+import com.moly3.cedarjam.shared.ui.MainApp
 import com.moly3.cedarjam.core.domain.func.runBlocking
+import com.moly3.cedarjam.core.domain.model.Workspace
+import com.moly3.cedarjam.core.net.IRemoteSyncRepository
+import com.moly3.cedarjam.core.storage.ISystemFilesManager
 import com.moly3.cedarjam.core.storage.func.init
 import com.moly3.cedarjam.core.ui.compositions.LocalUITestScope
-import com.moly3.cedarjam.di.metro.createCedarJamAppGraph
-import com.moly3.cedarjam.di.metro.createRootComponent
+import com.moly3.cedarjam.shared.di.metro.CedarJamGraph
+import com.moly3.cedarjam.shared.di.metro.createCedarJamAppGraph
+import com.moly3.cedarjam.shared.di.metro.createRootComponent
 import com.moly3.cedarjam.pages.page_tab.TabComponent
 import com.moly3.cedarjam.pages.page_tabs.TabsComponent
+import com.moly3.cedarjam.pages.page_workspace.Intent
 import com.moly3.cedarjam.pages.page_workspace.WorkspaceComponent
+import com.moly3.cedarjam.ui.Res
+import com.moly3.cedarjam.ui.create_new_workspace
 import io.github.vinceglb.filekit.FileKit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.yield
+import kotlinx.io.files.Path
+import kotlinx.io.files.SystemFileSystem
+import org.jetbrains.compose.resources.getString
+import kotlin.run
 import kotlin.test.BeforeTest
 
 @OptIn(ExperimentalTestApi::class)
@@ -37,14 +53,22 @@ abstract class UITest : BaseTest() {
     var component: Root? = null
     var lifecycle: LifecycleRegistry? = null
 
+    val remoteSyncRepository: IRemoteSyncRepository
+        get() =
+            CedarJamGraph.instance.cedarJamDependencies.remoteSyncRepository
+
+    val systemFileManager: ISystemFilesManager
+        get() = CedarJamGraph.instance.cedarJamDependencies.systemFileManager
+
     @OptIn(ExperimentalCoroutinesApi::class)
     @BeforeTest
     fun before() = runTest {
-//        cleanupState()
-//        Dispatchers.setMain(dispatcher)
-//        Logger.setLogWriters(CommonWriter())
-        FileKit.init(getTestApplicationContext())
-        initApp(getTestApplicationContext(), isTest = true)
+        val testAppContext = getTestApplicationContext()
+        FileKit.init(testAppContext)
+        initApp(testAppContext, isTest = true)
+        systemFileManager.deleteNodeHeavy(buildPath)
+        Logger.setLogWriters(CommonWriter())
+        Logger.setMinSeverity(Severity.Verbose)
         runBlocking(Dispatchers.Main.immediate) {
             lifecycle = LifecycleRegistry()
             component = createRootComponent(
@@ -56,40 +80,17 @@ abstract class UITest : BaseTest() {
         }
     }
 
-
-//    private suspend fun cleanupState() {
-//        // Stop lifecycle first to prevent new operations
-//        lifecycle?.stop()
-//        lifecycle?.destroy()
-//        lifecycle = null
-//        component = null
-//
-//        // Allow pending operations to complete
-//        yield()
-//
-//        // Clean shutdown of Koin with proper timeout
-//        var attempts = 0
-//        val maxAttempts = 10
-//
-//        while (KoinPlatformTools.defaultContext().getOrNull() != null && attempts < maxAttempts) {
-//            attempts++
-//            try {
-//                Logger.d("Attempting to stop Koin (attempt $attempts)")
-//                Logger.d("Koin stopped successfully")
-//                break
-//            } catch (exc: Exception) {
-//                Logger.w("Failed to stop Koin on attempt $attempts: ${exc.message}")
-//                if (attempts >= maxAttempts) {
-//                    Logger.e("Max attempts reached, forcing cleanup")
-//                    break
-//                }
-//                delay(100L)
-//            }
-//        }
-//
-//        // Give some time for any remaining cleanup
-//        delay(200L)
-//    }
+    private fun deleteHeavy(nodePath: String) {
+        val path = Path(nodePath)
+        //val files = fs.list(path)
+        val meta = SystemFileSystem.metadataOrNull(path) ?: return
+        if (meta.isDirectory) {
+            for (child in SystemFileSystem.list(path)) {
+                deleteHeavy(child.toString())
+            }
+        }
+        SystemFileSystem.delete(path, mustExist = false)
+    }
 
 
     inline fun <reified CurrentPage> ComposeUiTest.checkAndWaitCurrentPage(timeoutMillis: Long = 1_000L) {
@@ -133,27 +134,50 @@ abstract class UITest : BaseTest() {
         return component!!.children.active.instance is CurrentPage
     }
 
+    @OptIn(ExperimentalTestApi::class)
+    suspend fun ComposeUiTest.createWorkspace(workspace: Workspace):Root.Child.Workspace {
+        val instance1 = waitAndGetComponent<Root.Child.SelectWorkspace>()
+        instance1.component.onIntent(com.moly3.cedarjam.pages.page_select_workspace.Intent.CreateWorkspace)
+
+        waitUntilAtLeastOneExists(hasText(getString(Res.string.create_new_workspace)))
+        onNode(hasTestTag("fullpath_check_box")).performClick()
+        onNode(hasTestTag("workspace_name_input")).performTextInput(workspace.serverName)
+        waitUntilAtLeastOneExists(hasText(workspace.serverName))
+
+        val sm = hasTestTag("workspace_fullpath_input")
+        waitUntilAtLeastOneExists(sm)
+        onNode(sm).performTextInput(workspace.platformPath)
+
+        onNode(hasTestTag("workspace_name_button")).performClick()
+
+        val instance = waitAndGetComponent<Root.Child.Workspace>(30_000L)
+        instance.component.onIntent(Intent.CreateWorkspaceDatabaseFiles)
+        delay(500L)
+        waitForIdle()
+        return instance
+    }
+
     fun runUITest(
-        beforeSetContent: suspend ComposeUiTest.() -> Unit,
+        beforeSetContent: suspend ComposeUiTest.() -> Unit = {},
         run: suspend ComposeUiTest.(Root) -> Unit
-    ) =
-        runComposeUiTest {
+    ) {
+
+        runComposeUiTest() {
             beforeSetContent()
             setContent {
                 CompositionLocalProvider(LocalUITestScope provides true) {
                     MainApp(component!!)
                 }
             }
+            waitForIdle()
             kotlinx.coroutines.runBlocking {
                 run(component!!)
             }
-//            io.kotest.engine.runBlocking {
-//
-//            }
             lifecycle?.stop()
             lifecycle?.destroy()
             while (lifecycle?.state != Lifecycle.State.DESTROYED) {
                 delay(100L)
             }
         }
+    }
 }

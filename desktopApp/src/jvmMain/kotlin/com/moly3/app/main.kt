@@ -2,27 +2,8 @@ package com.moly3.app
 
 import JewelDesktop
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicText
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.application
 import co.touchlab.kermit.Logger
 import com.arkivanov.decompose.DecomposeSettings
@@ -35,11 +16,12 @@ import com.badoo.reaktive.scheduler.overrideSchedulers
 import com.moly3.app.func.readSerializableContainer
 import com.moly3.app.func.writeToFile
 import com.moly3.cedarjam.core.domain.model.AndroidApplicationContext
-import com.moly3.cedarjam.di.initApp
-import com.moly3.cedarjam.di.metro.CedarJamGraph
-import com.moly3.cedarjam.di.metro.createRootComponent
-import com.moly3.cedarjam.navigation.Root
-import com.moly3.cedarjam.navigation.createComponentContext
+import com.moly3.cedarjam.shared.di.initApp
+import com.moly3.cedarjam.shared.di.metro.CedarJamGraph
+import com.moly3.cedarjam.shared.di.metro.createRootComponent
+import com.moly3.cedarjam.shared.navigation.Root
+import com.moly3.cedarjam.shared.navigation.createComponentContext
+import com.moly3.cedarjam.shared.navigation.createRootComponentSafe
 import dev.datlag.kcef.KCEF
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.filesDir
@@ -88,27 +70,20 @@ fun main() {
 
     val root: Root = runOnUiThread {
         runOnUiThread {
-            createRootComponent(
-                componentContext = createComponentContext(
-                    lifecycle = lifecycle,
-                    stateKeeper = stateKeeper,
-                    backDispatcher = backDispatcher,
-                    onErrorInit = {
-                        saveFile.delete()
-                        stateKeeper =
-                            StateKeeperDispatcher(saveFile.readSerializableContainer())
-                        stateKeeper
-                    }
-                ),
-                graph = CedarJamGraph.instance,
-                onDestroy = {
-                    saveState()
-                }
+            createRootComponentSafe(
+                lifecycle = lifecycle,
+                stateKeeper = stateKeeper,
+                backDispatcher = backDispatcher,
+                onErrorInit = {
+                    saveFile.delete()
+                    stateKeeper =
+                        StateKeeperDispatcher(saveFile.readSerializableContainer())
+                    stateKeeper
+                },
+                onDestroy = {}
             )
         }
     }
-
-//    }
 
     Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
         val errorMessage = "💥 Uncaught exception in thread ${thread.name}: ${throwable.message}"

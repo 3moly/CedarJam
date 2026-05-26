@@ -163,6 +163,7 @@ internal class FileStoreFactory(
                         val fileType = fileNode.toGetFileType(
                             filesRepository = filesRepository
                         )
+                        val pdfInputData = data.type as? FilePageInput.FilePageType.Pdf
                         when (fileType) {
                             is FileType.Canvas -> {
                                 showCanvasDialog(fileType.fileNode)
@@ -173,7 +174,7 @@ internal class FileStoreFactory(
                                 if (state.fileType == null) {
                                     dispatch(
                                         FileStore.Msg.SetFile(
-                                            FileType.PDF(fileType.fileNode, 1)
+                                            FileType.PDF(fileType.fileNode, pdfInputData?.page ?: 1)
                                         )
                                     )
                                 }
@@ -213,9 +214,7 @@ internal class FileStoreFactory(
 
                 is Intent.ChangeTextNode -> {
                     scope.launch {
-                        println("Intent.ChangeTextNode 1")
                         val workspaceEnv = workspaceSession.workspaceEnvStateFlow.value
-                        println("Intent.ChangeTextNode 2")
                         val oldFullPath =
                             fileManagerService.getFileNodeByTimestamp(timestamp = data.timestamp)
                         val nodes = workspaceEnv.getNodes(null).getAllFilesByExtension(null)
@@ -225,10 +224,7 @@ internal class FileStoreFactory(
                                 found,
                                 intent.newText
                             )
-                        } else {
-
                         }
-                        println("Intent.ChangeTextNode 3")
                     }
                 }
 

@@ -27,21 +27,16 @@ fun CJButtonIcon(
     NeumorphicShape(
         modifier = modifier
             .size(size.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(if (isEnabled) LocalAppTheme.current.colors.backgroundSecondary else Color.Transparent)
-            .let {
-                if (isEnabled)
-                    it.clickable { onClick() }
-                else
-                    it
-            },
+            .clip(RoundedCornerShape(8.dp)),
+//            .background(if (isEnabled) LocalAppTheme.current.colors.backgroundSecondary else Color.Transparent),
         content = {
             Image(
                 imageVector,
                 contentDescription = null,
                 colorFilter = ColorFilter.tint(LocalAppTheme.current.colors.icon)
             )
-        }
+        },
+        onClick = if(isEnabled) onClick else null
     )
 }
 

@@ -62,7 +62,7 @@ internal fun CollectionDataGrid(
     val presentations = remember(rows, tagCollectionRows, draggableItems) {
         rows.map { row ->
             CollectionRowPresentation(
-                isDragged = draggableItems[row.id] ?: false,
+                isDragged = draggableItems[row.id.value] ?: false,
                 row = row,
                 tags = tagCollectionRows.filter {
                     row.id == it.rowId
@@ -179,20 +179,20 @@ internal fun CollectionDataGrid(
                 key = "targetKey: ${data.row.id}",
                 state = dragAndDropState,
                 onDragEnter = {
-                    draggableItems[data.row.id] = true
+                    draggableItems[data.row.id.value] = true
                 },
                 onDragExit = {
-                    draggableItems[data.row.id] = false
+                    draggableItems[data.row.id.value] = false
                 },
                 onDrop = { state ->
                     println("state: ${state}")
-                    draggableItems[data.row.id] = false
+                    draggableItems[data.row.id.value] = false
 
                     //isDragTarget = false
                     onSetDocument(state.data, data.row)
                 }
             ).let {
-                if (draggableItems[data.row.id] == true)
+                if (draggableItems[data.row.id.value] == true)
                     it.border(3.dp, primaryColor)
                 else
                     it

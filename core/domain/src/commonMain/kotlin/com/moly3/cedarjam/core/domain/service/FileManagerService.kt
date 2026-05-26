@@ -16,7 +16,6 @@ import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class)
 class FileManagerService(
-//    val workspacePresentation: WorkspacePresentation,
     startedState: OpenedFiles
 ) {
 

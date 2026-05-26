@@ -33,4 +33,44 @@ interface RowCallbacks {
 
     /** Arrow key at a row edge: move focus to the adjacent row. */
     fun onNavigate(rowId: String, direction: NavDirection)
+    fun onUndo()
+    fun onRedo()
+
+    /**
+     * The properties (frontmatter) list changed.
+     *
+     * @param coalesce when true the change is merged into the previous typing
+     *   step in [com.moly3.cedarjam.core.domain.features.mdprops.DocumentHistory]
+     *   (use for per-keystroke value edits); when false it is a discrete step
+     *   (add / remove / type change). Routing every property edit through here
+     *   keeps undo/redo consistent — direct document mutation loses history.
+     */
+    fun onPropertiesChange(
+        properties: List<com.moly3.cedarjam.core.domain.features.mdprops.DocumentProperty>,
+        coalesce: Boolean,
+    )
+
+    /**
+     * Shift+Arrow at a row edge: extend the block selection to the adjacent row
+     * (starting one anchored at [rowId] if none exists yet).
+     */
+    fun onExtendSelection(rowId: String, direction: NavDirection)
+
+    /**
+     * Ctrl/Cmd+C: copy the current block selection (or, if none, the single
+     * row [rowId]) to the clipboard as raw Markdown text.
+     */
+    fun onCopySelection(rowId: String)
+
+    /** A plain (non-shift) interaction happened in a row — drop any block selection. */
+    fun onClearSelection()
+
+    /**
+     * A [com.moly3.cedarjam.core.domain.features.mdprops.RowType.Divider] row lost
+     * focus. The editor inspects its current [text]: if it is still valid divider
+     * syntax (`---`, `***`, `___`) the row stays a divider and renders as a line
+     * again; otherwise it is demoted to a plain paragraph carrying that text.
+     */
+    fun onDividerBlur(rowId: String)
+    fun onWikiLinkClick(target: String)
 }

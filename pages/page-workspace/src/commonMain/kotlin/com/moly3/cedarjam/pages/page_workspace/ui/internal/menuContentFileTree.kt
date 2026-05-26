@@ -1,6 +1,5 @@
 package com.moly3.cedarjam.pages.page_workspace.ui.internal
 
-import androidx.compose.foundation.lazy.LazyListScope
 import com.mohamedrejeb.compose.dnd.DragAndDropState
 import com.moly3.cedarjam.core.ui.model.FileTreeItemPresentation
 import com.moly3.cedarjam.pages.page_workspace.Intent

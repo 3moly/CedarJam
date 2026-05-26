@@ -33,13 +33,14 @@ import com.moly3.cedarjam.navigation.Navigator
 import com.moly3.cedarjam.navigation.Route
 import com.moly3.cedarjam.navigation.stateFlow
 import com.moly3.cedarjam.pages.page_tabs.TabsComponent
-import com.moly3.cedarjam.pages.page_tabs.TabsComponentFactory
+import com.moly3.cedarjam.pages.page_workspace.di.WorkspaceGraph
 import com.moly3.cedarjam.pages.page_workspace.store.WorkspaceStoreFactory
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedInject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -48,7 +49,6 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.serialization.Serializable
 
 data class PageNameWorkspace(
@@ -71,7 +71,7 @@ class WorkspaceComponentImpl(
     private val dialogColorPickerService: DialogColorPickerService,
     private val dialogDeleteService: DialogDeleteService,
     private val navigateToFileUseCaseFactory: NavigateToFileUseCaseFactory,
-    private val tabsComponentFactory: TabsComponentFactory,
+    private val workspaceGraphFactory: WorkspaceGraph.Factory
 ) : ComponentContext by context,
     IDecomposeScopeComponent,
     WorkspaceComponent {
@@ -81,6 +81,10 @@ class WorkspaceComponentImpl(
     override val workspaceSession: WorkspaceSession by lazy {
         createWorkspaceSession(workspaceInput, stateKeeper)
     }
+
+    val workspaceGraph: WorkspaceGraph =
+        workspaceGraphFactory
+            .create(workspaceSession)
 
     private val settingsDialogScope by lazy {
         settingsDialogScopeFactory(
@@ -144,7 +148,7 @@ class WorkspaceComponentImpl(
                 )
             },
             childFactory = { config, componentContext ->
-                tabsComponentFactory.invoke(
+                workspaceGraph.tabsComponentFactory.invoke(
                     context = componentContext,
                     storeFactory = storeFactory,
                     workspaceSession = workspaceSession,

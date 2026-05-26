@@ -18,11 +18,6 @@ typealias ComposableDialogUI = @Composable (GlobalDialog<*, *>, Any?) -> Unit
 
 class DialogRegistry : IDialogRegister {
 
-    init {
-        Logger.e { "DialogRegistry created" }
-    }
-    //    private val activeStack = mutableStateListOf<GlobalDialog<*, *>>()
-    // Maps a Class (e.g., DialogRenameService::class) to its UI renderer
     val uiFactories = mutableMapOf<KClass<*>, ComposableDialogUI>()
 
     // The actual stack of active dialog instances

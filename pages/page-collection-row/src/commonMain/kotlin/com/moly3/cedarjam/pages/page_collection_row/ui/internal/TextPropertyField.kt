@@ -3,7 +3,6 @@ package com.moly3.cedarjam.pages.page_collection_row.ui.internal
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -54,7 +53,7 @@ fun TextPropertyField(
             onAnyAction = {
                 onSave?.invoke(textState.text)
             },
-            onValueChanged = {
+            onValueChange = {
                 textState = it
             }
         )

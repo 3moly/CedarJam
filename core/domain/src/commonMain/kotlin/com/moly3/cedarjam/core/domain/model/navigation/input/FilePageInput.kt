@@ -6,10 +6,11 @@ import kotlinx.serialization.Serializable
 data class FilePageInput(
     val timestamp: Long,
     val type: FilePageType = FilePageType.Default
-){
+) {
     @Serializable
     sealed class FilePageType {
         data object Default : FilePageType()
         data object Collection : FilePageType()
+        data class Pdf(val page: Int) : FilePageType()
     }
 }

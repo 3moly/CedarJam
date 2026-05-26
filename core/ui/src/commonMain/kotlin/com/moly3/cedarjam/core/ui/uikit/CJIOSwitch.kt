@@ -37,13 +37,13 @@ import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 fun CJIOSwitch(
     modifier: Modifier = Modifier,
     height: Int = 90,
-    isPressed: Boolean,
-    onClick: () -> Unit
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
 ) {
     val density = LocalDensity.current
 
     val transition = updateTransition(
-        targetState = isPressed,
+        targetState = checked,
         label = "switch_transition"
     )
 
@@ -126,7 +126,7 @@ fun CJIOSwitch(
             )
         }
     ) {
-        onClick()
+        onCheckedChange(!checked)
     }
 }
 
@@ -144,11 +144,11 @@ fun CJIOSwitchPreview2() {
             Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
                 CJIOSwitch(
                     height = 30,
-                    isPressed = isPressed,
-                    onClick = {
+                    checked = isPressed,
+                    onCheckedChange = {
                         isPressed = !isPressed
                     })
-                CJIOSwitch(isPressed = isPressed, onClick = {
+                CJIOSwitch(checked = isPressed, onCheckedChange = {
                     isPressed = !isPressed
                 })
             }

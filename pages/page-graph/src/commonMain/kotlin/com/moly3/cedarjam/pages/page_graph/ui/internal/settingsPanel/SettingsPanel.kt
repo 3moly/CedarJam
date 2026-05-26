@@ -7,47 +7,46 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
-import com.moly3.cedarjam.core.domain.func.ignoreIndexSqlDatabaseName
-import com.moly3.cedarjam.core.domain.model.node.GraphSettingsConfig
+import androidx.compose.ui.unit.sp
+import com.moly3.cedarjam.core.domain.model.config.GraphPartConfig
+import com.moly3.cedarjam.core.domain.model.config.GroupLogic
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
+import com.moly3.cedarjam.core.ui.func.flatClickable
 import com.moly3.cedarjam.core.ui.func.navigationBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.func.wstatusBarsPaddingCJ
-import com.moly3.cedarjam.core.ui.uikit.ButtSnapType
-import com.moly3.cedarjam.core.ui.uikit.CJButtSnap
+import com.moly3.cedarjam.core.ui.uikit.CJButton
 import com.moly3.cedarjam.core.ui.uikit.CJButtonIcon
 import com.moly3.cedarjam.core.ui.uikit.CJIOSwitch
+import com.moly3.cedarjam.core.ui.uikit.CJSearchTextField
 import com.moly3.cedarjam.core.ui.uikit.CJText
 import com.moly3.cedarjam.core.ui.uikit.NeumorphicShape
 import com.moly3.cedarjam.pages.page_graph.Intent
-import com.moly3.dataviz.core.graph.model.GraphSettings
+import com.moly3.cedarjam.pages.page_graph.ui.internal.SettingsSection
 import vector.Settings
-import vector.Tag
-import vector.collection.File05
-import vector.collection.FileAttach01
-import vector.collection.Note
 
 @Composable
 fun EnableOption(text: String, value: Boolean, onClick: () -> Unit) {
@@ -72,10 +71,12 @@ fun BoxScope.SettingsPanel(
     zoom: Float,
     isShowSettings: Boolean,
     nodesCount: Int,
-    config: GraphSettingsConfig,
-    settings: GraphSettings,
+    partConfig: GraphPartConfig,
     onIntent: (Intent) -> Unit
 ) {
+    val filterSearch = remember {
+        mutableStateOf(TextFieldValue(partConfig.filter.search))
+    }
     Column(
         modifier = Modifier
             .wstatusBarsPaddingCJ()
@@ -86,22 +87,47 @@ fun BoxScope.SettingsPanel(
             .background(LocalAppTheme.current.colors.backgroundSecondary)
             .verticalScroll(rememberScrollState())
     ) {
+        val isFullSettingsState = remember { mutableStateOf(false) }
         val settingsWidth by animateDpAsState(
             targetValue = if (isShowSettings) 250.dp else 48.dp,
             label = "settingsWidth"
         )
+        val isFullDef = remember(isFullSettingsState.value, isShowSettings) {
+            isShowSettings && isFullSettingsState.value
+        }
         Column(
-            modifier = Modifier.width(settingsWidth).padding(8.dp),
+            modifier = Modifier.let {
+                if (isFullDef)
+                    it.fillMaxWidth()
+                else
+                    it.width(settingsWidth)
+            }.padding(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalAlignment = Alignment.End
         ) {
-            Row(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 if (isShowSettings) {
+                    CJButtonIcon(imageVector = vector.ArrowLeft, onClick = {
+                        isFullSettingsState.value = !isFullSettingsState.value
+                    })
                     CJText(text = "Nodes: ${nodesCount}", modifier = Modifier.weight(1f))
                 }
                 CJButtonIcon(imageVector = Settings, onClick = {
                     onIntent(Intent.SetIsShowSettings(!isShowSettings))
                 })
+            }
+            if (isShowSettings) {
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CJButton(text = "Configs", onClick = {
+                        onIntent(Intent.OpenConfigs)
+                    })
+                }
             }
 
             AnimatedVisibility(
@@ -113,90 +139,298 @@ fun BoxScope.SettingsPanel(
                 Column {
                     Column(
                         modifier = Modifier
-                            .requiredWidth(234.dp)
+//                            .requiredWidth(234.dp)
                             .fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        Row(modifier = Modifier.fillMaxWidth()) {
+                            CJText(text = "is moving nodes:", modifier = Modifier.weight(1f))
+                            CJIOSwitch(
+                                modifier = Modifier,
+                                height = 24,
+                                checked = partConfig.config.isMoving,
+                                onCheckedChange = {
+                                    onIntent(
+                                        Intent.SetGraphSettings(
+                                            partConfig.config.copy(isMoving = !partConfig.config.isMoving)
+                                        )
+                                    )
+                                })
+                        }
+
+                        CJSearchTextField(
+                            modifier = Modifier
+                                .fillMaxWidth(),
+                            isSearchIcon = true,
+                            placeholderText = "Search...",
+                            value = filterSearch.value,
+                            onValueChange = {
+                                filterSearch.value = it
+                                onIntent(Intent.SetFilter(partConfig.filter.copy(search = it.text)))
+                            }
+                        )
+
+                        SettingsSection(
+                            title = "Filter"
                         ) {
-                            EnableOption(
-                                text = "directories",
-                                value = config.isShowDirectories,
-                                onClick = {
-                                    onIntent(Intent.SetConfig(config.copy(isShowDirectories = !config.isShowDirectories)))
-                                }
-                            )
-                            EnableOption(
-                                text = "tags",
-                                value = config.isTags,
+                            FlowRow(
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                EnableOption(
+                                    text = "directories",
+                                    value = partConfig.filter.isShowDirectories,
+                                    onClick = {
+                                        onIntent(
+                                            Intent.SetFilter(
+                                                partConfig.filter.copy(
+                                                    isShowDirectories = !partConfig.filter.isShowDirectories
+                                                )
+                                            )
+                                        )
+                                    }
+                                )
+                                EnableOption(
+                                    text = "tags",
+                                    value = partConfig.filter.isTags,
 
-                                onClick = {
-                                    onIntent(Intent.SetConfig(config.copy(isTags = !config.isTags)))
-                                }
-                            )
-                            EnableOption(
-                                text = "orphans",
-                                value = config.isOrphans,
+                                    onClick = {
+                                        onIntent(Intent.SetFilter(partConfig.filter.copy(isTags = !partConfig.filter.isTags)))
+                                    }
+                                )
+                                EnableOption(
+                                    text = "orphans",
+                                    value = partConfig.filter.isOrphans,
 
-                                onClick = {
-                                    onIntent(Intent.SetConfig(config.copy(isOrphans = !config.isOrphans)))
+                                    onClick = {
+                                        onIntent(Intent.SetFilter(partConfig.filter.copy(isOrphans = !partConfig.filter.isOrphans)))
+                                    }
+                                )
+                                EnableOption(
+                                    text = "annotations",
+                                    value = partConfig.filter.isAnnotations,
+                                    onClick = {
+                                        onIntent(
+                                            Intent.SetFilter(
+                                                partConfig.filter.copy(
+                                                    isAnnotations = !partConfig.filter.isAnnotations
+                                                )
+                                            )
+                                        )
+                                    }
+                                )
+                                EnableOption(
+                                    text = "collections",
+                                    value = partConfig.filter.isCollections,
+                                    onClick = {
+                                        onIntent(
+                                            Intent.SetFilter(
+                                                partConfig.filter.copy(
+                                                    isCollections = !partConfig.filter.isCollections
+                                                )
+                                            )
+                                        )
+                                    }
+                                )
+                                EnableOption(
+                                    text = "rows",
+                                    value = partConfig.filter.isRows,
+                                    onClick = {
+                                        onIntent(Intent.SetFilter(partConfig.filter.copy(isRows = !partConfig.filter.isRows)))
+                                    }
+                                )
+                                EnableOption(
+                                    text = "real files only",
+                                    value = partConfig.filter.isRealFiles,
+                                    onClick = {
+                                        onIntent(Intent.SetFilter(partConfig.filter.copy(isRealFiles = !partConfig.filter.isRealFiles)))
+                                    }
+                                )
+                                EnableOption(
+                                    text = "gradations",
+                                    value = partConfig.filter.isGradations,
+                                    onClick = {
+                                        onIntent(
+                                            Intent.SetFilter(
+                                                partConfig.filter.copy(
+                                                    isGradations = !partConfig.filter.isGradations
+                                                )
+                                            )
+                                        )
+                                    }
+                                )
+                            }
+                        }
+                        SettingsSection(
+                            title = "Groups ${partConfig.groups.size}",
+                            menuContent = {
+                                CJIOSwitch(
+                                    modifier = Modifier,
+                                    height = 24,
+                                    checked = partConfig.config.groupSettings.enabled,
+                                    onCheckedChange = {
+                                        val groups =
+                                            partConfig.config.groupSettings.copy(enabled = !partConfig.config.groupSettings.enabled)
+                                        onIntent(
+                                            Intent.SetGraphSettings(
+                                                partConfig.config.copy(
+                                                    groupSettings = groups
+                                                )
+                                            )
+                                        )
+                                    })
+                            }
+                        ) {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                for ((index, group) in partConfig.groups.withIndex()) {
+                                    fun changeGroup(change: (GroupLogic) -> GroupLogic) {
+                                        onIntent(
+                                            Intent.SetGroups(
+                                                partConfig.groups.mapIndexed { i, g ->
+                                                    if (i == index) change(g) else g
+                                                }
+                                            )
+                                        )
+                                    }
+
+                                    // key the remembered state to index so it doesn't bind to the wrong row
+                                    val groupSearch = remember(index) {
+                                        mutableStateOf(TextFieldValue(group.name))
+                                    }
+                                    val filterGroupSearch = remember(index) {
+                                        mutableStateOf(TextFieldValue(group.filter))
+                                    }
+
+                                    SettingsSection(
+                                        title = group.name,
+                                        accentColor = group.color,
+                                        menuContent = {
+                                            CJIOSwitch(
+                                                modifier = Modifier,
+                                                height = 24,
+                                                checked = group.isVisible,
+                                                onCheckedChange = {
+                                                    changeGroup {
+                                                        group.copy(isVisible = !group.isVisible)
+                                                    }
+                                                })
+                                        }
+                                    ) {
+                                        Column(
+                                            modifier = Modifier.border(
+                                                1.dp,
+                                                Color.White,
+                                                shape = RoundedCornerShape(8.dp)
+                                            ).padding(8.dp),
+                                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+
+                                            CJSearchTextField(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                isSearchIcon = false,
+                                                placeholderText = "Group name...",
+                                                value = groupSearch.value,
+                                                onValueChange = {
+                                                    groupSearch.value = it
+                                                    changeGroup {
+                                                        group.copy(name = groupSearch.value.text)
+                                                    }
+                                                }
+                                            )
+                                            CJSearchTextField(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                isSearchIcon = false,
+                                                placeholderText = "Group name...",
+                                                value = filterGroupSearch.value,
+                                                onValueChange = {
+                                                    filterGroupSearch.value = it
+                                                    changeGroup {
+                                                        group.copy(filter = filterGroupSearch.value.text)
+                                                    }
+                                                }
+                                            )
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                CJText(
+                                                    text = "Is Land:",
+                                                    fontSize = 12.sp,
+                                                    modifier = Modifier.weight(1f)
+                                                )
+                                                CJIOSwitch(
+                                                    modifier = Modifier,
+                                                    height = 24,
+                                                    checked = group.isLand,
+                                                    onCheckedChange = {
+                                                        changeGroup {
+                                                            group.copy(isLand = !group.isLand)
+                                                        }
+                                                    })
+                                            }
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                CJButtonIcon(
+                                                    modifier = Modifier,
+                                                    imageVector = vector.TrashCan,
+                                                    onClick = {
+                                                        onIntent(Intent.DeleteGroup(groupName = group.name))
+                                                    }
+                                                )
+                                                Box(Modifier.weight(1f))
+                                                Box(
+                                                    Modifier.size(24.dp).background(
+                                                        group.color,
+                                                        shape = RoundedCornerShape(24.dp)
+                                                    ).flatClickable {
+                                                        onIntent(
+                                                            Intent.SetGroupColor(
+                                                                groupName = group.name,
+                                                                color = group.color
+                                                            )
+                                                        )
+                                                    }
+                                                )
+                                            }
+                                        }
+                                    }
                                 }
-                            )
-                            EnableOption(
-                                text = "annotations",
-                                value = config.isAnnotations,
-                                onClick = {
-                                    onIntent(Intent.SetConfig(config.copy(isAnnotations = !config.isAnnotations)))
+
+                                CJButton(
+                                    modifier = Modifier,
+                                    text = "Add group"
+                                ) {
+                                    val groups = partConfig.groups.toMutableList()
+                                    val uniqueName = ""
+                                    groups.add(
+                                        GroupLogic(
+                                            isLand = true,
+                                            name = "hoho",
+                                            filter = "type:tag",
+                                            color = Color.Yellow,
+                                            isVisible = true
+                                        )
+                                    )
+                                    onIntent(Intent.SetGroups(groups))
                                 }
-                            )
-                            EnableOption(
-                                text = "collections",
-                                value = config.isCollections,
-                                onClick = {
-                                    onIntent(Intent.SetConfig(config.copy(isCollections = !config.isCollections)))
-                                }
-                            )
-                            EnableOption(
-                                text = "rows",
-                                value = config.isRows,
-                                onClick = {
-                                    onIntent(Intent.SetConfig(config.copy(isRows = !config.isRows)))
-                                }
-                            )
-                            EnableOption(
-                                text = "real files only",
-                                value = config.isRealFiles,
-                                onClick = {
-                                    onIntent(Intent.SetConfig(config.copy(isRealFiles = !config.isRealFiles)))
-                                }
-                            )
-                            EnableOption(
-                                text = "gradations",
-                                value = config.isGradations,
-                                onClick = {
-                                    onIntent(Intent.SetConfig(config.copy(isGradations = !config.isGradations)))
-                                }
-                            )
+                            }
+
+//
                         }
                         GraphViewSettingsSection(
                             zoom = zoom,
-                            settings = settings,
+                            settings = partConfig.config,
                             onIntent = onIntent
                         )
-                        GraphTextSettingsSection(settings = settings, onIntent = onIntent)
-                        EnableOption(
-                            text = "groups",
-                            value = settings.groupSettings.enabled,
-                            onClick = {
-                                val groups =
-                                    settings.groupSettings.copy(enabled = !settings.groupSettings.enabled)
-                                onIntent(Intent.SetGraphSettings(settings.copy(groupSettings = groups)))
-                            }
-                        )
-                        if (settings.groupSettings.enabled) {
-                            GraphGroupSettingsSection(settings = settings, onIntent = onIntent)
+                        GraphTextSettingsSection(settings = partConfig.config, onIntent = onIntent)
+
+                        if (partConfig.config.groupSettings.enabled) {
+                            GraphGroupSettingsSection(
+                                settings = partConfig.config,
+                                onIntent = onIntent
+                            )
                         }
                     }
                 }

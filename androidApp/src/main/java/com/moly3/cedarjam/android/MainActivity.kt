@@ -13,11 +13,8 @@ import com.arkivanov.essenty.lifecycle.asEssentyLifecycle
 import com.arkivanov.essenty.lifecycle.doOnStop
 import com.arkivanov.essenty.statekeeper.SerializableContainer
 import com.arkivanov.essenty.statekeeper.StateKeeperDispatcher
-import com.moly3.cedarjam.navigation.createComponentContext
-import com.moly3.cedarjam.ui.MainApp
+import com.moly3.cedarjam.shared.ui.MainApp
 import com.moly3.cedarjam.core.domain.DefaultJson
-import com.moly3.cedarjam.di.metro.CedarJamGraph
-import com.moly3.cedarjam.di.metro.createRootComponent
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.dialogs.init
 import io.github.vinceglb.filekit.filesDir
@@ -63,21 +60,22 @@ class MainActivity : ComponentActivity() {
 
 
         val essentyLifecycle = lifecycle.asEssentyLifecycle()
-        val rootComponent = createRootComponent(
-            componentContext = createComponentContext(
-                lifecycle = essentyLifecycle,
-                stateKeeper = stateKeeperDispatcher!!,
-                backDispatcher = BackHandler(onBackPressedDispatcher),
-                onErrorInit = {
-                    stateKeeperDispatcher = StateKeeperDispatcher(null)
-                    stateKeeperDispatcher!!
+        val rootComponent =
+            _root_ide_package_.com.moly3.cedarjam.shared.di.metro.createRootComponent(
+                componentContext = _root_ide_package_.com.moly3.cedarjam.shared.navigation.createComponentContext(
+                    lifecycle = essentyLifecycle,
+                    stateKeeper = stateKeeperDispatcher!!,
+                    backDispatcher = BackHandler(onBackPressedDispatcher),
+                    onErrorInit = {
+                        stateKeeperDispatcher = StateKeeperDispatcher(null)
+                        stateKeeperDispatcher!!
+                    }
+                ),
+                graph = _root_ide_package_.com.moly3.cedarjam.shared.di.metro.CedarJamGraph.instance,
+                onDestroy = {
+                    //saveState()
                 }
-            ),
-            graph = CedarJamGraph.instance,
-            onDestroy = {
-                //saveState()
-            }
-        )
+            )
         lifecycle.asEssentyLifecycle().doOnStop {
             try {
                 stateKeeperDispatcher?.save()?.writeToFile(getSaveStateFile())

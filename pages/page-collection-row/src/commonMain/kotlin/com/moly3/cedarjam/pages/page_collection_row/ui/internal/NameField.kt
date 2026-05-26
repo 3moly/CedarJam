@@ -13,9 +13,11 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -36,18 +38,18 @@ internal fun NameField(
 ) {
     val startSize = 14f
     val textNameState = remember {
-        TextFieldState(collectionRow.name)
+        mutableStateOf(TextFieldValue(collectionRow.name))
     }
     val isBigText =
         remember(
             scrollState.canScrollBackward,
-            textNameState.text.length,
+            textNameState.value.text.length,
             collectionRow.fileRelativePath
         ) {
             if (scrollState.canScrollBackward || !collectionRow.fileRelativePath.isNullOrEmpty())
                 false
             else
-                textNameState.text.length < 6
+                textNameState.value.text.length < 6
         }
     val animatedWidthSize by animateDpAsState(if (isBigText) 100.dp else 10.dp)
     Column(
@@ -81,14 +83,19 @@ internal fun NameField(
                 textAlign = TextAlign.Center,
                 fontSize = 32.sp
             ),
-            text = textNameState,
-            onDone = {
-                if(textNameState.text.isEmpty()){
-                    textNameState.edit {
-                        append(collectionRow.name)
-                    }
+            value = textNameState.value,
+            imeAction = ImeAction.Done,
+            onValueChange = {},
+            onAnyAction = {
+                if(textNameState.value.text.isEmpty()){
+                    val newText = textNameState.value.text + collectionRow.name
+
+                    textNameState.value = textNameState.value.copy(text = newText)
+//                    textNameState.edit {
+//                        append()
+//                    }
                 }else{
-                    onIntent(Intent.Rename(textNameState.text.toString()))
+                    onIntent(Intent.Rename(textNameState.value.text.toString()))
                 }
             }
         )

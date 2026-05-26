@@ -10,48 +10,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.moly3.cedarjam.core.domain.model.UIState
 
-//
-//@Composable
-//fun <T> UIStateContent(
-//    modifier: Modifier = Modifier,
-//    state: UIState<T>,
-//    loading: (@Composable BoxScope.() -> Unit)? = null,
-//    error: (@Composable BoxScope.(UIState.Error.ErrorData) -> Unit)? = null,
-//    errorNotSign: (@Composable () -> Unit)? = null,
-//    success: @Composable BoxScope.(T) -> Unit
-//) {
-//    Box(modifier = modifier, contentAlignment = Alignment.Center) {
-//        when (state) {
-//            is UIState.Error -> {
-//                if (state.errorData is UIState.Error.ErrorData.NotSigned &&
-//                    errorNotSign != null
-//                ) {
-//                    errorNotSign()
-//                } else if (error != null) {
-//                    error(state.errorData)
-//                } else {
-//                    Text(
-//                        modifier = Modifier.align(Alignment.Center),
-//                        text = state.errorMessage
-//                    )
-//                }
-//            }
-//
-//            is UIState.Loading -> {
-//                if (loading != null) {
-//                    loading()
-//                } else {
-//                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-//                }
-//            }
-//
-//            is UIState.Success -> {
-//                success(state.data)
-//            }
-//        }
-//    }
-//}
-
 @Composable
 fun <T, E> UIStateSuccessOnly(
     state: UIState<T, E>,

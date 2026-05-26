@@ -1,3 +1,58 @@
+job("ui test") {
+    startOn {
+        gitPush {
+            anyBranchMatching {
+                +"main"
+                +"markdown"
+            }
+        }
+    }
+    container(image = "3moly/cedar-ui-test:latest") {
+        env["BOT_TG_TOKEN"] = "{{ project:BOT_TG_TOKEN }}"
+        env["SYNC_SERVER_URL"]   = "{{ project:CEDAR_SYNC_SERVER_URL }}"
+        env["SYNC_SERVER_TOKEN"] = "{{ project:CEDAR_SYNC_SERVER_TOKEN }}"
+        env["IS_RELEASE"]        = "{{ project:CEDAR_IS_RELEASE }}"
+        env["CI"] = "true"
+
+        shellScript {
+            interpreter = "/bin/bash"
+            content = """
+                    # Dependencies are pre-installed in the custom image
+                    
+                    set +e
+                    # Added --build-cache and --no-daemon for speed and reliability
+                    xvfb-run -a --server-args="-screen 0 1280x1024x24" \
+                        ./gradlew :shared:cleanJvmTest :shared:jvmTest --tests "shared_tests.*" :shared:koverHtmlReportJvm \
+                        --build-cache --no-daemon --console=plain > test.log 2>&1
+                    
+                    STATUS=${'$'}?
+                    set -e
+                    
+                    if [ ${'$'}STATUS -eq 0 ]; then
+                        RESULT="✅ PASSED"
+                    else
+                        RESULT="❌ FAILED"
+                    fi
+                    
+                    # Reporting remains the same
+                    curl -F document=@test.log \
+                         -F chat_id=253870633 \
+                         -F caption="UI1Test build {{ run:number }} — ${'$'}RESULT" \
+                         https://api.telegram.org/bot${'$'}BOT_TG_TOKEN/sendDocument
+                    
+                    if [ -d shared/build/reports/tests/jvmTest ]; then
+                        (cd shared/build/reports/tests/jvmTest && zip -r /tmp/report.zip .)
+                        curl -F document=@/tmp/report.zip \
+                             -F chat_id=253870633 \
+                             -F caption="UI1Test report {{ run:number }}" \
+                             https://api.telegram.org/bot${'$'}BOT_TG_TOKEN/sendDocument
+                    fi
+                    
+                    exit ${'$'}STATUS
+                """
+        }
+    }
+}
 
 job("publish wasm") {
     startOn {
@@ -7,7 +62,7 @@ job("publish wasm") {
             }
         }
     }
-    container(image = "gradle:9.0-jdk17"){
+    container(image = "gradle:9.5.1-jdk21"){
         env["SSH_HOST"] = "{{ project:SSH_HOST }}"
         env["SSH_PRIVATE_KEY"] = "{{ project:SSH_PRIVATE_KEY }}"
         env["BOT_TG_TOKEN"] = "{{ project:BOT_TG_TOKEN }}"
@@ -40,6 +95,7 @@ job("publish wasm") {
         }
     }
 }
+
 job("build linux arm64") {
 
     startOn {

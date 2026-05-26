@@ -25,7 +25,19 @@ class GraphComponentImpl(
     ComponentContext by componentContext {
 
     override val engine: IGraphEngine<String, ObsidianGraphData> =
-        UltraFastEngine(config = UltraFastEngineConfig.Default)
+        UltraFastEngine(
+            UltraFastEngineConfig()
+//                .Gentle.copy(
+//                startAlpha =
+////                antiStickDistanceMultiplier = 0f,
+////                antiStickForceMultiplier = 0f,
+//                minRepelAlpha = 0f,
+//                dragReheatAlpha = 0.001f,
+////                deStackRadius = 50f,
+////                startAlpha = 0f,
+//                groupChangeReheatAlpha = 0.01f
+//            )
+        )
 
     private val store by lazy {
         graphStoreFactory.create(

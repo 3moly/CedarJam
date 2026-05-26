@@ -1,10 +1,11 @@
 package com.moly3.cedarjam.core.domain.model.request
 
+import com.moly3.cedarjam.core.domain.model.RowId
 import com.moly3.cedarjam.core.domain.func.normalizeText
 import com.moly3.cedarjam.core.domain.model.CollectionRowDTO
 
 data class UpdateDataCollectionRowRequest(
-    val id: Long,
+    val id: RowId,
     val currentProgress: Double?,
     val progressMax: Double?,
     val webLink: String?,

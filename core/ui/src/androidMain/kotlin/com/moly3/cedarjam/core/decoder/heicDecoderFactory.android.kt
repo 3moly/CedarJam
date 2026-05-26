@@ -1,5 +1,6 @@
 package com.moly3.cedarjam.core.decoder
 
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Build
 import coil3.ImageLoader
@@ -11,20 +12,20 @@ import coil3.fetch.SourceFetchResult
 import coil3.request.Options
 import kotlinx.coroutines.runInterruptible
 
+/*
+ * androidMain
+ *
+ * Android's platform `BitmapFactory` decodes HEIC on API 28+ (Android 9 Pie),
+ * so Coil's stock `BitmapFactoryDecoder` will usually already handle HEIC.
+ *
+ * This explicit decoder still earns its place: it gives a single, predictable
+ * HEIC path that matches the JVM/iOS decoders, and a clean seam to plug in a
+ * third-party codec (e.g. awxkee/avif-coder) later if you ever need API < 28,
+ * HDR, or to dodge a specific OEM decoding bug.
+ */
+
 /**
- * Android HEIC decoder.
- *
- * Android's platform `BitmapFactory` already decodes HEIC on **API 28+**
- * (Android 9 Pie), so Coil's stock `BitmapFactoryDecoder` will usually handle
- * HEIC for you with no extra code.
- *
- * This explicit decoder still earns its place when you want:
- *  - a single, predictable HEIC path that matches the JVM/iOS decoders;
- *  - a clean point to plug in a third-party codec (e.g. awxkee/avif-coder) for
- *    API < 28, HDR, or to dodge specific OEM decoding bugs.
- *
- * As written it simply uses the platform decoder; replace the body of
- * [decode] with a library call if you need API < 28 support.
+ * Android HEIC decoder backed by the platform [BitmapFactory] (API 28+).
  */
 class AndroidHeicDecoder(
     private val source: ImageSource,
@@ -33,8 +34,7 @@ class AndroidHeicDecoder(
 
     override suspend fun decode(): DecodeResult = runInterruptible {
         val opts = BitmapFactory.Options().apply {
-            // Honour Coil's requested size for memory efficiency.
-            inPreferredConfig = android.graphics.Bitmap.Config.ARGB_8888
+            inPreferredConfig = Bitmap.Config.ARGB_8888
         }
 
         val bitmap = source.source().inputStream().use { stream ->
@@ -63,7 +63,7 @@ class AndroidHeicDecoder(
 }
 
 /**
- * Android `actual`. Returns `null` on API < 28 where the platform cannot
+ * Android `actual`. Returns `null` on API < 28, where the platform cannot
  * decode HEIC — callers should fall back to the stock decoder or a library.
  */
 actual fun heicDecoderFactory(): Decoder.Factory? {

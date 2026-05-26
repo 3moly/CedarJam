@@ -1,6 +1,9 @@
 package com.moly3.cedarjam.core.ui.model
 
 import androidx.compose.runtime.Stable
+import com.moly3.cedarjam.core.domain.model.CollectionId
+import com.moly3.cedarjam.core.domain.model.RowId
+import com.moly3.cedarjam.core.domain.model.TagId
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 
 @Stable
@@ -24,9 +27,9 @@ data class PageNameData(
 
     @Stable
     sealed class PageType {
-        data class Collection(val id: Long) : PageType()
-        data class CollectionRow(val id: Long) : PageType()
-        data class Tag(val id: Long) : PageType()
+        data class Collection(val id: CollectionId) : PageType()
+        data class CollectionRow(val id: RowId) : PageType()
+        data class Tag(val id: TagId) : PageType()
         data class FileNode(
             val timestamp: Long,
             val fileTreeNode: FileTreeNode

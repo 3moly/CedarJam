@@ -14,8 +14,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import com.moly3.cedarjam.core.domain.model.AnnotationId
+import com.moly3.cedarjam.core.domain.model.RowId
 import com.moly3.cedarjam.core.domain.func.hiddenDirectory
 import com.moly3.cedarjam.core.domain.func.nowInMs
 import com.moly3.cedarjam.core.domain.func.pathWrapper
@@ -69,7 +72,7 @@ fun TimeMachineAnnotationPreview() {
     AppThemePreview {
         val timeMachine = TimeMachine.Annotation(
             annotation = AnnotationDTO(
-                id = 1,
+                id = AnnotationId(1L),
                 dataPath = "",
                 dataPoint = 0.0,
                 description = "",
@@ -78,7 +81,7 @@ fun TimeMachineAnnotationPreview() {
                 width = 0.2f,
                 height = 0.2f,
                 modifiedTime = nowInMs(),
-                rowId = 1
+                rowId = RowId(1L)
             ),
             modifiedTime = nowInMs()
         )
@@ -87,7 +90,8 @@ fun TimeMachineAnnotationPreview() {
                 modifier = Modifier,
                 workspaceFullPath = "",
                 item = timeMachine,
-                onClick = {}
+                onClick = {},
+                fileSize = DpSize(50f.dp, 50f.dp)
             )
         }
     }

@@ -6,9 +6,9 @@ import kotlinx.serialization.Serializable
 @Serializable
 @Stable
 data class CollectionRowDTO(
-    val id: Long,
+    val id: RowId,
     val name: String,
-    val collectionId: Long,
+    val collectionId: CollectionId,
 
     val fileRelativePath: String? = null,
     val imgRelativePath: String? = null,

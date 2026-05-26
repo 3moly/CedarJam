@@ -1,9 +1,11 @@
 package com.moly3.cedarjam.pages.page_graph.ui.internal
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -30,11 +32,15 @@ import com.moly3.cedarjam.core.domain.model.toFileType
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
 import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
 import com.moly3.cedarjam.core.ui.onPointerEvent
+import com.moly3.cedarjam.core.ui.uikit.CJText
 import com.moly3.cedarjam.pages.page_graph.Intent
 import com.moly3.cedarjam.pages.page_graph.State
 import com.moly3.cedarjam.pages.page_graph.ui.internal.settingsPanel.SettingsPanel
 import com.moly3.dataviz.core.graph.engine.IGraphEngine
-import com.moly3.dataviz.core.graph.engine.impl.ultra.UltraFastEngine
+import com.moly3.dataviz.core.graph.model.GroupHullDef
+import com.moly3.dataviz.core.graph.model.GroupId
+import com.moly3.dataviz.core.graph.model.GroupMembership
+import com.moly3.dataviz.core.graph.model.GroupModel
 import com.moly3.dataviz.graph.features.atlas.AtlasTier
 import com.moly3.dataviz.graph.ui.AtlasPainterLoader
 import com.moly3.dataviz.graph.ui.Graph
@@ -69,10 +75,11 @@ internal fun PageContent(
         val accentColor = LocalAppTheme.current.primaryColor
         val fontColor = LocalAppTheme.current.colors.primaryFont
         val textStyle = LocalTextStyle.current
-        val settings = remember(accentColor, state.graphSettings, fontColor) {
-            state.graphSettings.copy(
-                zoom = state.graphSettings.zoom.copy(stepIn = 1.03f, stepOut = 1f / 1.03f),
-                theme = state.graphSettings.theme.copy(
+        val settings = remember(accentColor, state.partConfig.config, fontColor) {
+
+            state.partConfig.config.copy(
+                zoom = state.partConfig.config.zoom.copy(stepIn = 1.03f, stepOut = 1f / 1.03f),
+                theme = state.partConfig.config.theme.copy(
                     accentColor = accentColor,
                     textColor = fontColor
                 ),
@@ -140,6 +147,11 @@ internal fun PageContent(
             atlasses
         }
 
+        //persistentMapOf(
+        //                "folder" to folder,
+        //                "tag" to tag,
+        //                "video" to video
+        //            ),
         val handle = rememberAtlasComposer(
             nodes = state.graphNodes,
             tiers = tiers,
@@ -147,13 +159,9 @@ internal fun PageContent(
             userPosition = state.graphUserPosition,
             zoom = state.zoom,
             coordinates = state.coordinates,
-            loader = if (state.config.isShowImages) loader else suspend { null },
+            loader = if (state.partConfig.filter.isShowImages) loader else suspend { null },
             loaderKey = state.graphNodes.size,
-            staticIcons = persistentMapOf(
-                "folder" to folder,
-                "tag" to tag,
-                "video" to video
-            ),
+            staticIcons = persistentMapOf(),
             concurrencyLimit = 3,
             staticIconKey = { id, data ->
                 when (val dt = data) {
@@ -183,6 +191,43 @@ internal fun PageContent(
         )
         val graphUserPosition = remember { mutableStateOf(state.graphUserPosition) }
         val updatedZoom by rememberUpdatedState(state.zoom)
+
+        val groupModel: GroupModel<String> = remember(
+            state.partConfig.config.groupSettings.enabled,
+            state.partConfig.groups,
+            state.nodeLands,
+        ) {
+            if (!state.partConfig.config.groupSettings.enabled) {
+                GroupModel.empty()
+            } else {
+                // defs: one hull per configured group, name doubles as identity
+                val defs =
+                    state.partConfig.groups.filter { d -> d.isVisible && d.isLand }.map { group ->
+
+                        GroupHullDef(
+                            id = GroupId(group.name),
+                            name = group.name,
+                            color = group.color,
+                        )
+                    }
+
+                // memberships: flatten nodeLands (nodeId -> list of group names)
+                val memberships = state.nodeLands.flatMap { (nodeId, groupNames) ->
+                    groupNames.map { groupName ->
+                        GroupMembership(
+                            nodeId = nodeId,
+                            groupId = GroupId(groupName),
+                        )
+                    }
+                }
+
+                GroupModel(
+                    defs = defs,
+                    memberships = memberships
+                )
+            }
+        }
+
         Graph(
             userPosition = graphUserPosition.value,
             zoom = state.zoom,
@@ -191,49 +236,13 @@ internal fun PageContent(
             engine = engine,
             atlasLayers = handle.atlasLayers,
             getIconKey = handle::resolveIconKey,
-            getNodeGroups = { _, data ->
-                if (state.graphSettings.groupSettings.enabled) {
-                    when (data) {
-                        is ObsidianGraphData.Collection -> listOf("collection")
-                        is ObsidianGraphData.CollectionRow -> listOf("row")
-                        is ObsidianGraphData.File -> if (data.isDirectory)
-                            listOf("directory")
-                        else listOf("file")
-
-                        is ObsidianGraphData.Tag -> listOf("tag")
-                        is ObsidianGraphData.Annotation -> listOf("annotation")
-                    }
-                } else
-                    listOf()
-            },
-            getGroupColor = { groupName ->
-                when (groupName) {
-                    "directory" -> Color.LightGray
-                    "file" -> Color.Green
-                    "annotation" -> Color.Red
-                    "tag" -> Color.White
-                    "row" -> Color.Blue
-                    "collection" -> Color.Cyan
-                    else -> Color.Green
-                }
-            },
-            getGroupName = { groupName ->
-                when (groupName) {
-                    "directory" -> "Directory"
-                    "file" -> "Files"
-                    "annotation" -> "Annotations"
-                    "tag" -> "Tags"
-                    "row" -> "Rows"
-                    "collection" -> "Collections"
-                    else -> "File"
-                }
-            },
+            groupModel = groupModel,
             settings = settings,
             connections = state.connections,
             stateNodes = state.graphNodes,
             coordinates = state.coordinates,
-            velocities = state.velocities,
-
+            velocities = mapOf(),
+            isImmediateReheatOnUpdate = false,
             onWatchPosition = { nodePosition ->
                 graphUserPosition.value = nodePosition
                 onIntent(Intent.SetGraphUserPosition(nodePosition))
@@ -247,7 +256,6 @@ internal fun PageContent(
 
                 onIntent(Intent.SetZoom(isGesture, newValue))
             },
-
             onNodeClick = { node ->
                 val data = node.data
                 if (data != null) onIntent(Intent.OpenNodeData(data))
@@ -260,11 +268,10 @@ internal fun PageContent(
         )
         SettingsPanel(
             zoom = state.zoom,
-            settings = settings,
             nodesCount = state.graphNodes.size,
             isShowSettings = state.isShowSettings,
             onIntent = onIntent,
-            config = state.config
+            partConfig = state.partConfig
         )
     }
 }

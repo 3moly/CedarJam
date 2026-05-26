@@ -21,3 +21,6 @@ WHERE id = :id;
 insertObject:
 INSERT INTO TagCollectionRow(createdTime,tagId,rowId)
 VALUES ?;
+
+lastInsertId:
+SELECT last_insert_rowid();

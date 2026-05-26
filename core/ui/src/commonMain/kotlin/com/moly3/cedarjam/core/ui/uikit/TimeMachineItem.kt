@@ -38,6 +38,12 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
+import coil3.compose.LocalPlatformContext
+import coil3.compose.rememberAsyncImagePainter
+import coil3.request.ImageRequest
+import coil3.request.crossfade
+import coil3.size.Precision
+import coil3.size.Size
 import com.moly3.cedarjam.core.domain.func.pathWrapper
 import com.moly3.cedarjam.core.domain.model.FileTypeExt
 import com.moly3.cedarjam.core.domain.model.TimeMachine
@@ -58,6 +64,7 @@ fun TimeMachineItem(
     modifier: Modifier,
     workspaceFullPath: String,
     item: TimeMachine,
+    fileSize: DpSize,
     onClick: () -> Unit
 ) {
     NeumorphicShape(
@@ -124,7 +131,17 @@ fun TimeMachineItem(
 
                             FileTypeExt.Image -> {
                                 AsyncImage(
-                                    model = item.file.getFullPath(),
+                                    model = ImageRequest.Builder(LocalPlatformContext.current)
+                                        .data(item.file.getFullPath())
+                                        .size(Size.ORIGINAL.let { _ ->
+                                            Size(
+                                                fileSize.width.value.toInt(),
+                                                fileSize.height.value.toInt()
+                                            )
+                                        }) // or use a real px size
+                                        .precision(Precision.INEXACT)
+                                        .crossfade(true)
+                                        .build(),
                                     contentDescription = null,
                                     modifier = Modifier.fillMaxSize(),
                                     filterQuality = FilterQuality.Low,
@@ -201,6 +218,7 @@ fun TimeMachineItem(
                                     Color.White
                                 }
                             }
+
                             Box(
                                 Modifier
                                     .size(40.dp)
@@ -274,6 +292,7 @@ fun TimeMachineList(
                 modifier = modifier,
                 item = it,
                 workspaceFullPath = workspaceFullPath,
+                fileSize = size1,
                 onClick = {
                     onClick(it)
                 }

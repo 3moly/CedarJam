@@ -11,6 +11,7 @@ import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.domain.model.mapToOffset
 import com.moly3.cedarjam.core.domain.model.mapToOffsetData
 import com.moly3.cedarjam.features.feature_graph.model.GraphPage
+import com.moly3.dataviz.core.graph.model.Connection
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.collections.immutable.persistentListOf
@@ -28,7 +29,7 @@ data class State(
     val rowsState: UIState<ImmutableList<CollectionRowDTO>, Unit> = UIState.Loading,
     val annotationsState: UIState<ImmutableList<AnnotationDTO>, Unit> = UIState.Loading,
     val graphNodes: ImmutableList<ObsidianGraphNode> = persistentListOf(),
-    val connections: ImmutableMap<String, ImmutableList<String>> = persistentMapOf(),
+    val connections: ImmutableMap<String, ImmutableList<Connection<String>>> = persistentMapOf(),
     val coordinates: ImmutableMap<String, Offset> = persistentMapOf(),
     val velocities: ImmutableMap<String, Offset> = persistentMapOf(),
     val zoom: Float = 1f,
@@ -41,7 +42,7 @@ data class State(
         val currentPage: GraphPage,
         val zoom: Float,
         val graphNodes: List<ObsidianGraphNode>,
-        val connections: Map<String, List<String>>,
+        val connections: Map<String, List<Connection<String>>>,
         val coordinates: Map<String, OffsetData>,
         val isShowNestedConnections: Boolean
     )

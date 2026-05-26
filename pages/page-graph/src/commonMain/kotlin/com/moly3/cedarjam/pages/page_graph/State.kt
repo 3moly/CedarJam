@@ -2,12 +2,11 @@ package com.moly3.cedarjam.pages.page_graph
 
 import androidx.compose.ui.geometry.Offset
 import com.moly3.cedarjam.core.domain.model.ObsidianGraphNode
-import com.moly3.cedarjam.core.domain.model.node.GraphSettingsConfig
 import com.moly3.cedarjam.core.domain.model.OffsetData
+import com.moly3.cedarjam.core.domain.model.config.GraphPartConfig
 import com.moly3.cedarjam.core.domain.model.mapToOffset
 import com.moly3.cedarjam.core.domain.model.mapToOffsetData
-import com.moly3.dataviz.core.graph.model.GraphSettings
-import com.moly3.dataviz.core.graph.model.GraphViewSettings
+import com.moly3.dataviz.core.graph.model.Connection
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.collections.immutable.persistentListOf
@@ -18,57 +17,54 @@ import kotlinx.serialization.Serializable
 
 data class State(
     val isShowSettings: Boolean = false,
-    val config: GraphSettingsConfig = GraphSettingsConfig.Default,
     val graphNodes: ImmutableList<ObsidianGraphNode> = persistentListOf(),
-    val connections: ImmutableMap<String, ImmutableList<String>> = persistentMapOf(),
+    val connections: ImmutableMap<String, ImmutableList<Connection<String>>> = persistentMapOf(),
     val zoom: Float = 1f,
     val graphUserPosition: Offset = Offset.Zero,
-    val graphSettings: GraphSettings = GraphSettings.Default,
     val coordinates: ImmutableMap<String, Offset> = persistentMapOf(),
-    val velocities: ImmutableMap<String, Offset> = persistentMapOf(),
+
+    val partConfig: GraphPartConfig = GraphPartConfig.Default,
+    val nodeLands: ImmutableMap<String, ImmutableList<String>> = persistentMapOf()
 ) {
     @Serializable
     data class SaveableState(
         val isShowSettings: Boolean = false,
-        val config: GraphSettingsConfig = GraphSettingsConfig.Default,
         val graphNodes: List<ObsidianGraphNode> = listOf(),
-        val connections: Map<String, List<String>> = mapOf(),
+        val connections: Map<String, List<Connection<String>>> = mapOf(),
         val zoom: Float = 1f,
         val graphUserPosition: OffsetData = OffsetData.Zero,
-        val graphSettings: GraphSettings = GraphSettings.Default,
-        val coordinates: Map<String, OffsetData> = mapOf()
+        val coordinates: Map<String, OffsetData> = mapOf(),
+        val partConfig: GraphPartConfig = GraphPartConfig.Default
     )
 
     companion object {
         fun SaveableState.fromSaveable(): State {
             return State(
                 isShowSettings = isShowSettings,
-                config = config,
                 graphNodes = graphNodes.toPersistentList(),
                 connections = connections
                     .mapValues { it.value.toPersistentList() }
                     .toPersistentMap(),
                 zoom = zoom,
                 graphUserPosition = graphUserPosition.mapToOffset(),
-                graphSettings = graphSettings,
                 coordinates = coordinates
                     .mapValues { it.value.mapToOffset() }
-                    .toPersistentMap()
+                    .toPersistentMap(),
+                partConfig = partConfig
             )
         }
 
         fun State.toSaveable(): SaveableState {
             return SaveableState(
                 isShowSettings = isShowSettings,
-                config = config,
                 graphNodes = graphNodes,
                 connections = connections,
                 zoom = zoom,
                 graphUserPosition = graphUserPosition.mapToOffsetData(),
-                graphSettings = graphSettings,
                 coordinates = coordinates
                     .mapValues { d -> d.value.mapToOffsetData() }
-                    .toPersistentMap()
+                    .toPersistentMap(),
+                partConfig = partConfig
             )
         }
     }

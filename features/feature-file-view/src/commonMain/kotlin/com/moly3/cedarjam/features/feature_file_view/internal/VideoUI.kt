@@ -86,7 +86,7 @@ internal fun BoxScope.VideoUI(
                 playerState.dispose()
             }
 //            player.playUri("https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WhatCarCanYouGetForAGrand.mp4")
-            //playerState.openFile(PlatformFile(fl.fileNode.getFullPath()))
+            playerState.openFile(PlatformFile(fl.fileNode.getFullPath()))
 //            playerState.openUri("https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WhatCarCanYouGetForAGrand.mp4")
 
             val srts = (files.getOrDefault(listOf())).getAllFilesByExtension("srt")

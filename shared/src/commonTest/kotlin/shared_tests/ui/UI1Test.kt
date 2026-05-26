@@ -1,26 +1,21 @@
 package shared_tests.ui
 
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.waitUntilAtLeastOneExists
 import shared_tests.base.UITest
-import co.touchlab.kermit.Logger
-import com.arkivanov.decompose.router.stack.active
-import com.moly3.cedarjam.core.domain.dialog.DialogCreateWorkspaceService
+import com.moly3.cedarjam.core.domain.func.pathWrapper
 import com.moly3.cedarjam.core.domain.model.FileName
 import com.moly3.cedarjam.core.domain.model.SyncStatus
 import com.moly3.cedarjam.core.domain.model.Workspace
-import com.moly3.cedarjam.navigation.Root
+import com.moly3.cedarjam.shared.navigation.Root
 import com.moly3.cedarjam.navigation.Route
 import com.moly3.cedarjam.core.domain.model.WorkspaceInput
 import com.moly3.cedarjam.core.domain.model.shouldBeSuccess
 import com.moly3.cedarjam.core.domain.repository.IWorkspaceEnvironment
-import com.moly3.cedarjam.core.domain.usecase.ISyncUseCase
-import com.moly3.cedarjam.core.net.IRemoteSyncRepository
-import com.moly3.cedarjam.core.storage.ISystemFilesManager
-import com.moly3.cedarjam.di.metro.CedarJamGraph
+import com.moly3.cedarjam.shared.di.metro.CedarJamGraph
 import com.moly3.cedarjam.pages.page_tab.TabComponent
-import com.moly3.cedarjam.pages.page_workspace.Intent
+import io.github.vinceglb.filekit.FileKit
+import io.github.vinceglb.filekit.absolutePath
+import io.github.vinceglb.filekit.projectDir
 import io.kotest.matchers.collections.shouldHaveSize
 import kotlinx.coroutines.delay
 import shared_tests.func.checkFlowListSize
@@ -31,38 +26,8 @@ import kotlin.test.assertEquals
 class UI1Test : UITest() {
 
     @Test
-    fun testUITest() = runUITest(beforeSetContent = {
-        Logger.d("step beforeSetContent")
-    }) {
-        Logger.d("step 0")
+    fun testUI2Test() = runUITest {
         checkAndWaitCurrentPage<Root.Child.SelectWorkspace>()
-        Logger.d("step 1")
-        runOnUiThread {
-            component!!.onNavigate(
-                Route.Workspace(
-                    WorkspaceInput(
-                        name = "hehe",
-                        serverName = "hehe"
-                    )
-                )
-            )
-        }
-        Logger.d("step 2")
-        waitUntil("Navigation to Workspace", 10_000L) {
-            waitForIdle() // Ensure compose updates are processed
-            component!!.children.active.instance is Root.Child.Workspace
-        }
-
-        Logger.d("step 3")
-    }
-
-    @Test
-    fun testUI2Test() = runUITest(beforeSetContent = {
-        Logger.d("step beforeSetContent")
-    }) {
-        Logger.d("step 0")
-        checkAndWaitCurrentPage<Root.Child.SelectWorkspace>()
-        Logger.d("step 1")
         component!!.onNavigate(
             Route.Workspace(
                 WorkspaceInput(
@@ -71,10 +36,7 @@ class UI1Test : UITest() {
                 )
             )
         )
-        Logger.d("step 2")
         checkAndWaitCurrentPage<Root.Child.Workspace>()
-
-        Logger.d("step 3")
     }
 
     private suspend inline fun IWorkspaceEnvironment.isFullSynced() {
@@ -122,35 +84,38 @@ class UI1Test : UITest() {
     }
 
     @Test
-    fun testUITestLogging() = runUITest(beforeSetContent = {}) { root ->
-        Logger.e { "testUITestLogging -- start" }
-        Logger.e { "testUITestLogging -- =" }
-        Logger.e { "testUITestLogging -- finish" }
-    }
-
-    @Test
     fun testUITestAdvance() = runUITest(beforeSetContent = {}) { root ->
         val workspace = Workspace(
             name = "hehe",
-            platformPath = "build/.test_workspace_hehe",
+            platformPath = pathWrapper(
+                FileKit.projectDir.absolutePath(),
+                "build",
+                ".test_workspace_hehe"
+            ).pathString,
             serverName = "hehe"
         )
         val koin = CedarJamGraph.instance
-        val remoteSync = koin.cedarJamDependencies. //.get<IRemoteSyncRepository>()
-        val fs = koin.get<ISystemFilesManager>()
+        val remoteSync = koin.cedarJamDependencies.remoteSyncRepository
+        val fs = koin.cedarJamDependencies.systemFileManager
         fs.deleteNodeHeavy(workspace.platformPath)
 
-        remoteSync.deleteWorkspace(userName = "bulat", workspace.serverName)
-
-        val dialog = koin.get<DialogCreateWorkspaceService>()
-
-        val instance1 = waitAndGetComponent<Root.Child.SelectWorkspace>()
-        instance1.component.onIntent(com.moly3.cedarjam.pages.page_select_workspace.Intent.CreateWorkspace)
-        waitUntilAtLeastOneExists(hasText("create workspace"))
-        dialog.setResult(workspace)
-
-        val instance = waitAndGetComponent<Root.Child.Workspace>(30_000L)
-        instance.component.onIntent(Intent.CreateWorkspace)
+        remoteSync.deleteWorkspace(userName = "bulat", workspace.serverName).shouldBeSuccess()
+        val instance = createWorkspace(workspace)
+//        val instance1 = waitAndGetComponent<Root.Child.SelectWorkspace>()
+//        instance1.component.onIntent(com.moly3.cedarjam.pages.page_select_workspace.Intent.CreateWorkspace)
+//        waitUntilAtLeastOneExists(hasText(getString(Res.string.create_new_workspace)))
+//
+//        onNode(hasTestTag("fullpath_check_box")).performClick()
+//        onNode(hasTestTag("workspace_name_input")).performTextInput(workspace.serverName)
+//        waitUntilAtLeastOneExists(hasText(workspace.serverName))
+//        val sm = hasTestTag("workspace_fullpath_input")
+//        waitUntilAtLeastOneExists(sm)
+//        onNode(sm).performTextInput(workspace.platformPath)
+//
+//        onNode(hasTestTag("workspace_name_button")).performClick()
+//
+//        val instance = waitAndGetComponent<Root.Child.Workspace>(30_000L)
+//        instance.component.onIntent(Intent.CreateWorkspaceDatabaseFiles)
         val workspaceSession = instance.component.workspaceSession
         val workspaceEnv = workspaceSession.workspaceEnvStateFlow.value
         workspaceEnv.deleteWorkspaceInServer().shouldBeSuccess()
@@ -161,7 +126,7 @@ class UI1Test : UITest() {
 
         val tabs = instance.component.children.value.items.first().instance
         val sre = tabs.children.value.active.instance.component as TabComponent
-        val syncUseCase = koin.get<ISyncUseCase>()
+        val syncUseCase = koin.cedarJamDependencies.syncUseCase
 
         val home = waitAndTabGetComponent<TabComponent.Child.Home>(sre, 5000L)
         delay(1000L)
@@ -171,7 +136,9 @@ class UI1Test : UITest() {
         syncUseCase.getStatus(workspaceEnv).shouldBeSuccess()
 
         val dbIndexes = workspaceEnv.getIndexFiles()
+        val absolute = workspaceEnv.getWorkspace().absolutePath
         assertEquals(2, dbIndexes.size)
+        val sds = absolute
         syncUseCase.syncronize(workspaceEnv, isAbsoluteNewLocal = false).shouldBeSuccess()
 
         workspaceEnv.checkServerFilesSize(expectedSize = 2)

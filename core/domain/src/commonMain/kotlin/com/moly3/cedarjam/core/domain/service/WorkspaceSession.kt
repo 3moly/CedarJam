@@ -14,6 +14,7 @@ import com.moly3.cedarjam.core.domain.model.FileTreeNode.Companion.getAll
 import com.moly3.cedarjam.core.domain.model.FileTreeNode.Companion.hideHiddenDirectory
 import com.moly3.cedarjam.core.domain.model.IndexFileDto
 import com.moly3.cedarjam.core.domain.model.ResultWrapper
+import com.moly3.cedarjam.core.domain.model.TagAnnotationDTO
 import com.moly3.cedarjam.core.domain.model.TagCollectionRowDTO
 import com.moly3.cedarjam.core.domain.model.TagDTO
 import com.moly3.cedarjam.core.domain.model.TagLinkDTO
@@ -22,9 +23,7 @@ import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.domain.model.WorkspacePresentation
 import com.moly3.cedarjam.core.domain.model.error.DatabaseError
 import com.moly3.cedarjam.core.domain.model.isSuccess
-import com.moly3.cedarjam.core.domain.model.node.GraphSettingsConfig
-import com.moly3.cedarjam.core.domain.model.node.ObsidianGraphPresentation
-import com.moly3.cedarjam.core.domain.model.node.toPresentation
+import com.moly3.cedarjam.core.domain.model.node.GraphFilter
 import com.moly3.cedarjam.core.domain.model.settings.WorkspaceFont
 import com.moly3.cedarjam.core.domain.model.settings.WorkspaceSettings
 import com.moly3.cedarjam.core.domain.repository.IAppEnvironment
@@ -33,20 +32,17 @@ import com.moly3.cedarjam.core.domain.repository.IWorkspaceEnvironment
 import com.moly3.cedarjam.core.domain.repository.IWorkspaceEnvironment.Companion.getHiddenDirectory
 import com.moly3.cedarjam.core.domain.usecase.ISyncUseCase
 import com.moly3.cedarjam.core.domain.usecase.SyncStatus2
-import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
-import kotlinx.coroutines.flow.shareIn
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @Stable
@@ -140,6 +136,12 @@ class WorkspaceSession(
                 it.getTagFilesFlow()
             }.shareScope()
 
+    val tagAnnotationsFlow: Flow<List<TagAnnotationDTO>> =
+        workspaceEnvStateFlow
+            .flatMapLatest {
+                it.getTagAnnotationsFlow()
+            }.shareScope()
+
     private val resourcesFlow: Flow<UIState<List<FileTreeNode>, Nothing>> = combine(
         filesFlow,
         workspaceFlow
@@ -187,37 +189,11 @@ class WorkspaceSession(
             appEnvironment = appEnvironment,
             workspaceSession = this,
             startTargetId = null,
-            config = GraphSettingsConfig.Default.copy(
+            config = GraphFilter.Default.copy(
                 isShowDirectories = false,
                 isOrphans = true
             )
         )
-    }
-
-    fun getConnectionPresentations(graphNodeTagId: String): Flow<List<ObsidianGraphPresentation>> {
-        return com.moly3.cedarjam.core.domain.func.combine(
-            graphEco.nodes,
-            graphEco.connectionsFlow,
-            tagsFlow,
-            collectionsFlow,
-            collectionRowsFlow,
-            filesFlow
-        ) { nodes, connections, tags, collections, rows, filesState ->
-            val found = connections[graphNodeTagId]
-            val list = if (found != null) {
-                nodes.filter { d -> found.contains(d.id) }.map { x -> x.data }
-            } else null
-            val files = mutableListOf<FileTreeNode>()
-            filesState.map {
-                files.addAll(files)
-            }
-            list?.toPresentation(
-                tags = tags,
-                collections = collections,
-                rows = rows,
-                files = files
-            ) ?: listOf()
-        }
     }
 
     private val _workspaceFont = MutableStateFlow<WorkspaceFont?>(null)

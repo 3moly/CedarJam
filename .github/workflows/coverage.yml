@@ -1,0 +1,61 @@
+name: Coverage Badge
+
+on:
+  push:
+    branches:
+      - markdown # Or your default branch
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'jetbrains'
+          java-version: '21'
+          cache: gradle
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run Tests and Generate Kover XML
+        run: ./gradlew :shared:cleanJvmTest :shared:jvmTest --tests "shared_tests.*" :shared:koverXmlReportCustomJvm
+
+      - name: Parse Coverage XML
+        id: coverage
+        # Python is pre-installed on ubuntu-latest and is much safer than grep/awk for XML parsing
+        run: |
+          python3 -c "
+          import xml.etree.ElementTree as ET
+          import os
+          
+          # Adjust this path if your Kover setup outputs somewhere else
+          report_path = 'shared/build/reports/kover/customJvm/report.xml'
+          root = ET.parse(report_path).getroot()
+          
+          # Find overall LINE coverage from the root of the report
+          line = next(c for c in root.findall('counter') if c.get('type') == 'LINE')
+          covered = int(line.get('covered'))
+          missed = int(line.get('missed'))
+          coverage = (covered / (covered + missed)) * 100
+          
+          # Determine badge color dynamically
+          color = 'brightgreen' if coverage >= 80 else 'yellow' if coverage >= 60 else 'red'
+          
+          # Save to GitHub outputs
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              f.write(f'percentage={coverage:.2f}\n')
+              f.write(f'color={color}\n')
+          "
+
+      - name: Update Gist Badge
+        uses: Schneegans/dynamic-badges-action@v1.7.0
+        with:
+          auth: ${{ secrets.GIST_SECRET }}
+          gistID: YOUR_GIST_ID_HERE # Replace with the ID from Step 2
+          filename: kover-coverage.json
+          label: Coverage
+          message: ${{ steps.coverage.outputs.percentage }}%
+          color: ${{ steps.coverage.outputs.color }}

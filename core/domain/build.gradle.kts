@@ -8,6 +8,15 @@ plugins {
     alias(libs.plugins.serialization)
     alias(libs.plugins.compose)
     alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.kover)
+}
+
+kover {
+    currentProject {
+        createVariant("custom") {
+            add("jvm")
+        }
+    }
 }
 
 kotlin {
@@ -40,8 +49,11 @@ kotlin {
                 api(libs.okio)
             }
         }
-        commonTest.dependencies{
+        commonTest.dependencies {
             implementation(libs.kotlin.test)
+            implementation(libs.coroutines.test)
+            implementation(libs.ui.test)
+            implementation(libs.kotest.property)
         }
         androidInstrumentedTest.dependencies{
             implementation(libs.robolectric)

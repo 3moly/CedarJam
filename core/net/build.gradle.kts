@@ -7,6 +7,15 @@ plugins {
     alias(libs.plugins.android.kotlin.multiplatform.library)
     alias(libs.plugins.serialization)
     alias(libs.plugins.metro)
+    alias(libs.plugins.kover)
+}
+
+kover {
+    currentProject {
+        createVariant("custom") {
+            add("jvm")
+        }
+    }
 }
 
 kotlin {

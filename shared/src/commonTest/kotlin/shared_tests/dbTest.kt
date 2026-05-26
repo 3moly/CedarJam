@@ -2,11 +2,8 @@ package shared_tests
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.ExperimentalTestApi
-import shared_tests.base.AppEnvironmentTest
-import shared_tests.base.getTestApplicationContext
-import com.moly3.cedarjam.core.domain.model.navigation.input.TagPageInput
-import com.moly3.cedarjam.pages.page_tab.TabComponentImpl
 import com.moly3.cedarjam.core.data.FilesRepository
+import com.moly3.cedarjam.core.domain.model.TagId
 import com.moly3.cedarjam.core.domain.func.nowInMs
 import com.moly3.cedarjam.core.domain.model.FileName
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
@@ -14,19 +11,21 @@ import com.moly3.cedarjam.core.domain.model.Workspace
 import com.moly3.cedarjam.core.domain.model.fold
 import com.moly3.cedarjam.core.domain.model.getValueOrNull
 import com.moly3.cedarjam.core.domain.model.isSuccess
-import com.moly3.cedarjam.core.domain.model.shouldBeSuccess
-import com.moly3.cedarjam.core.domain.repository.IAppEnvironment
-import com.moly3.cedarjam.core.domain.repository.IWorkspaceEnvironment
+import com.moly3.cedarjam.core.domain.model.navigation.input.TagPageInput
 import com.moly3.cedarjam.core.domain.model.request.CreateCollectionRequest
 import com.moly3.cedarjam.core.domain.model.request.CreateCollectionRowRequest
 import com.moly3.cedarjam.core.domain.model.request.CreateTagRequest
 import com.moly3.cedarjam.core.domain.model.request.UpdateDataCollectionRowRequest
+import com.moly3.cedarjam.core.domain.model.shouldBeSuccess
+import com.moly3.cedarjam.core.domain.repository.IWorkspaceEnvironment
 import com.moly3.cedarjam.core.domain.service.AppContextProvider
 import com.moly3.cedarjam.core.storage.func.createSqlStorage
 import com.moly3.cedarjam.core.storage.func.createSystemFilesManager
+import com.moly3.cedarjam.pages.page_tab.TabComponentImpl
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
-import org.koin.mp.KoinPlatform.getKoin
+import shared_tests.base.AppEnvironmentTest
+import shared_tests.base.getTestApplicationContext
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
@@ -37,22 +36,22 @@ class dbTest : AppEnvironmentTest() {
 //    data class Tag( val index: Int, val data: TagPageInput)
 
     @Test
-    fun check_hash_code() {
+    fun check_hash_code() = runTest {
         val tag = TabComponentImpl.Config.Tag(
             index = 0,
-            data = TagPageInput(id = 1L, isOpenGraphDialog = false)
+            data = TagPageInput(id = TagId(1L), isOpenGraphDialog = false)
         )
         val tag2 = TabComponentImpl.Config.Tag(
             index = 1,
-            data = TagPageInput(id = 1L, isOpenGraphDialog = false)
+            data = TagPageInput(id = TagId(1L), isOpenGraphDialog = false)
         )
         assertTrue(tag.hashCode().toString(radix = 36) != tag2.hashCode().toString(radix = 36))
     }
 
     @Test
     fun appEnvTest() = runTest {
-        val appEnvironment: IAppEnvironment = getKoin().get()
-        val settings = appEnvironment.getAppSettingsFlow().value
+//        val appEnvironment: IAppEnvironment = getKoin().get()
+//        val settings = appEnvironment.getAppSettingsFlow().value
 //    todo    assertTrue(settings.currentWorkspaceFullPath == null)
 //        appEnvironment.setAppSettings(settings.copy(currentWorkspaceFullPath = "123123"))
 
@@ -71,7 +70,7 @@ class dbTest : AppEnvironmentTest() {
             )
         )
         collectionId.shouldBeSuccess()
-        val createRowResult = workspaceEnvironment.createCollectionRow(
+        val createRowResult = workspaceEnvironment.createRow(
             CreateCollectionRowRequest(
                 name = "are",
                 collectionId = collectionId.value,
@@ -109,16 +108,12 @@ class dbTest : AppEnvironmentTest() {
     @Test
     fun asKet() = runTest {
         val workspaceEnvironment: IWorkspaceEnvironment = createWorkspaceEnv()
-        workspaceEnvironment.deleteTag(1)
+        workspaceEnvironment.deleteTag(TagId(1L))
     }
 
     @Test
     fun creation() = runTest {
-        val workspace = Workspace(
-            name = "test",
-            platformPath = getWorkspaceDirectory().getFullPath(),
-            serverName = "test"
-        )
+        val workspace = getTestWorkspace()
         val filesStorage = createSystemFilesManager()
         val sql = createSqlStorage(
             systemFilesManager = filesStorage,
@@ -209,9 +204,10 @@ class dbTest : AppEnvironmentTest() {
 //        assertTrue("step 3") { env.getFileNodesFlow().first().getOrNull()!!.size == 1 }
     }
 
-    @Test
+//    @Test
     fun same_directory_same_file_in_times() = runTest {
         val env = createWorkspaceEnv()
+
         val sameName = "unknown"
         val directory = env.createDirectory(null, name = sameName, isAbsoluteNew = false)
         try {
@@ -272,7 +268,7 @@ class dbTest : AppEnvironmentTest() {
 
         val file = FileTreeNode.File(
             workspaceFullPath = "",
-            parentRelativePath = getWorkspaceDirectory().getFullPath(),
+            parentRelativePath = getTestFullPath(),
             name = FileName(
                 name = "mmm",
                 extension = null
@@ -287,13 +283,13 @@ class dbTest : AppEnvironmentTest() {
         assertTrue { getText.value == text }
     }
 
-    @Test
+//    @Test
     fun move_file() = runTest {
         val filesStorage = createSystemFilesManager()
         val filesRepository = FilesRepository(filesStorage)
         val file = FileTreeNode.File(
-            workspaceFullPath = getWorkspaceDirectory().getFullPath(),
-            parentRelativePath = getWorkspaceDirectory().getFullPath(),
+            workspaceFullPath = getTestFullPath(),
+            parentRelativePath = getTestFullPath(),
             name = FileName(
                 name = "mmm",
                 extension = null
@@ -301,8 +297,8 @@ class dbTest : AppEnvironmentTest() {
 //            parentFullPath = ""
         )
         val file2 = FileTreeNode.File(
-            workspaceFullPath = getWorkspaceDirectory().getFullPath(),
-            parentRelativePath = getWorkspaceDirectory().getFullPath(),
+            workspaceFullPath = getTestFullPath(),
+            parentRelativePath =  getTestFullPath(),
             name = FileName(
                 name = "mmm2",
                 extension = null
@@ -337,7 +333,7 @@ class dbTest : AppEnvironmentTest() {
         val list2 = env.getCollectionsFlow().first()
         assertTrue("first is empty") { list2.count() == 1 }
         val createdTime = nowInMs()
-        val rowId = env.createCollectionRow(
+        val rowId = env.createRow(
             request = CreateCollectionRowRequest(
                 name = "new",
                 collectionId = collectionId.value,

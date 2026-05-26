@@ -7,6 +7,9 @@ import com.arkivanov.mvikotlin.core.store.Reducer
 import com.arkivanov.mvikotlin.core.store.SimpleBootstrapper
 import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
+import com.moly3.cedarjam.core.domain.dialog.DialogColorPickerService
+import com.moly3.cedarjam.core.domain.dialog.DialogDeleteService
+import com.moly3.cedarjam.core.domain.dialog.DialogGraphConfigsService
 import com.moly3.cedarjam.core.domain.func.hiddenDirectory
 import com.moly3.cedarjam.core.domain.func.isGraphSettingsNudge
 import com.moly3.cedarjam.core.domain.func.pathWrapper
@@ -14,8 +17,11 @@ import com.moly3.cedarjam.core.domain.io
 import com.moly3.cedarjam.core.domain.model.FileName
 import com.moly3.cedarjam.core.domain.model.FileTreeNode
 import com.moly3.cedarjam.core.domain.model.bind
+import com.moly3.cedarjam.core.domain.model.config.GraphSaveConfig
+import com.moly3.cedarjam.core.domain.model.config.GroupLogic
 import com.moly3.cedarjam.core.domain.model.node.ObsidianGraphData
 import com.moly3.cedarjam.core.domain.model.resultBlock
+import com.moly3.cedarjam.core.domain.model.toKmpImmutableMap
 import com.moly3.cedarjam.core.domain.repository.IAppEnvironment
 import com.moly3.cedarjam.core.domain.repository.setNodeJson
 import com.moly3.cedarjam.core.domain.service.ObsGraphEco
@@ -32,10 +38,9 @@ import com.moly3.cedarjam.pages.page_graph.State
 import com.moly3.cedarjam.pages.page_graph.State.Companion.fromSaveable
 import com.moly3.cedarjam.pages.page_graph.State.Companion.toSaveable
 import com.moly3.cedarjam.pages.page_graph.placeNodesCircular
-import com.moly3.cedarjam.pages.page_graph.store.GraphStore.Msg.SetConfig
+import com.moly3.cedarjam.pages.page_graph.store.GraphStore.Msg.*
 import com.moly3.cedarjam.pages.page_graph.store.GraphStore.Msg.SetConnections
 import com.moly3.cedarjam.pages.page_graph.store.GraphStore.Msg.SetCoordinates
-import com.moly3.cedarjam.pages.page_graph.store.GraphStore.Msg.SetGraphSettings
 import com.moly3.cedarjam.pages.page_graph.store.GraphStore.Msg.SetGraphUserPosition
 import com.moly3.cedarjam.pages.page_graph.store.GraphStore.Msg.SetIsShowSettings
 import com.moly3.cedarjam.pages.page_graph.store.GraphStore.Msg.SetNodes
@@ -47,6 +52,7 @@ import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.toPersistentMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -55,6 +61,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlin.collections.map
 
 class GraphStoreImpl @AssistedInject constructor(
     @Assisted storeFactory: StoreFactory,
@@ -67,6 +74,9 @@ class GraphStoreImpl @AssistedInject constructor(
     private val appEnvironment: IAppEnvironment,
     private val macTrackpadGestureService: MacTrackpadGestureService,
     private val openNodeDataUseCaseFactory: OpenNodeDataUseCaseFactory,
+    private val dialogColorPickerService: DialogColorPickerService,
+    private val dialogDeleteService: DialogDeleteService,
+    private val dialogGraphConfigsService: DialogGraphConfigsService
 ) : GraphStore,
     Store<Intent, State, Unit> by storeFactory.create(
         name = GraphStore::class.simpleName,
@@ -85,7 +95,10 @@ class GraphStoreImpl @AssistedInject constructor(
                 macTrackpadGestureService = macTrackpadGestureService,
                 navigator = navigator,
                 openNodeDataUseCase = openNodeDataUseCaseFactory.invoke(fileManagerService = workspaceSession.fileManagerService),
-                openWorkspaceSettings = openWorkspaceSettings
+                openWorkspaceSettings = openWorkspaceSettings,
+                dialogColorPickerService = dialogColorPickerService,
+                dialogDeleteService = dialogDeleteService,
+                dialogGraphConfigsService = dialogGraphConfigsService
             )
         },
         reducer = ReducerImpl
@@ -105,9 +118,11 @@ class GraphStoreImpl @AssistedInject constructor(
         private val macTrackpadGestureService: MacTrackpadGestureService,
         private val openNodeDataUseCase: IOpenNodeDataUseCase,
         private val engine: IGraphEngine<String, ObsidianGraphData>,
-        private val openWorkspaceSettings: (Boolean) -> Unit
-    ) :
-        BaseExecutor<Intent, Unit, State, GraphStore.Msg, Unit>(lifecycle) {
+        private val openWorkspaceSettings: (Boolean) -> Unit,
+        private val dialogColorPickerService: DialogColorPickerService,
+        private val dialogDeleteService: DialogDeleteService,
+        private val dialogGraphConfigsService: DialogGraphConfigsService
+    ) : BaseExecutor<Intent, Unit, State, GraphStore.Msg, Unit>(lifecycle) {
 
         private val _isMouseCapturedState = MutableStateFlow(false)
         private val _pendingSaveConfig = MutableSharedFlow<GraphSaveConfig>()
@@ -117,7 +132,7 @@ class GraphStoreImpl @AssistedInject constructor(
             ObsGraphEco(
                 scope = scope,
                 workspaceSession = workspaceSession,
-                config = state().config,
+                config = state().partConfig.filter,
                 appEnvironment = appEnvironment
             )
         }
@@ -126,6 +141,17 @@ class GraphStoreImpl @AssistedInject constructor(
         override fun onStart(scopeFromStartToStop: CoroutineScope) {
             super.onStart(scopeFromStartToStop)
 
+            graphEco.setGroups(state().partConfig.groups)
+
+            // Collect the new node lands map
+            scopeFromStartToStop.launch {
+                graphEco.nodeLandsFlow
+                    .distinctUntilChanged()
+                    .collectLatest { landsMap ->
+                        dispatch(GraphStore.Msg.SetNodeLands(landsMap))
+                        // dispatch(SetNodeLands(landsMap.toPersistentMap())) // Add this Msg to your GraphStore.Msg
+                    }
+            }
             scopeFromStartToStop.launch {
                 _pendingSaveConfig
                     .debounce(300L)
@@ -158,17 +184,21 @@ class GraphStoreImpl @AssistedInject constructor(
                 graphEco.graphState
 //                    .distinctUntilChanged()
                     .collectLatest {
-                        if (it != state().config) {
-                            dispatch(SetConfig(it))
+                        if (it != state().partConfig.filter) {
+                            //dispatch(SetConfig(it))
                         }
                     }
             }
             scopeFromStartToStop.launch {
                 graphEco.connectionsFlow
-                    .map {
-                        it
-                            .map { d -> d.key to d.value.toImmutableList() }
-                            .toMap()
+//                    .map {
+//                        it
+//                            .map { d -> d.key to d.value.toImmutableList() }
+//                            .toMap()
+//                            .toPersistentMap()
+//                    }
+                    .map { m ->
+                        m.mapValues { (_, v) -> v.toImmutableList() }
                             .toPersistentMap()
                     }
                     .flowOn(io)
@@ -180,18 +210,19 @@ class GraphStoreImpl @AssistedInject constructor(
                     }
             }
             scopeFromStartToStop.launch {
-                graphEco.nodes
-                    .distinctUntilChanged()
-                    .collectLatest {
+                graphEco.nodesFlow
+                    .map {
+                        it.toImmutableList()
+
+                    }     // copy on IO
+                    .distinctUntilChanged()           // equality on IO
+                    .flowOn(io)
+                    .collectLatest { immutableNodes ->
                         if (state().coordinates.isEmpty()) {
                             val mutMap = mutableMapOf<String, Offset>()
-                            placeNodesCircular(
-                                stateNodes = it,
-                                changeCoords = mutMap
-                            )
+                            placeNodesCircular(stateNodes = immutableNodes, changeCoords = mutMap)
                             dispatch(SetCoordinates(mutMap.toPersistentMap()))
                         }
-                        val immutableNodes = it.toImmutableList()
                         if (immutableNodes != state().graphNodes) {
                             dispatch(SetNodes(immutableNodes))
                         }
@@ -199,14 +230,41 @@ class GraphStoreImpl @AssistedInject constructor(
             }
         }
 
+        private fun setGroups(groups: List<GroupLogic>) {
+            val partConfig = state().partConfig
+            val grroups = if (partConfig.config.groupSettings.enabled) {
+                groups
+            } else {
+                listOf()
+            }
+
+            graphEco.setGroups(grroups)
+
+            dispatch(
+                SetPartConfig(
+                    partConfig.copy(groups = grroups)
+                )
+            )
+            scope.launch {
+                delay(500L)
+                engine.reheat()
+            }
+        }
+
+        private fun changeGroup(groupName: String, change: (GroupLogic) -> GroupLogic) {
+            val groups = state().partConfig.groups.toMutableList()
+
+            setGroups(groups.map {
+                if (it.name == groupName)
+                    change(it)
+                else
+                    it
+            })
+        }
+
 
         override fun executeIntent(intent: Intent) {
             when (intent) {
-
-                is Intent.SetConfig -> {
-                    graphEco.setGraphConfig(intent.value)
-                    engine.reheat()
-                }
 
                 is Intent.OpenNodeData -> {
                     scope.launch(io) {
@@ -245,33 +303,8 @@ class GraphStoreImpl @AssistedInject constructor(
                     openWorkspaceSettings(true)
                 }
 
-
-                is Intent.SetGraphSettings -> {
-                    scope.launch {
-                        _pendingSaveConfig.emit(
-                            GraphSaveConfig(
-                                isPinned = true,
-                                name = "Default",
-                                config = intent.value
-                            )
-                        )
-                    }
-
-                    val oldSettings = state().graphSettings
-                    if (intent.value != oldSettings) {
-                        if (intent.value.isGraphSettingsNudge(oldSettings)) {
-                            engine.nudge()
-                        }
-                        dispatch(SetGraphSettings(intent.value))
-                    }
-                }
-
                 is Intent.SetCoordinates -> {
                     dispatch(SetCoordinates(intent.value.toPersistentMap()))
-                }
-
-                is Intent.SetVelocities -> {
-                    dispatch(GraphStore.Msg.SetVelocities(intent.value.toPersistentMap()))
                 }
 
                 is Intent.SetIsMouseCaptured -> {
@@ -281,23 +314,103 @@ class GraphStoreImpl @AssistedInject constructor(
                         }
                     }
                 }
+
+                is Intent.SetGroups -> {
+                    setGroups(intent.value)
+                }
+
+                is Intent.DeleteGroup -> {
+                    scope.launch {
+                        val groupCount =
+                            state().partConfig.groups.count { d -> d.name == intent.groupName }
+                        if (groupCount > 1) {
+                            //todo tell user that it has more 1 of the same Group name
+                            return@launch
+                        }
+                        val isDelete = dialogDeleteService.open(Unit)
+                        if (isDelete) {
+                            val partConfig = state().partConfig
+                            val config =
+                                partConfig.copy(groups = partConfig.groups.filter { d -> d.name != intent.groupName })
+                            dispatch(SetPartConfig(config))
+                        }
+                    }
+                }
+
+                is Intent.SetGroupColor -> {
+                    scope.launch {
+                        val result = dialogColorPickerService.open(intent.color)
+                        if (result != null) {
+                            changeGroup(groupName = intent.groupName, change = {
+                                it.copy(color = result)
+                            })
+                        }
+                    }
+                }
+
+                is Intent.SetGraphSettings -> {
+                    val config = intent.config
+                    val partConfig = state().partConfig
+                    val oldSettings = partConfig.config
+                    if (config != oldSettings) {
+                        if (config.isGraphSettingsNudge(oldSettings)) {
+                            engine.nudge()
+                        }
+                    }
+
+                    dispatch(
+                        SetPartConfig(
+                            partConfig.copy(config = config)
+                        )
+                    )
+                }
+
+                is Intent.SetFilter -> {
+                    val filter = intent.value
+                    val partConfig = state().partConfig
+                    if (filter != partConfig.filter) {
+                        engine.reheat()
+                    }
+                    graphEco.setGraphConfig(filter)
+
+                    // Ensure groups sync if you ever update partConfig
+                    graphEco.setGroups(partConfig.groups)
+
+                    dispatch(
+                        SetPartConfig(
+                            partConfig.copy(filter = filter)
+                        )
+                    )
+                }
+
+                Intent.OpenConfigs -> scope.launch {
+                    val config = state().partConfig
+                    val result =
+                        dialogGraphConfigsService.open(DialogGraphConfigsService.Input(config))
+                    if (result != null) {
+                        engine.reheat()
+                        graphEco.setGraphConfig(result.part.filter)
+                        graphEco.setGroups(result.part.groups)
+                        dispatch(GraphStore.Msg.SetPartConfig(result.part))
+                    }
+                }
             }
         }
     }
-
 
     private object ReducerImpl : Reducer<State, GraphStore.Msg> {
         override fun State.reduce(msg: GraphStore.Msg): State {
             return when (msg) {
                 is SetNodes -> copy(graphNodes = msg.value.toImmutableList())
                 is SetConnections -> copy(connections = msg.value)
-                is SetConfig -> copy(config = msg.value)
                 is SetZoom -> copy(zoom = msg.value)
                 is SetIsShowSettings -> copy(isShowSettings = msg.value)
                 is SetGraphUserPosition -> copy(graphUserPosition = msg.value)
-                is SetGraphSettings -> copy(graphSettings = msg.value)
                 is SetCoordinates -> copy(coordinates = msg.value)
-                is GraphStore.Msg.SetVelocities -> copy(velocities = msg.value)
+                is SetPartConfig -> copy(partConfig = msg.value)
+                is SetNodeLands -> {
+                    copy(nodeLands = msg.value.toKmpImmutableMap())
+                }
             }
         }
     }

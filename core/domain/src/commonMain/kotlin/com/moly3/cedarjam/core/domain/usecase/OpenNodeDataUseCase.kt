@@ -14,7 +14,7 @@ import com.moly3.cedarjam.core.domain.model.node.ObsidianGraphData
 import com.moly3.cedarjam.core.domain.usecase.IOpenNodeDataUseCase.Result.*
 
 class OpenNodeDataUseCase(
-    private val navigateToFileUseCase: INavigateToFileUseCase
+    private val navigateToFileUseCase: INavigateToFileUseCase,
 ) : IOpenNodeDataUseCase {
     override suspend fun invoke(
         data: ObsidianGraphData,
@@ -57,11 +57,21 @@ class OpenNodeDataUseCase(
                     )
                 )
 
-                is ObsidianGraphData.Annotation -> ToAnnotation(
-                    AnnotationPageInput(
-                        annotationId = data.id
+                is ObsidianGraphData.Annotation -> {
+                    val result =
+                        navigateToFileUseCase.invoke(
+                            RelativePath(
+                                data.dataPath
+                            )
+                        )
+                    val timestamp = bind(result = result)
+                    IOpenNodeDataUseCase.Result.File(
+                        FilePageInput(
+                            timestamp = timestamp,
+                            type = FilePageInput.FilePageType.Pdf(page = data.dataPoint.toInt())
+                        )
                     )
-                )
+                }
             }
         }
     }

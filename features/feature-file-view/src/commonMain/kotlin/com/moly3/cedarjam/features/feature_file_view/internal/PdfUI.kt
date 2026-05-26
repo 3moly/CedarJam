@@ -412,17 +412,17 @@ internal fun PdfUI(
                         textStyle = LocalTextStyle.current.merge(
                             textAlign = TextAlign.End
                         ),
-                        keyboardType = KeyboardType.Number,
-                        onDone = {
-                            val number = textState.text.trim().toIntOrNull()
-                            if (number != null) {
-                                toPage(number)
-                            } else {
-                                textState = TextFieldValue((currentPage.toString()))
-                                //state.setTextAndPlaceCursorAtEnd(currentPage.toString())
-                            }
-                        },
-                        color = Color.White
+//                        keyboardType = KeyboardType.Number,
+//                        onDone = {
+//                            val number = textState.text.trim().toIntOrNull()
+//                            if (number != null) {
+//                                toPage(number)
+//                            } else {
+//                                textState = TextFieldValue((currentPage.toString()))
+//                                //state.setTextAndPlaceCursorAtEnd(currentPage.toString())
+//                            }
+//                        },
+//                        color = Color.White
                     )
                     CJText(
                         text = "-", Modifier.blendMode(BlendMode.Difference),

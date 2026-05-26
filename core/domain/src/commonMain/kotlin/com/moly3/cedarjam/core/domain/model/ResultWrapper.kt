@@ -15,14 +15,13 @@ fun <S, E> success(value: S): ResultWrapper<S, E> = ResultWrapper.Success(value)
 fun <S, E> error(error: E): ResultWrapper<S, E> = ResultWrapper.Error(error)
 
 @OptIn(ExperimentalContracts::class)
-inline fun <reified S, E> ResultWrapper<S, E>.shouldBeSuccess() {
+inline fun <reified S, E> ResultWrapper<S, E>.shouldBeSuccess(): S {
     contract {
         returns() implies (this@shouldBeSuccess is ResultWrapper.Success<S>)
     }
-    when (this) {
+    return when (this) {
         is ResultWrapper.Error -> throw IllegalArgumentException(this.error.toString())
-        is ResultWrapper.Success -> { /* Success case - do nothing */
-        }
+        is ResultWrapper.Success -> this.value
     }
 }
 

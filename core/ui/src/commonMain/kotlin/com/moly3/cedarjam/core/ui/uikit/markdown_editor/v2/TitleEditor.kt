@@ -11,7 +11,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import com.moly3.cedarjam.core.ui.uikit.CJText
+import com.moly3.cedarjam.core.ui.uikit.CJTextField
 
 /**
  * The document title. Behaves like a single-line heading field.
@@ -37,25 +40,25 @@ fun TitleEditor(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        BasicTextField(
-            value = title,
+        CJTextField(
+            value = TextFieldValue(title),
             onValueChange = { new ->
                 // collapse hard newlines — title is single-line
-                onTitleChange(new.replace("\n", ""))
+                onTitleChange(new.text.replace("\n", ""))
             },
             modifier = Modifier.fillMaxWidth(),
             textStyle = style.merge(LocalTextStyle.current),
-            cursorBrush = androidx.compose.ui.graphics.SolidColor(
-                MaterialTheme.colorScheme.primary,
-            ),
+//            cursorBrush = androidx.compose.ui.graphics.SolidColor(
+//                MaterialTheme.colorScheme.primary,
+//            ),
             singleLine = true,
-            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                imeAction = ImeAction.Next,
-            ),
-            keyboardActions = androidx.compose.foundation.text.KeyboardActions(
-                onNext = { onSubmit() },
-                onDone = { onSubmit() },
-            ),
+//            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+//                imeAction = ImeAction.Next,
+//            ),
+//            keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+//                onNext = { onSubmit() },
+//                onDone = { onSubmit() },
+//            ),
         )
     }
 }

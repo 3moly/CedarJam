@@ -36,12 +36,7 @@ fun FileTreeNode.toGetFileType(
                 FileTypeExt.Canvas -> FileType.Canvas(fileNode = fileNode)
                 FileTypeExt.Video -> Video(fileNode)
                 FileTypeExt.Text -> {
-                    try {
-                        val text = filesRepository.getNodeText(fileNode)
-                        Text(text.getValueOrNull() ?: "")
-                    } catch (exc: Exception) {
-                        Text("")
-                    }
+                    Text(fileNode = fileNode)
                 }
 
                 FileTypeExt.Mid -> FileType.MIDI(fileNode)

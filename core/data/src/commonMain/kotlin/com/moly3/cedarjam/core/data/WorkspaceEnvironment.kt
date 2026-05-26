@@ -2,6 +2,14 @@ package com.moly3.cedarjam.core.data
 
 import com.moly3.cedarjam.core.net.IRemoteSyncRepository
 import com.moly3.cedarjam.core.domain.DefaultJson
+import com.moly3.cedarjam.core.domain.model.AnnotationId
+import com.moly3.cedarjam.core.domain.model.CollectionId
+import com.moly3.cedarjam.core.domain.model.RowId
+import com.moly3.cedarjam.core.domain.model.TagAnnotationId
+import com.moly3.cedarjam.core.domain.model.TagRowId
+import com.moly3.cedarjam.core.domain.model.TagId
+import com.moly3.cedarjam.core.domain.model.TagLinkId
+import com.moly3.cedarjam.core.domain.model.TagToTagId
 import com.moly3.cedarjam.core.domain.func.doNothing
 import com.moly3.cedarjam.core.domain.func.normalizeText
 import com.moly3.cedarjam.core.domain.func.nowInMs
@@ -29,9 +37,12 @@ import com.moly3.cedarjam.core.domain.model.TagToTagDTO
 import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.domain.model.WorkspacePresentation
 import com.moly3.cedarjam.core.domain.model.bind
+import com.moly3.cedarjam.core.domain.model.config.GraphSaveConfig
+import com.moly3.cedarjam.core.domain.model.config.GraphSaveConfigs
 import com.moly3.cedarjam.core.domain.model.ensure
 import com.moly3.cedarjam.core.domain.model.error.DatabaseError
 import com.moly3.cedarjam.core.domain.model.fold
+import com.moly3.cedarjam.core.domain.model.getGraphConfigs
 import com.moly3.cedarjam.core.domain.model.getSettingsJsonFile
 import com.moly3.cedarjam.core.domain.model.request.CreateAnnotationRequest
 import com.moly3.cedarjam.core.domain.model.resultBlock
@@ -40,6 +51,7 @@ import com.moly3.cedarjam.core.domain.repository.IFilesRepository
 import com.moly3.cedarjam.core.domain.repository.IWorkspaceEnvironment
 import com.moly3.cedarjam.core.domain.model.request.CreateCollectionRequest
 import com.moly3.cedarjam.core.domain.model.request.CreateCollectionRowRequest
+import com.moly3.cedarjam.core.domain.model.request.CreateTagAnnotationRequest
 import com.moly3.cedarjam.core.domain.model.request.CreateTagCollectionRowRequest
 import com.moly3.cedarjam.core.domain.model.request.CreateTagLinkRequest
 import com.moly3.cedarjam.core.domain.model.request.CreateTagRequest
@@ -55,12 +67,16 @@ import com.moly3.cedarjam.core.domain.model.settings.WorkspaceSettings
 import com.moly3.cedarjam.core.domain.service.FileManagerService
 import com.moly3.cedarjam.core.storage.ISqlStorage
 import com.moly3.cedarjam.db.Annotation
+import com.moly3.cedarjam.db.DataCollection
 import com.moly3.cedarjam.db.DataCollectionRow
 import com.moly3.cedarjam.db.Tag
 import com.moly3.cedarjam.indexdb.IndexFile
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
@@ -72,11 +88,11 @@ import kotlin.collections.set
 import kotlin.time.ExperimentalTime
 
 class WorkspaceEnvironment(
-    private val sqlStorageFactory: () -> ISqlStorage,//core:data
+    private val sqlStorageFactory: () -> ISqlStorage,
     private val workspace: WorkspacePresentation,
-    private val filesRepository: IFilesRepository,//core:data
-    private val fileManagerService: FileManagerService, //core:data
-    private val syncNetRepository: IRemoteSyncRepository, //-> core:net,
+    private val filesRepository: IFilesRepository,
+    private val fileManagerService: FileManagerService,
+    private val syncNetRepository: IRemoteSyncRepository
 ) : IWorkspaceEnvironment {
 
     private val fileNodesState: MutableStateFlow<UIState<List<FileTreeNode>, String>> =
@@ -99,6 +115,39 @@ class WorkspaceEnvironment(
                 walkInFiles(item.children, watch = watch)
             }
             watch(item)
+        }
+    }
+
+    private val _configsState = MutableStateFlow<GraphSaveConfigs?>(null)
+    private val loadMutex = Mutex()
+
+    override fun getGraphConfigs(): Flow<List<GraphSaveConfig>> = flow {
+        if (_configsState.value == null) {
+            loadMutex.withLock {
+                if (_configsState.value == null) {
+                    _configsState.value = loadFromDisk()
+                }
+            }
+        }
+        emitAll(_configsState.filterNotNull().map { it.configs })
+    }.flowOn(io)
+
+    private suspend fun loadFromDisk(): GraphSaveConfigs = try {
+        filesRepository.getNodeText(workspace.getGraphConfigs()).fold(
+            onFailure = { GraphSaveConfigs(emptyList()) },
+            onSuccess = { DefaultJson.decodeFromString<GraphSaveConfigs>(it) }
+        )
+    } catch (e: Exception) {
+        GraphSaveConfigs(emptyList())
+    }
+
+    override suspend fun insertNewGraphConfigs(config: GraphSaveConfigs) {
+        try {
+            val json = DefaultJson.encodeToString(config)
+            filesRepository.setNodeText(workspace.getGraphConfigs(), json)
+            _configsState.value = config
+        } catch (e: Exception) {
+            // at least log it
         }
     }
 
@@ -225,30 +274,32 @@ class WorkspaceEnvironment(
         )
     }
 
+    private fun DataCollection.toDTO(): CollectionDTO {
+        return CollectionDTO(
+            id = CollectionId(this.id),
+            name = this.name,
+            viewType = this.viewType.toCollectionViewType(),
+            createdTime = this.createdTime,
+            modifiedTime = this.modifiedTime
+        )
+    }
+
     override fun getCollectionsFlow(): Flow<List<CollectionDTO>> {
         return sqlStorage
             .getCollections()
             .map {
-                it.map { d ->
-                    CollectionDTO(
-                        id = d.id,
-                        name = d.name,
-                        viewType = d.viewType.toCollectionViewType(),
-                        createdTime = d.createdTime,
-                        modifiedTime = d.modifiedTime
-                    )
-                }
+                it.map { d -> d.toDTO() }
             }
             .flowOn(io)
     }
 
-    override fun getCollectionFlow(collectionId: Long): Flow<CollectionDTO?> {
+    override fun getCollectionFlow(collectionId: CollectionId): Flow<CollectionDTO?> {
         return sqlStorage
             .getCollection(id = collectionId)
             .map {
                 it?.let { d ->
                     CollectionDTO(
-                        id = d.id,
+                        id = CollectionId(d.id),
                         name = d.name,
                         viewType = d.viewType.toCollectionViewType(),
                         createdTime = d.createdTime,
@@ -261,9 +312,9 @@ class WorkspaceEnvironment(
 
     internal fun DataCollectionRow.toDTO(): CollectionRowDTO {
         return CollectionRowDTO(
-            id = this.id,
+            id = RowId(this.id),
             name = this.name,
-            collectionId = this.collectionId,
+            collectionId = CollectionId(this.collectionId),
             fileRelativePath = this.fileRelativePath,
             imgRelativePath = this.imgRelativePath,
             webLink = this.webLink,
@@ -276,7 +327,7 @@ class WorkspaceEnvironment(
         )
     }
 
-    override fun getCollectionRowsFlow(collectionId: Long?): Flow<List<CollectionRowDTO>> {
+    override fun getCollectionRowsFlow(collectionId: CollectionId?): Flow<List<CollectionRowDTO>> {
         return sqlStorage
             .getCollectionRows(collectionId = collectionId)
             .map {
@@ -294,7 +345,7 @@ class WorkspaceEnvironment(
             .flowOn(io)
     }
 
-    override fun getCollectionRowsCount(collectionId: Long?): Flow<Long> {
+    override fun getCollectionRowsCount(collectionId: CollectionId?): Flow<Long> {
         return sqlStorage
             .getCollectionRowsCount(collectionId = collectionId)
             .flowOn(io)
@@ -304,7 +355,7 @@ class WorkspaceEnvironment(
         return sqlStorage.getAnnotationsFlow().map {
             it.map {
                 AnnotationDTO(
-                    id = it.id,
+                    id = AnnotationId(it.id),
                     dataPath = it.dataPath,
                     dataPoint = it.dataPoint,
                     description = it.description,
@@ -314,7 +365,7 @@ class WorkspaceEnvironment(
                     width = it.width.toFloat(),
                     height = it.height.toFloat(),
                     modifiedTime = it.modifiedTime,
-                    rowId = it.rowId
+                    rowId = it.rowId?.let { RowId(it) }
                 )
             }
         }.flowOn(io)
@@ -332,8 +383,8 @@ class WorkspaceEnvironment(
                     }
                     if (data != null)
                         TagLinkDTO(
-                            id = it.id,
-                            tagId = it.tagId,
+                            id = TagLinkId(it.id),
+                            tagId = TagId(it.tagId),
                             data = data
                         )
                     else null
@@ -348,9 +399,9 @@ class WorkspaceEnvironment(
             .map {
                 it.map {
                     TagAnnotationDTO(
-                        id = it.id,
-                        tagId = it.tagId,
-                        annotationId = it.annotationId
+                        id = TagAnnotationId(it.id),
+                        tagId = TagId(it.tagId),
+                        annotationId = AnnotationId(it.annotationId)
                     )
                 }
             }
@@ -360,7 +411,7 @@ class WorkspaceEnvironment(
     override fun getCollectionRowsPaginated(
         offset: Long,
         pageSize: Long,
-        collectionId: Long
+        collectionId: CollectionId
     ): Flow<List<CollectionRowDTO>> {
         return sqlStorage
             .getCollectionRowsPaginated(
@@ -372,7 +423,7 @@ class WorkspaceEnvironment(
             }.flowOn(io)
     }
 
-    override fun getCollectionRowFlow(rowId: Long): Flow<CollectionRowDTO?> {
+    override fun getCollectionRowFlow(rowId: RowId): Flow<CollectionRowDTO?> {
         return sqlStorage
             .getCollectionRow(rowId = rowId)
             .map { d -> d?.toDTO() }
@@ -424,7 +475,7 @@ class WorkspaceEnvironment(
             .map {
                 it.map {
                     TagDTO(
-                        id = it.id,
+                        id = TagId(it.id),
                         name = it.name,
                         color = it.color.toColor(),
                         createdTime = it.createdTime,
@@ -435,13 +486,13 @@ class WorkspaceEnvironment(
             .flowOn(io)
     }
 
-    override fun getTagFlow(id: Long): Flow<TagDTO?> {
+    override fun getTagFlow(id: TagId): Flow<TagDTO?> {
         return sqlStorage
             .getTagFlow(id = id)
             .map {
                 it?.let {
                     TagDTO(
-                        id = it.id,
+                        id = TagId(it.id),
                         name = it.name,
                         color = it.color.toColor(),
                         createdTime = it.createdTime,
@@ -458,9 +509,9 @@ class WorkspaceEnvironment(
             .map {
                 it.map {
                     TagToTagDTO(
-                        id = it.id,
-                        firstTagId = it.firstTagId,
-                        secondTagId = it.secondTagId
+                        id = TagToTagId(it.id),
+                        firstTagId = TagId(it.firstTagId),
+                        secondTagId = TagId(it.secondTagId)
                     )
                 }
             }
@@ -473,9 +524,9 @@ class WorkspaceEnvironment(
             .map {
                 it.map {
                     TagCollectionRowDTO(
-                        id = it.id,
-                        tagId = it.tagId,
-                        rowId = it.rowId
+                        id = TagRowId(it.id),
+                        tagId = TagId(it.tagId),
+                        rowId = RowId(it.rowId)
                     )
                 }
             }
@@ -869,12 +920,12 @@ class WorkspaceEnvironment(
         )
     }
 
-    override fun createCollection(request: CreateCollectionRequest): ResultWrapper<Long, String> {
+    override fun createCollection(request: CreateCollectionRequest): ResultWrapper<CollectionId, String> {
         return sqlStorage.createCollection(request = request)
     }
 
-    override fun createCollectionRow(request: CreateCollectionRowRequest): ResultWrapper<Long, String> {
-        return sqlStorage.createCollectionRow(request = request)
+    override fun createRow(request: CreateCollectionRowRequest): ResultWrapper<RowId, String> {
+        return sqlStorage.createRow(request = request)
     }
 
     override fun updateCollectionRow(request: UpdateDataCollectionRowRequest) {
@@ -885,17 +936,17 @@ class WorkspaceEnvironment(
         sqlStorage.updateRowsForPdf(request = request)
     }
 
-    override fun deleteCollectionRow(id: Long) {
+    override fun deleteCollectionRow(id: RowId) {
         sqlStorage.deleteCollectionRow(id = id)
     }
 
-    override fun deleteCollection(id: Long) {
+    override fun deleteCollection(id: CollectionId) {
         sqlStorage.deleteCollection(id = id)
     }
 
 
     @OptIn(ExperimentalTime::class)
-    override suspend fun createAnnotation(data: CreateAnnotationRequest): ResultWrapper<Long, String> {
+    override suspend fun createAnnotation(data: CreateAnnotationRequest): ResultWrapper<AnnotationId, String> {
         return sqlStorage.createAnnotation(
             annotation = Annotation(
                 id = 0L,
@@ -908,12 +959,12 @@ class WorkspaceEnvironment(
                 posY = data.y.toDouble(),
                 width = data.width.toDouble(),
                 height = data.height.toDouble(),
-                rowId = data.rowId
+                rowId = data.rowId?.value
             )
         )
     }
 
-    override fun createTag(request: CreateTagRequest): ResultWrapper<Long, String> {
+    override fun createTag(request: CreateTagRequest): ResultWrapper<TagId, String> {
         return sqlStorage.createTag(
             Tag(
                 id = 0L,
@@ -926,7 +977,13 @@ class WorkspaceEnvironment(
         )
     }
 
-    override fun createTagToTag(request: CreateTagToTagRequest): ResultWrapper<Long, String> {
+    override fun createTagAnnotation(request: CreateTagAnnotationRequest): ResultWrapper<TagAnnotationId, String> {
+        return sqlStorage.createTagAnnotation(
+            request = request
+        )
+    }
+
+    override fun createTagToTag(request: CreateTagToTagRequest): ResultWrapper<TagToTagId, String> {
         return sqlStorage.createTagToTag(request = request)
     }
 
@@ -937,27 +994,31 @@ class WorkspaceEnvironment(
         )
     }
 
-    override fun createTagCollectionRow(request: CreateTagCollectionRowRequest) {
-        sqlStorage.createTagCollectionRow(request = request)
+    override fun createTagRow(request: CreateTagCollectionRowRequest): ResultWrapper<TagRowId, String> {
+        return sqlStorage.createTagCollectionRow(request = request)
     }
 
-    override fun deleteTagLink(id: Long) {
+    override fun deleteTagLink(id: TagLinkId) {
         sqlStorage.deleteTagLink(id = id)
     }
 
-    override fun deleteTag(id: Long) {
+    override fun deleteTag(id: TagId) {
         sqlStorage.deleteTag(id = id)
     }
 
-    override fun deleteAnnotation(id: Long) {
+    override fun deleteAnnotation(id: AnnotationId) {
         sqlStorage.deleteAnnotation(id = id)
     }
 
-    override fun deleteTagToTag(id: Long) {
+    override fun deleteTagToTag(id: TagToTagId) {
         sqlStorage.deleteTagToTag(id = id)
     }
 
-    override fun deleteTagCollectionRow(id: Long) {
+    override fun deleteTagAnnotation(id: TagAnnotationId) {
+        sqlStorage.deleteTagAnnotation(id = id)
+    }
+
+    override fun deleteTagCollectionRow(id: TagRowId) {
         sqlStorage.deleteTagCollectionRow(id = id)
     }
 

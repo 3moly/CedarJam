@@ -4,6 +4,15 @@ plugins {
     alias(libs.plugins.compose)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.serialization)
+    alias(libs.plugins.kover)
+}
+
+kover {
+    currentProject {
+        createVariant("custom") {
+            add("jvm")
+        }
+    }
 }
 
 kotlin {
@@ -18,6 +27,7 @@ kotlin {
     listOf(iosArm64(), iosSimulatorArm64())
     sourceSets {
         commonMain.dependencies {
+
             implementation(projects.core.domain)
 
             implementation(libs.shared.logger.kermit)
@@ -51,14 +61,14 @@ kotlin {
             implementation(libs.kotlin.test)
         }
         jvmMain.dependencies {
+            implementation(libs.skiko)
             implementation(libs.pdfbox)
-
         }
         androidMain.dependencies {
             implementation(libs.compose.ui.tooling)
         }
         iosMain.dependencies {
-
+            implementation(libs.skiko)
         }
     }
 }

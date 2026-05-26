@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class TagCollectionRowDTO(
-    val id: Long,
-    val tagId: Long,
-    val rowId: Long
+    val id: TagRowId,
+    val tagId: TagId,
+    val rowId: RowId
 )

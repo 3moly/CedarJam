@@ -10,11 +10,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Divider
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -26,24 +21,41 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.isMetaPressed
 import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.isCtrlPressed
+import androidx.compose.ui.input.pointer.isMetaPressed
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.moly3.cedarjam.core.domain.features.mdprops.DividerSyntax
 import com.moly3.cedarjam.core.domain.features.mdprops.MarkdownRow
+import com.moly3.cedarjam.core.domain.features.mdprops.RowFocusManager
 import com.moly3.cedarjam.core.domain.features.mdprops.RowType
+import com.moly3.cedarjam.core.domain.features.mdprops.WikiLinkSyntax
+import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
+import com.moly3.cedarjam.core.ui.compositions.LocalTextStyle
+import com.moly3.cedarjam.core.ui.uikit.CJDivider
+import com.moly3.cedarjam.core.ui.uikit.CJText
+import com.moly3.cedarjam.core.ui.uikit.CJTextField
 
 /**
  * One editable block in the document. This is the heart of the editor and owns:
@@ -63,14 +75,24 @@ fun MarkdownRowItem(
     focusManager: RowFocusManager,
     callbacks: RowCallbacks,
     modifier: Modifier = Modifier,
+    isSelected: Boolean = false,
 ) {
-    // Divider rows are not editable text — render & bail early.
-    if (row.type == RowType.Divider) {
-        Box(modifier = modifier.fillMaxWidth().padding(vertical = 10.dp)) {
-            Divider(color = MaterialTheme.colorScheme.outlineVariant)
+    // Tint applied to the whole row while it is part of a block selection.
+    val selectionModifier: Modifier =
+        if (isSelected) {
+            Modifier.background(
+                LocalAppTheme.current.colors.backgroundPrimary.copy(alpha = 0.14f),
+                RoundedCornerShape(4.dp),
+            )
+        } else {
+            Modifier
         }
-        return
-    }
+
+    // NOTE: divider rows are NOT special-cased away here any more. They flow
+    // through the same focus / navigation / key-handling path as every other
+    // row so arrows can land on them. A divider just renders differently when
+    // blurred (a horizontal line) vs focused (its raw "---" source) — see
+    // RowTextField's decorationBox.
 
     val requester = remember { FocusRequester() }
 
@@ -87,9 +109,10 @@ fun MarkdownRowItem(
     // Keep local text in sync if the model text changed externally (e.g. merge).
     LaunchedEffect(row.text) {
         if (row.text != fieldValue.text) {
+            val caret = fieldValue.selection.end.coerceAtMost(row.text.length)
             fieldValue = fieldValue.copy(
                 text = row.text,
-                selection = TextRange(row.text.length.coerceAtMost(row.text.length)),
+                selection = TextRange(caret),
             )
         }
     }
@@ -111,7 +134,7 @@ fun MarkdownRowItem(
         }
     }
 
-    Column(modifier = modifier.fillMaxWidth()) {
+    Column(modifier = modifier.fillMaxWidth().then(selectionModifier)) {
         Row(verticalAlignment = Alignment.Top, modifier = Modifier.fillMaxWidth()) {
 
             RowLeadingDecoration(row = row, index = index)
@@ -135,7 +158,32 @@ fun MarkdownRowItem(
                         slashQuery = result.slashQuery
                         fieldValue = result.value
                         if (result.value.text != row.text) {
+                            // Typing is an edit — drop any block selection.
+                            callbacks.onClearSelection()
                             callbacks.onTextChange(row.id, result.value.text)
+                        }
+                    },
+                    onWikiLinkClick = { target -> callbacks.onWikiLinkClick(target) },
+                    onFocusChange = { focused ->
+                        if (row.type == RowType.Divider) {
+                            if (focused) {
+                                // Reveal editable source. A divider decoded from
+                                // text already carries "---"; a freshly created
+                                // one may be blank — show the canonical rule so
+                                // there is something to edit.
+                                if (fieldValue.text.isBlank()) {
+                                    val seeded = DividerSyntax.CANONICAL
+                                    fieldValue = TextFieldValue(
+                                        text = seeded,
+                                        selection = TextRange(seeded.length),
+                                    )
+                                    callbacks.onTextChange(row.id, seeded)
+                                }
+                            } else {
+                                // Blurred: keep as divider if still valid syntax,
+                                // otherwise the editor demotes it to a paragraph.
+                                callbacks.onDividerBlur(row.id)
+                            }
                         }
                     },
                     onKeyEvent = { keyEvent ->
@@ -167,8 +215,21 @@ fun MarkdownRowItem(
                             val stripped = stripSlashToken(fieldValue)
                             slashActive = false
                             slashQuery = ""
-                            fieldValue = stripped
-                            callbacks.onTextChange(row.id, stripped.text)
+                            if (selectedType == RowType.Divider && stripped.text.isBlank()) {
+                                // A divider created via the slash menu seeds its
+                                // canonical "---" source immediately, so blurring
+                                // without typing keeps it a divider (instead of
+                                // demoting an empty row to a paragraph).
+                                val seeded = TextFieldValue(
+                                    text = DividerSyntax.CANONICAL,
+                                    selection = TextRange(DividerSyntax.CANONICAL.length),
+                                )
+                                fieldValue = seeded
+                                callbacks.onTextChange(row.id, seeded.text)
+                            } else {
+                                fieldValue = stripped
+                                callbacks.onTextChange(row.id, stripped.text)
+                            }
                             callbacks.onTypeChange(row.id, selectedType)
                         },
                         onDismiss = {
@@ -194,53 +255,110 @@ private fun RowTextField(
     requester: FocusRequester,
     onValueChange: (TextFieldValue) -> Unit,
     onKeyEvent: (androidx.compose.ui.input.key.KeyEvent) -> Boolean,
+    onFocusChange: (Boolean) -> Unit = {},
+    onWikiLinkClick: (String) -> Unit = {},
 ) {
+    val theme = LocalAppTheme.current
     val isCode = row.type == RowType.Code
+    val isDivider = row.type == RowType.Divider
+    val isImage = row.type == RowType.Image
     val style = row.type.textStyle()
+    val linkColor = theme.primaryColor
 
-    val container = if (isCode) {
-        Modifier
+    var isFocused by remember { mutableStateOf(false) }
+    var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
+
+    val supportsWikiLinks = !isCode && !isImage && !isDivider
+
+    // Pre-compute wiki-link ranges for hit-testing on Ctrl/Cmd+click.
+    val wikiRanges = remember(fieldValue.text, supportsWikiLinks) {
+        if (!supportsWikiLinks) emptyList()
+        else WikiLinkSyntax.findAll(fieldValue.text)
+            .map { it.range.first..(it.range.last) to it.target }
+            .toList()
+    }
+
+    val container = when {
+        isCode -> Modifier
             .fillMaxWidth()
-            .background(
-                MaterialTheme.colorScheme.surfaceVariant,
-                RoundedCornerShape(8.dp),
-            )
+            .background(theme.colors.backgroundPrimary, RoundedCornerShape(8.dp))
             .padding(12.dp)
-    } else {
-        Modifier.fillMaxWidth().padding(vertical = 2.dp)
+        else -> Modifier.fillMaxWidth().padding(vertical = 2.dp)
     }
 
     Column(modifier = modifier.fillMaxWidth()) {
-        // Image rows show a preview above the URL field once a URL is present.
-        if (row.type == RowType.Image && fieldValue.text.isNotBlank()) {
+        if (isImage && fieldValue.text.isNotBlank()) {
             ImagePreview(url = fieldValue.text)
         }
 
         Box(modifier = container) {
-            BasicTextField(
+            CJTextField(
                 value = fieldValue,
                 onValueChange = onValueChange,
                 modifier = Modifier
                     .fillMaxWidth()
                     .focusRequester(requester)
-                    .onPreviewKeyEvent(onKeyEvent),
-                textStyle = style,
-                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                // Code & multiline types allow visible newlines; others are single-line
-                // visually but we still intercept Enter ourselves via key events.
-                singleLine = false,
-                keyboardOptions = KeyboardOptions(
-                    imeAction = if (row.type.isMultiline) ImeAction.Default else ImeAction.None,
-                ),
-                decorationBox = { inner ->
-                    if (fieldValue.text.isEmpty()) {
-                        Text(
-                            text = row.type.placeholder(),
-                            style = style,
-                            color = MaterialTheme.colorScheme.outline,
-                        )
+                    .onFocusChanged {
+                        if (it.isFocused != isFocused) {
+                            isFocused = it.isFocused
+                            onFocusChange(it.isFocused)
+                        }
                     }
-                    inner()
+                    .onPreviewKeyEvent(onKeyEvent)
+                    .then(
+                        if (supportsWikiLinks && wikiRanges.isNotEmpty()) {
+                            Modifier.pointerInput(wikiRanges) {
+                                awaitPointerEventScope {
+                                    while (true) {
+                                        val event = awaitPointerEvent(PointerEventPass.Initial)
+                                        if (event.type != PointerEventType.Press) continue
+                                        val mods = event.keyboardModifiers
+                                        if (!(mods.isCtrlPressed || mods.isMetaPressed)) continue
+                                        val change = event.changes.firstOrNull() ?: continue
+                                        val l = layout ?: continue
+                                        val offset = l.getOffsetForPosition(change.position)
+                                        val hit = wikiRanges.firstOrNull { (r, _) -> offset in r }
+                                        if (hit != null) {
+                                            change.consume()
+                                            onWikiLinkClick(hit.second)
+                                        }
+                                    }
+                                }
+                            }
+                        } else Modifier
+                    ),
+                textStyle = style,
+                singleLine = false,
+                imeAction = if (row.type.isMultiline) ImeAction.Default else ImeAction.None,
+                visualTransformation = if (supportsWikiLinks) {
+                    WikiLinkVisualTransformation(linkColor)
+                } else {
+                    VisualTransformation.None
+                },
+                onTextLayout = { layout = it },
+                decorationBox = { inner ->
+                    when {
+                        isDivider && !isFocused -> {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Box(Modifier.height(0.dp)) { inner() }
+                                CJDivider(color = theme.colors.backgroundPrimary)
+                            }
+                        }
+                        fieldValue.text.isEmpty() && isFocused -> {
+                            CJText(
+                                text = row.type.placeholder(),
+                                style = style,
+                                color = theme.colors.secondaryFont
+                            )
+                            inner()
+                        }
+                        else -> inner()
+                    }
                 },
             )
         }
@@ -285,15 +403,13 @@ private fun ImagePreview(url: String) {
                     .fillMaxWidth()
                     .height(120.dp)
                     .background(
-                        MaterialTheme.colorScheme.surfaceVariant,
+                        LocalAppTheme.current.colors.backgroundPrimary,
                         RoundedCornerShape(8.dp),
                     ),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(
+                CJText(
                     "🖼  $url",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -308,19 +424,19 @@ private fun ImagePreview(url: String) {
 private fun RowLeadingDecoration(row: MarkdownRow, index: Int) {
     when (row.type) {
         RowType.BulletList -> {
-            Text(
+            CJText(
                 "•",
                 modifier = Modifier.padding(end = 8.dp, top = 2.dp),
-                style = MaterialTheme.typography.bodyLarge,
+//                style = typography.bodyLarge,
             )
         }
 
         RowType.NumberedList -> {
-            Text(
+            CJText(
                 "${index + 1}.",
                 modifier = Modifier.padding(end = 8.dp, top = 2.dp),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+//                style = typography.bodyMedium,
+//                color = colorScheme.onSurfaceVariant,
             )
         }
 
@@ -330,7 +446,7 @@ private fun RowLeadingDecoration(row: MarkdownRow, index: Int) {
                     .padding(end = 10.dp)
                     .width(3.dp)
                     .height(24.dp)
-                    .background(MaterialTheme.colorScheme.primary),
+                    .background(LocalAppTheme.current.primaryColor),
             )
         }
 
@@ -418,21 +534,45 @@ private fun handleKeyEvent(
     if (slashActive && keyEvent.key in setOf(Key.DirectionUp, Key.DirectionDown, Key.Enter)) {
         return false
     }
+
+    val ctrl = keyEvent.isCtrlPressed || keyEvent.isMetaPressed
+
+    // --- Copy block selection as raw Markdown (Ctrl/Cmd+C) ----------------------
+    // Only intercept when the field has NO in-row text selection; otherwise the
+    // user is copying text within the field and the platform should handle it.
+    if (ctrl && keyEvent.key == Key.C && fieldValue.selection.collapsed) {
+        callbacks.onCopySelection(row.id)
+        return true
+    }
+
     if (keyEvent.isShiftPressed && keyEvent.key == Key.Tab) {
         return handleShiftTab(fieldValue, callbacks, onLocalValueChange)
+    }
+    if (ctrl && keyEvent.key == Key.Z) {
+        if (keyEvent.isShiftPressed) callbacks.onRedo() else callbacks.onUndo()
+        return true
+    }
+    if (ctrl && keyEvent.key == Key.Y) {
+        callbacks.onRedo()
+        return true
     }
 
     return when (keyEvent.key) {
         Key.Tab -> handleTab(fieldValue, callbacks, onLocalValueChange)
-        Key.Enter -> handleEnter(
-            keyEvent.isShiftPressed,
-            row,
-            fieldValue,
-            callbacks,
-            onLocalValueChange
-        )
+        Key.Enter -> {
+            // Editing keys end any block selection.
+            callbacks.onClearSelection()
+            handleEnter(
+                keyEvent.isShiftPressed,
+                row,
+                fieldValue,
+                callbacks,
+                onLocalValueChange,
+            )
+        }
 
         Key.Backspace -> {
+            callbacks.onClearSelection()
             if (fieldValue.text.isEmpty() || fieldValue.caretAtDocumentStart()) {
                 callbacks.onMergeWithPrevious(row.id)
                 true
@@ -443,14 +583,22 @@ private fun handleKeyEvent(
 
         Key.DirectionUp -> {
             if (fieldValue.caretOnFirstLine()) {
-                callbacks.onNavigate(row.id, NavDirection.Up)
+                if (keyEvent.isShiftPressed) {
+                    callbacks.onExtendSelection(row.id, NavDirection.Up)
+                } else {
+                    callbacks.onNavigate(row.id, NavDirection.Up)
+                }
                 true
             } else false
         }
 
         Key.DirectionDown -> {
             if (fieldValue.caretOnLastLine()) {
-                callbacks.onNavigate(row.id, NavDirection.Down)
+                if (keyEvent.isShiftPressed) {
+                    callbacks.onExtendSelection(row.id, NavDirection.Down)
+                } else {
+                    callbacks.onNavigate(row.id, NavDirection.Down)
+                }
                 true
             } else false
         }
@@ -635,19 +783,36 @@ private fun handleEnter(
 
 @Composable
 private fun RowType.textStyle(): TextStyle {
-    val scheme = MaterialTheme.colorScheme
-    val typo = MaterialTheme.typography
+    val textStyle = LocalTextStyle.current
+
     return when (this) {
-        RowType.Heading1 -> typo.headlineMedium.copy(fontWeight = FontWeight.Bold)
-        RowType.Heading2 -> typo.headlineSmall.copy(fontWeight = FontWeight.Bold)
-        RowType.Heading3 -> typo.titleLarge.copy(fontWeight = FontWeight.SemiBold)
-        RowType.Quote -> typo.bodyLarge.copy(
-            fontWeight = FontWeight.Normal,
-            color = scheme.onSurfaceVariant,
+        RowType.Heading1 -> textStyle.copy(
+            fontWeight = FontWeight.Bold,
+            fontSize = 32.sp
         )
 
-        RowType.Code -> typo.bodyMedium.copy(fontFamily = FontFamily.Monospace)
-        else -> typo.bodyLarge
+        RowType.Heading2 -> textStyle.copy(
+            fontWeight = FontWeight.Bold,
+            fontSize = 24.sp
+        )
+
+        RowType.Heading3 -> textStyle.copy(
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 18.sp
+        )
+
+        RowType.Quote -> textStyle.copy(
+            fontWeight = FontWeight.Normal,
+//            color = scheme.onSurfaceVariant,
+        )
+
+        RowType.Code -> textStyle.copy()
+        // Divider source ("---") edits in a monospace face, like a code snippet.
+        RowType.Divider -> textStyle.copy(
+//            color = scheme.onSurfaceVariant,
+        )
+
+        else -> textStyle
     }
 }
 
@@ -661,5 +826,5 @@ private fun RowType.placeholder(): String = when (this) {
     RowType.Quote -> "Quote"
     RowType.Code -> "// code"
     RowType.Image -> "Paste image URL…"
-    RowType.Divider -> ""
+    RowType.Divider -> "--- (divider)"
 }

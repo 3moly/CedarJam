@@ -1,9 +1,12 @@
 package com.moly3.cedarjam.pages.page_collection.ui.internal
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,9 +21,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.moly3.cedarjam.core.ui.compositions.LocalAppTheme
@@ -28,6 +35,7 @@ import com.moly3.cedarjam.core.ui.func.navigationBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.func.pageControlsPadding
 import com.moly3.cedarjam.core.ui.func.wstatusBarsPaddingCJ
 import com.moly3.cedarjam.core.ui.uikit.CJButton
+import com.moly3.cedarjam.core.ui.uikit.CJSlider
 import com.moly3.cedarjam.core.ui.uikit.CJText
 import com.moly3.cedarjam.core.ui.uikit.NeumorphicShape
 import com.moly3.cedarjam.pages.page_collection.Intent
@@ -74,27 +82,55 @@ internal fun PageContent(
                 onIntent(Intent.OpenOptions)
             }
         }
+        val items = (0 until 10000).map {
+            it
+        }
+        val selectedStep = remember { mutableStateOf(5) }
+
+        CJSlider(
+            modifier = Modifier.width(200.dp),
+            step = 10,
+            valueRange = 1f..20f,
+            value = selectedStep.value.toFloat(),
+            onValueChange = {
+                selectedStep.value = it.toInt()
+            }
+        )
+        val lazyWidth = remember { mutableStateOf<Float>(0f) }
+        val density = LocalDensity.current
+        val crossAxis = remember(selectedStep.value, lazyWidth.value) {
+            (lazyWidth.value - 32 - (selectedStep.value - 1) * 8) / selectedStep.value.toFloat()
+        }
         LazyFlow(
-            modifier = Modifier.weight(1f).fillMaxWidth(),
-            horizontalGap = 4.dp,
-            verticalGap = 4.dp
+            modifier = Modifier.weight(1f).fillMaxWidth().onGloballyPositioned {
+                lazyWidth.value = with(density) { it.size.width.toDp().value }
+            },
+            contentPadding = PaddingValues(horizontal = 16.dp),
+            horizontalGap = 8.dp,
+            verticalGap = 8.dp,
+            enterFadeSpec = null,
+            slideSpec = null
         ) {
-            items(items = state.rows, size = { FlowItemSize.Auto }) { item ->
-                Column(
-                    modifier = Modifier
-                        .width(100.dp)
-                        .background(
-                            LocalAppTheme.current.colors.backgroundPrimary,
-                            shape = RoundedCornerShape(8.dp)
-                        )
-                        .clip(RoundedCornerShape(8.dp)),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
+            items(
+                items = items,
+                size = {
+                    FlowItemSize.GridCell(
+                        maxSpan = selectedStep.value,
+                        crossAxis = crossAxis.dp
+                    )
+                }
+            ) { item ->
+                Box(
+                    Modifier.fillMaxSize().border(
+                        border = BorderStroke(1.dp,LocalAppTheme.current.colors.icon),
+                        shape = RoundedCornerShape(8.dp)
+                    )
                 ) {
 
                 }
             }
         }
+
 //        Column(modifier = Modifier.fillMaxWidth().weight(1f)) {
 //
 ////            if (state.collection != null) {

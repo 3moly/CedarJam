@@ -37,6 +37,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -320,7 +321,8 @@ internal fun DialogCanvasUIContent(
                                         textStyle = LocalTextStyle.current.copy(
                                             fontSize = (12 * state.zoom / LocalDensity.current.density).sp
                                         ),
-                                        onDone = {
+                                        imeAction = ImeAction.Done,
+                                        onAnyAction = {
                                             val newChange = shapeState.shape.copy(
                                                 data = data.copy(text = textState.value.text)
                                             )

@@ -12,7 +12,7 @@ sealed class FileType {
     data class Canvas(val fileNode: FileTreeNode.File) : FileType()
 
     @Serializable
-    data class Text(val value: String) : FileType()
+    data class Text(val fileNode: FileTreeNode.File) : FileType()
 
     @Serializable
     @Stable

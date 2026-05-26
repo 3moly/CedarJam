@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 @Stable
 data class CollectionDTO(
-    val id: Long,
+    val id: CollectionId,
     val name: String,
     val viewType: CollectionViewType,
     val createdTime: Long,

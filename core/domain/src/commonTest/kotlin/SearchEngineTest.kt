@@ -199,4 +199,11 @@ class SearchEngineTest {
             engine.explain("type:(file OR directory) project"),
         )
     }
+
+    @Test fun explainBanana() {
+        assertEquals(
+            "NOT the word 'banana'",
+            engine.explain("-banana"),
+        )
+    }
 }

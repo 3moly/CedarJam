@@ -26,7 +26,7 @@ import com.moly3.cedarjam.core.domain.model.getCollectionRowGraphId
 import com.moly3.cedarjam.core.domain.model.getFileTreeNodeGraphId
 import com.moly3.cedarjam.core.domain.model.getGraphId
 import com.moly3.cedarjam.core.domain.model.getTagGraphId
-import com.moly3.cedarjam.core.domain.model.placeNodesCircular
+import com.moly3.cedarjam.core.domain.func.placeNodesCircular
 import com.moly3.cedarjam.core.domain.model.request.CreateTagCollectionRowRequest
 import com.moly3.cedarjam.core.domain.model.request.CreateTagLinkRequest
 import com.moly3.cedarjam.core.domain.model.request.CreateTagToTagRequest
@@ -36,6 +36,7 @@ import com.moly3.cedarjam.core.domain.usecase.IOpenNodeDataUseCase
 import com.moly3.cedarjam.features.feature_graph.model.GraphDialogInput
 import com.moly3.cedarjam.navigation.Navigator
 import com.moly3.cedarjam.navigation.mapper.toRoute
+import com.moly3.dataviz.core.graph.model.Connection
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.collections.immutable.toPersistentMap
@@ -108,11 +109,12 @@ internal class DialogGraphStoreFactory(
             }
         }
 
+
         private val connectionsFlow = combine(
             workspaceSession.graphEco.connectionsFlow,
             targetIdFlow
         ) { connections, targetId ->
-            connections[targetId]?.associateBy { it } ?: mapOf()
+            connections[targetId]?.associateBy { it.target } ?: emptyMap()
         }
 
         private val connectedTags = combine(
@@ -157,9 +159,10 @@ internal class DialogGraphStoreFactory(
             UIState.Success(filtered.toPersistentList())
         }
 
+
         fun findAllConnected(
             startId: String,
-            connections: Map<String, List<String>>
+            connections: Map<String, List<Connection<String>>>,
         ): Set<String> {
             val visited = mutableSetOf<String>()
             val queue = ArrayDeque<String>()
@@ -172,8 +175,8 @@ internal class DialogGraphStoreFactory(
                 val neighbours = connections[current].orEmpty()
 
                 for (neighbour in neighbours) {
-                    if (visited.add(neighbour)) {
-                        queue.add(neighbour)
+                    if (visited.add(neighbour.target)) {
+                        queue.add(neighbour.target)
                     }
                 }
             }
@@ -219,12 +222,11 @@ internal class DialogGraphStoreFactory(
                         dispatch(Msg.SetAnnotationsState(it))
                     }
             }
+
             scopeFromStartToStop.launch {
                 workspaceSession.graphEco.connectionsFlow
-                    .map {
-                        it
-                            .map { d -> d.key to d.value.toImmutableList() }
-                            .toMap()
+                    .map { m ->
+                        m.mapValues { (_, v) -> v.toImmutableList() }
                             .toPersistentMap()
                     }
                     .flowOn(io)
@@ -233,9 +235,11 @@ internal class DialogGraphStoreFactory(
                     }
             }
 
+
+
             scopeFromStartToStop.launch {
                 combine(
-                    workspaceSession.graphEco.nodes,
+                    workspaceSession.graphEco.nodesFlow,
                     workspaceSession.graphEco.connectionsFlow,
                     targetIdFlow,
                     _isShowNestedConnectionsStateFlow
@@ -245,11 +249,14 @@ internal class DialogGraphStoreFactory(
                             val connectedIds = findAllConnected(targetId, connections)
                             nodes.filter { it.id in connectedIds }
                         } else {
-                            val masterConnections = connections[targetId] ?: listOf()
-                            nodes.filter { it.id == targetId || masterConnections.contains(it.id) }
+                            // Project the master's outgoing Connections to a Set of
+                            // target node ids; we only care about membership here.
+                            val masterTargets: Set<String> =
+                                connections[targetId]?.mapTo(HashSet()) { it.target } ?: emptySet()
+                            nodes.filter { it.id == targetId || it.id in masterTargets }
                         }
-                    } else
-                        nodes
+                    } else nodes
+
                     var coordinates: Map<String, Offset>? = null
                     if (state().coordinates.isEmpty()) {
                         val mutMap = mutableMapOf<String, Offset>()
@@ -326,7 +333,7 @@ internal class DialogGraphStoreFactory(
                                 }
 
                                 is GraphDialogInput.Row -> {
-                                    workspaceEnv.createTagCollectionRow(
+                                    workspaceEnv.createTagRow(
                                         CreateTagCollectionRowRequest(
                                             tagId = tag.id,
                                             rowId = targetInput.id,

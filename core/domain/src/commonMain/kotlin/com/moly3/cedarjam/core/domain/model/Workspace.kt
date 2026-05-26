@@ -42,8 +42,16 @@ data class WorkspacePresentation(
 
 fun WorkspacePresentation.getSettingsJsonFile(): FileTreeNode.File {
     return FileTreeNode.File(
-        name = FileName("workspace_settings", extension = "json"),
         workspaceFullPath = absolutePath,
         parentRelativePath = hiddenDirectory,
+        name = FileName("workspace_settings", extension = "json"),
+    )
+}
+
+fun WorkspacePresentation.getGraphConfigs(): FileTreeNode.File {
+    return FileTreeNode.File(
+        workspaceFullPath = absolutePath,
+        parentRelativePath = hiddenDirectory,
+        name = FileName("workspace_settings", extension = "json"),
     )
 }

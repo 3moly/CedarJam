@@ -150,9 +150,9 @@ internal class SystemFilesManager : ISystemFilesManager, IFileHasher {
     }
 
     override fun deleteNodeHeavy(nodePath: String) {
-
         try {
             val path = Path(nodePath)
+            if (!fs.exists(path)) return
             if (fs.metadataOrNull(path)!!.isDirectory) {
                 val child = fs.list(Path(nodePath))
                 for (childPath in child) {

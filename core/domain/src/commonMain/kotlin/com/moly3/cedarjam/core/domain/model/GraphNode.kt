@@ -19,26 +19,26 @@ fun AnnotationDTO.getGraphId(): String {
     return id.getAnnotationGraphId()
 }
 
-fun Long.getCollectionGraphId(): String {
-    return "collection: $this"
+fun CollectionId.getCollectionGraphId(): String {
+    return "collection: ${this.value}"
 }
 
-fun Long.getAnnotationGraphId(): String {
-    return "annotation: $this"
+fun AnnotationId.getAnnotationGraphId(): String {
+    return "annotation: ${this.value}"
 }
 
 fun CollectionRowDTO.getGraphId(): String {
     return id.getCollectionRowGraphId()
 }
 
-fun Long.getCollectionRowGraphId(): String {
-    return "collection_row: $this"
+fun RowId.getCollectionRowGraphId(): String {
+    return "collection_row: ${this.value}"
 }
 
 fun TagDTO.getGraphId(): String {
     return id.getTagGraphId()
 }
 
-fun Long.getTagGraphId(): String {
-    return "tag: $this"
+fun TagId.getTagGraphId(): String {
+    return "tag: ${this.value}"
 }

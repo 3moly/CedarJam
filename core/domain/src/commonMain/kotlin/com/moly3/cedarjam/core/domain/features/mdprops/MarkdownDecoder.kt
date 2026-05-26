@@ -45,7 +45,7 @@ object MarkdownDecoder {
             val first = rows.first()
             if (first.type == RowType.Heading1 && first.text.isNotBlank()) {
                 title = first.text
-                rows = rows.drop(1)
+                rows = rows.drop(1).dropWhile { it.type == RowType.Paragraph && it.text.isEmpty() }
             }
         }
 
@@ -136,14 +136,50 @@ object MarkdownDecoder {
     private fun decodeBody(body: String): List<MarkdownRow> {
         if (body.isBlank()) return emptyList()
 
-        val lines = body.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+        val raw = body.replace("\r\n", "\n").replace("\r", "\n")
+        val normalized = if (raw.endsWith("\n")) raw.dropLast(1) else raw
+        val lines = normalized.split("\n")
         val rows = ArrayList<MarkdownRow>()
-        var i = 0
 
+        var pendingBlankLines = 0
+        var prevBlock: MarkdownRow? = null
+
+        fun flushBlankLines(nextBlock: MarkdownRow?) {
+            if (pendingBlankLines == 0) return
+
+            val mergingLists = prevBlock != null && nextBlock != null && (
+                    (prevBlock!!.type == RowType.BulletList && nextBlock.type == RowType.BulletList) ||
+                            (prevBlock!!.type == RowType.NumberedList && nextBlock.type == RowType.NumberedList)
+                    )
+            if (mergingLists) {
+                pendingBlankLines = 0
+                return
+            }
+
+            // Leading blank lines (before any block) are frontmatter/title artifacts.
+            if (prevBlock == null) {
+                pendingBlankLines = 0
+                return
+            }
+
+            repeat(pendingBlankLines) {
+                rows.add(MarkdownRow(type = RowType.Paragraph, text = ""))
+            }
+            pendingBlankLines = 0
+        }
+
+        var i = 0
         while (i < lines.size) {
             val line = lines[i]
 
-            // --- fenced code block ------------------------------------------------
+            // --- blank line ------------------------------------------------------
+            if (line.isBlank()) {
+                pendingBlankLines++
+                i++
+                continue
+            }
+
+            // --- fenced code block -----------------------------------------------
             val fence = fencedCodeStart.find(line)
             if (fence != null) {
                 val fenceToken = fence.groupValues[1]
@@ -155,23 +191,28 @@ object MarkdownDecoder {
                     i++
                 }
                 if (i < lines.size) i++ // consume closing fence
-                rows.add(
-                    MarkdownRow(
-                        type = RowType.Code,
-                        text = codeLines.joinToString("\n"),
-                        codeLanguage = language,
-                    )
+                val codeRow = MarkdownRow(
+                    type = RowType.Code,
+                    text = codeLines.joinToString("\n"),
+                    codeLanguage = language,
                 )
+                flushBlankLines(codeRow)
+                rows.add(codeRow)
+                prevBlock = codeRow
                 continue
             }
 
-            // --- blank line -> separator -----------------------------------------
-            if (line.isBlank()) { i++; continue }
-
             // --- single-line block types -----------------------------------------
-            rows.add(decodeLine(line))
+            val row = decodeLine(line)
+            flushBlankLines(row)
+            rows.add(row)
+            prevBlock = row
             i++
         }
+
+        // Flush any trailing blank lines at the end of the file
+        flushBlankLines(null)
+
         return rows
     }
 
@@ -186,7 +227,8 @@ object MarkdownDecoder {
     /** Classifies a single body line into a typed [MarkdownRow]. */
     private fun decodeLine(line: String): MarkdownRow {
         dividerRegex.matchEntire(line)?.let {
-            return MarkdownRow(type = RowType.Divider, text = "")
+            // Keep the raw rule source so the editor can reveal & edit it.
+            return MarkdownRow(type = RowType.Divider, text = it.groupValues[1].trim())
         }
         imageRegex.matchEntire(line)?.let {
             return MarkdownRow(type = RowType.Image, text = it.groupValues[1].trim())
@@ -250,7 +292,8 @@ object MarkdownEncoder {
         }
 
         sb.append(encodeBody(doc.rows))
-        return sb.toString().trimEnd() + "\n"
+        val s = sb.toString()
+        return if (s.endsWith("\n")) s else "$s\n"
     }
 
     /* ---- frontmatter: List<DocumentProperty> -> YAML ----------------------------- */
@@ -366,6 +409,15 @@ object MarkdownEncoder {
     /* ---- body: List<MarkdownRow> -> Markdown text -------------------------------- */
 
     /**
+     * Renders an arbitrary list of [rows] to Markdown text, with no frontmatter
+     * or title. Used to copy a multi-row block selection to the clipboard as
+     * raw Markdown. The output is the same body text [encode] would produce for
+     * those rows, trimmed of trailing whitespace.
+     */
+    fun encodeRows(rows: List<MarkdownRow>): String =
+        encodeBody(rows).trimEnd()
+
+    /**
      * Renders rows to Markdown. Adjacent list items of the same kind stay on
      * consecutive lines; every other block is separated by a blank line, which
      * mirrors how [MarkdownDecoder] re-reads the text.
@@ -373,33 +425,41 @@ object MarkdownEncoder {
     private fun encodeBody(rows: List<MarkdownRow>): String {
         val sb = StringBuilder()
         var numberedCounter = 0
+        var lastEmittedRow: MarkdownRow? = null
 
-        rows.forEachIndexed { index, row ->
-            val prev = rows.getOrNull(index - 1)
+        rows.forEach { row ->
+            // DO NOT skip empty paragraphs anymore! We want them saved.
 
-            // Maintain an incrementing counter for runs of numbered-list rows.
             numberedCounter = if (row.type == RowType.NumberedList) {
-                if (prev?.type == RowType.NumberedList) numberedCounter + 1 else 1
+                if (lastEmittedRow?.type == RowType.NumberedList) numberedCounter + 1 else 1
             } else {
                 0
             }
 
-            if (index > 0 && needsBlankLineBetween(prev, row)) {
+            if (lastEmittedRow != null && needsBlankLineBetween(lastEmittedRow, row)) {
                 sb.append("\n")
             }
 
             sb.append(encodeRow(row, numberedCounter))
             sb.append("\n")
+
+            lastEmittedRow = row
         }
         return sb.toString()
     }
 
-    /** Two consecutive list items of the same type are NOT blank-separated. */
     private fun needsBlankLineBetween(prev: MarkdownRow?, current: MarkdownRow): Boolean {
         if (prev == null) return false
-        val bothBullets = prev.type == RowType.BulletList && current.type == RowType.BulletList
-        val bothNumbered = prev.type == RowType.NumberedList && current.type == RowType.NumberedList
-        return !(bothBullets || bothNumbered)
+
+        val isPrevEmpty = prev.type == RowType.Paragraph && prev.text.isBlank()
+        val isCurrentEmpty = current.type == RowType.Paragraph && current.text.isBlank()
+
+        // Empty blocks carry their own newline; never double-space around them.
+        if (isPrevEmpty || isCurrentEmpty) return false
+
+        // Otherwise, adjacent non-empty blocks butt up against each other.
+        // The user's explicit empty rows are the only source of vertical spacing.
+        return false
     }
 
     private fun encodeRow(row: MarkdownRow, numberedIndex: Int): String = when (row.type) {
@@ -412,7 +472,7 @@ object MarkdownEncoder {
         RowType.Quote -> if (row.text.isEmpty()) ">" else "> ${row.text}"
         RowType.Code -> encodeCodeRow(row)
         RowType.Image -> "![](${row.text})"
-        RowType.Divider -> "---"
+        RowType.Divider -> if (row.text.isBlank()) DividerSyntax.CANONICAL else row.text.trim()
     }
 
     /** Fences a code row, widening the fence if the body itself contains backticks. */
