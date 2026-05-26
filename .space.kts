@@ -21,7 +21,7 @@ job("coverage badge") {
             content = """
                 set -e
 
-                # Run tests + Kover XML report (xvfb for any UI-touching tests)
+                #  Run tests + Kover XML report (xvfb for any UI-touching tests)
                 xvfb-run -a --server-args="-screen 0 1280x1024x24" \
                     ./gradlew :shared:cleanJvmTest :shared:jvmTest --tests "shared_tests.*" :shared:koverXmlReportCustomJvm \
                     --build-cache --no-daemon --console=plain
