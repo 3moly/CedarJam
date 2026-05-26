@@ -26,40 +26,36 @@ class MagnifyHandler(private val onValue: (Double) -> Unit) : InvocationHandler 
 }
 
 fun addMagnifyListener(p: Container, onMagnifyValue: (Double) -> Unit) {
-    try {
-        if (System.getProperty("os.name").contains("Mac")) {
-            try {
-                val constructors = Class.forName("com.apple.eawt.event.GestureUtilities")
-                    .declaredConstructors
+    if (System.getProperty("os.name").contains("Mac")) {
+        try {
+            val constructors = Class.forName("com.apple.eawt.event.GestureUtilities")
+                .declaredConstructors
 
-                var gu: Any? = null
+            var gu: Any? = null
 
-                for (constructor in constructors) {
-                    constructor.isAccessible = true
-                    gu = constructor.newInstance()
-                    break
-                }
-
-                val mh = Proxy.newProxyInstance(
-                    Class.forName("com.apple.eawt.event.MagnificationListener").getClassLoader(),
-                    arrayOf<Class<*>>(Class.forName("com.apple.eawt.event.MagnificationListener")),
-                    MagnifyHandler { value ->
-                        onMagnifyValue(value)
-                    }
-                )
-                gu!!.javaClass
-                    .getMethod(
-                        "addGestureListenerTo",
-                        Class.forName("javax.swing.JComponent"),
-                        Class.forName("com.apple.eawt.event.GestureListener")
-                    )
-                    .invoke(gu, p, mh)
-            } catch (e: Exception) {
-                Logger.e { e.toString() }
-                //e.printStackTrace()
+            for (constructor in constructors) {
+                constructor.isAccessible = true
+                gu = constructor.newInstance()
+                break
             }
-        }
-    } catch (exc: Exception) {
 
+            val mh = Proxy.newProxyInstance(
+                Class.forName("com.apple.eawt.event.MagnificationListener").getClassLoader(),
+                arrayOf<Class<*>>(Class.forName("com.apple.eawt.event.MagnificationListener")),
+                MagnifyHandler { value ->
+                    onMagnifyValue(value)
+                }
+            )
+            gu!!.javaClass
+                .getMethod(
+                    "addGestureListenerTo",
+                    Class.forName("javax.swing.JComponent"),
+                    Class.forName("com.apple.eawt.event.GestureListener")
+                )
+                .invoke(gu, p, mh)
+        } catch (e: Exception) {
+//                Logger.e { e.toString() }
+            //e.printStackTrace()
+        }
     }
 }

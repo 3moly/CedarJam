@@ -18,6 +18,7 @@ import com.moly3.cedarjam.core.domain.model.FileTypeExt
 import com.moly3.cedarjam.core.domain.model.GraphEdge
 import com.moly3.cedarjam.core.domain.model.GraphEdgeType
 import com.moly3.cedarjam.core.domain.model.ObsidianGraphNode
+import com.moly3.cedarjam.core.domain.model.TagAnnotationDTO
 import com.moly3.cedarjam.core.domain.model.TagCollectionRowDTO
 import com.moly3.cedarjam.core.domain.model.TagDTO
 import com.moly3.cedarjam.core.domain.model.TagLinkDTO
@@ -26,6 +27,7 @@ import com.moly3.cedarjam.core.domain.model.TagToTagDTO
 import com.moly3.cedarjam.core.domain.model.UIState
 import com.moly3.cedarjam.core.domain.model.bind
 import com.moly3.cedarjam.core.domain.model.config.GroupLogic
+import com.moly3.cedarjam.core.domain.model.getAnnotationGraphId
 import com.moly3.cedarjam.core.domain.model.getCollectionGraphId
 import com.moly3.cedarjam.core.domain.model.getCollectionRowGraphId
 import com.moly3.cedarjam.core.domain.model.getFileTreeNodeGraphId
@@ -120,36 +122,19 @@ class ObsGraphEco(
     private fun styleFor(type: GraphEdgeType): ArrowStyle {
         return ArrowStyle(head = ArrowHead.None, line = LineStyle.Solid, color = Color.Unspecified)
         return when (type) {
-            GraphEdgeType.DirectoryContainsFile -> ArrowStyle.Default
-            GraphEdgeType.RowInCollection       -> ArrowStyle.Default
+            GraphEdgeType.None -> ArrowStyle.Default
 
             is GraphEdgeType.FileLink -> ArrowStyle(
                 head = ArrowHead.Open,
                 line = LineStyle.Solid,
             )
-
-            GraphEdgeType.AnnotationOnFile -> ArrowStyle(head = ArrowHead.Open)
-            GraphEdgeType.AnnotationOnRow  -> ArrowStyle(head = ArrowHead.Open)
-
-            GraphEdgeType.TagOnFile -> ArrowStyle(
-                head = ArrowHead.Open,
-                line = LineStyle.Dashed,
-            )
-            GraphEdgeType.TagOnRow -> ArrowStyle(
-                head = ArrowHead.Open,
-                line = LineStyle.Dashed,
-            )
-
-            GraphEdgeType.RowOnFile -> ArrowStyle(head = ArrowHead.Open)
-
-            GraphEdgeType.TagToTag -> ArrowStyle(head = ArrowHead.FilledTriangle)
         }
     }
 
     private fun isMutual(type: GraphEdgeType): Boolean = when (type) {
-        GraphEdgeType.DirectoryContainsFile -> true
-        is GraphEdgeType.FileLink           -> true
-        else                                -> false
+        GraphEdgeType.None -> true
+        is GraphEdgeType.FileLink -> true
+        else -> false
     }
 
     private val isShowTagsFlow = _settingsStateFlow
@@ -209,6 +194,11 @@ class ObsGraphEco(
             if (show) items else emptyList()
         }.scoping()
 
+    private val tagAnnotationsFlow: Flow<List<TagAnnotationDTO>> =
+        combine(isShowAnnotationsFlow, workspaceSession.tagAnnotationsFlow) { show, items ->
+            if (show) items else emptyList()
+        }.scoping()
+
     private val collectionRowsFlow: Flow<List<CollectionRowDTO>> =
         combine(isShowRowsFlow, workspaceSession.collectionRowsFlow) { show, items ->
             if (show) items else emptyList()
@@ -236,7 +226,7 @@ class ObsGraphEco(
                 }
             }
             allFiles
-        } .debounce(150L)   // collapse rapid bursts during indexing
+        }.debounce(150L)   // collapse rapid bursts during indexing
             .scoping()
 
     private val graphNodesFlow = kotlinx.coroutines.flow.combine(
@@ -260,7 +250,7 @@ class ObsGraphEco(
                 GraphNode(
                     id = graphId,
                     name = item.name,
-                    colorValue = GREEN_COLOR,
+                    colorValue = Color.Gray.value,
                     data = ObsidianGraphData.Collection(id = item.id)
                 )
             )
@@ -273,7 +263,7 @@ class ObsGraphEco(
                 GraphNode(
                     id = graphId,
                     name = "annotation: page ${item.dataPoint}",
-                    colorValue = RED_COLOR,
+                    colorValue = Color.Gray.value,
                     data = ObsidianGraphData.Annotation(
                         id = item.id,
                         dataPath = item.dataPath,
@@ -315,12 +305,11 @@ class ObsGraphEco(
         }
         for (item in files) {
             val graphId = item.getGraphId()
-            val color = if (item is FileTreeNode.File) BLUE_COLOR else CYAN_COLOR
             graphNodes.add(
                 GraphNode(
                     id = graphId,
                     name = item.getShortName(),
-                    colorValue = color,
+                    colorValue = Color.Gray.value,
                     data = ObsidianGraphData.File(
                         item.getRelativePath(),
                         isDirectory = item.isDirectory(),
@@ -371,6 +360,7 @@ class ObsGraphEco(
     ) {
         if (from == to) return // skip self-loops at the source
         add(GraphEdge(from, to, type))
+        add(GraphEdge(to, from, type))
     }
 
     /**
@@ -744,7 +734,7 @@ class ObsGraphEco(
 
             for (file in children) {
                 val fileGraphId = file.getGraphId()
-                edges.add(dirGraphId, fileGraphId, GraphEdgeType.DirectoryContainsFile)
+                edges.add(dirGraphId, fileGraphId, GraphEdgeType.None)
 
                 if (file !is FileTreeNode.File) continue
                 if (file.name.extension.toFileType() != FileTypeExt.Text) continue
@@ -787,33 +777,50 @@ class ObsGraphEco(
 
 
     private val metadataEdgesFlow: Flow<List<GraphEdge>> =
-        com.moly3.cedarjam.core.domain.func.combine(
+        combine(
             collectionRowsFlow,
             tagToTagsFlow,
             tagLinksFlow,
             tagRowsFlow,
             annotationsFlow,
-        ) { rows, tagToTags, tagLinks, tagRows, annotations ->
+            tagAnnotationsFlow
+        ) { rows, tagToTags, tagLinks, tagRows, annotations, tagAnnotations ->
             val edges = ArrayList<GraphEdge>(
-                rows.size * 2 + tagToTags.size + tagLinks.size + annotations.size * 2 + 16
+                rows.size * 2 +
+                        tagToTags.size +
+                        tagLinks.size +
+                        annotations.size * 2 + 16 +
+                        tagAnnotations.size * 2
             )
 
             // 1) Annotations
             for (item in annotations) {
                 val annId = item.getGraphId()
-                edges.add(annId, item.dataPath.getFileTreeNodeGraphId(), GraphEdgeType.AnnotationOnFile)
+                edges.add(
+                    annId,
+                    item.dataPath.getFileTreeNodeGraphId(),
+                    GraphEdgeType.None
+                )
                 if (item.rowId != null) {
-                    edges.add(annId, item.rowId.getCollectionRowGraphId(), GraphEdgeType.AnnotationOnRow)
+                    edges.add(
+                        annId,
+                        item.rowId.getCollectionRowGraphId(),
+                        GraphEdgeType.None
+                    )
                 }
             }
 
             // 2) Collection rows
             for (item in rows) {
                 val rowId = item.getGraphId()
-                edges.add(rowId, item.collectionId.getCollectionGraphId(), GraphEdgeType.RowInCollection)
+                edges.add(
+                    rowId,
+                    item.collectionId.getCollectionGraphId(),
+                    GraphEdgeType.None
+                )
                 val rel = item.fileRelativePath
                 if (!rel.isNullOrEmpty()) {
-                    edges.add(rowId, rel.getFileTreeNodeGraphId(), GraphEdgeType.RowOnFile)
+                    edges.add(rowId, rel.getFileTreeNodeGraphId(), GraphEdgeType.None)
                 }
             }
 
@@ -822,7 +829,7 @@ class ObsGraphEco(
                 edges.add(
                     item.tagId.getTagGraphId(),
                     item.rowId.getCollectionRowGraphId(),
-                    GraphEdgeType.TagOnRow,
+                    GraphEdgeType.None,
                 )
             }
 
@@ -834,7 +841,7 @@ class ObsGraphEco(
                         edges.add(
                             tagGraphId,
                             data.relativePath.getFileTreeNodeGraphId(),
-                            GraphEdgeType.TagOnFile,
+                            GraphEdgeType.None,
                         )
                     }
                 }
@@ -845,12 +852,23 @@ class ObsGraphEco(
                 edges.add(
                     item.secondTagId.getTagGraphId(),
                     item.firstTagId.getTagGraphId(),
-                    GraphEdgeType.TagToTag,
+                    GraphEdgeType.None,
+                )
+            }
+
+            // 6) Tag-to-Annotation
+            for (item in tagAnnotations) {
+                edges.add(
+                    item.annotationId.getAnnotationGraphId(),
+                    item.tagId.getTagGraphId(),
+                    GraphEdgeType.None,
                 )
             }
 
             edges
         }.scoping()
+
+
 
 
     private val oldConnectionsFlow: Flow<List<GraphEdge>> = combine(
@@ -936,7 +954,8 @@ class ObsGraphEco(
     ): Map<String, List<Connection<String>>> {
 
         // (from -> ((target, edgeType) -> Connection))
-        val acc = HashMap<String, LinkedHashMap<Pair<String, GraphEdgeType>, Connection<String>>>(edges.size)
+        val acc =
+            HashMap<String, LinkedHashMap<Pair<String, GraphEdgeType>, Connection<String>>>(edges.size)
 
         fun addOne(from: String, to: String, type: GraphEdgeType) {
             if (from == to) return
@@ -978,10 +997,10 @@ class ObsGraphEco(
     }
 
 
-    private companion object {
-        private val GREEN_COLOR = Color.Green.value
-        private val RED_COLOR = Color.Red.value
-        private val BLUE_COLOR = Color.Blue.value
-        private val CYAN_COLOR = Color.Cyan.value
-    }
+//    private companion object {
+//        private val GREEN_COLOR = Color.Green.value
+//        private val RED_COLOR = Color.Red.value
+//        private val BLUE_COLOR = Color.Blue.value
+//        private val CYAN_COLOR = Color.Cyan.value
+//    }
 }

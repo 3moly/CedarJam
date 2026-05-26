@@ -13,6 +13,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import com.moly3.cedarjam.core.domain.dialog.DialogState
 import com.moly3.cedarjam.core.domain.dialog.GlobalDialog
 import com.moly3.cedarjam.core.domain.dialog.getData
@@ -58,7 +59,7 @@ fun <Input, Result> CJDialogGeneric(
                     .graphicsLayer {
                         this.translationX = animatedOffset.toPx()
 //                        this.translationY = animatedOffset.toPx()
-                    },
+                    }.zIndex(Float.MAX_VALUE - 100f),
                 sheetState = state.sheetState,
                 sheetMaxWidth = 400.dp,
                 containerColor = appTheme.colors.backgroundSecondary,

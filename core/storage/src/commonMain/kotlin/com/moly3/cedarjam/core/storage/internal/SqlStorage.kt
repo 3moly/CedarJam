@@ -33,6 +33,7 @@ import com.moly3.cedarjam.core.domain.model.fold
 import com.moly3.cedarjam.core.domain.model.resultBlock
 import com.moly3.cedarjam.core.domain.model.request.CreateCollectionRequest
 import com.moly3.cedarjam.core.domain.model.request.CreateCollectionRowRequest
+import com.moly3.cedarjam.core.domain.model.request.CreateTagAnnotationRequest
 import com.moly3.cedarjam.core.domain.model.request.CreateTagCollectionRowRequest
 import com.moly3.cedarjam.core.domain.model.request.CreateTagToTagRequest
 import com.moly3.cedarjam.core.domain.model.request.RenameDataCollectionRequest
@@ -698,6 +699,29 @@ internal class SqlStorage(
         }
     }
 
+    override fun createTagAnnotation(request: CreateTagAnnotationRequest): ResultWrapper<Long, String> {
+        return runQueryOrThrow { db ->
+            resultBlock {
+                db.transactionWithResult {
+//                    val tags =
+//                        db.tagToTagQueries.search(request.tagId, request.tag2Id).executeAsList()
+//                    ensure(tags.isEmpty()) { "" }
+
+                    db.tagAnnotationQueries.insertObject(
+                        TagAnnotation(
+                            id = 1L,
+                            tagId = request.tagId,
+                            annotationId = request.annotationId,
+                            createdTime = request.createdTime
+                        )
+                    )
+                    val tagId = db.tagAnnotationQueries.lastInsertId().executeAsOneOrNull()
+                    tagId!!
+                }
+            }
+        }
+    }
+
     override fun createTagToTag(request: CreateTagToTagRequest): ResultWrapper<Long, String> {
         return runQueryOrThrow { db ->
             resultBlock {
@@ -897,6 +921,12 @@ internal class SqlStorage(
     override fun deleteTagCollectionRow(id: Long) {
         runQueryOrThrow { db ->
             db.tagCollectionRowQueries.delete(id = id)
+        }
+    }
+
+    override fun deleteTagAnnotation(id: Long) {
+        runQueryOrThrow { db ->
+            db.tagAnnotationQueries.delete(id = id)
         }
     }
 }

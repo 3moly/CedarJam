@@ -39,12 +39,14 @@ fun FileEdit(
     onSave: (String) -> Unit = {}
 ) {
     val isRawMode = remember { mutableStateOf(false) }
-    var document by remember {
-        val document2 = MarkdownDecoder.decode(text)
-        mutableStateOf(document2)
+//    var document by remember {
+//        val document2 = MarkdownDecoder.decode(text)
+//        mutableStateOf(document2)
+//    }
+    var doc by remember(text) {                       // key on text
+        mutableStateOf(MarkdownDecoder.decode(text))
     }
-    val history = remember { DocumentHistory(document) }
-    var doc by remember { mutableStateOf(history.current) }
+    val history = remember(text) { DocumentHistory(doc) }
     var updatedTimingState by remember { mutableStateOf(0L) }
     Column(modifier.fillMaxSize()) {
         CJIOSwitch(modifier = Modifier, height = 24, checked = isRawMode.value, onCheckedChange = {

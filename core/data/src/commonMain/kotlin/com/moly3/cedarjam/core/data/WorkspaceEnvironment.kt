@@ -43,6 +43,7 @@ import com.moly3.cedarjam.core.domain.repository.IFilesRepository
 import com.moly3.cedarjam.core.domain.repository.IWorkspaceEnvironment
 import com.moly3.cedarjam.core.domain.model.request.CreateCollectionRequest
 import com.moly3.cedarjam.core.domain.model.request.CreateCollectionRowRequest
+import com.moly3.cedarjam.core.domain.model.request.CreateTagAnnotationRequest
 import com.moly3.cedarjam.core.domain.model.request.CreateTagCollectionRowRequest
 import com.moly3.cedarjam.core.domain.model.request.CreateTagLinkRequest
 import com.moly3.cedarjam.core.domain.model.request.CreateTagRequest
@@ -61,14 +62,12 @@ import com.moly3.cedarjam.db.Annotation
 import com.moly3.cedarjam.db.DataCollectionRow
 import com.moly3.cedarjam.db.Tag
 import com.moly3.cedarjam.indexdb.IndexFile
-import dev.zacsweers.metro.AssistedInject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
@@ -109,6 +108,7 @@ class WorkspaceEnvironment(
             watch(item)
         }
     }
+
     private val _configsState = MutableStateFlow<GraphSaveConfigs?>(null)
     private val loadMutex = Mutex()
 
@@ -966,6 +966,12 @@ class WorkspaceEnvironment(
         )
     }
 
+    override fun createTagAnnotation(request: CreateTagAnnotationRequest): ResultWrapper<Long, String> {
+        return sqlStorage.createTagAnnotation(
+            request = request
+        )
+    }
+
     override fun createTagToTag(request: CreateTagToTagRequest): ResultWrapper<Long, String> {
         return sqlStorage.createTagToTag(request = request)
     }
@@ -995,6 +1001,10 @@ class WorkspaceEnvironment(
 
     override fun deleteTagToTag(id: Long) {
         sqlStorage.deleteTagToTag(id = id)
+    }
+
+    override fun deleteTagAnnotation(id: Long) {
+        sqlStorage.deleteTagAnnotation(id = id)
     }
 
     override fun deleteTagCollectionRow(id: Long) {

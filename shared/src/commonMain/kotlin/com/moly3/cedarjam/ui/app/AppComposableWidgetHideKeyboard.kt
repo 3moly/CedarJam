@@ -1,6 +1,5 @@
 package com.moly3.cedarjam.ui.app
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -16,6 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import com.moly3.cedarjam.core.domain.func.getPlatform
 import com.moly3.cedarjam.core.domain.model.Platform
 import com.moly3.cedarjam.core.ui.func.imePaddingCJ
@@ -27,19 +27,20 @@ import vector.CommonIcHideKeyboard
 fun BoxScope.AppComposableWidgetHideKeyboard() {
     val isKeyboardShowed by keyboardAsState()
     val keyboard = LocalSoftwareKeyboardController.current
-
-    AnimatedVisibility(
-        visible = isKeyboardShowed && getPlatform() == Platform.Ios,
-        modifier = Modifier
-            .imePaddingCJ()
-            .navigationBarsPaddingCJ()
-            .padding(end = 24.dp)
-            .align(Alignment.BottomEnd) // attach here instead
-    ) {
-        HideKeyboardCard(
-            modifier = Modifier,
-            onClick = { keyboard?.hide() }
-        )
+    if (isKeyboardShowed && getPlatform() == Platform.Ios) {
+        Box(
+            modifier = Modifier
+                .zIndex(Float.MAX_VALUE)
+                .imePaddingCJ()
+                .navigationBarsPaddingCJ()
+                .padding(end = 24.dp)
+                .align(Alignment.BottomEnd) // attach here instead
+        ) {
+            HideKeyboardCard(
+                modifier = Modifier,
+                onClick = { keyboard?.hide() }
+            )
+        }
     }
 }
 

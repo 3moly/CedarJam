@@ -16,12 +16,5 @@ fun GraphEdgeType.arrowStyle(): ArrowStyle = when (this) {
         RelationKind.Reference -> ArrowStyle(ArrowHead.Open, LineStyle.Dotted)
     }
 
-    GraphEdgeType.DirectoryContainsFile -> ArrowStyle(ArrowHead.FilledDiamond, LineStyle.Solid)
-    GraphEdgeType.AnnotationOnFile -> ArrowStyle(ArrowHead.Open, LineStyle.Dotted)
-    GraphEdgeType.AnnotationOnRow -> ArrowStyle(ArrowHead.Open, LineStyle.Dotted)
-    GraphEdgeType.RowInCollection -> ArrowStyle(ArrowHead.HollowDiamond, LineStyle.Solid)
-    GraphEdgeType.RowOnFile -> ArrowStyle(ArrowHead.Open, LineStyle.Solid)
-    GraphEdgeType.TagOnRow -> ArrowStyle(ArrowHead.Open, LineStyle.Solid)
-    GraphEdgeType.TagOnFile -> ArrowStyle(ArrowHead.Open, LineStyle.Solid)
-    GraphEdgeType.TagToTag -> ArrowStyle(ArrowHead.Open, LineStyle.Solid)
+    GraphEdgeType.None -> ArrowStyle.Default
 }

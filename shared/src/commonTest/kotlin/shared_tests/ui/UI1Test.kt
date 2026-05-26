@@ -20,11 +20,14 @@ import com.moly3.cedarjam.core.domain.repository.IWorkspaceEnvironment
 import com.moly3.cedarjam.di.metro.CedarJamGraph
 import com.moly3.cedarjam.pages.page_tab.TabComponent
 import com.moly3.cedarjam.pages.page_workspace.Intent
+import com.moly3.cedarjam.ui.Res
+import com.moly3.cedarjam.ui.create_new_workspace
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.absolutePath
 import io.github.vinceglb.filekit.projectDir
 import io.kotest.matchers.collections.shouldHaveSize
 import kotlinx.coroutines.delay
+import org.jetbrains.compose.resources.getString
 import shared_tests.func.checkFlowListSize
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -33,12 +36,8 @@ import kotlin.test.assertEquals
 class UI1Test : UITest() {
 
     @Test
-    fun testUI2Test() = runUITest(beforeSetContent = {
-        Logger.d("step beforeSetContent")
-    }) {
-        Logger.d("step 01")
+    fun testUI2Test() = runUITest {
         checkAndWaitCurrentPage<Root.Child.SelectWorkspace>()
-        Logger.d("step 1")
         component!!.onNavigate(
             Route.Workspace(
                 WorkspaceInput(
@@ -47,10 +46,7 @@ class UI1Test : UITest() {
                 )
             )
         )
-        Logger.d("step 2")
         checkAndWaitCurrentPage<Root.Child.Workspace>()
-
-        Logger.d("step 3")
     }
 
     private suspend inline fun IWorkspaceEnvironment.isFullSynced() {
@@ -98,15 +94,7 @@ class UI1Test : UITest() {
     }
 
     @Test
-    fun testUITestLogging() = runUITest(beforeSetContent = {}) { root ->
-        Logger.e { "testUITestLogging -- start" }
-        Logger.e { "testUITestLogging -- =" }
-        Logger.e { "testUITestLogging -- finish" }
-    }
-
-    @Test
     fun testUITestAdvance() = runUITest(beforeSetContent = {}) { root ->
-        Logger.i { "testUITestAdvance step 1" }
         val workspace = Workspace(
             name = "hehe",
             platformPath = pathWrapper(
@@ -121,14 +109,12 @@ class UI1Test : UITest() {
         val fs = koin.cedarJamDependencies.systemFileManager
         fs.deleteNodeHeavy(workspace.platformPath)
 
-        Logger.i { "testUITestAdvance step 2" }
         remoteSync.deleteWorkspace(userName = "bulat", workspace.serverName).shouldBeSuccess()
 
-        Logger.i { "testUITestAdvance step 3" }
         val instance1 = waitAndGetComponent<Root.Child.SelectWorkspace>()
-        Logger.i { "testUITestAdvance step 4" }
         instance1.component.onIntent(com.moly3.cedarjam.pages.page_select_workspace.Intent.CreateWorkspace)
-        waitUntilAtLeastOneExists(hasText("create workspace"))
+        waitUntilAtLeastOneExists(hasText(getString(Res.string.create_new_workspace)))
+
         onNode(hasTestTag("fullpath_check_box")).performClick()
         onNode(hasTestTag("workspace_name_input")).performTextInput(workspace.serverName)
         waitUntilAtLeastOneExists(hasText(workspace.serverName))

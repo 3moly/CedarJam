@@ -38,6 +38,8 @@ import com.moly3.cedarjam.pages.page_tab.TabComponent
 import com.moly3.cedarjam.pages.page_tabs.TabsComponent
 import com.moly3.cedarjam.pages.page_workspace.Intent
 import com.moly3.cedarjam.pages.page_workspace.WorkspaceComponent
+import com.moly3.cedarjam.ui.Res
+import com.moly3.cedarjam.ui.create_new_workspace
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.absolutePath
 import io.github.vinceglb.filekit.projectDir
@@ -48,6 +50,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
+import org.jetbrains.compose.resources.getString
 import kotlin.run
 import kotlin.test.BeforeTest
 
@@ -138,11 +141,11 @@ abstract class UITest : BaseTest() {
     }
 
     @OptIn(ExperimentalTestApi::class)
-    fun ComposeUiTest.createWorkspace(workspace: Workspace):Root.Child.Workspace {
+    suspend fun ComposeUiTest.createWorkspace(workspace: Workspace):Root.Child.Workspace {
         val instance1 = waitAndGetComponent<Root.Child.SelectWorkspace>()
         instance1.component.onIntent(com.moly3.cedarjam.pages.page_select_workspace.Intent.CreateWorkspace)
 
-        waitUntilAtLeastOneExists(hasText("create workspace"))
+        waitUntilAtLeastOneExists(hasText(getString(Res.string.create_new_workspace)))
         onNode(hasTestTag("fullpath_check_box")).performClick()
         onNode(hasTestTag("workspace_name_input")).performTextInput(workspace.serverName)
         waitUntilAtLeastOneExists(hasText(workspace.serverName))
@@ -159,7 +162,7 @@ abstract class UITest : BaseTest() {
     }
 
     fun runUITest(
-        beforeSetContent: suspend ComposeUiTest.() -> Unit,
+        beforeSetContent: suspend ComposeUiTest.() -> Unit = {},
         run: suspend ComposeUiTest.(Root) -> Unit
     ) {
 

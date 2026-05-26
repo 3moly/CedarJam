@@ -27,6 +27,7 @@ import com.moly3.cedarjam.core.domain.model.error.DatabaseError
 import com.moly3.cedarjam.core.domain.model.request.CreateAnnotationRequest
 import com.moly3.cedarjam.core.domain.model.request.CreateCollectionRequest
 import com.moly3.cedarjam.core.domain.model.request.CreateCollectionRowRequest
+import com.moly3.cedarjam.core.domain.model.request.CreateTagAnnotationRequest
 import com.moly3.cedarjam.core.domain.model.request.CreateTagCollectionRowRequest
 import com.moly3.cedarjam.core.domain.model.request.CreateTagLinkRequest
 import com.moly3.cedarjam.core.domain.model.request.CreateTagRequest
@@ -130,6 +131,7 @@ interface IWorkspaceEnvironment {
     suspend fun setNodeText(node: FileTreeNode.File, text: String): ResultWrapper<Unit, String>
     suspend fun createAnnotation(data: CreateAnnotationRequest): ResultWrapper<Long, String>
     fun createTag(request: CreateTagRequest): ResultWrapper<Long, String>
+    fun createTagAnnotation(request: CreateTagAnnotationRequest): ResultWrapper<Long, String>
     fun createTagToTag(request: CreateTagToTagRequest): ResultWrapper<Long, String>
     fun createCollection(request: CreateCollectionRequest): ResultWrapper<Long, String>
     fun createCollectionRow(request: CreateCollectionRowRequest): ResultWrapper<Long, String>
@@ -160,6 +162,7 @@ interface IWorkspaceEnvironment {
     fun deleteTagLink(id: Long)
     fun deleteAnnotation(id: Long)
     fun deleteTagToTag(id: Long)
+    fun deleteTagAnnotation(id: Long)
     fun deleteTagCollectionRow(id: Long)
     suspend fun createDatabase()
     suspend fun createDatabaseFiles()

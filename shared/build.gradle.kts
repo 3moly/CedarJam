@@ -212,18 +212,18 @@ kotlin {
             implementation(libs.robolectric)
             implementation(libs.android.videoplayer.contextprovider)
         }
-        linuxX64Main.dependencies {
-            implementation("org.jetbrains.compose.desktop:desktop-jvm-linux-x64:1.10.1")
-        }
-        macosX64Main.dependencies {
-            implementation("org.jetbrains.compose.desktop:desktop-jvm-macos-x64:1.10.1")
-        }
-        macosArm64Main.dependencies {
-            implementation("org.jetbrains.compose.desktop:desktop-jvm-macos-arm64:1.10.1")
-        }
-        mingwX64Main.dependencies {
-            implementation("org.jetbrains.compose.desktop:desktop-jvm-windows-x64:1.10.1")
-        }
+//        linuxX64Main.dependencies {
+//            implementation("org.jetbrains.compose.desktop:desktop-jvm-linux-x64:1.10.1")
+//        }
+//        macosX64Main.dependencies {
+//            implementation("org.jetbrains.compose.desktop:desktop-jvm-macos-x64:1.10.1")
+//        }
+//        macosArm64Main.dependencies {
+//            implementation("org.jetbrains.compose.desktop:desktop-jvm-macos-arm64:1.10.1")
+//        }
+//        mingwX64Main.dependencies {
+//            implementation("org.jetbrains.compose.desktop:desktop-jvm-windows-x64:1.10.1")
+//        }
     }
 }
 

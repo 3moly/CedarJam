@@ -214,9 +214,7 @@ internal class FileStoreFactory(
 
                 is Intent.ChangeTextNode -> {
                     scope.launch {
-                        println("Intent.ChangeTextNode 1")
                         val workspaceEnv = workspaceSession.workspaceEnvStateFlow.value
-                        println("Intent.ChangeTextNode 2")
                         val oldFullPath =
                             fileManagerService.getFileNodeByTimestamp(timestamp = data.timestamp)
                         val nodes = workspaceEnv.getNodes(null).getAllFilesByExtension(null)
@@ -226,10 +224,7 @@ internal class FileStoreFactory(
                                 found,
                                 intent.newText
                             )
-                        } else {
-
                         }
-                        println("Intent.ChangeTextNode 3")
                     }
                 }
 

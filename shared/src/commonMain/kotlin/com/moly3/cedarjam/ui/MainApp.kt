@@ -131,7 +131,7 @@ fun MainApp(root: Root) {
                         messageService = root.messageService
                     )
                 }
-                AppComposableWidgetHideKeyboard()
+
                 TopAlertServiceUI(root.alertService)
                 when (val sync = syncStatus) {
                     is UIState.Error,
@@ -157,6 +157,7 @@ fun MainApp(root: Root) {
                         }
                     }
                 }
+                AppComposableWidgetHideKeyboard()
             }
         }
     }

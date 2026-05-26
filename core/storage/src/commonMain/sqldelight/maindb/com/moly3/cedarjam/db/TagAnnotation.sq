@@ -20,3 +20,6 @@ WHERE id = :id;
 insertObject:
 INSERT INTO TagAnnotation(createdTime,tagId,annotationId)
 VALUES ?;
+
+lastInsertId:
+SELECT last_insert_rowid();

@@ -107,7 +107,9 @@ internal fun PageContent(
             },
             contentPadding = PaddingValues(horizontal = 16.dp),
             horizontalGap = 8.dp,
-            verticalGap = 8.dp
+            verticalGap = 8.dp,
+            enterFadeSpec = null,
+            slideSpec = null
         ) {
             items(
                 items = items,
