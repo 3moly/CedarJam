@@ -10,7 +10,7 @@ jobs:
   coverage:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
+      - name: Checkout Code2
         uses: actions/checkout@v4
 
       - name: Set up JDK
