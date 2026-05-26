@@ -3,7 +3,8 @@ name: Coverage Badge
 on:
   push:
     branches:
-      - markdown # Or your default branch
+      - markdown
+      - main
 
 jobs:
   coverage:
